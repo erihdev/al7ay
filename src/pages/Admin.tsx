@@ -24,6 +24,7 @@ import {
   Coffee,
   Navigation,
   MapPin,
+  UserPlus,
   Volume2,
   VolumeX,
   BarChart3,
@@ -36,6 +37,7 @@ import { ProductOptionsManager } from '@/components/admin/ProductOptionsManager'
 import { OptionsManager } from '@/components/admin/OptionsManager';
 import { ProductStats } from '@/components/admin/ProductStats';
 import { OffersManager } from '@/components/admin/OffersManager';
+import { ReferralStats } from '@/components/admin/ReferralStats';
 import { useUpdateDeliveryLocation } from '@/hooks/useOrderTracking';
 import { useOrderNotifications } from '@/hooks/useOrderNotifications';
 import { format } from 'date-fns';
@@ -247,7 +249,7 @@ const Admin = () => {
 
       <main className="container mx-auto px-4 py-6">
         <Tabs defaultValue="orders" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 lg:grid-cols-8">
+          <TabsList className="grid w-full grid-cols-5 lg:grid-cols-9">
             <TabsTrigger value="orders" className="font-arabic">
               <Package className="h-4 w-4 ml-2" />
               الطلبات
@@ -259,6 +261,10 @@ const Admin = () => {
             <TabsTrigger value="offers" className="font-arabic">
               <Ticket className="h-4 w-4 ml-2" />
               العروض
+            </TabsTrigger>
+            <TabsTrigger value="referrals" className="font-arabic">
+              <UserPlus className="h-4 w-4 ml-2" />
+              الإحالات
             </TabsTrigger>
             <TabsTrigger value="products" className="font-arabic">
               <Coffee className="h-4 w-4 ml-2" />
@@ -488,6 +494,11 @@ const Admin = () => {
           {/* Offers Tab */}
           <TabsContent value="offers">
             <OffersManager />
+          </TabsContent>
+
+          {/* Referrals Tab */}
+          <TabsContent value="referrals">
+            <ReferralStats />
           </TabsContent>
 
           {/* Coupons Tab */}
