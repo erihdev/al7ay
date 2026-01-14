@@ -15,7 +15,6 @@ import {
   Store, 
   MapPin, 
   Phone, 
-  Mail, 
   Star,
   ShoppingBag,
   Coffee,
@@ -23,22 +22,20 @@ import {
   Plus,
   Minus,
   MessageSquare,
-  ChevronDown,
-  ChevronUp,
   Sparkles,
   IceCream,
   Cake,
-  X
+  X,
+  Search
 } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
-  DialogTitle,
 } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Input } from '@/components/ui/input';
 
 interface Product {
   id: string;
@@ -57,8 +54,10 @@ const ProviderStoreContent = () => {
   const { addItem, totalItems } = useProviderCart();
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [quantity, setQuantity] = useState(1);
-  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(['featured']));
-  const categoryRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const [activeCategory, setActiveCategory] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const categoryScrollRef = useRef<HTMLDivElement>(null);
+  const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   // Fetch provider data
   const { data: provider, isLoading: providerLoading } = useQuery({
@@ -102,33 +101,42 @@ const ProviderStoreContent = () => {
     enabled: !!providerId,
   });
 
+  // Filter products by search
+  const filteredProducts = products?.filter(p => {
+    if (!searchQuery.trim()) return true;
+    const query = searchQuery.toLowerCase();
+    return (
+      p.name_ar.toLowerCase().includes(query) ||
+      (p.name_en && p.name_en.toLowerCase().includes(query)) ||
+      (p.description_ar && p.description_ar.toLowerCase().includes(query))
+    );
+  }) || [];
+
   // Group products by category
-  const productsByCategory = products?.reduce((acc, product) => {
+  const productsByCategory = filteredProducts.reduce((acc, product) => {
     const category = product.category || 'other';
     if (!acc[category]) acc[category] = [];
     acc[category].push(product);
     return acc;
-  }, {} as Record<string, Product[]>) || {};
+  }, {} as Record<string, Product[]>);
 
-  // Get featured products
-  const featuredProducts = products?.filter(p => p.is_featured) || [];
-
-  // Auto-expand first category with products
-  useEffect(() => {
-    if (products && products.length > 0 && expandedCategories.size === 1) {
-      const categories = Object.keys(productsByCategory);
-      if (categories.length > 0) {
-        setExpandedCategories(new Set(['featured', categories[0]]));
-      }
-    }
-  }, [products]);
+  // Get categories with counts
+  const categories = [
+    { id: 'all', label: 'الكل', icon: Package, count: filteredProducts.length },
+    ...Object.entries(productsByCategory).map(([cat, prods]) => ({
+      id: cat,
+      label: getCategoryLabel(cat),
+      icon: getCategoryIconComponent(cat),
+      count: prods.length
+    }))
+  ];
 
   // Get store settings with defaults
   const storeSettings = provider?.store_settings as { primary_color?: string; accent_color?: string } || {};
   const primaryColor = storeSettings.primary_color || '#1B4332';
   const accentColor = storeSettings.accent_color || '#D4AF37';
 
-  const getCategoryLabel = (category: string) => {
+  function getCategoryLabel(category: string) {
     const labels: Record<string, string> = {
       'featured': 'المميز',
       'coffee': 'القهوة',
@@ -137,9 +145,9 @@ const ProviderStoreContent = () => {
       'other': 'أخرى'
     };
     return labels[category] || category;
-  };
+  }
 
-  const getCategoryIcon = (category: string) => {
+  function getCategoryIconComponent(category: string) {
     const icons: Record<string, any> = {
       'featured': Sparkles,
       'coffee': Coffee,
@@ -147,18 +155,22 @@ const ProviderStoreContent = () => {
       'cold_drinks': IceCream,
       'other': Package
     };
-    const Icon = icons[category] || Package;
-    return <Icon className="h-5 w-5" />;
-  };
+    return icons[category] || Package;
+  }
 
-  const toggleCategory = (category: string) => {
-    const newExpanded = new Set(expandedCategories);
-    if (newExpanded.has(category)) {
-      newExpanded.delete(category);
-    } else {
-      newExpanded.add(category);
+  const scrollToCategory = (categoryId: string) => {
+    setActiveCategory(categoryId);
+    if (categoryId === 'all') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
     }
-    setExpandedCategories(newExpanded);
+    const section = sectionRefs.current[categoryId];
+    if (section) {
+      const headerOffset = 180;
+      const elementPosition = section.getBoundingClientRect().top;
+      const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+      window.scrollTo({ top: offsetPosition, behavior: 'smooth' });
+    }
   };
 
   const handleAddToCart = (product: Product, qty: number = 1) => {
@@ -179,21 +191,28 @@ const ProviderStoreContent = () => {
     setQuantity(1);
   };
 
+  // Loading state
   if (providerLoading) {
     return (
       <div className="min-h-screen bg-background font-arabic" dir="rtl">
-        <div className="sticky top-0 z-50 bg-background border-b">
-          <Skeleton className="h-20 w-full" />
-        </div>
+        <div className="h-16 bg-muted animate-pulse" />
         <div className="p-4 space-y-4">
-          {[1, 2, 3].map(i => (
-            <Skeleton key={i} className="h-24 w-full rounded-xl" />
+          {[1, 2, 3, 4].map(i => (
+            <div key={i} className="flex gap-3">
+              <Skeleton className="h-20 w-20 rounded-lg flex-shrink-0" />
+              <div className="flex-1 space-y-2">
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-3 w-1/2" />
+                <Skeleton className="h-4 w-1/4" />
+              </div>
+            </div>
           ))}
         </div>
       </div>
     );
   }
 
+  // Not found state
   if (!provider) {
     return (
       <div className="min-h-screen bg-background font-arabic flex items-center justify-center" dir="rtl">
@@ -217,186 +236,201 @@ const ProviderStoreContent = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted/30 font-arabic" dir="rtl">
-      {/* Sticky Header */}
+    <div className="min-h-screen bg-background font-arabic" dir="rtl">
+      {/* Fixed Header */}
       <header 
-        className="sticky top-0 z-50 backdrop-blur-lg border-b"
-        style={{ 
-          backgroundColor: `${primaryColor}f0`,
-        }}
+        className="fixed top-0 left-0 right-0 z-50"
+        style={{ backgroundColor: primaryColor }}
       >
-        <div className="px-4 py-3">
-          <div className="flex items-center justify-between">
-            {/* Logo and Name */}
-            <div className="flex items-center gap-3">
-              <div 
-                className="w-12 h-12 rounded-xl bg-white shadow-lg flex items-center justify-center overflow-hidden border-2"
-                style={{ borderColor: accentColor }}
-              >
-                {provider.logo_url ? (
-                  <img 
-                    src={provider.logo_url} 
-                    alt={provider.business_name}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <Store className="h-6 w-6 text-muted-foreground" />
-                )}
-              </div>
-              <div>
-                <h1 className="text-lg font-bold text-white">
-                  {provider.business_name}
-                </h1>
-                {provider.active_neighborhoods && (
-                  <p className="text-xs text-white/70 flex items-center gap-1">
-                    <MapPin className="h-3 w-3" />
-                    {(provider.active_neighborhoods as any).name}
-                  </p>
-                )}
-              </div>
+        {/* Top Bar */}
+        <div className="px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            {/* Logo */}
+            <div 
+              className="w-10 h-10 rounded-full bg-white shadow-lg flex items-center justify-center overflow-hidden"
+            >
+              {provider.logo_url ? (
+                <img 
+                  src={provider.logo_url} 
+                  alt={provider.business_name}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <Store className="h-5 w-5 text-muted-foreground" />
+              )}
             </div>
-
-            {/* Actions */}
-            <div className="flex items-center gap-2">
-              <ThemeToggle />
-              <Link to="/">
-                <Button variant="ghost" size="icon" className="text-white hover:bg-white/20">
-                  <ArrowRight className="h-5 w-5" />
-                </Button>
-              </Link>
+            {/* Store Name */}
+            <div>
+              <h1 className="text-base font-bold text-white leading-tight">
+                {provider.business_name}
+              </h1>
+              {provider.active_neighborhoods && (
+                <p className="text-[11px] text-white/70 flex items-center gap-1">
+                  <MapPin className="h-3 w-3" />
+                  {(provider.active_neighborhoods as any).name}
+                </p>
+              )}
             </div>
           </div>
+          
+          {/* Actions */}
+          <div className="flex items-center gap-1">
+            {provider.phone && (
+              <a href={`tel:${provider.phone}`}>
+                <Button variant="ghost" size="icon" className="text-white hover:bg-white/20 h-9 w-9">
+                  <Phone className="h-4 w-4" />
+                </Button>
+              </a>
+            )}
+            <ThemeToggle />
+            <Link to="/">
+              <Button variant="ghost" size="icon" className="text-white hover:bg-white/20 h-9 w-9">
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            </Link>
+          </div>
+        </div>
+
+        {/* Search Bar */}
+        <div className="px-4 pb-3">
+          <div className="relative">
+            <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="ابحث عن منتج..."
+              className="pr-10 h-10 bg-white/95 border-0 rounded-full text-sm"
+              dir="rtl"
+            />
+            {searchQuery && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="absolute left-1 top-1/2 -translate-y-1/2 h-8 w-8"
+                onClick={() => setSearchQuery('')}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
+        </div>
+
+        {/* Category Tabs */}
+        <div 
+          ref={categoryScrollRef}
+          className="flex gap-2 px-4 pb-3 overflow-x-auto hide-scrollbar"
+        >
+          {categories.map((cat) => {
+            const Icon = cat.icon;
+            const isActive = activeCategory === cat.id;
+            return (
+              <button
+                key={cat.id}
+                onClick={() => scrollToCategory(cat.id)}
+                className={cn(
+                  "flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all",
+                  isActive 
+                    ? "bg-white text-foreground shadow-lg" 
+                    : "bg-white/20 text-white hover:bg-white/30"
+                )}
+              >
+                <Icon className="h-4 w-4" />
+                <span>{cat.label}</span>
+                <span className={cn(
+                  "text-xs px-1.5 py-0.5 rounded-full",
+                  isActive ? "bg-muted" : "bg-white/20"
+                )}>
+                  {cat.count}
+                </span>
+              </button>
+            );
+          })}
         </div>
       </header>
 
-      {/* Hero Section - Compact */}
-      <div 
-        className="relative overflow-hidden"
-        style={{ 
-          background: `linear-gradient(180deg, ${primaryColor} 0%, ${primaryColor}99 100%)`
-        }}
-      >
-        <div className="px-4 py-6">
-          {/* Provider Info */}
-          <div className="text-center text-white">
-            {provider.business_name_en && (
-              <p className="text-white/80 text-sm mb-2" dir="ltr">
-                {provider.business_name_en}
-              </p>
-            )}
-            {provider.description && (
-              <p className="text-sm text-white/70 max-w-md mx-auto">
-                {provider.description}
-              </p>
-            )}
-            
-            {/* Quick Info */}
-            <div className="flex items-center justify-center gap-4 mt-4 text-sm">
-              {provider.is_verified && (
-                <Badge 
-                  className="text-xs"
-                  style={{ backgroundColor: accentColor }}
-                >
-                  <Star className="h-3 w-3 ml-1 fill-white" />
-                  موثّق
-                </Badge>
-              )}
-              {provider.phone && (
-                <a 
-                  href={`tel:${provider.phone}`} 
-                  className="flex items-center gap-1 text-white/80 hover:text-white transition-colors"
-                >
-                  <Phone className="h-4 w-4" />
-                </a>
-              )}
-              {provider.email && (
-                <a 
-                  href={`mailto:${provider.email}`} 
-                  className="flex items-center gap-1 text-white/80 hover:text-white transition-colors"
-                >
-                  <Mail className="h-4 w-4" />
-                </a>
-              )}
-            </div>
-          </div>
-        </div>
-        
-        {/* Wave */}
-        <div className="absolute bottom-0 left-0 right-0">
-          <svg viewBox="0 0 1440 60" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path 
-              d="M0 60L60 55C120 50 240 40 360 35C480 30 600 30 720 32.5C840 35 960 40 1080 42.5C1200 45 1320 45 1380 45L1440 45V60H0Z" 
-              className="fill-background"
-            />
-          </svg>
-        </div>
-      </div>
-
-      {/* Menu Content */}
-      <main className="px-4 py-6 pb-32">
+      {/* Main Content - with top padding for fixed header */}
+      <main className="pt-[180px] pb-32">
         {productsLoading ? (
-          <div className="space-y-4">
+          <div className="p-4 space-y-4">
             {[1, 2, 3].map(i => (
-              <Skeleton key={i} className="h-32 w-full rounded-xl" />
+              <Skeleton key={i} className="h-24 w-full rounded-xl" />
             ))}
           </div>
-        ) : !products || products.length === 0 ? (
-          <Card>
+        ) : filteredProducts.length === 0 ? (
+          <Card className="m-4">
             <CardContent className="p-12 text-center">
               <Package className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-xl font-bold mb-2">لا توجد منتجات</h3>
+              <h3 className="text-xl font-bold mb-2">
+                {searchQuery ? 'لا توجد نتائج' : 'لا توجد منتجات'}
+              </h3>
               <p className="text-muted-foreground">
-                لم يقم صاحب المتجر بإضافة منتجات بعد
+                {searchQuery 
+                  ? 'جرب البحث بكلمات مختلفة' 
+                  : 'لم يقم صاحب المتجر بإضافة منتجات بعد'
+                }
               </p>
             </CardContent>
           </Card>
         ) : (
-          <div className="space-y-4">
-            {/* Featured Section */}
-            {featuredProducts.length > 0 && (
-              <CategorySection
-                category="featured"
-                label={getCategoryLabel('featured')}
-                icon={getCategoryIcon('featured')}
-                products={featuredProducts}
-                isExpanded={expandedCategories.has('featured')}
-                onToggle={() => toggleCategory('featured')}
-                onAddToCart={handleAddToCart}
-                onProductClick={setSelectedProduct}
-                primaryColor={primaryColor}
-                accentColor={accentColor}
-                ref={(el) => { categoryRefs.current['featured'] = el; }}
-              />
-            )}
+          <div>
+            {/* All Products or Filtered by Category */}
+            {(activeCategory === 'all' 
+              ? Object.entries(productsByCategory) 
+              : [[activeCategory, productsByCategory[activeCategory] || []] as [string, Product[]]]
+            ).map(([category, categoryProducts]: [string, Product[]]) => {
+              if (!categoryProducts || categoryProducts.length === 0) return null;
+              const CategoryIcon = getCategoryIconComponent(category);
+              
+              return (
+                <div 
+                  key={category} 
+                  ref={(el) => { sectionRefs.current[category] = el; }}
+                  className="mb-6"
+                >
+                  {/* Category Header */}
+                  <div 
+                    className="sticky top-[180px] z-40 px-4 py-3 flex items-center gap-3"
+                    style={{ backgroundColor: `${primaryColor}15` }}
+                  >
+                    <div 
+                      className="w-8 h-8 rounded-lg flex items-center justify-center text-white"
+                      style={{ backgroundColor: primaryColor }}
+                    >
+                      <CategoryIcon className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <h2 className="font-bold text-lg">{getCategoryLabel(category)}</h2>
+                      <p className="text-xs text-muted-foreground">{categoryProducts.length} منتج</p>
+                    </div>
+                  </div>
 
-            {/* Category Sections */}
-            {Object.entries(productsByCategory).map(([category, categoryProducts]) => (
-              <CategorySection
-                key={category}
-                category={category}
-                label={getCategoryLabel(category)}
-                icon={getCategoryIcon(category)}
-                products={categoryProducts}
-                isExpanded={expandedCategories.has(category)}
-                onToggle={() => toggleCategory(category)}
-                onAddToCart={handleAddToCart}
-                onProductClick={setSelectedProduct}
-                primaryColor={primaryColor}
-                accentColor={accentColor}
-                ref={(el) => { categoryRefs.current[category] = el; }}
-              />
-            ))}
+                  {/* Products List */}
+                  <div className="px-4 space-y-3">
+                    {categoryProducts.map((product: Product) => (
+                      <ProductCard
+                        key={product.id}
+                        product={product}
+                        onAddToCart={() => handleAddToCart(product, 1)}
+                        onClick={() => setSelectedProduct(product)}
+                        primaryColor={primaryColor}
+                        accentColor={accentColor}
+                      />
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
       </main>
 
-      {/* Product Detail Dialog */}
+      {/* Product Detail Sheet */}
       <Dialog open={!!selectedProduct} onOpenChange={() => { setSelectedProduct(null); setQuantity(1); }}>
-        <DialogContent dir="rtl" className="font-arabic max-w-lg p-0 overflow-hidden">
+        <DialogContent dir="rtl" className="font-arabic max-w-lg p-0 overflow-hidden gap-0">
           {selectedProduct && (
-            <div className="flex flex-col max-h-[90vh]">
+            <div className="flex flex-col max-h-[85vh]">
               {/* Product Image */}
-              <div className="relative aspect-video bg-muted">
+              <div className="relative aspect-[16/10] bg-muted flex-shrink-0">
                 {selectedProduct.image_url ? (
                   <img 
                     src={selectedProduct.image_url} 
@@ -404,72 +438,76 @@ const ProviderStoreContent = () => {
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <Coffee className="h-20 w-20 text-muted-foreground/30" />
+                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-muted to-muted/50">
+                    <Coffee className="h-16 w-16 text-muted-foreground/30" />
                   </div>
                 )}
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="absolute top-2 left-2 bg-black/50 text-white hover:bg-black/70"
-                  onClick={() => { setSelectedProduct(null); setQuantity(1); }}
-                >
-                  <X className="h-5 w-5" />
-                </Button>
+                {selectedProduct.is_featured && (
+                  <Badge 
+                    className="absolute top-3 right-3 shadow-lg"
+                    style={{ backgroundColor: accentColor }}
+                  >
+                    <Star className="h-3 w-3 ml-1 fill-white" />
+                    مميز
+                  </Badge>
+                )}
               </div>
 
               {/* Product Info */}
-              <ScrollArea className="flex-1 max-h-[50vh]">
+              <ScrollArea className="flex-1">
                 <div className="p-5 space-y-4">
-                  <div>
-                    <h2 className="text-xl font-bold">{selectedProduct.name_ar}</h2>
-                    {selectedProduct.name_en && (
-                      <p className="text-sm text-muted-foreground" dir="ltr">
-                        {selectedProduct.name_en}
-                      </p>
-                    )}
+                  {/* Name and Price */}
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <h2 className="text-xl font-bold">{selectedProduct.name_ar}</h2>
+                      {selectedProduct.name_en && (
+                        <p className="text-sm text-muted-foreground" dir="ltr">
+                          {selectedProduct.name_en}
+                        </p>
+                      )}
+                    </div>
+                    <div 
+                      className="text-xl font-bold whitespace-nowrap"
+                      style={{ color: primaryColor }}
+                    >
+                      {Number(selectedProduct.price).toFixed(0)} ر.س
+                    </div>
                   </div>
 
                   {selectedProduct.description_ar && (
-                    <p className="text-muted-foreground">{selectedProduct.description_ar}</p>
+                    <p className="text-muted-foreground text-sm leading-relaxed">
+                      {selectedProduct.description_ar}
+                    </p>
                   )}
 
-                  {/* Quantity and Price */}
-                  <div className="flex items-center justify-between py-3 border-y">
-                    <div className="flex items-center gap-3">
+                  {/* Quantity Selector */}
+                  <div className="flex items-center justify-between py-4 border-y">
+                    <span className="font-medium">الكمية</span>
+                    <div className="flex items-center gap-4">
                       <Button
                         variant="outline"
                         size="icon"
-                        className="h-10 w-10 rounded-full"
+                        className="h-9 w-9 rounded-full"
                         onClick={() => setQuantity(Math.max(1, quantity - 1))}
                       >
                         <Minus className="h-4 w-4" />
                       </Button>
-                      <span className="font-bold text-xl w-10 text-center">{quantity}</span>
+                      <span className="font-bold text-xl w-8 text-center">{quantity}</span>
                       <Button
                         variant="outline"
                         size="icon"
-                        className="h-10 w-10 rounded-full"
+                        className="h-9 w-9 rounded-full"
                         onClick={() => setQuantity(quantity + 1)}
                       >
                         <Plus className="h-4 w-4" />
                       </Button>
                     </div>
-                    <div className="text-left">
-                      <p className="text-xs text-muted-foreground">السعر الإجمالي</p>
-                      <p 
-                        className="text-2xl font-bold"
-                        style={{ color: primaryColor }}
-                      >
-                        {(Number(selectedProduct.price) * quantity).toFixed(0)} ر.س
-                      </p>
-                    </div>
                   </div>
 
                   {/* Reviews Section */}
-                  <div className="pt-2">
-                    <h3 className="font-bold mb-4 flex items-center gap-2">
-                      <MessageSquare className="h-5 w-5" />
+                  <div>
+                    <h3 className="font-bold mb-3 flex items-center gap-2 text-sm">
+                      <MessageSquare className="h-4 w-4" />
                       التقييمات والمراجعات
                     </h3>
                     <ProductReviews productId={selectedProduct.id} primaryColor={primaryColor} />
@@ -478,14 +516,14 @@ const ProviderStoreContent = () => {
               </ScrollArea>
 
               {/* Add to Cart Button */}
-              <div className="p-4 border-t bg-background">
+              <div className="p-4 border-t bg-background flex-shrink-0">
                 <Button 
-                  className="w-full h-12 text-base font-bold rounded-xl"
+                  className="w-full h-12 text-base font-bold rounded-xl shadow-lg"
                   style={{ backgroundColor: primaryColor }}
                   onClick={() => handleAddToCart(selectedProduct, quantity)}
                 >
                   <ShoppingBag className="h-5 w-5 ml-2" />
-                  إضافة للسلة
+                  إضافة للسلة - {(Number(selectedProduct.price) * quantity).toFixed(0)} ر.س
                 </Button>
               </div>
             </div>
@@ -499,157 +537,72 @@ const ProviderStoreContent = () => {
   );
 };
 
-// Category Section Component
-interface CategorySectionProps {
-  category: string;
-  label: string;
-  icon: React.ReactNode;
-  products: Product[];
-  isExpanded: boolean;
-  onToggle: () => void;
-  onAddToCart: (product: Product, qty?: number) => void;
-  onProductClick: (product: Product) => void;
-  primaryColor: string;
-  accentColor: string;
-}
-
-const CategorySection = React.forwardRef<HTMLDivElement, CategorySectionProps>(
-  ({ category, label, icon, products, isExpanded, onToggle, onAddToCart, onProductClick, primaryColor, accentColor }, ref) => {
-    return (
-      <div ref={ref} className="overflow-hidden">
-        {/* Category Header */}
-        <button
-          onClick={onToggle}
-          className={cn(
-            "w-full flex items-center justify-between p-4 rounded-xl transition-all duration-300",
-            isExpanded 
-              ? "bg-card shadow-lg" 
-              : "bg-card/50 hover:bg-card shadow"
-          )}
-        >
-          <div className="flex items-center gap-3">
-            <div 
-              className="w-10 h-10 rounded-lg flex items-center justify-center text-white"
-              style={{ backgroundColor: primaryColor }}
-            >
-              {icon}
-            </div>
-            <div className="text-right">
-              <h3 className="font-bold text-lg">{label}</h3>
-              <p className="text-xs text-muted-foreground">
-                {products.length} منتج
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            {isExpanded ? (
-              <ChevronUp className="h-5 w-5 text-muted-foreground" />
-            ) : (
-              <ChevronDown className="h-5 w-5 text-muted-foreground" />
-            )}
-          </div>
-        </button>
-
-        {/* Products List */}
-        <div
-          className={cn(
-            "grid transition-all duration-300 ease-in-out",
-            isExpanded ? "grid-rows-[1fr] opacity-100 mt-3" : "grid-rows-[0fr] opacity-0"
-          )}
-        >
-          <div className="overflow-hidden">
-            <div className="space-y-3">
-              {products.map((product) => (
-                <ProductItem
-                  key={product.id}
-                  product={product}
-                  onAddToCart={onAddToCart}
-                  onClick={() => onProductClick(product)}
-                  primaryColor={primaryColor}
-                  accentColor={accentColor}
-                />
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-);
-
-CategorySection.displayName = 'CategorySection';
-
-// Product Item Component
-interface ProductItemProps {
+// Product Card Component
+interface ProductCardProps {
   product: Product;
-  onAddToCart: (product: Product, qty?: number) => void;
+  onAddToCart: () => void;
   onClick: () => void;
   primaryColor: string;
   accentColor: string;
 }
 
-const ProductItem = ({ product, onAddToCart, onClick, primaryColor, accentColor }: ProductItemProps) => {
+const ProductCard = ({ product, onAddToCart, onClick, primaryColor, accentColor }: ProductCardProps) => {
   return (
     <div
-      className="flex gap-4 p-3 bg-card rounded-xl shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer group"
+      className="flex gap-3 p-3 bg-card rounded-xl border shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer active:scale-[0.99]"
       onClick={onClick}
     >
       {/* Product Image */}
-      <div className="w-24 h-24 rounded-lg bg-muted overflow-hidden flex-shrink-0 relative">
+      <div className="w-20 h-20 rounded-lg bg-muted overflow-hidden flex-shrink-0 relative">
         {product.image_url ? (
           <img 
             src={product.image_url} 
             alt={product.name_ar}
-            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+            className="w-full h-full object-cover"
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
-            <Coffee className="h-8 w-8 text-muted-foreground/50" />
+            <Coffee className="h-6 w-6 text-muted-foreground/40" />
           </div>
         )}
         {product.is_featured && (
-          <Badge 
-            className="absolute top-1 right-1 text-[10px] px-1.5 py-0.5"
+          <div 
+            className="absolute top-1 right-1 w-5 h-5 rounded-full flex items-center justify-center"
             style={{ backgroundColor: accentColor }}
           >
-            <Star className="h-2.5 w-2.5 fill-white" />
-          </Badge>
+            <Star className="h-3 w-3 fill-white text-white" />
+          </div>
         )}
       </div>
 
       {/* Product Info */}
-      <div className="flex-1 flex flex-col justify-between min-w-0">
+      <div className="flex-1 flex flex-col justify-between min-w-0 py-0.5">
         <div>
-          <h4 className="font-bold text-base truncate">{product.name_ar}</h4>
-          {product.name_en && (
-            <p className="text-xs text-muted-foreground truncate" dir="ltr">
-              {product.name_en}
-            </p>
-          )}
+          <h4 className="font-bold text-sm line-clamp-1">{product.name_ar}</h4>
           {product.description_ar && (
-            <p className="text-xs text-muted-foreground line-clamp-2 mt-1">
+            <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5 leading-relaxed">
               {product.description_ar}
             </p>
           )}
         </div>
         
-        <div className="flex items-center justify-between mt-2">
+        <div className="flex items-center justify-between mt-1">
           <span 
-            className="font-bold text-lg"
+            className="font-bold text-base"
             style={{ color: primaryColor }}
           >
             {Number(product.price).toFixed(0)} ر.س
           </span>
           <Button
             size="sm"
-            className="h-8 px-3 rounded-full text-xs"
+            className="h-7 px-3 rounded-full text-xs gap-1"
             style={{ backgroundColor: primaryColor }}
             onClick={(e) => {
               e.stopPropagation();
-              onAddToCart(product, 1);
+              onAddToCart();
             }}
           >
-            <Plus className="h-3.5 w-3.5 ml-1" />
+            <Plus className="h-3 w-3" />
             أضف
           </Button>
         </div>
