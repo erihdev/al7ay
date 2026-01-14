@@ -4,8 +4,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { useMapboxToken } from '@/hooks/useMapboxToken';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { MapPin, Users, Coffee } from 'lucide-react';
+import { MapPin, Users, Coffee, Store, ArrowLeft } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 
@@ -17,6 +19,13 @@ interface Neighborhood {
   lng: number;
   provider_count: number;
   is_active: boolean;
+}
+
+interface ServiceProvider {
+  id: string;
+  business_name: string;
+  logo_url: string | null;
+  is_verified: boolean;
 }
 
 const NeighborhoodsMap = () => {
@@ -39,6 +48,24 @@ const NeighborhoodsMap = () => {
       if (error) throw error;
       return data as Neighborhood[];
     }
+  });
+
+  // Fetch providers for selected neighborhood
+  const { data: providers } = useQuery({
+    queryKey: ['neighborhood-providers', selectedNeighborhood?.id],
+    queryFn: async () => {
+      if (!selectedNeighborhood) return [];
+      
+      const { data, error } = await supabase
+        .from('service_providers')
+        .select('id, business_name, logo_url, is_verified')
+        .eq('neighborhood_id', selectedNeighborhood.id)
+        .eq('is_active', true);
+      
+      if (error) throw error;
+      return data as ServiceProvider[];
+    },
+    enabled: !!selectedNeighborhood
   });
 
   useEffect(() => {
@@ -211,10 +238,43 @@ const NeighborhoodsMap = () => {
                 <CardContent className="p-4">
                   <h3 className="font-bold text-lg mb-2">{selectedNeighborhood.name}</h3>
                   <p className="text-muted-foreground text-sm mb-3">{selectedNeighborhood.city}</p>
-                  <div className="flex items-center gap-2 text-primary">
+                  <div className="flex items-center gap-2 text-primary mb-4">
                     <Coffee className="h-4 w-4" />
                     <span className="font-medium">{selectedNeighborhood.provider_count} مقدم خدمة نشط</span>
                   </div>
+
+                  {/* Providers List */}
+                  {providers && providers.length > 0 && (
+                    <div className="space-y-2 border-t pt-3">
+                      <p className="text-sm font-medium mb-2">المتاجر في هذا الحي:</p>
+                      {providers.map(provider => (
+                        <Link 
+                          key={provider.id} 
+                          to={`/store/${provider.id}`}
+                          className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted transition-colors"
+                        >
+                          <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center overflow-hidden">
+                            {provider.logo_url ? (
+                              <img 
+                                src={provider.logo_url} 
+                                alt={provider.business_name}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <Store className="h-5 w-5 text-muted-foreground" />
+                            )}
+                          </div>
+                          <div className="flex-1">
+                            <p className="font-medium text-sm">{provider.business_name}</p>
+                            {provider.is_verified && (
+                              <Badge variant="secondary" className="text-xs">موثّق</Badge>
+                            )}
+                          </div>
+                          <ArrowLeft className="h-4 w-4 text-muted-foreground" />
+                        </Link>
+                      ))}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             )}

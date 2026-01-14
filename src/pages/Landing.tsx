@@ -162,9 +162,14 @@ const Landing = () => {
           </div>
           <div className="flex items-center gap-4">
             <ThemeToggle />
-            <Link to="/">
+            <Link to="/provider-login">
               <Button variant="outline" className="font-arabic">
-                تسجيل الدخول
+                دخول مقدمي الخدمات
+              </Button>
+            </Link>
+            <Link to="/app">
+              <Button className="font-arabic">
+                دخول العملاء
                 <ArrowLeft className="h-4 w-4 mr-2" />
               </Button>
             </Link>
