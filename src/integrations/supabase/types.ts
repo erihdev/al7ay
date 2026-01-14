@@ -268,6 +268,7 @@ export type Database = {
           points_earned: number
           points_redeemed: number
           scheduled_for: string | null
+          scheduled_notification_sent: boolean | null
           status: Database["public"]["Enums"]["order_status"]
           total_amount: number
           updated_at: string
@@ -290,6 +291,7 @@ export type Database = {
           points_earned?: number
           points_redeemed?: number
           scheduled_for?: string | null
+          scheduled_notification_sent?: boolean | null
           status?: Database["public"]["Enums"]["order_status"]
           total_amount: number
           updated_at?: string
@@ -312,6 +314,7 @@ export type Database = {
           points_earned?: number
           points_redeemed?: number
           scheduled_for?: string | null
+          scheduled_notification_sent?: boolean | null
           status?: Database["public"]["Enums"]["order_status"]
           total_amount?: number
           updated_at?: string
@@ -545,6 +548,7 @@ export type Database = {
           full_name: string | null
           id: string
           phone: string | null
+          referral_code: string | null
           updated_at: string
           user_id: string
         }
@@ -553,6 +557,7 @@ export type Database = {
           full_name?: string | null
           id?: string
           phone?: string | null
+          referral_code?: string | null
           updated_at?: string
           user_id: string
         }
@@ -561,6 +566,7 @@ export type Database = {
           full_name?: string | null
           id?: string
           phone?: string | null
+          referral_code?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -590,6 +596,42 @@ export type Database = {
           id?: string
           p256dh?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      referrals: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          id: string
+          referral_code: string
+          referred_id: string
+          referred_points_awarded: number | null
+          referrer_id: string
+          referrer_points_awarded: number | null
+          status: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          referral_code: string
+          referred_id: string
+          referred_points_awarded?: number | null
+          referrer_id: string
+          referrer_points_awarded?: number | null
+          status?: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          referral_code?: string
+          referred_id?: string
+          referred_points_awarded?: number | null
+          referrer_id?: string
+          referrer_points_awarded?: number | null
+          status?: string
         }
         Relationships: []
       }
