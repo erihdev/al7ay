@@ -1,0 +1,314 @@
+import { useCart } from '@/contexts/CartContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { useLocation } from '@/contexts/LocationContext';
+import { useLoyaltyPoints, useCreateOrder } from '@/hooks/useOrders';
+import { BottomNav } from '@/components/layout/BottomNav';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Minus, Plus, Trash2, ShoppingBag, MapPin, Truck, Star } from 'lucide-react';
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
+import { Checkbox } from '@/components/ui/checkbox';
+
+const Cart = () => {
+  const { items, updateQuantity, removeItem, clearCart, totalAmount } = useCart();
+  const { user } = useAuth();
+  const { isWithinDeliveryZone } = useLocation();
+  const { data: loyaltyPoints } = useLoyaltyPoints();
+  const createOrder = useCreateOrder();
+  const navigate = useNavigate();
+
+  const [orderType, setOrderType] = useState<'pickup' | 'delivery'>(
+    isWithinDeliveryZone ? 'delivery' : 'pickup'
+  );
+  const [customerName, setCustomerName] = useState('');
+  const [customerPhone, setCustomerPhone] = useState('');
+  const [notes, setNotes] = useState('');
+  const [usePoints, setUsePoints] = useState(false);
+
+  const availablePoints = loyaltyPoints?.total_points || 0;
+  const maxRedeemablePoints = Math.min(availablePoints, Math.floor(totalAmount * 100));
+  const pointsDiscount = usePoints ? maxRedeemablePoints / 100 : 0;
+  const finalAmount = Math.max(0, totalAmount - pointsDiscount);
+
+  const handleSubmitOrder = async () => {
+    if (!user) {
+      toast.error('يرجى تسجيل الدخول أولاً');
+      navigate('/profile');
+      return;
+    }
+
+    if (!customerName || !customerPhone) {
+      toast.error('يرجى إدخال الاسم ورقم الهاتف');
+      return;
+    }
+
+    try {
+      await createOrder.mutateAsync({
+        customer_name: customerName,
+        customer_phone: customerPhone,
+        total_amount: finalAmount,
+        order_type: orderType,
+        notes,
+        points_redeemed: usePoints ? maxRedeemablePoints : 0,
+        discount_amount: pointsDiscount,
+        items: items.map((item) => ({
+          product_id: item.id,
+          product_name: item.name_ar,
+          quantity: item.quantity,
+          unit_price: item.price,
+          total_price: item.price * item.quantity,
+        })),
+      });
+
+      toast.success('تم إرسال طلبك بنجاح!');
+      clearCart();
+      navigate('/orders');
+    } catch (error: any) {
+      toast.error(error.message || 'حدث خطأ ما');
+    }
+  };
+
+  if (items.length === 0) {
+    return (
+      <div className="min-h-screen bg-background font-arabic" dir="rtl">
+        <div className="container mx-auto px-4 py-8 pb-24">
+          <h1 className="text-2xl font-bold mb-6">السلة</h1>
+          
+          <div className="text-center py-12">
+            <ShoppingBag className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+            <h2 className="text-lg font-semibold mb-2">السلة فارغة</h2>
+            <p className="text-muted-foreground mb-4">أضف بعض المنتجات للبدء</p>
+            <Link to="/">
+              <Button className="font-arabic">تصفح القائمة</Button>
+            </Link>
+          </div>
+        </div>
+        <BottomNav />
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-background font-arabic" dir="rtl">
+      <div className="container mx-auto px-4 py-8 pb-32">
+        <h1 className="text-2xl font-bold mb-6">السلة</h1>
+
+        {/* Cart Items */}
+        <div className="space-y-3 mb-6">
+          {items.map((item) => (
+            <Card key={item.id}>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-16 h-16 bg-muted rounded-lg overflow-hidden shrink-0">
+                    {item.image_url ? (
+                      <img
+                        src={item.image_url}
+                        alt={item.name_ar}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-2xl">
+                        ☕
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold truncate">{item.name_ar}</h3>
+                    <p className="text-primary font-bold">
+                      {(item.price * item.quantity).toFixed(0)} ر.س
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <Button
+                      size="icon"
+                      variant="outline"
+                      className="h-8 w-8"
+                      onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                    >
+                      <Minus className="h-4 w-4" />
+                    </Button>
+                    <span className="w-8 text-center font-bold">{item.quantity}</span>
+                    <Button
+                      size="icon"
+                      variant="outline"
+                      className="h-8 w-8"
+                      onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-8 w-8 text-destructive"
+                      onClick={() => removeItem(item.id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {/* Order Type */}
+        <Card className="mb-6">
+          <CardContent className="p-4">
+            <h3 className="font-semibold mb-3">طريقة الاستلام</h3>
+            <RadioGroup
+              value={orderType}
+              onValueChange={(v) => setOrderType(v as 'pickup' | 'delivery')}
+              className="flex gap-4"
+            >
+              <div className="flex items-center gap-2 flex-1">
+                <RadioGroupItem value="pickup" id="pickup" />
+                <Label htmlFor="pickup" className="flex items-center gap-2 cursor-pointer">
+                  <MapPin className="h-4 w-4" />
+                  استلام
+                </Label>
+              </div>
+              <div className="flex items-center gap-2 flex-1">
+                <RadioGroupItem
+                  value="delivery"
+                  id="delivery"
+                  disabled={!isWithinDeliveryZone}
+                />
+                <Label
+                  htmlFor="delivery"
+                  className={`flex items-center gap-2 cursor-pointer ${
+                    !isWithinDeliveryZone ? 'opacity-50' : ''
+                  }`}
+                >
+                  <Truck className="h-4 w-4" />
+                  توصيل
+                </Label>
+              </div>
+            </RadioGroup>
+            {!isWithinDeliveryZone && (
+              <p className="text-xs text-muted-foreground mt-2">
+                التوصيل غير متاح لموقعك الحالي
+              </p>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Customer Info */}
+        <Card className="mb-6">
+          <CardContent className="p-4 space-y-4">
+            <h3 className="font-semibold">معلومات التواصل</h3>
+            
+            <div className="space-y-2">
+              <Label htmlFor="name">الاسم</Label>
+              <Input
+                id="name"
+                value={customerName}
+                onChange={(e) => setCustomerName(e.target.value)}
+                placeholder="أدخل اسمك"
+                dir="rtl"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="phone">رقم الهاتف</Label>
+              <Input
+                id="phone"
+                type="tel"
+                value={customerPhone}
+                onChange={(e) => setCustomerPhone(e.target.value)}
+                placeholder="05XXXXXXXX"
+                dir="ltr"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="notes">ملاحظات (اختياري)</Label>
+              <Textarea
+                id="notes"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="أي ملاحظات خاصة بطلبك"
+                dir="rtl"
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Loyalty Points Redemption */}
+        {user && availablePoints >= 100 && (
+          <Card className="mb-6 border-gold/30 bg-gold/5">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Star className="h-5 w-5 text-gold" />
+                  <div>
+                    <p className="font-semibold">استخدام النقاط</p>
+                    <p className="text-sm text-muted-foreground">
+                      لديك {availablePoints} نقطة ({(availablePoints / 100).toFixed(0)} ر.س)
+                    </p>
+                  </div>
+                </div>
+                <Checkbox
+                  checked={usePoints}
+                  onCheckedChange={(checked) => setUsePoints(!!checked)}
+                />
+              </div>
+              {usePoints && (
+                <p className="text-sm text-gold mt-2">
+                  سيتم خصم {maxRedeemablePoints} نقطة = {pointsDiscount.toFixed(0)} ر.س
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Order Summary */}
+        <Card className="mb-6">
+          <CardContent className="p-4">
+            <h3 className="font-semibold mb-3">ملخص الطلب</h3>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span>المجموع الفرعي</span>
+                <span>{totalAmount.toFixed(0)} ر.س</span>
+              </div>
+              {usePoints && pointsDiscount > 0 && (
+                <div className="flex justify-between text-gold">
+                  <span>خصم النقاط</span>
+                  <span>-{pointsDiscount.toFixed(0)} ر.س</span>
+                </div>
+              )}
+              <div className="flex justify-between text-lg font-bold pt-2 border-t">
+                <span>الإجمالي</span>
+                <span className="text-primary">{finalAmount.toFixed(0)} ر.س</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Submit Button */}
+        <Button
+          className="w-full h-12 text-lg font-arabic"
+          onClick={handleSubmitOrder}
+          disabled={createOrder.isPending}
+        >
+          {createOrder.isPending ? 'جاري الإرسال...' : 'تأكيد الطلب'}
+        </Button>
+
+        <p className="text-center text-sm text-muted-foreground mt-3">
+          الدفع عند الاستلام
+        </p>
+      </div>
+
+      <BottomNav />
+    </div>
+  );
+};
+
+export default Cart;
