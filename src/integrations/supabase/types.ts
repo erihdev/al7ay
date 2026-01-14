@@ -14,6 +14,84 @@ export type Database = {
   }
   public: {
     Tables: {
+      coupon_usage: {
+        Row: {
+          coupon_id: string
+          id: string
+          order_id: string | null
+          used_at: string
+          user_id: string | null
+        }
+        Insert: {
+          coupon_id: string
+          id?: string
+          order_id?: string | null
+          used_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          coupon_id?: string
+          id?: string
+          order_id?: string | null
+          used_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coupon_usage_coupon_id_fkey"
+            columns: ["coupon_id"]
+            isOneToOne: false
+            referencedRelation: "coupons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coupon_usage_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      coupons: {
+        Row: {
+          code: string
+          created_at: string
+          current_uses: number
+          discount_type: string
+          discount_value: number
+          expires_at: string | null
+          id: string
+          is_active: boolean
+          max_uses: number | null
+          min_order_amount: number | null
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          current_uses?: number
+          discount_type: string
+          discount_value: number
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          max_uses?: number | null
+          min_order_amount?: number | null
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          current_uses?: number
+          discount_type?: string
+          discount_value?: number
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          max_uses?: number | null
+          min_order_amount?: number | null
+        }
+        Relationships: []
+      }
       delivery_route_history: {
         Row: {
           id: string
@@ -125,6 +203,7 @@ export type Database = {
           product_id: string | null
           product_name: string
           quantity: number
+          selected_options: Json | null
           total_price: number
           unit_price: number
         }
@@ -135,6 +214,7 @@ export type Database = {
           product_id?: string | null
           product_name: string
           quantity?: number
+          selected_options?: Json | null
           total_price: number
           unit_price: number
         }
@@ -145,6 +225,7 @@ export type Database = {
           product_id?: string | null
           product_name?: string
           quantity?: number
+          selected_options?: Json | null
           total_price?: number
           unit_price?: number
         }
@@ -167,6 +248,8 @@ export type Database = {
       }
       orders: {
         Row: {
+          coupon_discount: number | null
+          coupon_id: string | null
           created_at: string
           customer_id: string | null
           customer_name: string
@@ -185,6 +268,8 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          coupon_discount?: number | null
+          coupon_id?: string | null
           created_at?: string
           customer_id?: string | null
           customer_name: string
@@ -203,6 +288,8 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          coupon_discount?: number | null
+          coupon_id?: string | null
           created_at?: string
           customer_id?: string | null
           customer_name?: string
@@ -220,7 +307,15 @@ export type Database = {
           total_amount?: number
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "orders_coupon_id_fkey"
+            columns: ["coupon_id"]
+            isOneToOne: false
+            referencedRelation: "coupons"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       points_history: {
         Row: {
@@ -256,6 +351,101 @@ export type Database = {
             columns: ["order_id"]
             isOneToOne: false
             referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_option_values: {
+        Row: {
+          created_at: string
+          id: string
+          name_ar: string
+          name_en: string | null
+          option_id: string
+          price_modifier: number
+          sort_order: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name_ar: string
+          name_en?: string | null
+          option_id: string
+          price_modifier?: number
+          sort_order?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name_ar?: string
+          name_en?: string | null
+          option_id?: string
+          price_modifier?: number
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_option_values_option_id_fkey"
+            columns: ["option_id"]
+            isOneToOne: false
+            referencedRelation: "product_options"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_options: {
+        Row: {
+          created_at: string
+          id: string
+          is_required: boolean
+          name_ar: string
+          name_en: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_required?: boolean
+          name_ar: string
+          name_en?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_required?: boolean
+          name_ar?: string
+          name_en?: string | null
+        }
+        Relationships: []
+      }
+      product_options_link: {
+        Row: {
+          id: string
+          option_id: string
+          product_id: string
+        }
+        Insert: {
+          id?: string
+          option_id: string
+          product_id: string
+        }
+        Update: {
+          id?: string
+          option_id?: string
+          product_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_options_link_option_id_fkey"
+            columns: ["option_id"]
+            isOneToOne: false
+            referencedRelation: "product_options"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_options_link_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
             referencedColumns: ["id"]
           },
         ]

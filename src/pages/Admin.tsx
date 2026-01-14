@@ -25,9 +25,13 @@ import {
   Navigation,
   MapPin,
   Volume2,
-  VolumeX
+  VolumeX,
+  BarChart3,
+  Ticket
 } from 'lucide-react';
 import { ProductList } from '@/components/admin/ProductList';
+import { CouponManager } from '@/components/admin/CouponManager';
+import { SalesReports } from '@/components/admin/SalesReports';
 import { useUpdateDeliveryLocation } from '@/hooks/useOrderTracking';
 import { useOrderNotifications } from '@/hooks/useOrderNotifications';
 import { format } from 'date-fns';
@@ -217,7 +221,7 @@ const Admin = () => {
 
       <main className="container mx-auto px-4 py-6">
         <Tabs defaultValue="orders" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="orders" className="font-arabic">
               <Package className="h-4 w-4 ml-2" />
               الطلبات
@@ -225,6 +229,14 @@ const Admin = () => {
             <TabsTrigger value="products" className="font-arabic">
               <Coffee className="h-4 w-4 ml-2" />
               المنتجات
+            </TabsTrigger>
+            <TabsTrigger value="coupons" className="font-arabic">
+              <Ticket className="h-4 w-4 ml-2" />
+              الكوبونات
+            </TabsTrigger>
+            <TabsTrigger value="reports" className="font-arabic">
+              <BarChart3 className="h-4 w-4 ml-2" />
+              التقارير
             </TabsTrigger>
             <TabsTrigger value="settings" className="font-arabic">
               <Settings className="h-4 w-4 ml-2" />
@@ -418,6 +430,16 @@ const Admin = () => {
           {/* Products Tab */}
           <TabsContent value="products">
             <ProductList />
+          </TabsContent>
+
+          {/* Coupons Tab */}
+          <TabsContent value="coupons">
+            <CouponManager />
+          </TabsContent>
+
+          {/* Reports Tab */}
+          <TabsContent value="reports">
+            <SalesReports />
           </TabsContent>
 
           {/* Settings Tab */}
