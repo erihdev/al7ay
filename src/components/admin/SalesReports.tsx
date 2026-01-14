@@ -1,7 +1,10 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { useDailySalesReport, useMonthlySalesReport, useOrderStatusBreakdown } from '@/hooks/useSalesReports';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
-import { TrendingUp, Package, DollarSign, Award, Ticket, Loader2 } from 'lucide-react';
+import { TrendingUp, Package, DollarSign, Award, Ticket, Loader2, FileSpreadsheet, FileText } from 'lucide-react';
+import { exportToExcel, exportToPDF } from '@/utils/exportReports';
+import { toast } from 'sonner';
 
 const COLORS = ['hsl(var(--primary))', 'hsl(var(--accent))', 'hsl(var(--secondary))'];
 const STATUS_COLORS = ['#f59e0b', '#3b82f6', '#22c55e', '#8b5cf6', '#10b981', '#ef4444'];
@@ -10,6 +13,32 @@ export function SalesReports() {
   const { data: dailyData, isLoading: dailyLoading } = useDailySalesReport(7);
   const { data: monthlyData, isLoading: monthlyLoading } = useMonthlySalesReport();
   const { data: statusData, isLoading: statusLoading } = useOrderStatusBreakdown();
+
+  const handleExportExcel = () => {
+    if (!dailyData || !statusData) {
+      toast.error('البيانات غير متاحة للتصدير');
+      return;
+    }
+    try {
+      exportToExcel(dailyData, monthlyData, statusData);
+      toast.success('تم تصدير التقرير إلى Excel');
+    } catch (error) {
+      toast.error('حدث خطأ أثناء التصدير');
+    }
+  };
+
+  const handleExportPDF = () => {
+    if (!dailyData || !statusData) {
+      toast.error('البيانات غير متاحة للتصدير');
+      return;
+    }
+    try {
+      exportToPDF(dailyData, monthlyData, statusData);
+      toast.success('تم تصدير التقرير إلى PDF');
+    } catch (error) {
+      toast.error('حدث خطأ أثناء التصدير');
+    }
+  };
 
   if (dailyLoading || monthlyLoading || statusLoading) {
     return (
@@ -21,6 +50,18 @@ export function SalesReports() {
 
   return (
     <div className="space-y-6">
+      {/* Export Buttons */}
+      <div className="flex justify-end gap-2">
+        <Button variant="outline" onClick={handleExportExcel} className="font-arabic">
+          <FileSpreadsheet className="h-4 w-4 ml-2" />
+          تصدير Excel
+        </Button>
+        <Button variant="outline" onClick={handleExportPDF} className="font-arabic">
+          <FileText className="h-4 w-4 ml-2" />
+          تصدير PDF
+        </Button>
+      </div>
+
       {/* Monthly Stats Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card>
