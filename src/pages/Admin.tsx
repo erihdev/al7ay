@@ -19,8 +19,10 @@ import {
   Truck, 
   XCircle,
   ArrowRight,
-  Home
+  Home,
+  Coffee
 } from 'lucide-react';
+import { ProductList } from '@/components/admin/ProductList';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import type { Database } from '@/integrations/supabase/types';
@@ -182,10 +184,14 @@ const Admin = () => {
 
       <main className="container mx-auto px-4 py-6">
         <Tabs defaultValue="orders" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="orders" className="font-arabic">
               <Package className="h-4 w-4 ml-2" />
               الطلبات
+            </TabsTrigger>
+            <TabsTrigger value="products" className="font-arabic">
+              <Coffee className="h-4 w-4 ml-2" />
+              المنتجات
             </TabsTrigger>
             <TabsTrigger value="settings" className="font-arabic">
               <Settings className="h-4 w-4 ml-2" />
@@ -297,6 +303,11 @@ const Admin = () => {
                 );
               })
             )}
+          </TabsContent>
+
+          {/* Products Tab */}
+          <TabsContent value="products">
+            <ProductList />
           </TabsContent>
 
           {/* Settings Tab */}
