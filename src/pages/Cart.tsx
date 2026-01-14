@@ -31,6 +31,7 @@ const Cart = () => {
   );
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
+  const [customerEmail, setCustomerEmail] = useState('');
   const [notes, setNotes] = useState('');
   const [usePoints, setUsePoints] = useState(false);
   const [deliveryLocation, setDeliveryLocation] = useState<{
@@ -93,6 +94,7 @@ const Cart = () => {
       await createOrder.mutateAsync({
         customer_name: customerName,
         customer_phone: customerPhone,
+        customer_email: customerEmail || undefined,
         total_amount: finalAmount,
         order_type: orderType,
         notes,
@@ -351,8 +353,23 @@ const Cart = () => {
                 value={customerPhone}
                 onChange={(e) => setCustomerPhone(e.target.value)}
                 placeholder="05XXXXXXXX"
+              dir="ltr"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="email">البريد الإلكتروني (اختياري)</Label>
+              <Input
+                id="email"
+                type="email"
+                value={customerEmail}
+                onChange={(e) => setCustomerEmail(e.target.value)}
+                placeholder="email@example.com"
                 dir="ltr"
               />
+              <p className="text-xs text-muted-foreground">
+                للحصول على تحديثات الطلب عبر البريد
+              </p>
             </div>
 
             <div className="space-y-2">

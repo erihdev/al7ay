@@ -117,7 +117,13 @@ const Admin = () => {
 
   // Update order status mutation
   const updateOrderStatus = useMutation({
-    mutationFn: async ({ orderId, status, customerId }: { orderId: string; status: OrderStatus; customerId: string | null }) => {
+    mutationFn: async ({ orderId, status, customerId, customerEmail, customerName }: { 
+      orderId: string; 
+      status: OrderStatus; 
+      customerId: string | null;
+      customerEmail?: string | null;
+      customerName?: string;
+    }) => {
       const { error } = await supabase
         .from('orders')
         .update({ status })
@@ -132,7 +138,23 @@ const Admin = () => {
           });
         } catch (notifError) {
           console.error('Error sending notification:', notifError);
-          // Don't fail the order update if notification fails
+        }
+      }
+
+      // Send email notification for status update
+      if (customerEmail && customerName) {
+        try {
+          await supabase.functions.invoke('send-order-email', {
+            body: {
+              type: 'status_update',
+              orderId,
+              customerEmail,
+              customerName,
+              status,
+            },
+          });
+        } catch (emailError) {
+          console.error('Error sending status email:', emailError);
         }
       }
     },
@@ -400,6 +422,8 @@ const Admin = () => {
                                 orderId: order.id,
                                 status: nextStatus,
                                 customerId: order.customer_id,
+                                customerEmail: order.customer_email,
+                                customerName: order.customer_name,
                               })
                             }
                             disabled={updateOrderStatus.isPending}
@@ -416,6 +440,8 @@ const Admin = () => {
                                   orderId: order.id,
                                   status: 'cancelled',
                                   customerId: order.customer_id,
+                                  customerEmail: order.customer_email,
+                                  customerName: order.customer_name,
                                 })
                               }
                               disabled={updateOrderStatus.isPending}
