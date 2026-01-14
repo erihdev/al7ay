@@ -29,7 +29,8 @@ import {
   VolumeX,
   BarChart3,
   Ticket,
-  CreditCard
+  CreditCard,
+  FileText
 } from 'lucide-react';
 import { ProductList } from '@/components/admin/ProductList';
 import { CouponManager } from '@/components/admin/CouponManager';
@@ -40,6 +41,7 @@ import { ProductStats } from '@/components/admin/ProductStats';
 import { OffersManager } from '@/components/admin/OffersManager';
 import { ReferralStats } from '@/components/admin/ReferralStats';
 import { PaymentsManager } from '@/components/admin/PaymentsManager';
+import ApplicationsManager from '@/components/admin/ApplicationsManager';
 import { useUpdateDeliveryLocation } from '@/hooks/useOrderTracking';
 import { useOrderNotifications } from '@/hooks/useOrderNotifications';
 import { format } from 'date-fns';
@@ -287,6 +289,10 @@ const Admin = () => {
             <TabsTrigger value="payments" className="font-arabic">
               <CreditCard className="h-4 w-4 ml-2" />
               المدفوعات
+            </TabsTrigger>
+            <TabsTrigger value="applications" className="font-arabic">
+              <FileText className="h-4 w-4 ml-2" />
+              طلبات الانضمام
             </TabsTrigger>
             <TabsTrigger value="settings" className="font-arabic">
               <Settings className="h-4 w-4 ml-2" />
@@ -601,6 +607,11 @@ const Admin = () => {
           {/* Payments Tab */}
           <TabsContent value="payments">
             <PaymentsManager />
+          </TabsContent>
+
+          {/* Applications Tab */}
+          <TabsContent value="applications">
+            <ApplicationsManager />
           </TabsContent>
         </Tabs>
       </main>
