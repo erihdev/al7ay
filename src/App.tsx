@@ -16,6 +16,8 @@ import Admin from "./pages/Admin";
 import ProductDetails from "./pages/ProductDetails";
 import LoyaltyTiers from "./pages/LoyaltyTiers";
 import PaymentResult from "./pages/PaymentResult";
+import ProviderLogin from "./pages/ProviderLogin";
+import ProviderDashboard from "./pages/ProviderDashboard";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -40,6 +42,8 @@ const App = () => (
                   <Route path="/loyalty" element={<LoyaltyTiers />} />
                   <Route path="/admin" element={<Admin />} />
                   <Route path="/payment-result" element={<PaymentResult />} />
+                  <Route path="/provider-login" element={<ProviderLogin />} />
+                  <Route path="/provider-dashboard" element={<ProviderDashboard />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </BrowserRouter>
