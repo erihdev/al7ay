@@ -21,6 +21,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
+import NeighborhoodsMap from '@/components/landing/NeighborhoodsMap';
 import logo from '@/assets/logo.png';
 
 const Landing = () => {
@@ -249,6 +250,9 @@ const Landing = () => {
           </div>
         </div>
       </section>
+
+      {/* Neighborhoods Map Section */}
+      <NeighborhoodsMap />
 
       {/* Testimonials Section */}
       <section className="py-20 bg-muted/30">

@@ -94,12 +94,29 @@ const ApplicationsManager = () => {
     }
   });
 
+  const sendEmailNotification = async (application: Application, status: 'approved' | 'rejected') => {
+    try {
+      await supabase.functions.invoke('send-application-email', {
+        body: {
+          email: application.email,
+          fullName: application.full_name,
+          businessName: application.business_name,
+          status,
+          notes: adminNotes || undefined
+        }
+      });
+    } catch (error) {
+      console.error('Error sending email notification:', error);
+    }
+  };
+
   const handleApprove = (application: Application) => {
     updateApplicationMutation.mutate(
       { id: application.id, status: 'approved', notes: adminNotes },
       {
-        onSuccess: () => {
+        onSuccess: async () => {
           toast.success(`تم قبول طلب ${application.full_name}`);
+          await sendEmailNotification(application, 'approved');
         },
         onError: () => {
           toast.error('حدث خطأ أثناء تحديث الطلب');
@@ -112,8 +129,9 @@ const ApplicationsManager = () => {
     updateApplicationMutation.mutate(
       { id: application.id, status: 'rejected', notes: adminNotes },
       {
-        onSuccess: () => {
+        onSuccess: async () => {
           toast.success(`تم رفض طلب ${application.full_name}`);
+          await sendEmailNotification(application, 'rejected');
         },
         onError: () => {
           toast.error('حدث خطأ أثناء تحديث الطلب');
