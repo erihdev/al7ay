@@ -2,6 +2,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useLoyaltyPoints, usePointsHistory } from '@/hooks/useOrders';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { AuthForm } from '@/components/auth/AuthForm';
+import { NotificationSettings } from '@/components/notifications/NotificationSettings';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -135,6 +136,11 @@ const Profile = () => {
             )}
           </CardContent>
         </Card>
+
+        {/* Notification Settings */}
+        <div className="mb-6">
+          <NotificationSettings />
+        </div>
 
         {/* Admin Link */}
         {isAdmin && (

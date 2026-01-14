@@ -96,12 +96,24 @@ const Admin = () => {
 
   // Update order status mutation
   const updateOrderStatus = useMutation({
-    mutationFn: async ({ orderId, status }: { orderId: string; status: OrderStatus }) => {
+    mutationFn: async ({ orderId, status, customerId }: { orderId: string; status: OrderStatus; customerId: string | null }) => {
       const { error } = await supabase
         .from('orders')
         .update({ status })
         .eq('id', orderId);
       if (error) throw error;
+
+      // Send push notification to customer
+      if (customerId) {
+        try {
+          await supabase.functions.invoke('send-notification', {
+            body: { orderId, status, customerId },
+          });
+        } catch (notifError) {
+          console.error('Error sending notification:', notifError);
+          // Don't fail the order update if notification fails
+        }
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-orders'] });
@@ -253,6 +265,7 @@ const Admin = () => {
                               updateOrderStatus.mutate({
                                 orderId: order.id,
                                 status: nextStatus,
+                                customerId: order.customer_id,
                               })
                             }
                             disabled={updateOrderStatus.isPending}
@@ -268,6 +281,7 @@ const Admin = () => {
                                 updateOrderStatus.mutate({
                                   orderId: order.id,
                                   status: 'cancelled',
+                                  customerId: order.customer_id,
                                 })
                               }
                               disabled={updateOrderStatus.isPending}
