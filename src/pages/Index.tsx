@@ -5,6 +5,7 @@ import { CategoryTabs } from '@/components/menu/CategoryTabs';
 import { ProductCard } from '@/components/menu/ProductCard';
 import { ProductSearch } from '@/components/menu/ProductSearch';
 import { FeaturedProducts } from '@/components/menu/FeaturedProducts';
+import { SpecialOffersCarousel } from '@/components/offers/SpecialOffersCarousel';
 import { LoyaltyCard } from '@/components/loyalty/LoyaltyCard';
 import { LocationPermission } from '@/components/location/LocationPermission';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -37,6 +38,9 @@ const Index = () => {
 
         {/* Loyalty Card */}
         <LoyaltyCard />
+
+        {/* Special Offers */}
+        <SpecialOffersCarousel />
 
         {/* Featured Products */}
         <FeaturedProducts />

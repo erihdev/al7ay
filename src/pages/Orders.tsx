@@ -1,5 +1,6 @@
 import { useMyOrders } from '@/hooks/useOrders';
 import { useAuth } from '@/contexts/AuthContext';
+import { useCart } from '@/contexts/CartContext';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -7,11 +8,13 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { OrderTrackingCard } from '@/components/tracking/OrderTrackingCard';
-import { ClipboardList, Package, Truck, CheckCircle, Clock, XCircle, MapPin } from 'lucide-react';
+import { ClipboardList, Package, Truck, CheckCircle, Clock, XCircle, MapPin, RefreshCw } from 'lucide-react';
 import { AuthForm } from '@/components/auth/AuthForm';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
 const statusConfig = {
   pending: { label: 'جديد', icon: Clock, color: 'bg-yellow-500' },
@@ -24,8 +27,41 @@ const statusConfig = {
 
 const Orders = () => {
   const { user, loading: authLoading } = useAuth();
+  const { addItem, clearCart } = useCart();
   const { data: orders, isLoading } = useMyOrders();
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+  const navigate = useNavigate();
+
+  const handleReorder = (order: any) => {
+    if (!order.order_items || order.order_items.length === 0) {
+      toast.error('لا توجد منتجات في هذا الطلب');
+      return;
+    }
+
+    // Clear current cart and add items from the order
+    clearCart();
+    
+    order.order_items.forEach((item: any) => {
+      addItem({
+        id: item.product_id,
+        name_ar: item.product_name,
+        price: Number(item.unit_price),
+      });
+      
+      // Update quantity if more than 1
+      // This is handled by addItem which increases quantity
+      for (let i = 1; i < item.quantity; i++) {
+        addItem({
+          id: item.product_id,
+          name_ar: item.product_name,
+          price: Number(item.unit_price),
+        });
+      }
+    });
+
+    toast.success('تمت إضافة الطلب السابق للسلة');
+    navigate('/cart');
+  };
 
   if (authLoading) {
     return (
@@ -135,30 +171,46 @@ const Orders = () => {
                         </p>
                       )}
 
-                      {/* Track Order Button */}
-                      {isTrackable && (
-                        <Dialog
-                          open={selectedOrderId === order.id}
-                          onOpenChange={(open) => setSelectedOrderId(open ? order.id : null)}
-                        >
-                          <DialogTrigger asChild>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="w-full mt-3 font-arabic"
-                            >
-                              <MapPin className="h-4 w-4 ml-2" />
-                              تتبع الطلب
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
-                            <DialogHeader>
-                              <DialogTitle className="font-arabic">تتبع الطلب</DialogTitle>
-                            </DialogHeader>
-                            <OrderTrackingCard orderId={order.id} />
-                          </DialogContent>
-                        </Dialog>
-                      )}
+                      {/* Action Buttons */}
+                      <div className="flex gap-2 mt-3">
+                        {/* Reorder Button */}
+                        {order.status === 'completed' && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="flex-1 font-arabic"
+                            onClick={() => handleReorder(order)}
+                          >
+                            <RefreshCw className="h-4 w-4 ml-2" />
+                            تكرار الطلب
+                          </Button>
+                        )}
+
+                        {/* Track Order Button */}
+                        {isTrackable && (
+                          <Dialog
+                            open={selectedOrderId === order.id}
+                            onOpenChange={(open) => setSelectedOrderId(open ? order.id : null)}
+                          >
+                            <DialogTrigger asChild>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="flex-1 font-arabic"
+                              >
+                                <MapPin className="h-4 w-4 ml-2" />
+                                تتبع الطلب
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+                              <DialogHeader>
+                                <DialogTitle className="font-arabic">تتبع الطلب</DialogTitle>
+                              </DialogHeader>
+                              <OrderTrackingCard orderId={order.id} />
+                            </DialogContent>
+                          </Dialog>
+                        )}
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
