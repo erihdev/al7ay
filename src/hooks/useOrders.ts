@@ -161,7 +161,7 @@ export function useCreateOrder() {
         }
       }
 
-      // Send email notification for new order
+      // Send email notification for new order to customer
       if (orderData.customer_email) {
         try {
           await supabase.functions.invoke('send-order-email', {
@@ -182,6 +182,29 @@ export function useCreateOrder() {
           console.error('Error sending order email:', emailError);
           // Don't fail the order if email fails
         }
+      }
+
+      // Send admin notification email
+      try {
+        await supabase.functions.invoke('send-order-email', {
+          body: {
+            type: 'admin_notification',
+            orderId: order.id,
+            customerName: orderData.customer_name,
+            customerPhone: orderData.customer_phone,
+            orderTotal: orderData.total_amount,
+            orderType: orderData.order_type,
+            deliveryAddress: orderData.delivery_address,
+            adminEmail: 'difmashni@gmail.com',
+            items: orderData.items.map(item => ({
+              name: item.product_name,
+              quantity: item.quantity,
+              price: item.total_price,
+            })),
+          },
+        });
+      } catch (adminEmailError) {
+        console.error('Error sending admin notification email:', adminEmailError);
       }
 
       return order;
