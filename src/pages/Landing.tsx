@@ -412,9 +412,14 @@ const Landing = () => {
               <img src={logo} alt="الحي" className="h-8 w-8 rounded-lg" />
               <span className="font-bold text-primary">منصة الحي</span>
             </div>
-            <p className="text-muted-foreground text-sm">
-              © 2024 منصة الحي. جميع الحقوق محفوظة.
-            </p>
+            <div className="text-center md:text-right">
+              <p className="text-muted-foreground text-sm">
+                © 2024 منصة الحي. جميع الحقوق محفوظة.
+              </p>
+              <p className="text-xs text-muted-foreground/60 mt-1">
+                الإصدار 1.0.0
+              </p>
+            </div>
           </div>
         </div>
       </footer>

@@ -9,13 +9,17 @@ const corsHeaders = {
 };
 
 interface EmailRequest {
-  type: 'new_order' | 'status_update';
+  type: 'new_order' | 'status_update' | 'admin_notification';
   orderId: string;
-  customerEmail: string;
+  customerEmail?: string;
   customerName: string;
+  customerPhone?: string;
   orderTotal?: number;
   status?: string;
   items?: { name: string; quantity: number; price: number }[];
+  adminEmail?: string;
+  orderType?: string;
+  deliveryAddress?: string;
 }
 
 const statusLabels: Record<string, string> = {
@@ -33,10 +37,10 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { type, orderId, customerEmail, customerName, orderTotal, status, items }: EmailRequest = await req.json();
+    const { type, orderId, customerEmail, customerName, customerPhone, orderTotal, status, items, adminEmail, orderType, deliveryAddress }: EmailRequest = await req.json();
 
-    let subject: string;
-    let html: string;
+    let subject: string = '';
+    let html: string = '';
 
     if (type === 'new_order') {
       subject = `تأكيد طلبك #${orderId.slice(0, 8)}`;
@@ -103,7 +107,7 @@ const handler = async (req: Request): Promise<Response> => {
         </body>
         </html>
       `;
-    } else {
+    } else if (type === 'status_update') {
       const statusLabel = statusLabels[status || 'pending'] || status;
       subject = `تحديث طلبك #${orderId.slice(0, 8)} - ${statusLabel}`;
       
@@ -177,11 +181,101 @@ const handler = async (req: Request): Promise<Response> => {
         </body>
         </html>
       `;
+    } else if (type === 'admin_notification') {
+      // Admin notification for new order
+      subject = `🔔 طلب جديد #${orderId.slice(0, 8)} - ${orderTotal?.toFixed(2)} ر.س`;
+      html = `
+        <!DOCTYPE html>
+        <html dir="rtl" lang="ar">
+        <head>
+          <meta charset="UTF-8">
+          <style>
+            body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f5f5; padding: 20px; }
+            .container { max-width: 600px; margin: 0 auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+            .header { background: linear-gradient(135deg, #059669, #10B981); color: white; padding: 30px; text-align: center; }
+            .content { padding: 30px; }
+            .info-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #e5e7eb; }
+            .info-label { color: #6b7280; }
+            .info-value { font-weight: bold; }
+            .items-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+            .items-table th, .items-table td { padding: 12px; text-align: right; border-bottom: 1px solid #e5e7eb; }
+            .items-table th { background: #f9fafb; }
+            .total { font-size: 24px; color: #059669; font-weight: bold; text-align: center; padding: 20px; background: #ecfdf5; border-radius: 8px; margin-top: 20px; }
+            .badge { display: inline-block; padding: 5px 15px; border-radius: 20px; font-size: 14px; }
+            .badge-delivery { background: #dbeafe; color: #1d4ed8; }
+            .badge-pickup { background: #fef3c7; color: #b45309; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>🔔 طلب جديد!</h1>
+              <p style="margin: 0; opacity: 0.9;">رقم الطلب: #${orderId.slice(0, 8)}</p>
+            </div>
+            <div class="content">
+              <div class="info-row">
+                <span class="info-label">اسم العميل:</span>
+                <span class="info-value">${customerName}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">رقم الهاتف:</span>
+                <span class="info-value">${customerPhone || 'غير متوفر'}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">نوع الطلب:</span>
+                <span class="badge ${orderType === 'delivery' ? 'badge-delivery' : 'badge-pickup'}">
+                  ${orderType === 'delivery' ? '🚗 توصيل' : '🏪 استلام من المتجر'}
+                </span>
+              </div>
+              ${deliveryAddress ? `
+              <div class="info-row">
+                <span class="info-label">عنوان التوصيل:</span>
+                <span class="info-value">${deliveryAddress}</span>
+              </div>
+              ` : ''}
+              
+              ${items ? `
+              <h3 style="margin-top: 20px;">تفاصيل الطلب:</h3>
+              <table class="items-table">
+                <thead>
+                  <tr>
+                    <th>المنتج</th>
+                    <th>الكمية</th>
+                    <th>السعر</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${items.map(item => `
+                    <tr>
+                      <td>${item.name}</td>
+                      <td>${item.quantity}</td>
+                      <td>${item.price} ر.س</td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+              ` : ''}
+              
+              <div class="total">
+                💰 الإجمالي: ${orderTotal?.toFixed(2)} ر.س
+              </div>
+            </div>
+          </div>
+        </body>
+        </html>
+      `;
+    }
+
+    // Determine recipient email
+    const recipientEmail = type === 'admin_notification' ? adminEmail : customerEmail;
+    
+    if (!recipientEmail) {
+      throw new Error('No recipient email provided');
     }
 
     const emailResponse = await resend.emails.send({
       from: "الحي <onboarding@resend.dev>",
-      to: [customerEmail],
+      to: [recipientEmail],
       subject,
       html,
     });

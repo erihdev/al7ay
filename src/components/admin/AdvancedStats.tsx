@@ -1,8 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Badge } from '@/components/ui/badge';
 import { 
   TrendingUp, 
   TrendingDown, 
@@ -11,17 +11,19 @@ import {
   DollarSign, 
   Package,
   Clock,
-  Star,
   Truck,
   Store,
   Calendar,
   Activity,
   BarChart3,
-  PieChart
+  PieChart,
+  FileText
 } from 'lucide-react';
 import { format, subDays, startOfMonth, endOfMonth, startOfWeek, endOfWeek } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPieChart, Pie, Cell, BarChart, Bar, Legend } from 'recharts';
+import { exportAdvancedStatsToPDF } from '@/utils/exportAdvancedStats';
+import { toast } from 'sonner';
 
 const COLORS = ['hsl(var(--primary))', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899'];
 
@@ -219,8 +221,29 @@ export function AdvancedStats() {
     value: Math.round(value),
   }));
 
+  const handleExportPDF = () => {
+    if (!stats) {
+      toast.error('البيانات غير متاحة للتصدير');
+      return;
+    }
+    try {
+      exportAdvancedStatsToPDF(stats);
+      toast.success('تم تصدير التقرير بنجاح');
+    } catch (error) {
+      toast.error('حدث خطأ أثناء التصدير');
+    }
+  };
+
   return (
     <div className="space-y-6">
+      {/* Export Button */}
+      <div className="flex justify-end">
+        <Button onClick={handleExportPDF} variant="outline" className="font-arabic gap-2">
+          <FileText className="h-4 w-4" />
+          تصدير تقرير PDF
+        </Button>
+      </div>
+
       {/* Summary Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {/* Today's Revenue */}
