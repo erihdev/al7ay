@@ -34,6 +34,7 @@ import { CouponManager } from '@/components/admin/CouponManager';
 import { SalesReports } from '@/components/admin/SalesReports';
 import { ProductOptionsManager } from '@/components/admin/ProductOptionsManager';
 import { OptionsManager } from '@/components/admin/OptionsManager';
+import { ProductStats } from '@/components/admin/ProductStats';
 import { useUpdateDeliveryLocation } from '@/hooks/useOrderTracking';
 import { useOrderNotifications } from '@/hooks/useOrderNotifications';
 import { format } from 'date-fns';
@@ -245,10 +246,14 @@ const Admin = () => {
 
       <main className="container mx-auto px-4 py-6">
         <Tabs defaultValue="orders" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6">
+          <TabsList className="grid w-full grid-cols-7">
             <TabsTrigger value="orders" className="font-arabic">
               <Package className="h-4 w-4 ml-2" />
               الطلبات
+            </TabsTrigger>
+            <TabsTrigger value="stats" className="font-arabic">
+              <BarChart3 className="h-4 w-4 ml-2" />
+              الإحصائيات
             </TabsTrigger>
             <TabsTrigger value="products" className="font-arabic">
               <Coffee className="h-4 w-4 ml-2" />
@@ -468,6 +473,11 @@ const Admin = () => {
           <TabsContent value="options" className="space-y-6">
             <OptionsManager />
             <ProductOptionsManager />
+          </TabsContent>
+
+          {/* Stats Tab */}
+          <TabsContent value="stats">
+            <ProductStats />
           </TabsContent>
 
           {/* Coupons Tab */}
