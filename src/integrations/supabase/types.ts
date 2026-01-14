@@ -265,6 +265,10 @@ export type Database = {
           id: string
           notes: string | null
           order_type: Database["public"]["Enums"]["order_type"]
+          payment_completed_at: string | null
+          payment_method: string | null
+          payment_status: string | null
+          payment_transaction_id: string | null
           points_earned: number
           points_redeemed: number
           scheduled_for: string | null
@@ -288,6 +292,10 @@ export type Database = {
           id?: string
           notes?: string | null
           order_type: Database["public"]["Enums"]["order_type"]
+          payment_completed_at?: string | null
+          payment_method?: string | null
+          payment_status?: string | null
+          payment_transaction_id?: string | null
           points_earned?: number
           points_redeemed?: number
           scheduled_for?: string | null
@@ -311,6 +319,10 @@ export type Database = {
           id?: string
           notes?: string | null
           order_type?: Database["public"]["Enums"]["order_type"]
+          payment_completed_at?: string | null
+          payment_method?: string | null
+          payment_status?: string | null
+          payment_transaction_id?: string | null
           points_earned?: number
           points_redeemed?: number
           scheduled_for?: string | null
@@ -325,6 +337,53 @@ export type Database = {
             columns: ["coupon_id"]
             isOneToOne: false
             referencedRelation: "coupons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payments: {
+        Row: {
+          amount: number
+          created_at: string
+          customer_id: string | null
+          id: string
+          order_id: string | null
+          payment_method: string
+          provider_response: Json | null
+          status: string
+          transaction_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          customer_id?: string | null
+          id?: string
+          order_id?: string | null
+          payment_method?: string
+          provider_response?: Json | null
+          status?: string
+          transaction_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          customer_id?: string | null
+          id?: string
+          order_id?: string | null
+          payment_method?: string
+          provider_response?: Json | null
+          status?: string
+          transaction_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
             referencedColumns: ["id"]
           },
         ]

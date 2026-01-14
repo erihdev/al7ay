@@ -23,6 +23,8 @@ interface CreateOrderData {
   coupon_id?: string | null;
   coupon_discount?: number;
   scheduled_for?: string | null;
+  payment_method?: string;
+  payment_status?: string;
   items: {
     product_id: string;
     product_name: string;
@@ -94,6 +96,8 @@ export function useCreateOrder() {
           coupon_id: orderData.coupon_id || null,
           coupon_discount: orderData.coupon_discount || 0,
           scheduled_for: orderData.scheduled_for || null,
+          payment_method: orderData.payment_method || 'cash',
+          payment_status: orderData.payment_status || 'pending',
         })
         .select()
         .single();

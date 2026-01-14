@@ -15,9 +15,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { DeliveryMapPicker } from '@/components/map/DeliveryMapPicker';
 import { OrderScheduler } from '@/components/scheduling/OrderScheduler';
 import { LoyaltyTierBadge, tierConfigs } from '@/components/loyalty/LoyaltyTierBadge';
-import { Minus, Plus, Trash2, ShoppingBag, MapPin, Truck, Star, Map, CheckCircle2, Ticket, Loader2, X, Crown } from 'lucide-react';
+import { Minus, Plus, Trash2, ShoppingBag, MapPin, Truck, Star, Map, CheckCircle2, Ticket, Loader2, X, Crown, CreditCard, Banknote } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useEdfaPayment } from '@/hooks/useEdfaPayment';
 import { toast } from 'sonner';
 import { Checkbox } from '@/components/ui/checkbox';
 
@@ -53,6 +54,10 @@ const Cart = () => {
   
   // Order scheduling
   const [scheduledFor, setScheduledFor] = useState<Date | null>(null);
+  
+  // Payment method
+  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'online'>('cash');
+  const { initiatePayment, isProcessing: isPaymentProcessing } = useEdfaPayment();
 
   const availablePoints = loyaltyPoints?.total_points || 0;
   const maxRedeemablePoints = Math.min(availablePoints, Math.floor(totalAmount * 100));
@@ -102,7 +107,7 @@ const Cart = () => {
     }
 
     try {
-      await createOrder.mutateAsync({
+      const orderResult = await createOrder.mutateAsync({
         customer_name: customerName,
         customer_phone: customerPhone,
         customer_email: customerEmail || undefined,
@@ -117,8 +122,10 @@ const Cart = () => {
         coupon_id: appliedCoupon?.coupon.id || null,
         coupon_discount: couponDiscount,
         scheduled_for: scheduledFor?.toISOString() || null,
+        payment_method: paymentMethod,
+        payment_status: paymentMethod === 'cash' ? 'pending' : 'pending',
         items: items.map((item) => ({
-          product_id: item.id.split('-')[0], // Extract original product ID
+          product_id: item.id.split('-')[0],
           product_name: item.name_ar,
           quantity: item.quantity,
           unit_price: item.price,
@@ -131,8 +138,26 @@ const Cart = () => {
       if (appliedCoupon) {
         await recordCouponUsage.mutateAsync({
           couponId: appliedCoupon.coupon.id,
-          orderId: 'pending', // Will be updated
+          orderId: orderResult.id,
         });
+      }
+
+      // If online payment, redirect to payment page
+      if (paymentMethod === 'online') {
+        const paymentResult = await initiatePayment({
+          orderId: orderResult.id,
+          amount: finalAmount,
+          customerEmail: customerEmail || `${customerPhone}@temp.local`,
+          customerName: customerName,
+          customerPhone: customerPhone,
+          description: `طلب رقم ${orderResult.id.slice(-6)}`,
+        });
+
+        if (!paymentResult.success) {
+          toast.error('فشل بدء عملية الدفع، يمكنك الدفع عند الاستلام');
+        }
+        // Payment redirect happens in useEdfaPayment
+        return;
       }
 
       toast.success('تم إرسال طلبك بنجاح!');
@@ -455,6 +480,39 @@ const Cart = () => {
           </Card>
         )}
 
+        {/* Payment Method */}
+        <Card className="mb-6">
+          <CardContent className="p-4">
+            <h3 className="font-semibold mb-3">طريقة الدفع</h3>
+            <RadioGroup
+              value={paymentMethod}
+              onValueChange={(v) => setPaymentMethod(v as 'cash' | 'online')}
+              className="space-y-3"
+            >
+              <div className="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-muted/50">
+                <RadioGroupItem value="cash" id="cash-payment" />
+                <Label htmlFor="cash-payment" className="flex items-center gap-2 cursor-pointer flex-1">
+                  <Banknote className="h-5 w-5 text-green-600" />
+                  <div>
+                    <p className="font-medium">الدفع عند الاستلام</p>
+                    <p className="text-xs text-muted-foreground">ادفع نقداً عند استلام طلبك</p>
+                  </div>
+                </Label>
+              </div>
+              <div className="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-muted/50">
+                <RadioGroupItem value="online" id="online-payment" />
+                <Label htmlFor="online-payment" className="flex items-center gap-2 cursor-pointer flex-1">
+                  <CreditCard className="h-5 w-5 text-blue-600" />
+                  <div>
+                    <p className="font-medium">الدفع الإلكتروني</p>
+                    <p className="text-xs text-muted-foreground">بطاقة ائتمان / مدى / Apple Pay</p>
+                  </div>
+                </Label>
+              </div>
+            </RadioGroup>
+          </CardContent>
+        </Card>
+
         {/* Coupon Code */}
         <Card className="mb-6">
           <CardContent className="p-4">
@@ -539,13 +597,16 @@ const Cart = () => {
         <Button
           className="w-full h-12 text-lg font-arabic"
           onClick={handleSubmitOrder}
-          disabled={createOrder.isPending}
+          disabled={createOrder.isPending || isPaymentProcessing}
         >
-          {createOrder.isPending ? 'جاري الإرسال...' : 'تأكيد الطلب'}
+          {createOrder.isPending || isPaymentProcessing ? (
+            <Loader2 className="h-5 w-5 animate-spin ml-2" />
+          ) : null}
+          {createOrder.isPending ? 'جاري الإرسال...' : isPaymentProcessing ? 'جاري التحويل للدفع...' : paymentMethod === 'online' ? 'الدفع الآن' : 'تأكيد الطلب'}
         </Button>
 
         <p className="text-center text-sm text-muted-foreground mt-3">
-          الدفع عند الاستلام
+          {paymentMethod === 'cash' ? 'الدفع عند الاستلام' : 'ستتم إعادة توجيهك لصفحة الدفع'}
         </p>
       </div>
 
