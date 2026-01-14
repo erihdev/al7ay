@@ -2,6 +2,7 @@ import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLocation } from '@/contexts/LocationContext';
 import { useLoyaltyPoints, useCreateOrder } from '@/hooks/useOrders';
+import { useLoyaltyTier } from '@/hooks/useLoyaltyTier';
 import { useValidateCoupon, useRecordCouponUsage, Coupon } from '@/hooks/useCoupons';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { Button } from '@/components/ui/button';
@@ -12,7 +13,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { DeliveryMapPicker } from '@/components/map/DeliveryMapPicker';
-import { Minus, Plus, Trash2, ShoppingBag, MapPin, Truck, Star, Map, CheckCircle2, Ticket, Loader2, X } from 'lucide-react';
+import { OrderScheduler } from '@/components/scheduling/OrderScheduler';
+import { LoyaltyTierBadge, tierConfigs } from '@/components/loyalty/LoyaltyTierBadge';
+import { Minus, Plus, Trash2, ShoppingBag, MapPin, Truck, Star, Map, CheckCircle2, Ticket, Loader2, X, Crown } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -23,6 +26,7 @@ const Cart = () => {
   const { user } = useAuth();
   const { isWithinDeliveryZone, userLocation } = useLocation();
   const { data: loyaltyPoints } = useLoyaltyPoints();
+  const { data: loyaltyTier } = useLoyaltyTier();
   const createOrder = useCreateOrder();
   const navigate = useNavigate();
 
@@ -46,12 +50,19 @@ const Cart = () => {
   const [appliedCoupon, setAppliedCoupon] = useState<{ coupon: Coupon; discount: number } | null>(null);
   const validateCoupon = useValidateCoupon();
   const recordCouponUsage = useRecordCouponUsage();
+  
+  // Order scheduling
+  const [scheduledFor, setScheduledFor] = useState<Date | null>(null);
 
   const availablePoints = loyaltyPoints?.total_points || 0;
   const maxRedeemablePoints = Math.min(availablePoints, Math.floor(totalAmount * 100));
   const pointsDiscount = usePoints ? maxRedeemablePoints / 100 : 0;
   const couponDiscount = appliedCoupon?.discount || 0;
-  const finalAmount = Math.max(0, totalAmount - pointsDiscount - couponDiscount);
+  
+  // Tier discount
+  const tierDiscount = loyaltyTier?.discount || 0;
+  const tierDiscountAmount = (totalAmount * tierDiscount) / 100;
+  const finalAmount = Math.max(0, totalAmount - pointsDiscount - couponDiscount - tierDiscountAmount);
 
   const handleApplyCoupon = async () => {
     if (!couponCode.trim()) return;
@@ -99,12 +110,13 @@ const Cart = () => {
         order_type: orderType,
         notes,
         points_redeemed: usePoints ? maxRedeemablePoints : 0,
-        discount_amount: pointsDiscount,
+        discount_amount: pointsDiscount + tierDiscountAmount,
         delivery_address: deliveryLocation?.address || null,
         delivery_lat: deliveryLocation?.lat || null,
         delivery_lng: deliveryLocation?.lng || null,
         coupon_id: appliedCoupon?.coupon.id || null,
         coupon_discount: couponDiscount,
+        scheduled_for: scheduledFor?.toISOString() || null,
         items: items.map((item) => ({
           product_id: item.id.split('-')[0], // Extract original product ID
           product_name: item.name_ar,
@@ -329,6 +341,16 @@ const Cart = () => {
           </Card>
         )}
 
+        {/* Order Scheduling */}
+        <Card className="mb-6">
+          <CardContent className="p-4">
+            <OrderScheduler
+              scheduledFor={scheduledFor}
+              onScheduleChange={setScheduledFor}
+            />
+          </CardContent>
+        </Card>
+
         {/* Customer Info */}
         <Card className="mb-6">
           <CardContent className="p-4 space-y-4">
@@ -384,6 +406,26 @@ const Cart = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Tier Discount Info */}
+        {user && loyaltyTier && loyaltyTier.discount > 0 && (
+          <Card className="mb-6 border-amber-500/30 bg-amber-500/5">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <Crown className="h-5 w-5 text-amber-600" />
+                <div>
+                  <div className="flex items-center gap-2">
+                    <p className="font-semibold">خصم المستوى</p>
+                    <LoyaltyTierBadge tier={loyaltyTier.tier} size="sm" />
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    تحصل على خصم {loyaltyTier.discount}% = {tierDiscountAmount.toFixed(0)} ر.س
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Loyalty Points Redemption */}
         {user && availablePoints >= 100 && (
@@ -468,6 +510,15 @@ const Cart = () => {
                 <div className="flex justify-between text-gold">
                   <span>خصم النقاط</span>
                   <span>-{pointsDiscount.toFixed(0)} ر.س</span>
+                </div>
+              )}
+              {tierDiscountAmount > 0 && (
+                <div className="flex justify-between text-amber-600">
+                  <span className="flex items-center gap-1">
+                    <Crown className="h-3 w-3" />
+                    خصم المستوى ({tierDiscount}%)
+                  </span>
+                  <span>-{tierDiscountAmount.toFixed(0)} ر.س</span>
                 </div>
               )}
               {couponDiscount > 0 && (

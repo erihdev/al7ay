@@ -8,7 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { OrderTrackingCard } from '@/components/tracking/OrderTrackingCard';
-import { ClipboardList, Package, Truck, CheckCircle, Clock, XCircle, MapPin, RefreshCw } from 'lucide-react';
+import { ClipboardList, Package, Truck, CheckCircle, Clock, XCircle, MapPin, RefreshCw, CalendarClock } from 'lucide-react';
 import { AuthForm } from '@/components/auth/AuthForm';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
@@ -169,6 +169,16 @@ const Orders = () => {
                         <p className="text-xs text-gold mt-2">
                           +{order.points_earned} نقاط مكتسبة
                         </p>
+                      )}
+
+                      {/* Scheduled Order Info */}
+                      {order.scheduled_for && (
+                        <div className="flex items-center gap-2 text-sm text-primary mt-2 p-2 bg-primary/10 rounded-lg">
+                          <CalendarClock className="h-4 w-4" />
+                          <span className="font-arabic">
+                            موعد مجدول: {format(new Date(order.scheduled_for), 'dd MMM - hh:mm a', { locale: ar })}
+                          </span>
+                        </div>
                       )}
 
                       {/* Action Buttons */}

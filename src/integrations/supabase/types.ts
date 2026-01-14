@@ -173,6 +173,7 @@ export type Database = {
           created_at: string
           id: string
           lifetime_points: number
+          tier: string
           total_points: number
           updated_at: string
           user_id: string
@@ -181,6 +182,7 @@ export type Database = {
           created_at?: string
           id?: string
           lifetime_points?: number
+          tier?: string
           total_points?: number
           updated_at?: string
           user_id: string
@@ -189,6 +191,7 @@ export type Database = {
           created_at?: string
           id?: string
           lifetime_points?: number
+          tier?: string
           total_points?: number
           updated_at?: string
           user_id?: string
@@ -264,6 +267,7 @@ export type Database = {
           order_type: Database["public"]["Enums"]["order_type"]
           points_earned: number
           points_redeemed: number
+          scheduled_for: string | null
           status: Database["public"]["Enums"]["order_status"]
           total_amount: number
           updated_at: string
@@ -285,6 +289,7 @@ export type Database = {
           order_type: Database["public"]["Enums"]["order_type"]
           points_earned?: number
           points_redeemed?: number
+          scheduled_for?: string | null
           status?: Database["public"]["Enums"]["order_status"]
           total_amount: number
           updated_at?: string
@@ -306,6 +311,7 @@ export type Database = {
           order_type?: Database["public"]["Enums"]["order_type"]
           points_earned?: number
           points_redeemed?: number
+          scheduled_for?: string | null
           status?: Database["public"]["Enums"]["order_status"]
           total_amount?: number
           updated_at?: string
@@ -699,6 +705,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      calculate_loyalty_tier: { Args: { points: number }; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

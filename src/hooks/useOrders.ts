@@ -22,12 +22,14 @@ interface CreateOrderData {
   discount_amount?: number;
   coupon_id?: string | null;
   coupon_discount?: number;
+  scheduled_for?: string | null;
   items: {
     product_id: string;
     product_name: string;
     quantity: number;
     unit_price: number;
     total_price: number;
+    selected_options?: any[];
   }[];
 }
 
@@ -91,6 +93,7 @@ export function useCreateOrder() {
           discount_amount: orderData.discount_amount || 0,
           coupon_id: orderData.coupon_id || null,
           coupon_discount: orderData.coupon_discount || 0,
+          scheduled_for: orderData.scheduled_for || null,
         })
         .select()
         .single();
