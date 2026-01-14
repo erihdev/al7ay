@@ -20,9 +20,12 @@ import {
   XCircle,
   ArrowRight,
   Home,
-  Coffee
+  Coffee,
+  Navigation,
+  MapPin
 } from 'lucide-react';
 import { ProductList } from '@/components/admin/ProductList';
+import { useUpdateDeliveryLocation } from '@/hooks/useOrderTracking';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import type { Database } from '@/integrations/supabase/types';
@@ -41,6 +44,8 @@ const Admin = () => {
   const { user, isAdmin, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { updateLocation } = useUpdateDeliveryLocation();
+  const [trackingOrderId, setTrackingOrderId] = useState<string | null>(null);
 
   // Redirect non-admin users
   useEffect(() => {
@@ -250,6 +255,12 @@ const Admin = () => {
                           <Badge variant="outline">
                             {order.order_type === 'delivery' ? 'توصيل' : 'استلام'}
                           </Badge>
+                          {order.order_type === 'delivery' && order.delivery_address && (
+                            <span className="text-xs text-muted-foreground flex items-center gap-1">
+                              <MapPin className="h-3 w-3" />
+                              {order.delivery_address.slice(0, 30)}...
+                            </span>
+                          )}
                         </div>
                         {order.order_items?.map((item: any) => (
                           <p key={item.id} className="text-sm text-muted-foreground">
@@ -262,6 +273,77 @@ const Admin = () => {
                           </p>
                         )}
                       </div>
+
+                      {/* Live Location Tracking for Delivery Orders */}
+                      {order.order_type === 'delivery' && order.status === 'out_for_delivery' && (
+                        <div className="mb-3">
+                          {trackingOrderId === order.id ? (
+                            <div className="p-3 bg-primary/10 rounded-lg border border-primary/20">
+                              <div className="flex items-center gap-2 mb-2">
+                                <Navigation className="h-4 w-4 text-primary animate-pulse" />
+                                <span className="text-sm font-medium text-primary">
+                                  تتبع الموقع نشط
+                                </span>
+                              </div>
+                              <p className="text-xs text-muted-foreground mb-2">
+                                يتم تحديث موقعك تلقائياً للعميل
+                              </p>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  setTrackingOrderId(null);
+                                  toast.info('تم إيقاف تتبع الموقع');
+                                }}
+                              >
+                                إيقاف التتبع
+                              </Button>
+                            </div>
+                          ) : (
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              className="w-full"
+                              onClick={() => {
+                                if ('geolocation' in navigator) {
+                                  setTrackingOrderId(order.id);
+                                  toast.success('تم تفعيل تتبع الموقع');
+                                  
+                                  // Start tracking
+                                  const watchId = navigator.geolocation.watchPosition(
+                                    (position) => {
+                                      updateLocation(
+                                        order.id,
+                                        position.coords.latitude,
+                                        position.coords.longitude,
+                                        position.coords.heading || 0,
+                                        (position.coords.speed || 0) * 3.6 // m/s to km/h
+                                      );
+                                    },
+                                    (error) => {
+                                      console.error('Geolocation error:', error);
+                                      toast.error('خطأ في تحديد الموقع');
+                                    },
+                                    {
+                                      enableHighAccuracy: true,
+                                      maximumAge: 5000,
+                                      timeout: 10000,
+                                    }
+                                  );
+
+                                  // Store watchId in sessionStorage to clear later
+                                  sessionStorage.setItem(`tracking-${order.id}`, watchId.toString());
+                                } else {
+                                  toast.error('الجهاز لا يدعم تحديد الموقع');
+                                }
+                              }}
+                            >
+                              <Navigation className="h-4 w-4 ml-2" />
+                              بدء تتبع الموقع
+                            </Button>
+                          )}
+                        </div>
+                      )}
 
                       {nextStatus && (
                         <div className="flex gap-2">
