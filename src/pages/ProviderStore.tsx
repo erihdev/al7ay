@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -667,6 +667,3 @@ const ProviderStore = () => {
 };
 
 export default ProviderStore;
-
-// Add React import for forwardRef
-import React from 'react';
