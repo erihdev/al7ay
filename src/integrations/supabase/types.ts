@@ -587,6 +587,59 @@ export type Database = {
         }
         Relationships: []
       }
+      special_offers: {
+        Row: {
+          created_at: string
+          discount_percentage: number
+          ends_at: string
+          id: string
+          is_active: boolean
+          offer_price: number
+          original_price: number
+          product_id: string | null
+          starts_at: string
+          title_ar: string
+          title_en: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          discount_percentage: number
+          ends_at: string
+          id?: string
+          is_active?: boolean
+          offer_price: number
+          original_price: number
+          product_id?: string | null
+          starts_at?: string
+          title_ar: string
+          title_en?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          discount_percentage?: number
+          ends_at?: string
+          id?: string
+          is_active?: boolean
+          offer_price?: number
+          original_price?: number
+          product_id?: string | null
+          starts_at?: string
+          title_ar?: string
+          title_en?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "special_offers_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       store_settings: {
         Row: {
           created_at: string

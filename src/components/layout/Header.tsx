@@ -2,6 +2,7 @@ import { useLocation as useLocationContext } from '@/contexts/LocationContext';
 import { MapPin } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { CustomerSoundToggle } from '@/components/notifications/CustomerSoundToggle';
+import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { useAuth } from '@/contexts/AuthContext';
 import logo from '@/assets/logo.png';
 
@@ -29,8 +30,9 @@ export function Header() {
             </div>
           </div>
 
-          {/* Location Status & Sound Toggle */}
-          <div className="flex items-center gap-2">
+          {/* Location Status & Controls */}
+          <div className="flex items-center gap-1">
+            <ThemeToggle />
             {user && <CustomerSoundToggle />}
             {locationPermission === 'granted' && distance !== null && (
               <div className="flex items-center gap-1 text-sm">
