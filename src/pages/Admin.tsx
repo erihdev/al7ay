@@ -28,7 +28,8 @@ import {
   Volume2,
   VolumeX,
   BarChart3,
-  Ticket
+  Ticket,
+  CreditCard
 } from 'lucide-react';
 import { ProductList } from '@/components/admin/ProductList';
 import { CouponManager } from '@/components/admin/CouponManager';
@@ -38,6 +39,7 @@ import { OptionsManager } from '@/components/admin/OptionsManager';
 import { ProductStats } from '@/components/admin/ProductStats';
 import { OffersManager } from '@/components/admin/OffersManager';
 import { ReferralStats } from '@/components/admin/ReferralStats';
+import { PaymentsManager } from '@/components/admin/PaymentsManager';
 import { useUpdateDeliveryLocation } from '@/hooks/useOrderTracking';
 import { useOrderNotifications } from '@/hooks/useOrderNotifications';
 import { format } from 'date-fns';
@@ -249,7 +251,7 @@ const Admin = () => {
 
       <main className="container mx-auto px-4 py-6">
         <Tabs defaultValue="orders" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5 lg:grid-cols-9">
+          <TabsList className="grid w-full grid-cols-5 lg:grid-cols-10">
             <TabsTrigger value="orders" className="font-arabic">
               <Package className="h-4 w-4 ml-2" />
               الطلبات
