@@ -2,11 +2,14 @@ import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { ProviderCartProvider, useProviderCart } from '@/contexts/ProviderCartContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
+import StoreCart from '@/components/store/StoreCart';
+import ProductReviews from '@/components/store/ProductReviews';
 import { 
   ArrowRight, 
   Store, 
@@ -16,13 +19,38 @@ import {
   Star,
   ShoppingBag,
   Coffee,
-  Package
+  Package,
+  Plus,
+  Minus,
+  MessageSquare
 } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { toast } from 'sonner';
 import logo from '@/assets/logo.png';
 
-const ProviderStore = () => {
+interface Product {
+  id: string;
+  name_ar: string;
+  name_en: string | null;
+  description_ar: string | null;
+  price: number;
+  image_url: string | null;
+  category: string;
+  is_featured: boolean;
+  is_available: boolean;
+}
+
+const ProviderStoreContent = () => {
   const { providerId } = useParams<{ providerId: string }>();
+  const { addItem } = useProviderCart();
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [quantity, setQuantity] = useState(1);
 
   // Fetch provider data
   const { data: provider, isLoading: providerLoading } = useQuery({
@@ -61,7 +89,7 @@ const ProviderStore = () => {
         .order('sort_order');
       
       if (error) throw error;
-      return data;
+      return data as Product[];
     },
     enabled: !!providerId,
   });
@@ -90,6 +118,22 @@ const ProviderStore = () => {
       'other': 'أخرى'
     };
     return labels[category] || category;
+  };
+
+  const handleAddToCart = (product: Product) => {
+    if (!provider) return;
+    
+    addItem({
+      productId: product.id,
+      productName: product.name_ar,
+      price: product.price,
+      quantity: quantity,
+      imageUrl: product.image_url
+    }, provider.id, provider.business_name);
+    
+    toast.success('تمت الإضافة للسلة');
+    setSelectedProduct(null);
+    setQuantity(1);
   };
 
   if (providerLoading) {
@@ -239,7 +283,7 @@ const ProviderStore = () => {
       </div>
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 py-8 pb-24">
         {/* Category Filters */}
         {categories.length > 1 && (
           <div className="flex flex-wrap gap-2 mb-8 justify-center">
@@ -283,7 +327,8 @@ const ProviderStore = () => {
             {filteredProducts.map(product => (
               <Card 
                 key={product.id} 
-                className="overflow-hidden hover:shadow-lg transition-all duration-300 group"
+                className="overflow-hidden hover:shadow-lg transition-all duration-300 group cursor-pointer"
+                onClick={() => setSelectedProduct(product)}
               >
                 {/* Product Image */}
                 <div className="aspect-[4/3] relative bg-muted overflow-hidden">
@@ -343,6 +388,10 @@ const ProviderStore = () => {
                     <Button 
                       size="sm"
                       style={{ backgroundColor: primaryColor }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedProduct(product);
+                      }}
                     >
                       <ShoppingBag className="h-4 w-4 ml-2" />
                       أضف للسلة
@@ -354,6 +403,78 @@ const ProviderStore = () => {
           </div>
         )}
       </main>
+
+      {/* Product Dialog */}
+      <Dialog open={!!selectedProduct} onOpenChange={() => { setSelectedProduct(null); setQuantity(1); }}>
+        <DialogContent dir="rtl" className="font-arabic max-w-lg max-h-[90vh] overflow-y-auto">
+          {selectedProduct && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="font-arabic">{selectedProduct.name_ar}</DialogTitle>
+              </DialogHeader>
+              
+              {selectedProduct.image_url && (
+                <div className="aspect-video rounded-lg overflow-hidden bg-muted">
+                  <img 
+                    src={selectedProduct.image_url} 
+                    alt={selectedProduct.name_ar}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              )}
+
+              {selectedProduct.description_ar && (
+                <p className="text-muted-foreground">{selectedProduct.description_ar}</p>
+              )}
+
+              <div className="flex items-center justify-between py-2">
+                <span className="text-2xl font-bold" style={{ color: primaryColor }}>
+                  {Number(selectedProduct.price).toFixed(0)} ر.س
+                </span>
+                
+                <div className="flex items-center gap-3">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                  >
+                    <Minus className="h-4 w-4" />
+                  </Button>
+                  <span className="font-bold text-lg w-8 text-center">{quantity}</span>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setQuantity(quantity + 1)}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+
+              <Button 
+                className="w-full font-arabic"
+                style={{ backgroundColor: primaryColor }}
+                onClick={() => handleAddToCart(selectedProduct)}
+              >
+                <ShoppingBag className="h-4 w-4 ml-2" />
+                إضافة للسلة - {(Number(selectedProduct.price) * quantity).toFixed(0)} ر.س
+              </Button>
+
+              {/* Reviews Section */}
+              <div className="border-t pt-4">
+                <h3 className="font-bold mb-4 flex items-center gap-2">
+                  <MessageSquare className="h-5 w-5" />
+                  التقييمات والمراجعات
+                </h3>
+                <ProductReviews productId={selectedProduct.id} primaryColor={primaryColor} />
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Floating Cart */}
+      <StoreCart primaryColor={primaryColor} />
 
       {/* Footer */}
       <footer className="bg-muted py-8 mt-12">
@@ -368,6 +489,14 @@ const ProviderStore = () => {
         </div>
       </footer>
     </div>
+  );
+};
+
+const ProviderStore = () => {
+  return (
+    <ProviderCartProvider>
+      <ProviderStoreContent />
+    </ProviderCartProvider>
   );
 };
 
