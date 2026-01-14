@@ -1,12 +1,16 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { useLoyaltyPoints, usePointsHistory } from '@/hooks/useOrders';
+import { useLoyaltyTier } from '@/hooks/useLoyaltyTier';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { AuthForm } from '@/components/auth/AuthForm';
 import { NotificationSettings } from '@/components/notifications/NotificationSettings';
+import { ReferralCard } from '@/components/referral/ReferralCard';
+import { LoyaltyTierBadge, tierConfigs } from '@/components/loyalty/LoyaltyTierBadge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { LogOut, Star, User, History, Settings } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
+import { LogOut, Star, User, History, Settings, ChevronLeft } from 'lucide-react';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { Link } from 'react-router-dom';
@@ -14,6 +18,7 @@ import { Link } from 'react-router-dom';
 const Profile = () => {
   const { user, loading: authLoading, signOut, isAdmin } = useAuth();
   const { data: loyaltyPoints, isLoading: pointsLoading } = useLoyaltyPoints();
+  const { data: loyaltyTier } = useLoyaltyTier();
   const { data: pointsHistory, isLoading: historyLoading } = usePointsHistory();
 
   if (authLoading) {
@@ -62,33 +67,53 @@ const Profile = () => {
         </Card>
 
         {/* Loyalty Points Card */}
-        <Card className="mb-6 border-gold/30 bg-gradient-to-br from-gold/10 to-gold-light/5">
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Star className="h-5 w-5 text-gold" />
-              نقاط الولاء
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {pointsLoading ? (
-              <Skeleton className="h-12 w-24" />
-            ) : (
-              <div className="flex items-baseline gap-2">
-                <span className="text-4xl font-bold text-gold">
-                  {loyaltyPoints?.total_points || 0}
-                </span>
-                <span className="text-muted-foreground">نقطة</span>
-              </div>
-            )}
-            <div className="mt-3 flex justify-between text-sm">
-              <span className="text-muted-foreground">مجموع النقاط المكتسبة:</span>
-              <span className="font-semibold">{loyaltyPoints?.lifetime_points || 0}</span>
-            </div>
-            <p className="text-xs text-muted-foreground mt-3 pt-3 border-t border-gold/20">
-              كل 100 نقطة = 1 ر.س خصم على طلبك
-            </p>
-          </CardContent>
-        </Card>
+        <Link to="/loyalty">
+          <Card className="mb-6 border-gold/30 bg-gradient-to-br from-gold/10 to-gold-light/5 hover:bg-gold/15 transition-colors cursor-pointer">
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center justify-between text-lg">
+                <div className="flex items-center gap-2">
+                  <Star className="h-5 w-5 text-gold" />
+                  نقاط الولاء
+                </div>
+                <div className="flex items-center gap-2">
+                  {loyaltyTier && <LoyaltyTierBadge tier={loyaltyTier.tier} size="sm" />}
+                  <ChevronLeft className="h-4 w-4 text-muted-foreground" />
+                </div>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {pointsLoading ? (
+                <Skeleton className="h-12 w-24" />
+              ) : (
+                <div className="flex items-baseline gap-2">
+                  <span className="text-4xl font-bold text-gold">
+                    {loyaltyPoints?.total_points || 0}
+                  </span>
+                  <span className="text-muted-foreground">نقطة</span>
+                </div>
+              )}
+              
+              {loyaltyTier && loyaltyTier.nextTier && (
+                <div className="mt-3 space-y-1">
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>للمستوى {tierConfigs[loyaltyTier.nextTier].label}</span>
+                    <span>{loyaltyTier.pointsToNextTier} نقطة</span>
+                  </div>
+                  <Progress value={loyaltyTier.progressToNextTier} className="h-1.5" />
+                </div>
+              )}
+              
+              <p className="text-xs text-muted-foreground mt-3 pt-3 border-t border-gold/20">
+                كل 100 نقطة = 1 ر.س خصم على طلبك • اضغط لمعرفة المزيد
+              </p>
+            </CardContent>
+          </Card>
+        </Link>
+
+        {/* Referral Card */}
+        <div className="mb-6">
+          <ReferralCard />
+        </div>
 
         {/* Points History */}
         <Card className="mb-6">
