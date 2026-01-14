@@ -142,6 +142,23 @@ const ProviderLogin = () => {
         if (roleError) {
           console.error('Error adding role:', roleError);
         }
+
+        // Create provider profile from application data
+        const { error: providerError } = await supabase
+          .from('service_providers')
+          .insert({
+            user_id: data.user.id,
+            application_id: application.id,
+            business_name: application.business_name,
+            email: application.email,
+            phone: application.phone,
+            is_active: true,
+            is_verified: false
+          });
+
+        if (providerError) {
+          console.error('Error creating provider profile:', providerError);
+        }
       }
 
       toast.success('تم إنشاء الحساب بنجاح! يمكنك الآن تسجيل الدخول.');

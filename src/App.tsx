@@ -9,6 +9,7 @@ import { LocationProvider } from "@/contexts/LocationContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import Landing from "./pages/Landing";
 import Index from "./pages/Index";
+import ProviderStore from "./pages/ProviderStore";
 import Cart from "./pages/Cart";
 import Orders from "./pages/Orders";
 import Profile from "./pages/Profile";
@@ -44,6 +45,7 @@ const App = () => (
                   <Route path="/payment-result" element={<PaymentResult />} />
                   <Route path="/provider-login" element={<ProviderLogin />} />
                   <Route path="/provider-dashboard" element={<ProviderDashboard />} />
+                  <Route path="/store/:providerId" element={<ProviderStore />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </BrowserRouter>

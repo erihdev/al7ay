@@ -295,6 +295,10 @@ const Admin = () => {
               <FileText className="h-4 w-4 ml-2" />
               طلبات الانضمام
             </TabsTrigger>
+            <TabsTrigger value="neighborhoods" className="font-arabic">
+              <MapPin className="h-4 w-4 ml-2" />
+              الأحياء
+            </TabsTrigger>
             <TabsTrigger value="settings" className="font-arabic">
               <Settings className="h-4 w-4 ml-2" />
               الإعدادات
@@ -613,6 +617,11 @@ const Admin = () => {
           {/* Applications Tab */}
           <TabsContent value="applications">
             <ApplicationsManager />
+          </TabsContent>
+
+          {/* Neighborhoods Tab */}
+          <TabsContent value="neighborhoods">
+            <NeighborhoodsManager />
           </TabsContent>
         </Tabs>
       </main>
