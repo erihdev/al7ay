@@ -33,6 +33,7 @@ import { ProductList } from '@/components/admin/ProductList';
 import { CouponManager } from '@/components/admin/CouponManager';
 import { SalesReports } from '@/components/admin/SalesReports';
 import { ProductOptionsManager } from '@/components/admin/ProductOptionsManager';
+import { OptionsManager } from '@/components/admin/OptionsManager';
 import { useUpdateDeliveryLocation } from '@/hooks/useOrderTracking';
 import { useOrderNotifications } from '@/hooks/useOrderNotifications';
 import { format } from 'date-fns';
@@ -438,7 +439,8 @@ const Admin = () => {
           </TabsContent>
 
           {/* Product Options Tab */}
-          <TabsContent value="options">
+          <TabsContent value="options" className="space-y-6">
+            <OptionsManager />
             <ProductOptionsManager />
           </TabsContent>
 

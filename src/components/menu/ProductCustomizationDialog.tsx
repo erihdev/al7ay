@@ -5,7 +5,9 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { useAllProductOptions, SelectedOption } from '@/hooks/useProductOptions';
 import { useCart } from '@/contexts/CartContext';
-import { Loader2, Plus, Minus } from 'lucide-react';
+import { useProductAverageRating } from '@/hooks/useProductReviews';
+import { ProductReviewsList } from '@/components/reviews/ProductReviewsList';
+import { Loader2, Plus, Minus, Star } from 'lucide-react';
 import type { Database } from '@/integrations/supabase/types';
 
 type Product = Database['public']['Tables']['products']['Row'];
@@ -23,8 +25,10 @@ export function ProductCustomizationDialog({
 }: ProductCustomizationDialogProps) {
   const { data: options, isLoading } = useAllProductOptions();
   const { addItem } = useCart();
+  const { average, count } = useProductAverageRating(product?.id);
   const [selectedOptions, setSelectedOptions] = useState<Record<string, SelectedOption>>({});
   const [quantity, setQuantity] = useState(1);
+  const [showReviews, setShowReviews] = useState(false);
 
   // Reset when product changes
   useEffect(() => {
@@ -44,6 +48,7 @@ export function ProductCustomizationDialog({
       });
       setSelectedOptions(defaults);
       setQuantity(1);
+      setShowReviews(false);
     }
   }, [product, options]);
 
@@ -116,6 +121,24 @@ export function ProductCustomizationDialog({
                   className="w-full h-full object-cover"
                 />
               </div>
+            )}
+
+            {/* Rating Display */}
+            {count > 0 && (
+              <button
+                onClick={() => setShowReviews(!showReviews)}
+                className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
+                <span className="font-medium">{average.toFixed(1)}</span>
+                <span>({count} تقييم)</span>
+                <span className="text-primary">{showReviews ? 'إخفاء' : 'عرض'}</span>
+              </button>
+            )}
+
+            {/* Reviews Section */}
+            {showReviews && (
+              <ProductReviewsList productId={product.id} productName={product.name_ar} />
             )}
 
             {/* Options */}
