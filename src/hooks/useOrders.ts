@@ -11,6 +11,7 @@ type OrderType = Database['public']['Enums']['order_type'];
 interface CreateOrderData {
   customer_name: string;
   customer_phone: string;
+  customer_email?: string;
   total_amount: number;
   order_type: OrderType;
   delivery_lat?: number | null;
@@ -78,6 +79,7 @@ export function useCreateOrder() {
           customer_id: user.id,
           customer_name: orderData.customer_name,
           customer_phone: orderData.customer_phone,
+          customer_email: orderData.customer_email || null,
           total_amount: orderData.total_amount,
           order_type: orderData.order_type,
           delivery_lat: orderData.delivery_lat,
@@ -149,6 +151,29 @@ export function useCreateOrder() {
             transaction_type: 'redeemed',
             description: `نقاط مستبدلة في الطلب رقم ${order.id.slice(0, 8)}`,
           });
+        }
+      }
+
+      // Send email notification for new order
+      if (orderData.customer_email) {
+        try {
+          await supabase.functions.invoke('send-order-email', {
+            body: {
+              type: 'new_order',
+              orderId: order.id,
+              customerEmail: orderData.customer_email,
+              customerName: orderData.customer_name,
+              orderTotal: orderData.total_amount,
+              items: orderData.items.map(item => ({
+                name: item.product_name,
+                quantity: item.quantity,
+                price: item.total_price,
+              })),
+            },
+          });
+        } catch (emailError) {
+          console.error('Error sending order email:', emailError);
+          // Don't fail the order if email fails
         }
       }
 
