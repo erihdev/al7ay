@@ -307,6 +307,7 @@ export type Database = {
           payment_transaction_id: string | null
           points_earned: number
           points_redeemed: number
+          provider_id: string | null
           scheduled_for: string | null
           scheduled_notification_sent: boolean | null
           status: Database["public"]["Enums"]["order_status"]
@@ -334,6 +335,7 @@ export type Database = {
           payment_transaction_id?: string | null
           points_earned?: number
           points_redeemed?: number
+          provider_id?: string | null
           scheduled_for?: string | null
           scheduled_notification_sent?: boolean | null
           status?: Database["public"]["Enums"]["order_status"]
@@ -361,6 +363,7 @@ export type Database = {
           payment_transaction_id?: string | null
           points_earned?: number
           points_redeemed?: number
+          provider_id?: string | null
           scheduled_for?: string | null
           scheduled_notification_sent?: boolean | null
           status?: Database["public"]["Enums"]["order_status"]
@@ -373,6 +376,13 @@ export type Database = {
             columns: ["coupon_id"]
             isOneToOne: false
             referencedRelation: "coupons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "service_providers"
             referencedColumns: ["id"]
           },
         ]
@@ -607,6 +617,7 @@ export type Database = {
           name_ar: string
           name_en: string | null
           price: number
+          provider_id: string | null
           updated_at: string
         }
         Insert: {
@@ -620,6 +631,7 @@ export type Database = {
           name_ar: string
           name_en?: string | null
           price: number
+          provider_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -633,9 +645,18 @@ export type Database = {
           name_ar?: string
           name_en?: string | null
           price?: number
+          provider_id?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "products_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "service_providers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -666,6 +687,124 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      provider_orders: {
+        Row: {
+          created_at: string
+          customer_email: string | null
+          customer_id: string | null
+          customer_name: string
+          customer_phone: string
+          delivery_address: string | null
+          delivery_lat: number | null
+          delivery_lng: number | null
+          id: string
+          notes: string | null
+          order_type: string
+          provider_id: string
+          status: string
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          customer_email?: string | null
+          customer_id?: string | null
+          customer_name: string
+          customer_phone: string
+          delivery_address?: string | null
+          delivery_lat?: number | null
+          delivery_lng?: number | null
+          id?: string
+          notes?: string | null
+          order_type?: string
+          provider_id: string
+          status?: string
+          total_amount: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          customer_email?: string | null
+          customer_id?: string | null
+          customer_name?: string
+          customer_phone?: string
+          delivery_address?: string | null
+          delivery_lat?: number | null
+          delivery_lng?: number | null
+          id?: string
+          notes?: string | null
+          order_type?: string
+          provider_id?: string
+          status?: string
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "provider_orders_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "service_providers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      provider_products: {
+        Row: {
+          category: string
+          created_at: string
+          description_ar: string | null
+          id: string
+          image_url: string | null
+          is_available: boolean
+          is_featured: boolean
+          name_ar: string
+          name_en: string | null
+          price: number
+          provider_id: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          description_ar?: string | null
+          id?: string
+          image_url?: string | null
+          is_available?: boolean
+          is_featured?: boolean
+          name_ar: string
+          name_en?: string | null
+          price: number
+          provider_id: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description_ar?: string | null
+          id?: string
+          image_url?: string | null
+          is_available?: boolean
+          is_featured?: boolean
+          name_ar?: string
+          name_en?: string | null
+          price?: number
+          provider_id?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "provider_products_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "service_providers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       push_subscriptions: {
         Row: {
@@ -774,6 +913,75 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      service_providers: {
+        Row: {
+          application_id: string | null
+          business_name: string
+          business_name_en: string | null
+          created_at: string
+          description: string | null
+          email: string
+          id: string
+          is_active: boolean
+          is_verified: boolean
+          logo_url: string | null
+          neighborhood_id: string | null
+          phone: string | null
+          store_settings: Json | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          application_id?: string | null
+          business_name: string
+          business_name_en?: string | null
+          created_at?: string
+          description?: string | null
+          email: string
+          id?: string
+          is_active?: boolean
+          is_verified?: boolean
+          logo_url?: string | null
+          neighborhood_id?: string | null
+          phone?: string | null
+          store_settings?: Json | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          application_id?: string | null
+          business_name?: string
+          business_name_en?: string | null
+          created_at?: string
+          description?: string | null
+          email?: string
+          id?: string
+          is_active?: boolean
+          is_verified?: boolean
+          logo_url?: string | null
+          neighborhood_id?: string | null
+          phone?: string | null
+          store_settings?: Json | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_providers_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "service_provider_applications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_providers_neighborhood_id_fkey"
+            columns: ["neighborhood_id"]
+            isOneToOne: false
+            referencedRelation: "active_neighborhoods"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       special_offers: {
         Row: {

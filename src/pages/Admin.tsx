@@ -42,6 +42,7 @@ import { OffersManager } from '@/components/admin/OffersManager';
 import { ReferralStats } from '@/components/admin/ReferralStats';
 import { PaymentsManager } from '@/components/admin/PaymentsManager';
 import ApplicationsManager from '@/components/admin/ApplicationsManager';
+import NeighborhoodsManager from '@/components/admin/NeighborhoodsManager';
 import { useUpdateDeliveryLocation } from '@/hooks/useOrderTracking';
 import { useOrderNotifications } from '@/hooks/useOrderNotifications';
 import { format } from 'date-fns';

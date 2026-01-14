@@ -1,23 +1,28 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
+import { useProviderProfile, useProviderProducts, useProviderOrders } from '@/hooks/useProviderData';
+import ProviderProductsManager from '@/components/provider/ProviderProductsManager';
+import ProviderOrdersManager from '@/components/provider/ProviderOrdersManager';
+import ProviderSettingsManager from '@/components/provider/ProviderSettingsManager';
 import { 
   Store, 
   Package, 
   ShoppingBag, 
   TrendingUp, 
   LogOut,
-  ArrowRight,
   Coffee,
   Clock,
   CheckCircle,
-  Settings
+  Settings,
+  AlertCircle
 } from 'lucide-react';
 import { toast } from 'sonner';
 import logo from '@/assets/logo.png';
@@ -25,6 +30,7 @@ import logo from '@/assets/logo.png';
 const ProviderDashboard = () => {
   const { user, loading: authLoading, signOut } = useAuth();
   const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState('overview');
 
   // Check if user has service_provider role
   const { data: hasProviderRole, isLoading: roleLoading } = useQuery({
@@ -44,6 +50,10 @@ const ProviderDashboard = () => {
     enabled: !!user,
   });
 
+  const { data: provider, isLoading: providerLoading } = useProviderProfile();
+  const { data: products } = useProviderProducts(provider?.id);
+  const { data: orders } = useProviderOrders(provider?.id);
+
   useEffect(() => {
     if (!authLoading && !roleLoading) {
       if (!user) {
@@ -61,7 +71,7 @@ const ProviderDashboard = () => {
     navigate('/provider-login');
   };
 
-  if (authLoading || roleLoading) {
+  if (authLoading || roleLoading || providerLoading) {
     return (
       <div className="min-h-screen bg-background p-4" dir="rtl">
         <div className="container mx-auto max-w-6xl space-y-6">
@@ -77,161 +87,252 @@ const ProviderDashboard = () => {
     );
   }
 
+  // If no provider profile exists, show setup message
+  if (!provider) {
+    return (
+      <div className="min-h-screen bg-background font-arabic flex flex-col" dir="rtl">
+        <header className="sticky top-0 z-50 bg-background/95 backdrop-blur border-b">
+          <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <img src={logo} alt="الحي" className="h-10 w-10 rounded-xl" />
+              <span className="text-xl font-bold text-primary">الحي</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <ThemeToggle />
+              <Button variant="ghost" size="sm" onClick={handleLogout} className="font-arabic">
+                <LogOut className="h-4 w-4 ml-2" />
+                تسجيل الخروج
+              </Button>
+            </div>
+          </div>
+        </header>
+
+        <main className="flex-1 flex items-center justify-center p-4">
+          <Card className="max-w-md w-full">
+            <CardContent className="p-8 text-center">
+              <AlertCircle className="h-16 w-16 text-yellow-500 mx-auto mb-4" />
+              <h2 className="text-xl font-bold mb-2">حسابك قيد الإعداد</h2>
+              <p className="text-muted-foreground mb-4">
+                يقوم فريقنا بتجهيز متجرك. سيتم إعلامك عند اكتمال الإعداد.
+              </p>
+              <Button variant="outline" onClick={handleLogout} className="font-arabic">
+                تسجيل الخروج
+              </Button>
+            </CardContent>
+          </Card>
+        </main>
+      </div>
+    );
+  }
+
+  const todayOrders = orders?.filter(o => {
+    const today = new Date().toDateString();
+    return new Date(o.created_at).toDateString() === today;
+  }) || [];
+
+  const pendingOrders = orders?.filter(o => o.status === 'pending').length || 0;
+  const preparingOrders = orders?.filter(o => o.status === 'preparing').length || 0;
+  const completedToday = todayOrders.filter(o => o.status === 'completed').length;
+  const todayRevenue = todayOrders
+    .filter(o => o.status === 'completed')
+    .reduce((sum, o) => sum + o.total_amount, 0);
+
   return (
     <div className="min-h-screen bg-background font-arabic" dir="rtl">
       {/* Header */}
       <header className="sticky top-0 z-50 bg-background/95 backdrop-blur border-b">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <img src={logo} alt="الحي" className="h-10 w-10 rounded-xl" />
+            {provider.logo_url ? (
+              <img src={provider.logo_url} alt={provider.business_name} className="h-10 w-10 rounded-xl object-cover" />
+            ) : (
+              <img src={logo} alt="الحي" className="h-10 w-10 rounded-xl" />
+            )}
             <div>
-              <span className="text-xl font-bold text-primary">لوحة التحكم</span>
-              <p className="text-xs text-muted-foreground">مقدم الخدمة</p>
+              <span className="text-xl font-bold text-primary">{provider.business_name}</span>
+              <p className="text-xs text-muted-foreground">لوحة التحكم</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
             <ThemeToggle />
             <Button variant="ghost" size="sm" onClick={handleLogout} className="font-arabic">
               <LogOut className="h-4 w-4 ml-2" />
-              تسجيل الخروج
+              خروج
             </Button>
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8 max-w-6xl">
-        {/* Welcome Section */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">مرحباً بك! 👋</h1>
-          <p className="text-muted-foreground">إدارة متجرك وطلباتك من مكان واحد</p>
-        </div>
+      <main className="container mx-auto px-4 py-6 max-w-6xl">
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="grid grid-cols-4 mb-6">
+            <TabsTrigger value="overview" className="font-arabic">
+              <TrendingUp className="h-4 w-4 ml-2" />
+              نظرة عامة
+            </TabsTrigger>
+            <TabsTrigger value="orders" className="font-arabic">
+              <ShoppingBag className="h-4 w-4 ml-2" />
+              الطلبات
+              {pendingOrders > 0 && (
+                <span className="mr-2 bg-red-500 text-white text-xs rounded-full px-2">
+                  {pendingOrders}
+                </span>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="products" className="font-arabic">
+              <Coffee className="h-4 w-4 ml-2" />
+              المنتجات
+            </TabsTrigger>
+            <TabsTrigger value="settings" className="font-arabic">
+              <Settings className="h-4 w-4 ml-2" />
+              الإعدادات
+            </TabsTrigger>
+          </TabsList>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
-                  <ShoppingBag className="h-5 w-5 text-blue-600" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold">0</p>
-                  <p className="text-xs text-muted-foreground">طلبات اليوم</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg flex items-center justify-center">
-                  <Clock className="h-5 w-5 text-yellow-600" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold">0</p>
-                  <p className="text-xs text-muted-foreground">قيد التحضير</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
-                  <CheckCircle className="h-5 w-5 text-green-600" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold">0</p>
-                  <p className="text-xs text-muted-foreground">مكتملة</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-                  <TrendingUp className="h-5 w-5 text-primary" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold">0 ر.س</p>
-                  <p className="text-xs text-muted-foreground">إيرادات اليوم</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+          {/* Overview Tab */}
+          <TabsContent value="overview" className="space-y-6">
+            {/* Stats Cards */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
+                      <ShoppingBag className="h-5 w-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold">{todayOrders.length}</p>
+                      <p className="text-xs text-muted-foreground">طلبات اليوم</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg flex items-center justify-center">
+                      <Clock className="h-5 w-5 text-yellow-600" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold">{pendingOrders + preparingOrders}</p>
+                      <p className="text-xs text-muted-foreground">قيد التنفيذ</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
+                      <CheckCircle className="h-5 w-5 text-green-600" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold">{completedToday}</p>
+                      <p className="text-xs text-muted-foreground">مكتملة اليوم</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                      <TrendingUp className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold">{todayRevenue} ر.س</p>
+                      <p className="text-xs text-muted-foreground">إيرادات اليوم</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
 
-        {/* Quick Actions */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-            <CardHeader>
-              <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center mb-2">
-                <Coffee className="h-6 w-6 text-primary" />
-              </div>
-              <CardTitle className="font-arabic">إدارة المنتجات</CardTitle>
-              <CardDescription className="font-arabic">
-                أضف وعدّل منتجاتك وأسعارك
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button variant="outline" className="w-full font-arabic">
-                عرض المنتجات
-                <ArrowRight className="h-4 w-4 mr-2 rotate-180" />
-              </Button>
-            </CardContent>
-          </Card>
+            {/* Quick Stats */}
+            <div className="grid md:grid-cols-2 gap-6">
+              <Card>
+                <CardContent className="p-6">
+                  <h3 className="font-bold mb-4 flex items-center gap-2">
+                    <Coffee className="h-5 w-5" />
+                    المنتجات
+                  </h3>
+                  <div className="space-y-3">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">إجمالي المنتجات</span>
+                      <span className="font-bold">{products?.length || 0}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">منتجات متاحة</span>
+                      <span className="font-bold text-green-600">
+                        {products?.filter(p => p.is_available).length || 0}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">منتجات مميزة</span>
+                      <span className="font-bold text-yellow-600">
+                        {products?.filter(p => p.is_featured).length || 0}
+                      </span>
+                    </div>
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    className="w-full mt-4 font-arabic"
+                    onClick={() => setActiveTab('products')}
+                  >
+                    إدارة المنتجات
+                  </Button>
+                </CardContent>
+              </Card>
 
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-            <CardHeader>
-              <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-xl flex items-center justify-center mb-2">
-                <Package className="h-6 w-6 text-blue-600" />
-              </div>
-              <CardTitle className="font-arabic">الطلبات</CardTitle>
-              <CardDescription className="font-arabic">
-                تابع وأدِر طلبات العملاء
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button variant="outline" className="w-full font-arabic">
-                عرض الطلبات
-                <ArrowRight className="h-4 w-4 mr-2 rotate-180" />
-              </Button>
-            </CardContent>
-          </Card>
+              <Card>
+                <CardContent className="p-6">
+                  <h3 className="font-bold mb-4 flex items-center gap-2">
+                    <ShoppingBag className="h-5 w-5" />
+                    الطلبات
+                  </h3>
+                  <div className="space-y-3">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">إجمالي الطلبات</span>
+                      <span className="font-bold">{orders?.length || 0}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">طلبات جديدة</span>
+                      <span className="font-bold text-yellow-600">{pendingOrders}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">قيد التحضير</span>
+                      <span className="font-bold text-blue-600">{preparingOrders}</span>
+                    </div>
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    className="w-full mt-4 font-arabic"
+                    onClick={() => setActiveTab('orders')}
+                  >
+                    عرض الطلبات
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
 
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-            <CardHeader>
-              <div className="w-12 h-12 bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center mb-2">
-                <Settings className="h-6 w-6 text-gray-600" />
-              </div>
-              <CardTitle className="font-arabic">إعدادات المتجر</CardTitle>
-              <CardDescription className="font-arabic">
-                تخصيص متجرك وبياناتك
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button variant="outline" className="w-full font-arabic">
-                الإعدادات
-                <ArrowRight className="h-4 w-4 mr-2 rotate-180" />
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
+          {/* Orders Tab */}
+          <TabsContent value="orders">
+            <ProviderOrdersManager providerId={provider.id} />
+          </TabsContent>
 
-        {/* Coming Soon Notice */}
-        <Card className="bg-muted/50">
-          <CardContent className="p-8 text-center">
-            <Store className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-xl font-bold mb-2">قريباً!</h3>
-            <p className="text-muted-foreground max-w-md mx-auto">
-              نعمل على تطوير لوحة تحكم كاملة لمقدمي الخدمات. ستتمكن قريباً من إدارة منتجاتك وطلباتك وتتبع إيراداتك.
-            </p>
-          </CardContent>
-        </Card>
+          {/* Products Tab */}
+          <TabsContent value="products">
+            <ProviderProductsManager providerId={provider.id} />
+          </TabsContent>
+
+          {/* Settings Tab */}
+          <TabsContent value="settings">
+            <ProviderSettingsManager provider={provider} />
+          </TabsContent>
+        </Tabs>
       </main>
     </div>
   );
