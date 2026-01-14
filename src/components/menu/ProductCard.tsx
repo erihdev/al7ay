@@ -1,9 +1,10 @@
-import { Plus } from 'lucide-react';
+import { Plus, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useCart } from '@/contexts/CartContext';
 import { useState } from 'react';
 import { ProductCustomizationDialog } from './ProductCustomizationDialog';
+import { useProductAverageRating } from '@/hooks/useProductReviews';
 import type { Database } from '@/integrations/supabase/types';
 
 type Product = Database['public']['Tables']['products']['Row'];
@@ -15,6 +16,7 @@ interface ProductCardProps {
 export function ProductCard({ product }: ProductCardProps) {
   const { items } = useCart();
   const [isCustomizing, setIsCustomizing] = useState(false);
+  const { average, count } = useProductAverageRating(product.id);
 
   const cartItems = items.filter((item) => item.id.startsWith(product.id));
   const quantityInCart = cartItems.reduce((sum, item) => sum + item.quantity, 0);
@@ -55,6 +57,13 @@ export function ProductCard({ product }: ProductCardProps) {
                 <p className="text-xs text-muted-foreground font-arabic line-clamp-1 mt-0.5">
                   {product.description_ar}
                 </p>
+              )}
+              {count > 0 && (
+                <div className="flex items-center gap-1 mt-1">
+                  <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+                  <span className="text-xs font-medium">{average.toFixed(1)}</span>
+                  <span className="text-xs text-muted-foreground">({count})</span>
+                </div>
               )}
               <p className="text-primary font-bold mt-1 font-arabic">
                 {Number(product.price).toFixed(0)} ر.س
