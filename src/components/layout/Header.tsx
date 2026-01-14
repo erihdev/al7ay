@@ -1,10 +1,13 @@
 import { useLocation as useLocationContext } from '@/contexts/LocationContext';
 import { MapPin } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { CustomerSoundToggle } from '@/components/notifications/CustomerSoundToggle';
+import { useAuth } from '@/contexts/AuthContext';
 import logo from '@/assets/logo.png';
 
 export function Header() {
   const { storeName, isWithinDeliveryZone, distance, locationPermission } = useLocationContext();
+  const { user } = useAuth();
 
   const formatDistance = (meters: number) => {
     if (meters < 1000) {
@@ -26,8 +29,9 @@ export function Header() {
             </div>
           </div>
 
-          {/* Location Status */}
+          {/* Location Status & Sound Toggle */}
           <div className="flex items-center gap-2">
+            {user && <CustomerSoundToggle />}
             {locationPermission === 'granted' && distance !== null && (
               <div className="flex items-center gap-1 text-sm">
                 <MapPin className="h-4 w-4 text-muted-foreground" />
