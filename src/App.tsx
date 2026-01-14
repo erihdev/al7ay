@@ -14,6 +14,7 @@ import Cart from "./pages/Cart";
 import Orders from "./pages/Orders";
 import Profile from "./pages/Profile";
 import Admin from "./pages/Admin";
+import AdminLogin from "./pages/AdminLogin";
 import ProductDetails from "./pages/ProductDetails";
 import LoyaltyTiers from "./pages/LoyaltyTiers";
 import PaymentResult from "./pages/PaymentResult";
@@ -42,6 +43,7 @@ const App = () => (
                   <Route path="/profile" element={<Profile />} />
                   <Route path="/loyalty" element={<LoyaltyTiers />} />
                   <Route path="/admin" element={<Admin />} />
+                  <Route path="/admin-login" element={<AdminLogin />} />
                   <Route path="/payment-result" element={<PaymentResult />} />
                   <Route path="/provider-login" element={<ProviderLogin />} />
                   <Route path="/provider-dashboard" element={<ProviderDashboard />} />
