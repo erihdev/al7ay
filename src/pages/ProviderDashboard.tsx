@@ -6,9 +6,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { useProviderProfile, useProviderProducts, useProviderOrders } from '@/hooks/useProviderData';
+import { useProviderOrderNotifications } from '@/hooks/useProviderOrderNotifications';
 import ProviderProductsManager from '@/components/provider/ProviderProductsManager';
 import ProviderOrdersManager from '@/components/provider/ProviderOrdersManager';
 import ProviderSettingsManager from '@/components/provider/ProviderSettingsManager';
@@ -22,7 +25,9 @@ import {
   Clock,
   CheckCircle,
   Settings,
-  AlertCircle
+  AlertCircle,
+  Volume2,
+  VolumeX
 } from 'lucide-react';
 import { toast } from 'sonner';
 import logo from '@/assets/logo.png';
@@ -31,6 +36,7 @@ const ProviderDashboard = () => {
   const { user, loading: authLoading, signOut } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('overview');
+  const [soundEnabled, setSoundEnabled] = useState(true);
 
   // Check if user has service_provider role
   const { data: hasProviderRole, isLoading: roleLoading } = useQuery({
@@ -53,6 +59,9 @@ const ProviderDashboard = () => {
   const { data: provider, isLoading: providerLoading } = useProviderProfile();
   const { data: products } = useProviderProducts(provider?.id);
   const { data: orders } = useProviderOrders(provider?.id);
+
+  // Enable real-time order notifications
+  useProviderOrderNotifications(provider?.id, soundEnabled);
 
   useEffect(() => {
     if (!authLoading && !roleLoading) {
@@ -154,6 +163,21 @@ const ProviderDashboard = () => {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            {/* Sound Toggle */}
+            <div className="flex items-center gap-2 px-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setSoundEnabled(!soundEnabled)}
+                title={soundEnabled ? 'إيقاف صوت الإشعارات' : 'تفعيل صوت الإشعارات'}
+              >
+                {soundEnabled ? (
+                  <Volume2 className="h-4 w-4" />
+                ) : (
+                  <VolumeX className="h-4 w-4 text-muted-foreground" />
+                )}
+              </Button>
+            </div>
             <ThemeToggle />
             <Button variant="ghost" size="sm" onClick={handleLogout} className="font-arabic">
               <LogOut className="h-4 w-4 ml-2" />
