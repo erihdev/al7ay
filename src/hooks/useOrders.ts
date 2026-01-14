@@ -19,6 +19,8 @@ interface CreateOrderData {
   notes?: string;
   points_redeemed?: number;
   discount_amount?: number;
+  coupon_id?: string | null;
+  coupon_discount?: number;
   items: {
     product_id: string;
     product_name: string;
@@ -85,6 +87,8 @@ export function useCreateOrder() {
           points_earned: pointsEarned,
           points_redeemed: orderData.points_redeemed || 0,
           discount_amount: orderData.discount_amount || 0,
+          coupon_id: orderData.coupon_id || null,
+          coupon_discount: orderData.coupon_discount || 0,
         })
         .select()
         .single();
