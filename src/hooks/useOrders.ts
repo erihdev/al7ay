@@ -13,9 +13,9 @@ interface CreateOrderData {
   customer_phone: string;
   total_amount: number;
   order_type: OrderType;
-  delivery_lat?: number;
-  delivery_lng?: number;
-  delivery_address?: string;
+  delivery_lat?: number | null;
+  delivery_lng?: number | null;
+  delivery_address?: string | null;
   notes?: string;
   points_redeemed?: number;
   discount_amount?: number;

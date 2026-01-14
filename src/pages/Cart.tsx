@@ -9,7 +9,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Minus, Plus, Trash2, ShoppingBag, MapPin, Truck, Star } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { DeliveryMapPicker } from '@/components/map/DeliveryMapPicker';
+import { Minus, Plus, Trash2, ShoppingBag, MapPin, Truck, Star, Map, CheckCircle2 } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -18,7 +20,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 const Cart = () => {
   const { items, updateQuantity, removeItem, clearCart, totalAmount } = useCart();
   const { user } = useAuth();
-  const { isWithinDeliveryZone } = useLocation();
+  const { isWithinDeliveryZone, userLocation } = useLocation();
   const { data: loyaltyPoints } = useLoyaltyPoints();
   const createOrder = useCreateOrder();
   const navigate = useNavigate();
@@ -30,6 +32,12 @@ const Cart = () => {
   const [customerPhone, setCustomerPhone] = useState('');
   const [notes, setNotes] = useState('');
   const [usePoints, setUsePoints] = useState(false);
+  const [deliveryLocation, setDeliveryLocation] = useState<{
+    lat: number;
+    lng: number;
+    address: string;
+  } | null>(null);
+  const [isMapOpen, setIsMapOpen] = useState(false);
 
   const availablePoints = loyaltyPoints?.total_points || 0;
   const maxRedeemablePoints = Math.min(availablePoints, Math.floor(totalAmount * 100));
@@ -48,6 +56,11 @@ const Cart = () => {
       return;
     }
 
+    if (orderType === 'delivery' && !deliveryLocation) {
+      toast.error('يرجى تحديد موقع التوصيل على الخريطة');
+      return;
+    }
+
     try {
       await createOrder.mutateAsync({
         customer_name: customerName,
@@ -57,6 +70,9 @@ const Cart = () => {
         notes,
         points_redeemed: usePoints ? maxRedeemablePoints : 0,
         discount_amount: pointsDiscount,
+        delivery_address: deliveryLocation?.address || null,
+        delivery_lat: deliveryLocation?.lat || null,
+        delivery_lng: deliveryLocation?.lng || null,
         items: items.map((item) => ({
           product_id: item.id,
           product_name: item.name_ar,
@@ -165,7 +181,12 @@ const Cart = () => {
             <h3 className="font-semibold mb-3">طريقة الاستلام</h3>
             <RadioGroup
               value={orderType}
-              onValueChange={(v) => setOrderType(v as 'pickup' | 'delivery')}
+              onValueChange={(v) => {
+                setOrderType(v as 'pickup' | 'delivery');
+                if (v === 'pickup') {
+                  setDeliveryLocation(null);
+                }
+              }}
               className="flex gap-4"
             >
               <div className="flex items-center gap-2 flex-1">
@@ -199,6 +220,68 @@ const Cart = () => {
             )}
           </CardContent>
         </Card>
+
+        {/* Delivery Location Map */}
+        {orderType === 'delivery' && (
+          <Card className="mb-6">
+            <CardContent className="p-4">
+              <h3 className="font-semibold mb-3">موقع التوصيل</h3>
+              
+              {deliveryLocation ? (
+                <div className="space-y-3">
+                  <div className="flex items-start gap-2 p-3 bg-primary/10 rounded-lg border border-primary/20">
+                    <CheckCircle2 className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-primary">تم تحديد الموقع</p>
+                      <p className="text-sm text-muted-foreground">{deliveryLocation.address}</p>
+                    </div>
+                  </div>
+                  <Dialog open={isMapOpen} onOpenChange={setIsMapOpen}>
+                    <DialogTrigger asChild>
+                      <Button variant="outline" className="w-full font-arabic">
+                        <Map className="h-4 w-4 ml-2" />
+                        تغيير الموقع
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-lg">
+                      <DialogHeader>
+                        <DialogTitle className="font-arabic">تحديد موقع التوصيل</DialogTitle>
+                      </DialogHeader>
+                      <DeliveryMapPicker
+                        initialLocation={deliveryLocation}
+                        onLocationSelect={(location) => {
+                          setDeliveryLocation(location);
+                          setIsMapOpen(false);
+                        }}
+                      />
+                    </DialogContent>
+                  </Dialog>
+                </div>
+              ) : (
+                <Dialog open={isMapOpen} onOpenChange={setIsMapOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" className="w-full font-arabic">
+                      <Map className="h-4 w-4 ml-2" />
+                      تحديد الموقع على الخريطة
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-lg">
+                    <DialogHeader>
+                      <DialogTitle className="font-arabic">تحديد موقع التوصيل</DialogTitle>
+                    </DialogHeader>
+                    <DeliveryMapPicker
+                      initialLocation={userLocation || undefined}
+                      onLocationSelect={(location) => {
+                        setDeliveryLocation(location);
+                        setIsMapOpen(false);
+                      }}
+                    />
+                  </DialogContent>
+                </Dialog>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         {/* Customer Info */}
         <Card className="mb-6">
