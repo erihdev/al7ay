@@ -2,6 +2,7 @@ import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLocation } from '@/contexts/LocationContext';
 import { useLoyaltyPoints, useCreateOrder } from '@/hooks/useOrders';
+import { useValidateCoupon, useRecordCouponUsage, Coupon } from '@/hooks/useCoupons';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -11,7 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { DeliveryMapPicker } from '@/components/map/DeliveryMapPicker';
-import { Minus, Plus, Trash2, ShoppingBag, MapPin, Truck, Star, Map, CheckCircle2 } from 'lucide-react';
+import { Minus, Plus, Trash2, ShoppingBag, MapPin, Truck, Star, Map, CheckCircle2, Ticket, Loader2, X } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -38,11 +39,38 @@ const Cart = () => {
     address: string;
   } | null>(null);
   const [isMapOpen, setIsMapOpen] = useState(false);
+  
+  // Coupon state
+  const [couponCode, setCouponCode] = useState('');
+  const [appliedCoupon, setAppliedCoupon] = useState<{ coupon: Coupon; discount: number } | null>(null);
+  const validateCoupon = useValidateCoupon();
+  const recordCouponUsage = useRecordCouponUsage();
 
   const availablePoints = loyaltyPoints?.total_points || 0;
   const maxRedeemablePoints = Math.min(availablePoints, Math.floor(totalAmount * 100));
   const pointsDiscount = usePoints ? maxRedeemablePoints / 100 : 0;
-  const finalAmount = Math.max(0, totalAmount - pointsDiscount);
+  const couponDiscount = appliedCoupon?.discount || 0;
+  const finalAmount = Math.max(0, totalAmount - pointsDiscount - couponDiscount);
+
+  const handleApplyCoupon = async () => {
+    if (!couponCode.trim()) return;
+    
+    try {
+      const result = await validateCoupon.mutateAsync({
+        code: couponCode,
+        orderAmount: totalAmount - pointsDiscount,
+      });
+      setAppliedCoupon(result);
+      toast.success(`تم تطبيق الكوبون: خصم ${result.discount.toFixed(0)} ر.س`);
+    } catch (error: any) {
+      toast.error(error.message);
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponCode('');
+  };
 
   const handleSubmitOrder = async () => {
     if (!user) {
@@ -73,14 +101,25 @@ const Cart = () => {
         delivery_address: deliveryLocation?.address || null,
         delivery_lat: deliveryLocation?.lat || null,
         delivery_lng: deliveryLocation?.lng || null,
+        coupon_id: appliedCoupon?.coupon.id || null,
+        coupon_discount: couponDiscount,
         items: items.map((item) => ({
-          product_id: item.id,
+          product_id: item.id.split('-')[0], // Extract original product ID
           product_name: item.name_ar,
           quantity: item.quantity,
           unit_price: item.price,
           total_price: item.price * item.quantity,
+          selected_options: item.selected_options || [],
         })),
       });
+
+      // Record coupon usage if applied
+      if (appliedCoupon) {
+        await recordCouponUsage.mutateAsync({
+          couponId: appliedCoupon.coupon.id,
+          orderId: 'pending', // Will be updated
+        });
+      }
 
       toast.success('تم إرسال طلبك بنجاح!');
       clearCart();
@@ -137,6 +176,11 @@ const Cart = () => {
                   
                   <div className="flex-1 min-w-0">
                     <h3 className="font-semibold truncate">{item.name_ar}</h3>
+                    {item.selected_options && item.selected_options.length > 0 && (
+                      <p className="text-xs text-muted-foreground">
+                        {item.selected_options.map(o => o.value_name).join(' • ')}
+                      </p>
+                    )}
                     <p className="text-primary font-bold">
                       {(item.price * item.quantity).toFixed(0)} ر.س
                     </p>
@@ -352,6 +396,48 @@ const Cart = () => {
           </Card>
         )}
 
+        {/* Coupon Code */}
+        <Card className="mb-6">
+          <CardContent className="p-4">
+            <h3 className="font-semibold mb-3 flex items-center gap-2">
+              <Ticket className="h-4 w-4" />
+              كود الخصم
+            </h3>
+            {appliedCoupon ? (
+              <div className="flex items-center justify-between p-3 bg-primary/10 rounded-lg border border-primary/20">
+                <div>
+                  <p className="font-mono font-bold">{appliedCoupon.coupon.code}</p>
+                  <p className="text-sm text-primary">خصم {appliedCoupon.discount.toFixed(0)} ر.س</p>
+                </div>
+                <Button variant="ghost" size="icon" onClick={handleRemoveCoupon}>
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            ) : (
+              <div className="flex gap-2">
+                <Input
+                  value={couponCode}
+                  onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                  placeholder="أدخل كود الخصم"
+                  dir="ltr"
+                  className="flex-1"
+                />
+                <Button 
+                  variant="outline" 
+                  onClick={handleApplyCoupon}
+                  disabled={validateCoupon.isPending || !couponCode.trim()}
+                >
+                  {validateCoupon.isPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    'تطبيق'
+                  )}
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
         {/* Order Summary */}
         <Card className="mb-6">
           <CardContent className="p-4">
@@ -365,6 +451,12 @@ const Cart = () => {
                 <div className="flex justify-between text-gold">
                   <span>خصم النقاط</span>
                   <span>-{pointsDiscount.toFixed(0)} ر.س</span>
+                </div>
+              )}
+              {couponDiscount > 0 && (
+                <div className="flex justify-between text-primary">
+                  <span>خصم الكوبون</span>
+                  <span>-{couponDiscount.toFixed(0)} ر.س</span>
                 </div>
               )}
               <div className="flex justify-between text-lg font-bold pt-2 border-t">

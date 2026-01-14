@@ -1,11 +1,20 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
+export interface SelectedOption {
+  option_id: string;
+  option_name: string;
+  value_id: string;
+  value_name: string;
+  price_modifier: number;
+}
+
 export interface CartItem {
   id: string;
   name_ar: string;
   price: number;
   quantity: number;
   image_url?: string;
+  selected_options?: SelectedOption[];
 }
 
 interface CartContextType {
