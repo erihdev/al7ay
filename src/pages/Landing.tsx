@@ -3,7 +3,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { SearchableSelect } from '@/components/ui/searchable-select';
+import { LocationPickerDialog } from '@/components/landing/LocationPickerDialog';
 import { 
   MapPin, 
   Coffee, 
@@ -48,6 +49,8 @@ const Landing = () => {
   const [filteredNeighborhoods, setFilteredNeighborhoods] = useState<Neighborhood[]>([]);
   const [useCustomCity, setUseCustomCity] = useState(false);
   const [useCustomNeighborhood, setUseCustomNeighborhood] = useState(false);
+  const [showLocationPicker, setShowLocationPicker] = useState(false);
+  const [customLocation, setCustomLocation] = useState<{ lat: number; lng: number; address: string } | null>(null);
 
   useEffect(() => {
     const fetchNeighborhoods = async () => {
@@ -471,36 +474,43 @@ const Landing = () => {
                               placeholder="أدخل اسم المدينة"
                               className="font-arabic"
                             />
-                            <Button 
-                              type="button" 
-                              variant="ghost" 
-                              size="sm" 
-                              className="text-xs font-arabic"
-                              onClick={() => {
-                                setUseCustomCity(false);
-                                setUseCustomNeighborhood(false);
-                                setFormData(prev => ({ ...prev, customCity: '', customNeighborhood: '' }));
-                              }}
-                            >
-                              العودة للقائمة
-                            </Button>
+                            <div className="flex gap-2">
+                              <Button 
+                                type="button" 
+                                variant="ghost" 
+                                size="sm" 
+                                className="text-xs font-arabic"
+                                onClick={() => {
+                                  setUseCustomCity(false);
+                                  setUseCustomNeighborhood(false);
+                                  setFormData(prev => ({ ...prev, customCity: '', customNeighborhood: '' }));
+                                  setCustomLocation(null);
+                                }}
+                              >
+                                العودة للقائمة
+                              </Button>
+                              <Button 
+                                type="button" 
+                                variant="outline" 
+                                size="sm" 
+                                className="text-xs font-arabic"
+                                onClick={() => setShowLocationPicker(true)}
+                              >
+                                <MapPin className="h-3 w-3 ml-1" />
+                                حدد على الخريطة
+                              </Button>
+                            </div>
                           </div>
                         ) : (
-                          <Select value={formData.city} onValueChange={handleCityChange}>
-                            <SelectTrigger className="font-arabic">
-                              <SelectValue placeholder="اختر المدينة" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {cities.map((city) => (
-                                <SelectItem key={city} value={city} className="font-arabic">
-                                  {city}
-                                </SelectItem>
-                              ))}
-                              <SelectItem value="other" className="font-arabic text-primary">
-                                + مدينة أخرى
-                              </SelectItem>
-                            </SelectContent>
-                          </Select>
+                          <SearchableSelect
+                            options={cities.map(city => ({ value: city, label: city }))}
+                            value={formData.city}
+                            onValueChange={handleCityChange}
+                            placeholder="اختر المدينة"
+                            searchPlaceholder="ابحث عن مدينة..."
+                            emptyMessage="لا توجد نتائج"
+                            extraOption={{ value: 'other', label: '+ مدينة أخرى' }}
+                          />
                         )}
                       </div>
                       <div className="space-y-2">
@@ -515,44 +525,56 @@ const Landing = () => {
                               placeholder="أدخل اسم الحي"
                               className="font-arabic"
                             />
-                            {!useCustomCity && (
+                            <div className="flex gap-2">
+                              {!useCustomCity && (
+                                <Button 
+                                  type="button" 
+                                  variant="ghost" 
+                                  size="sm" 
+                                  className="text-xs font-arabic"
+                                  onClick={() => {
+                                    setUseCustomNeighborhood(false);
+                                    setFormData(prev => ({ ...prev, customNeighborhood: '' }));
+                                    setCustomLocation(null);
+                                  }}
+                                >
+                                  العودة للقائمة
+                                </Button>
+                              )}
                               <Button 
                                 type="button" 
-                                variant="ghost" 
+                                variant="outline" 
                                 size="sm" 
                                 className="text-xs font-arabic"
-                                onClick={() => {
-                                  setUseCustomNeighborhood(false);
-                                  setFormData(prev => ({ ...prev, customNeighborhood: '' }));
-                                }}
+                                onClick={() => setShowLocationPicker(true)}
                               >
-                                العودة للقائمة
+                                <MapPin className="h-3 w-3 ml-1" />
+                                حدد على الخريطة
                               </Button>
-                            )}
+                            </div>
                           </div>
                         ) : (
-                          <Select 
-                            value={formData.neighborhood} 
+                          <SearchableSelect
+                            options={filteredNeighborhoods.map(n => ({ value: n.id, label: n.name }))}
+                            value={formData.neighborhood}
                             onValueChange={handleNeighborhoodChange}
+                            placeholder={formData.city ? "اختر الحي" : "اختر المدينة أولاً"}
+                            searchPlaceholder="ابحث عن حي..."
+                            emptyMessage="لا توجد أحياء"
                             disabled={!formData.city}
-                          >
-                            <SelectTrigger className="font-arabic">
-                              <SelectValue placeholder={formData.city ? "اختر الحي" : "اختر المدينة أولاً"} />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {filteredNeighborhoods.map((neighborhood) => (
-                                <SelectItem key={neighborhood.id} value={neighborhood.id} className="font-arabic">
-                                  {neighborhood.name}
-                                </SelectItem>
-                              ))}
-                              <SelectItem value="other" className="font-arabic text-primary">
-                                + حي آخر
-                              </SelectItem>
-                            </SelectContent>
-                          </Select>
+                            extraOption={{ value: 'other', label: '+ حي آخر' }}
+                          />
                         )}
                       </div>
                     </div>
+
+                    {/* Show selected location from map */}
+                    {customLocation && (useCustomCity || useCustomNeighborhood) && (
+                      <div className="flex items-start gap-2 p-3 bg-muted rounded-lg">
+                        <MapPin className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                        <p className="text-sm">{customLocation.address}</p>
+                      </div>
+                    )}
                     
                     <Button 
                       type="submit" 
@@ -573,6 +595,24 @@ const Landing = () => {
                 </CardContent>
               </Card>
             )}
+
+            {/* Location Picker Dialog */}
+            <LocationPickerDialog
+              open={showLocationPicker}
+              onOpenChange={setShowLocationPicker}
+              onLocationSelect={(location) => {
+                setCustomLocation(location);
+                // Extract city and neighborhood from address if possible
+                const addressParts = location.address.split('،').map(p => p.trim());
+                if (addressParts.length >= 2) {
+                  setFormData(prev => ({
+                    ...prev,
+                    customNeighborhood: prev.customNeighborhood || addressParts[0],
+                    customCity: prev.customCity || addressParts[addressParts.length - 2] || addressParts[1],
+                  }));
+                }
+              }}
+            />
           </div>
         </div>
       </section>
