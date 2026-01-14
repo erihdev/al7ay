@@ -694,6 +694,51 @@ export type Database = {
         }
         Relationships: []
       }
+      service_provider_applications: {
+        Row: {
+          admin_notes: string | null
+          business_name: string
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          neighborhood: string
+          phone: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          business_name: string
+          created_at?: string
+          email: string
+          full_name: string
+          id?: string
+          neighborhood: string
+          phone: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          admin_notes?: string | null
+          business_name?: string
+          created_at?: string
+          email?: string
+          full_name?: string
+          id?: string
+          neighborhood?: string
+          phone?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       special_offers: {
         Row: {
           created_at: string

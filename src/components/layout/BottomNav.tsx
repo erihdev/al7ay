@@ -4,7 +4,7 @@ import { useCart } from '@/contexts/CartContext';
 import { cn } from '@/lib/utils';
 
 const navItems = [
-  { path: '/', icon: Coffee, label: 'القائمة' },
+  { path: '/app', icon: Coffee, label: 'القائمة' },
   { path: '/cart', icon: ShoppingBag, label: 'السلة' },
   { path: '/orders', icon: ClipboardList, label: 'طلباتي' },
   { path: '/profile', icon: User, label: 'حسابي' },
