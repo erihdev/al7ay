@@ -21,7 +21,6 @@ import {
   XCircle,
   ArrowRight,
   Home,
-  Coffee,
   Navigation,
   MapPin,
   UserPlus,
@@ -30,13 +29,11 @@ import {
   BarChart3,
   Ticket,
   CreditCard,
-  FileText
+  FileText,
+  LogOut
 } from 'lucide-react';
-import { ProductList } from '@/components/admin/ProductList';
 import { CouponManager } from '@/components/admin/CouponManager';
 import { SalesReports } from '@/components/admin/SalesReports';
-import { ProductOptionsManager } from '@/components/admin/ProductOptionsManager';
-import { OptionsManager } from '@/components/admin/OptionsManager';
 import { ProductStats } from '@/components/admin/ProductStats';
 import { AdvancedStats } from '@/components/admin/AdvancedStats';
 import { OffersManager } from '@/components/admin/OffersManager';
@@ -61,7 +58,7 @@ const statusFlow: { status: OrderStatus; label: string; icon: any; color: string
 ];
 
 const Admin = () => {
-  const { user, isAdmin, loading: authLoading } = useAuth();
+  const { user, isAdmin, loading: authLoading, signOut } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { updateLocation } = useUpdateDeliveryLocation();
@@ -249,6 +246,18 @@ const Admin = () => {
               <Home className="h-4 w-4 ml-2" />
               العودة للمتجر
             </Button>
+            <Button 
+              variant="destructive" 
+              size="sm" 
+              onClick={async () => {
+                await signOut();
+                navigate('/');
+                toast.success('تم تسجيل الخروج بنجاح');
+              }}
+            >
+              <LogOut className="h-4 w-4 ml-2" />
+              تسجيل الخروج
+            </Button>
           </div>
         </div>
       </header>
@@ -271,14 +280,6 @@ const Admin = () => {
             <TabsTrigger value="referrals" className="font-arabic">
               <UserPlus className="h-4 w-4 ml-2" />
               الإحالات
-            </TabsTrigger>
-            <TabsTrigger value="products" className="font-arabic">
-              <Coffee className="h-4 w-4 ml-2" />
-              المنتجات
-            </TabsTrigger>
-            <TabsTrigger value="options" className="font-arabic">
-              <Settings className="h-4 w-4 ml-2" />
-              الخيارات
             </TabsTrigger>
             <TabsTrigger value="coupons" className="font-arabic">
               <Ticket className="h-4 w-4 ml-2" />
@@ -493,16 +494,6 @@ const Admin = () => {
             )}
           </TabsContent>
 
-          {/* Products Tab */}
-          <TabsContent value="products">
-            <ProductList />
-          </TabsContent>
-
-          {/* Product Options Tab */}
-          <TabsContent value="options" className="space-y-6">
-            <OptionsManager />
-            <ProductOptionsManager />
-          </TabsContent>
 
           {/* Stats Tab */}
           <TabsContent value="stats" className="space-y-6">
