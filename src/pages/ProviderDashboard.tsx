@@ -15,6 +15,7 @@ import { useProviderOrderNotifications } from '@/hooks/useProviderOrderNotificat
 import ProviderProductsManager from '@/components/provider/ProviderProductsManager';
 import ProviderOrdersManager from '@/components/provider/ProviderOrdersManager';
 import ProviderSettingsManager from '@/components/provider/ProviderSettingsManager';
+import ProviderStats from '@/components/provider/ProviderStats';
 import { 
   Store, 
   Package, 
@@ -27,7 +28,8 @@ import {
   Settings,
   AlertCircle,
   Volume2,
-  VolumeX
+  VolumeX,
+  BarChart3
 } from 'lucide-react';
 import { toast } from 'sonner';
 import logo from '@/assets/logo.png';
@@ -189,10 +191,14 @@ const ProviderDashboard = () => {
 
       <main className="container mx-auto px-4 py-6 max-w-6xl">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid grid-cols-4 mb-6">
+          <TabsList className="grid grid-cols-5 mb-6">
             <TabsTrigger value="overview" className="font-arabic">
               <TrendingUp className="h-4 w-4 ml-2" />
               نظرة عامة
+            </TabsTrigger>
+            <TabsTrigger value="stats" className="font-arabic">
+              <BarChart3 className="h-4 w-4 ml-2" />
+              الإحصائيات
             </TabsTrigger>
             <TabsTrigger value="orders" className="font-arabic">
               <ShoppingBag className="h-4 w-4 ml-2" />
@@ -340,6 +346,14 @@ const ProviderDashboard = () => {
                 </CardContent>
               </Card>
             </div>
+          </TabsContent>
+
+          {/* Stats Tab */}
+          <TabsContent value="stats">
+            <ProviderStats 
+              orders={orders || []} 
+              products={products || []} 
+            />
           </TabsContent>
 
           {/* Orders Tab */}

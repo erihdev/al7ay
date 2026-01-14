@@ -64,6 +64,22 @@ const Landing = () => {
 
       if (error) throw error;
 
+      // Send email notification to admin
+      try {
+        await supabase.functions.invoke('send-application-email', {
+          body: {
+            type: 'admin_notification',
+            email: formData.email,
+            fullName: formData.fullName,
+            businessName: formData.businessName,
+            neighborhood: formData.neighborhood,
+            phone: formData.phone,
+          },
+        });
+      } catch (emailError) {
+        console.error('Error sending admin notification:', emailError);
+      }
+
       setIsSubmitted(true);
       toast.success('تم إرسال طلبك بنجاح! سنتواصل معك قريباً');
     } catch (error) {
