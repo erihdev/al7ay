@@ -14,6 +14,7 @@ import Profile from "./pages/Profile";
 import Admin from "./pages/Admin";
 import ProductDetails from "./pages/ProductDetails";
 import LoyaltyTiers from "./pages/LoyaltyTiers";
+import PaymentResult from "./pages/PaymentResult";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -36,6 +37,7 @@ const App = () => (
                   <Route path="/profile" element={<Profile />} />
                   <Route path="/loyalty" element={<LoyaltyTiers />} />
                   <Route path="/admin" element={<Admin />} />
+                  <Route path="/payment-result" element={<PaymentResult />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </BrowserRouter>
