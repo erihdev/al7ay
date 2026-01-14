@@ -37,13 +37,17 @@ const Landing = () => {
     email: '',
     businessName: '',
     city: '',
-    neighborhood: ''
+    neighborhood: '',
+    customCity: '',
+    customNeighborhood: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [neighborhoods, setNeighborhoods] = useState<Neighborhood[]>([]);
   const [cities, setCities] = useState<string[]>([]);
   const [filteredNeighborhoods, setFilteredNeighborhoods] = useState<Neighborhood[]>([]);
+  const [useCustomCity, setUseCustomCity] = useState(false);
+  const [useCustomNeighborhood, setUseCustomNeighborhood] = useState(false);
 
   useEffect(() => {
     const fetchNeighborhoods = async () => {
@@ -77,23 +81,45 @@ const Landing = () => {
   };
 
   const handleCityChange = (value: string) => {
-    setFormData(prev => ({ ...prev, city: value, neighborhood: '' }));
+    if (value === 'other') {
+      setUseCustomCity(true);
+      setUseCustomNeighborhood(true);
+      setFormData(prev => ({ ...prev, city: '', neighborhood: '', customCity: '', customNeighborhood: '' }));
+    } else {
+      setUseCustomCity(false);
+      setUseCustomNeighborhood(false);
+      setFormData(prev => ({ ...prev, city: value, neighborhood: '', customCity: '', customNeighborhood: '' }));
+    }
   };
 
   const handleNeighborhoodChange = (value: string) => {
-    setFormData(prev => ({ ...prev, neighborhood: value }));
+    if (value === 'other') {
+      setUseCustomNeighborhood(true);
+      setFormData(prev => ({ ...prev, neighborhood: '', customNeighborhood: '' }));
+    } else {
+      setUseCustomNeighborhood(false);
+      setFormData(prev => ({ ...prev, neighborhood: value, customNeighborhood: '' }));
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.fullName || !formData.phone || !formData.email || !formData.businessName || !formData.city || !formData.neighborhood) {
+    const finalCity = useCustomCity ? formData.customCity : formData.city;
+    const finalNeighborhood = useCustomNeighborhood ? formData.customNeighborhood : formData.neighborhood;
+    
+    if (!formData.fullName || !formData.phone || !formData.email || !formData.businessName || !finalCity || !finalNeighborhood) {
       toast.error('يرجى ملء جميع الحقول');
       return;
     }
 
-    const selectedNeighborhood = filteredNeighborhoods.find(n => n.id === formData.neighborhood);
-    const neighborhoodName = selectedNeighborhood ? `${selectedNeighborhood.name}، ${formData.city}` : formData.neighborhood;
+    let neighborhoodName: string;
+    if (useCustomNeighborhood) {
+      neighborhoodName = `${formData.customNeighborhood}، ${finalCity}`;
+    } else {
+      const selectedNeighborhood = filteredNeighborhoods.find(n => n.id === formData.neighborhood);
+      neighborhoodName = selectedNeighborhood ? `${selectedNeighborhood.name}، ${finalCity}` : finalNeighborhood;
+    }
 
     setIsSubmitting(true);
 
@@ -435,37 +461,96 @@ const Landing = () => {
                     <div className="grid md:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="city" className="font-arabic">المدينة *</Label>
-                        <Select value={formData.city} onValueChange={handleCityChange}>
-                          <SelectTrigger className="font-arabic">
-                            <SelectValue placeholder="اختر المدينة" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {cities.map((city) => (
-                              <SelectItem key={city} value={city} className="font-arabic">
-                                {city}
+                        {useCustomCity ? (
+                          <div className="space-y-2">
+                            <Input
+                              id="customCity"
+                              name="customCity"
+                              value={formData.customCity}
+                              onChange={handleInputChange}
+                              placeholder="أدخل اسم المدينة"
+                              className="font-arabic"
+                            />
+                            <Button 
+                              type="button" 
+                              variant="ghost" 
+                              size="sm" 
+                              className="text-xs font-arabic"
+                              onClick={() => {
+                                setUseCustomCity(false);
+                                setUseCustomNeighborhood(false);
+                                setFormData(prev => ({ ...prev, customCity: '', customNeighborhood: '' }));
+                              }}
+                            >
+                              العودة للقائمة
+                            </Button>
+                          </div>
+                        ) : (
+                          <Select value={formData.city} onValueChange={handleCityChange}>
+                            <SelectTrigger className="font-arabic">
+                              <SelectValue placeholder="اختر المدينة" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {cities.map((city) => (
+                                <SelectItem key={city} value={city} className="font-arabic">
+                                  {city}
+                                </SelectItem>
+                              ))}
+                              <SelectItem value="other" className="font-arabic text-primary">
+                                + مدينة أخرى
                               </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                            </SelectContent>
+                          </Select>
+                        )}
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="neighborhood" className="font-arabic">الحي *</Label>
-                        <Select 
-                          value={formData.neighborhood} 
-                          onValueChange={handleNeighborhoodChange}
-                          disabled={!formData.city}
-                        >
-                          <SelectTrigger className="font-arabic">
-                            <SelectValue placeholder={formData.city ? "اختر الحي" : "اختر المدينة أولاً"} />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {filteredNeighborhoods.map((neighborhood) => (
-                              <SelectItem key={neighborhood.id} value={neighborhood.id} className="font-arabic">
-                                {neighborhood.name}
+                        {useCustomNeighborhood ? (
+                          <div className="space-y-2">
+                            <Input
+                              id="customNeighborhood"
+                              name="customNeighborhood"
+                              value={formData.customNeighborhood}
+                              onChange={handleInputChange}
+                              placeholder="أدخل اسم الحي"
+                              className="font-arabic"
+                            />
+                            {!useCustomCity && (
+                              <Button 
+                                type="button" 
+                                variant="ghost" 
+                                size="sm" 
+                                className="text-xs font-arabic"
+                                onClick={() => {
+                                  setUseCustomNeighborhood(false);
+                                  setFormData(prev => ({ ...prev, customNeighborhood: '' }));
+                                }}
+                              >
+                                العودة للقائمة
+                              </Button>
+                            )}
+                          </div>
+                        ) : (
+                          <Select 
+                            value={formData.neighborhood} 
+                            onValueChange={handleNeighborhoodChange}
+                            disabled={!formData.city}
+                          >
+                            <SelectTrigger className="font-arabic">
+                              <SelectValue placeholder={formData.city ? "اختر الحي" : "اختر المدينة أولاً"} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {filteredNeighborhoods.map((neighborhood) => (
+                                <SelectItem key={neighborhood.id} value={neighborhood.id} className="font-arabic">
+                                  {neighborhood.name}
+                                </SelectItem>
+                              ))}
+                              <SelectItem value="other" className="font-arabic text-primary">
+                                + حي آخر
                               </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                            </SelectContent>
+                          </Select>
+                        )}
                       </div>
                     </div>
                     
