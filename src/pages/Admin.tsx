@@ -41,6 +41,7 @@ import { ReferralStats } from '@/components/admin/ReferralStats';
 import { PaymentsManager } from '@/components/admin/PaymentsManager';
 import ApplicationsManager from '@/components/admin/ApplicationsManager';
 import NeighborhoodsManager from '@/components/admin/NeighborhoodsManager';
+import { SuggestedNeighborhoodsManager } from '@/components/admin/SuggestedNeighborhoodsManager';
 import { useUpdateDeliveryLocation } from '@/hooks/useOrderTracking';
 import { useOrderNotifications } from '@/hooks/useOrderNotifications';
 import { format } from 'date-fns';
@@ -300,6 +301,10 @@ const Admin = () => {
             <TabsTrigger value="neighborhoods" className="font-arabic">
               <MapPin className="h-4 w-4 ml-2" />
               الأحياء
+            </TabsTrigger>
+            <TabsTrigger value="suggested-neighborhoods" className="font-arabic">
+              <MapPin className="h-4 w-4 ml-2" />
+              اقتراحات الأحياء
             </TabsTrigger>
             <TabsTrigger value="settings" className="font-arabic">
               <Settings className="h-4 w-4 ml-2" />
@@ -615,6 +620,11 @@ const Admin = () => {
           {/* Neighborhoods Tab */}
           <TabsContent value="neighborhoods">
             <NeighborhoodsManager />
+          </TabsContent>
+
+          {/* Suggested Neighborhoods Tab */}
+          <TabsContent value="suggested-neighborhoods">
+            <SuggestedNeighborhoodsManager />
           </TabsContent>
         </Tabs>
       </main>

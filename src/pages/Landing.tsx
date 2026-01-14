@@ -127,7 +127,8 @@ const Landing = () => {
     setIsSubmitting(true);
 
     try {
-      const { error } = await supabase
+      // Insert application
+      const { data: appData, error } = await supabase
         .from('service_provider_applications')
         .insert({
           full_name: formData.fullName,
@@ -136,9 +137,46 @@ const Landing = () => {
           business_name: formData.businessName,
           neighborhood: neighborhoodName,
           status: 'pending'
-        });
+        })
+        .select('id')
+        .single();
 
       if (error) throw error;
+
+      // If custom neighborhood was entered, save it as a suggestion
+      if (useCustomNeighborhood || useCustomCity) {
+        try {
+          await supabase
+            .from('suggested_neighborhoods')
+            .insert({
+              name: useCustomNeighborhood ? formData.customNeighborhood : finalNeighborhood,
+              city: finalCity,
+              lat: customLocation?.lat || null,
+              lng: customLocation?.lng || null,
+              address: customLocation?.address || null,
+              suggested_by_email: formData.email,
+              suggested_by_name: formData.fullName,
+              application_id: appData?.id || null,
+              status: 'pending'
+            });
+
+          // Send notification about new neighborhood suggestion
+          await supabase.functions.invoke('send-application-email', {
+            body: {
+              type: 'neighborhood_suggestion',
+              email: formData.email,
+              fullName: formData.fullName,
+              businessName: formData.businessName,
+              neighborhood: neighborhoodName,
+              phone: formData.phone,
+              customNeighborhood: formData.customNeighborhood || finalNeighborhood,
+              customCity: finalCity,
+            },
+          });
+        } catch (suggestionError) {
+          console.error('Error saving neighborhood suggestion:', suggestionError);
+        }
+      }
 
       // Send email notification to admin
       try {
