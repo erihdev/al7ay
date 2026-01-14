@@ -284,6 +284,10 @@ const Admin = () => {
               <BarChart3 className="h-4 w-4 ml-2" />
               التقارير
             </TabsTrigger>
+            <TabsTrigger value="payments" className="font-arabic">
+              <CreditCard className="h-4 w-4 ml-2" />
+              المدفوعات
+            </TabsTrigger>
             <TabsTrigger value="settings" className="font-arabic">
               <Settings className="h-4 w-4 ml-2" />
               الإعدادات
@@ -592,6 +596,11 @@ const Admin = () => {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Payments Tab */}
+          <TabsContent value="payments">
+            <PaymentsManager />
           </TabsContent>
         </Tabs>
       </main>
