@@ -38,6 +38,7 @@ import { SalesReports } from '@/components/admin/SalesReports';
 import { ProductOptionsManager } from '@/components/admin/ProductOptionsManager';
 import { OptionsManager } from '@/components/admin/OptionsManager';
 import { ProductStats } from '@/components/admin/ProductStats';
+import { AdvancedStats } from '@/components/admin/AdvancedStats';
 import { OffersManager } from '@/components/admin/OffersManager';
 import { ReferralStats } from '@/components/admin/ReferralStats';
 import { PaymentsManager } from '@/components/admin/PaymentsManager';
@@ -504,7 +505,8 @@ const Admin = () => {
           </TabsContent>
 
           {/* Stats Tab */}
-          <TabsContent value="stats">
+          <TabsContent value="stats" className="space-y-6">
+            <AdvancedStats />
             <ProductStats />
           </TabsContent>
 

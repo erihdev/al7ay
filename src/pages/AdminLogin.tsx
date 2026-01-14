@@ -170,8 +170,13 @@ const AdminLogin = () => {
           </Card>
 
           {/* Footer Links */}
-          <div className="mt-6 text-center text-sm text-muted-foreground">
-            <p>
+          <div className="mt-6 text-center space-y-2">
+            <p className="text-sm text-muted-foreground">
+              <Link to="/admin-forgot-password" className="text-primary hover:underline font-medium">
+                نسيت كلمة المرور؟
+              </Link>
+            </p>
+            <p className="text-sm text-muted-foreground">
               مقدم خدمة؟{' '}
               <Link to="/provider-login" className="text-primary hover:underline font-medium">
                 سجل دخولك هنا
