@@ -13,6 +13,15 @@ interface DeliveryTracking {
   updated_at: string;
 }
 
+interface RoutePoint {
+  id: string;
+  order_id: string;
+  lat: number;
+  lng: number;
+  speed: number;
+  recorded_at: string;
+}
+
 interface OrderWithTracking {
   id: string;
   status: string;
@@ -21,11 +30,13 @@ interface OrderWithTracking {
   delivery_lng: number | null;
   delivery_address: string | null;
   tracking?: DeliveryTracking | null;
+  routeHistory?: RoutePoint[];
 }
 
 export function useOrderTracking(orderId: string) {
   const queryClient = useQueryClient();
   const [realtimeTracking, setRealtimeTracking] = useState<DeliveryTracking | null>(null);
+  const [routeHistory, setRouteHistory] = useState<RoutePoint[]>([]);
 
   // Fetch initial order and tracking data
   const { data: order, isLoading } = useQuery({
@@ -45,9 +56,21 @@ export function useOrderTracking(orderId: string) {
         .eq('order_id', orderId)
         .single();
 
+      // Fetch route history
+      const { data: historyData } = await supabase
+        .from('delivery_route_history')
+        .select('*')
+        .eq('order_id', orderId)
+        .order('recorded_at', { ascending: true });
+
+      if (historyData) {
+        setRouteHistory(historyData);
+      }
+
       return {
         ...orderData,
         tracking: trackingData,
+        routeHistory: historyData || [],
       } as OrderWithTracking;
     },
     enabled: !!orderId,
@@ -59,6 +82,7 @@ export function useOrderTracking(orderId: string) {
 
     let trackingChannel: RealtimeChannel;
     let orderChannel: RealtimeChannel;
+    let routeChannel: RealtimeChannel;
 
     // Subscribe to tracking updates
     trackingChannel = supabase
@@ -99,9 +123,27 @@ export function useOrderTracking(orderId: string) {
       )
       .subscribe();
 
+    // Subscribe to route history updates
+    routeChannel = supabase
+      .channel(`route-history-${orderId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'delivery_route_history',
+          filter: `order_id=eq.${orderId}`,
+        },
+        (payload) => {
+          setRouteHistory(prev => [...prev, payload.new as RoutePoint]);
+        }
+      )
+      .subscribe();
+
     return () => {
       trackingChannel.unsubscribe();
       orderChannel.unsubscribe();
+      routeChannel.unsubscribe();
     };
   }, [orderId, queryClient]);
 
@@ -111,6 +153,7 @@ export function useOrderTracking(orderId: string) {
   return {
     order,
     tracking: currentTracking,
+    routeHistory,
     isLoading,
     isDelivery: order?.order_type === 'delivery',
     isOutForDelivery: order?.status === 'out_for_delivery',
@@ -158,6 +201,14 @@ export function useUpdateDeliveryLocation() {
 
       if (error) throw error;
     }
+
+    // Also record in route history (throttle to every 10 seconds approximately)
+    await supabase.from('delivery_route_history').insert({
+      order_id: orderId,
+      lat,
+      lng,
+      speed: speed || 0,
+    });
   };
 
   return { updateLocation };

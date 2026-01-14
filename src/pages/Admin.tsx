@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
 import { 
   Settings, 
@@ -22,10 +23,13 @@ import {
   Home,
   Coffee,
   Navigation,
-  MapPin
+  MapPin,
+  Volume2,
+  VolumeX
 } from 'lucide-react';
 import { ProductList } from '@/components/admin/ProductList';
 import { useUpdateDeliveryLocation } from '@/hooks/useOrderTracking';
+import { useOrderNotifications } from '@/hooks/useOrderNotifications';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import type { Database } from '@/integrations/supabase/types';
@@ -46,6 +50,10 @@ const Admin = () => {
   const queryClient = useQueryClient();
   const { updateLocation } = useUpdateDeliveryLocation();
   const [trackingOrderId, setTrackingOrderId] = useState<string | null>(null);
+  const [soundEnabled, setSoundEnabled] = useState(true);
+  
+  // Enable audio notifications for new orders
+  const { playNotificationSound } = useOrderNotifications(isAdmin && soundEnabled);
 
   // Redirect non-admin users
   useEffect(() => {
@@ -180,10 +188,30 @@ const Admin = () => {
       <header className="bg-card border-b border-border p-4">
         <div className="container mx-auto flex items-center justify-between">
           <h1 className="text-xl font-bold">لوحة التحكم</h1>
-          <Button variant="ghost" size="sm" onClick={() => navigate('/')}>
-            <Home className="h-4 w-4 ml-2" />
-            العودة للمتجر
-          </Button>
+          <div className="flex items-center gap-3">
+            {/* Sound Toggle */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setSoundEnabled(!soundEnabled);
+                if (!soundEnabled) {
+                  playNotificationSound();
+                }
+              }}
+              title={soundEnabled ? 'إيقاف الصوت' : 'تفعيل الصوت'}
+            >
+              {soundEnabled ? (
+                <Volume2 className="h-4 w-4" />
+              ) : (
+                <VolumeX className="h-4 w-4 text-muted-foreground" />
+              )}
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => navigate('/')}>
+              <Home className="h-4 w-4 ml-2" />
+              العودة للمتجر
+            </Button>
+          </div>
         </div>
       </header>
 

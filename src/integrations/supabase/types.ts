@@ -14,6 +14,41 @@ export type Database = {
   }
   public: {
     Tables: {
+      delivery_route_history: {
+        Row: {
+          id: string
+          lat: number
+          lng: number
+          order_id: string
+          recorded_at: string
+          speed: number | null
+        }
+        Insert: {
+          id?: string
+          lat: number
+          lng: number
+          order_id: string
+          recorded_at?: string
+          speed?: number | null
+        }
+        Update: {
+          id?: string
+          lat?: number
+          lng?: number
+          order_id?: string
+          recorded_at?: string
+          speed?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "delivery_route_history_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       delivery_tracking: {
         Row: {
           created_at: string

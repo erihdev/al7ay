@@ -4,16 +4,25 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 import { useMapboxToken } from '@/hooks/useMapboxToken';
 import { useLocation } from '@/contexts/LocationContext';
 import { Loader2 } from 'lucide-react';
+import { formatRouteForMap } from '@/hooks/useDeliveryETA';
+
+interface RoutePoint {
+  lat: number;
+  lng: number;
+  recorded_at: string;
+}
 
 interface OrderTrackingMapProps {
   deliveryLocation: { lat: number; lng: number };
   driverLocation?: { lat: number; lng: number; heading?: number } | null;
+  routeHistory?: RoutePoint[];
   isActive: boolean;
 }
 
 export function OrderTrackingMap({
   deliveryLocation,
   driverLocation,
+  routeHistory = [],
   isActive,
 }: OrderTrackingMapProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
@@ -57,10 +66,72 @@ export function OrderTrackingMap({
 
     map.current.fitBounds(bounds, { padding: 60 });
 
+    // Add route line layer when map loads
+    map.current.on('load', () => {
+      if (!map.current) return;
+
+      // Add route source
+      map.current.addSource('route', {
+        type: 'geojson',
+        data: {
+          type: 'FeatureCollection',
+          features: [],
+        },
+      });
+
+      // Add route line layer
+      map.current.addLayer({
+        id: 'route-line',
+        type: 'line',
+        source: 'route',
+        layout: {
+          'line-join': 'round',
+          'line-cap': 'round',
+        },
+        paint: {
+          'line-color': '#8b5cf6',
+          'line-width': 4,
+          'line-opacity': 0.8,
+        },
+      });
+
+      // Add route line border for better visibility
+      map.current.addLayer({
+        id: 'route-line-border',
+        type: 'line',
+        source: 'route',
+        layout: {
+          'line-join': 'round',
+          'line-cap': 'round',
+        },
+        paint: {
+          'line-color': '#6d28d9',
+          'line-width': 6,
+          'line-opacity': 0.4,
+        },
+      }, 'route-line');
+    });
+
     return () => {
       map.current?.remove();
     };
   }, [mapboxToken, storeLocation, deliveryLocation]);
+
+  // Update route line when history changes
+  useEffect(() => {
+    if (!map.current || !routeHistory.length) return;
+
+    const routeGeoJSON = formatRouteForMap(routeHistory);
+    if (!routeGeoJSON) return;
+
+    const source = map.current.getSource('route') as mapboxgl.GeoJSONSource;
+    if (source) {
+      source.setData({
+        type: 'FeatureCollection',
+        features: [routeGeoJSON],
+      });
+    }
+  }, [routeHistory]);
 
   // Update driver marker position
   useEffect(() => {
@@ -132,6 +203,11 @@ export function OrderTrackingMap({
         <div className="absolute top-2 right-2 bg-primary text-primary-foreground px-3 py-1 rounded-full text-xs font-arabic flex items-center gap-1">
           <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
           تتبع مباشر
+        </div>
+      )}
+      {routeHistory.length > 1 && (
+        <div className="absolute bottom-2 left-2 bg-background/90 backdrop-blur-sm px-2 py-1 rounded text-xs font-arabic">
+          {routeHistory.length} نقطة مسجلة
         </div>
       )}
     </div>

@@ -1,9 +1,12 @@
 import { useOrderTracking } from '@/hooks/useOrderTracking';
+import { useDeliveryETA } from '@/hooks/useDeliveryETA';
+import { useLocation } from '@/contexts/LocationContext';
 import { OrderTrackingMap } from './OrderTrackingMap';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { MapPin, Navigation, Clock, Truck, CheckCircle, Package } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
+import { MapPin, Navigation, Clock, Truck, CheckCircle, Package, Timer, Route } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ar } from 'date-fns/locale';
 
@@ -20,7 +23,18 @@ const statusSteps = [
 ];
 
 export function OrderTrackingCard({ orderId }: OrderTrackingCardProps) {
-  const { order, tracking, isLoading, isDelivery, isOutForDelivery } = useOrderTracking(orderId);
+  const { order, tracking, routeHistory, isLoading, isDelivery, isOutForDelivery } = useOrderTracking(orderId);
+  const { storeLocation } = useLocation();
+
+  // Calculate ETA
+  const eta = useDeliveryETA(
+    tracking ? { lat: tracking.current_lat, lng: tracking.current_lng } : null,
+    order?.delivery_lat && order?.delivery_lng 
+      ? { lat: order.delivery_lat, lng: order.delivery_lng }
+      : null,
+    storeLocation,
+    tracking?.speed
+  );
 
   if (isLoading) {
     return (
@@ -49,11 +63,42 @@ export function OrderTrackingCard({ orderId }: OrderTrackingCardProps) {
                 ? { lat: tracking.current_lat, lng: tracking.current_lng, heading: tracking.heading }
                 : null
             }
+            routeHistory={routeHistory}
             isActive={isOutForDelivery}
           />
         )}
 
         <div className="p-4">
+          {/* ETA Section */}
+          {isOutForDelivery && eta && (
+            <div className="mb-4 p-3 bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg border border-primary/20">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <Timer className="h-5 w-5 text-primary" />
+                  <span className="font-semibold text-primary">الوقت المتوقع للوصول</span>
+                </div>
+                <Badge variant="secondary" className="text-lg font-bold">
+                  {eta.etaText}
+                </Badge>
+              </div>
+              
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">المسافة المتبقية</span>
+                  <span className="font-medium">{eta.distanceText}</span>
+                </div>
+                
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <span>التقدم في التوصيل</span>
+                    <span>{Math.round(eta.progress)}%</span>
+                  </div>
+                  <Progress value={eta.progress} className="h-2" />
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Progress Steps */}
           <div className="mb-4">
             <div className="flex items-center justify-between relative">
@@ -132,6 +177,14 @@ export function OrderTrackingCard({ orderId }: OrderTrackingCardProps) {
                   {Math.round(tracking.speed)} كم/س
                 </Badge>
               )}
+            </div>
+          )}
+
+          {/* Route History Info */}
+          {routeHistory.length > 0 && (
+            <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
+              <Route className="h-4 w-4" />
+              <span>تم تسجيل {routeHistory.length} نقطة في مسار التوصيل</span>
             </div>
           )}
         </div>
