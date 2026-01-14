@@ -4,10 +4,14 @@ import { BottomNav } from '@/components/layout/BottomNav';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ClipboardList, Package, Truck, CheckCircle, Clock, XCircle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { OrderTrackingCard } from '@/components/tracking/OrderTrackingCard';
+import { ClipboardList, Package, Truck, CheckCircle, Clock, XCircle, MapPin } from 'lucide-react';
 import { AuthForm } from '@/components/auth/AuthForm';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
+import { useState } from 'react';
 
 const statusConfig = {
   pending: { label: 'جديد', icon: Clock, color: 'bg-yellow-500' },
@@ -21,6 +25,7 @@ const statusConfig = {
 const Orders = () => {
   const { user, loading: authLoading } = useAuth();
   const { data: orders, isLoading } = useMyOrders();
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
 
   if (authLoading) {
     return (
@@ -75,6 +80,8 @@ const Orders = () => {
             {orders?.map((order) => {
               const status = statusConfig[order.status];
               const StatusIcon = status.icon;
+              const isTrackable = order.order_type === 'delivery' && 
+                ['pending', 'preparing', 'ready', 'out_for_delivery'].includes(order.status);
 
               return (
                 <Card key={order.id}>
@@ -126,6 +133,31 @@ const Orders = () => {
                         <p className="text-xs text-gold mt-2">
                           +{order.points_earned} نقاط مكتسبة
                         </p>
+                      )}
+
+                      {/* Track Order Button */}
+                      {isTrackable && (
+                        <Dialog
+                          open={selectedOrderId === order.id}
+                          onOpenChange={(open) => setSelectedOrderId(open ? order.id : null)}
+                        >
+                          <DialogTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="w-full mt-3 font-arabic"
+                            >
+                              <MapPin className="h-4 w-4 ml-2" />
+                              تتبع الطلب
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+                            <DialogHeader>
+                              <DialogTitle className="font-arabic">تتبع الطلب</DialogTitle>
+                            </DialogHeader>
+                            <OrderTrackingCard orderId={order.id} />
+                          </DialogContent>
+                        </Dialog>
                       )}
                     </div>
                   </CardContent>
