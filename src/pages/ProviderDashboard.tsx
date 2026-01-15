@@ -62,26 +62,44 @@ const ProviderDashboard = () => {
   // Enable real-time order notifications
   useProviderOrderNotifications(provider?.id, soundEnabled);
 
-  // Single effect to handle all initialization with retry logic
+  // Single effect to handle all initialization with timeout and retry
   useEffect(() => {
     let isMounted = true;
-    let retryCount = 0;
-    const maxRetries = 3;
+    let timeoutId: NodeJS.Timeout;
     
-    const initializeDashboard = async (): Promise<void> => {
+    const initializeDashboard = async () => {
+      // Set a hard timeout - if nothing happens in 10 seconds, show error
+      timeoutId = setTimeout(() => {
+        if (isMounted && isLoading) {
+          console.log('Hard timeout reached');
+          setError('انتهت مهلة الاتصال. يرجى التحقق من اتصال الإنترنت والمحاولة مرة أخرى.');
+          setIsLoading(false);
+        }
+      }, 10000);
+      
       try {
-        console.log('ProviderDashboard: Starting initialization... (attempt ' + (retryCount + 1) + ')');
+        console.log('ProviderDashboard: Starting initialization...');
         
-        // Step 1: Get current session directly from Supabase
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        // Step 1: Get current session with timeout
+        const sessionPromise = supabase.auth.getSession();
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('timeout')), 5000)
+        );
         
-        if (sessionError) {
-          console.error('Session error:', sessionError);
-          throw new Error('فشل في التحقق من الجلسة');
+        let session;
+        try {
+          const result = await Promise.race([sessionPromise, timeoutPromise]) as any;
+          session = result?.data?.session;
+        } catch (e: any) {
+          if (e.message === 'timeout') {
+            throw new Error('انتهت مهلة الاتصال بالخادم');
+          }
+          throw e;
         }
         
         if (!session?.user) {
           console.log('No session found, redirecting to login');
+          clearTimeout(timeoutId);
           if (isMounted) {
             window.location.href = '/provider-login';
           }
@@ -90,20 +108,32 @@ const ProviderDashboard = () => {
         
         console.log('ProviderDashboard: User found:', session.user.id);
         
-        // Step 2: Get provider profile
-        const { data: providerData, error: providerError } = await supabase
+        // Step 2: Get provider profile with timeout
+        const providerPromise = supabase
           .from('service_providers')
           .select('id, business_name, logo_url')
           .eq('user_id', session.user.id)
           .maybeSingle();
+          
+        const providerTimeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('timeout')), 5000)
+        );
         
-        if (providerError) {
-          console.error('Provider error:', providerError);
-          throw new Error('فشل في تحميل بيانات المتجر');
+        let providerData;
+        try {
+          const result = await Promise.race([providerPromise, providerTimeoutPromise]) as any;
+          if (result.error) throw result.error;
+          providerData = result.data;
+        } catch (e: any) {
+          if (e.message === 'timeout') {
+            throw new Error('انتهت مهلة تحميل بيانات المتجر');
+          }
+          throw e;
         }
         
         if (!providerData) {
           console.log('No provider profile found');
+          clearTimeout(timeoutId);
           if (isMounted) {
             setProvider(null);
             setIsLoading(false);
@@ -113,23 +143,38 @@ const ProviderDashboard = () => {
         
         console.log('ProviderDashboard: Provider found:', providerData.id);
         
-        // Step 3: Load products and orders in parallel
-        const [productsResult, ordersResult] = await Promise.all([
-          supabase
-            .from('provider_products')
-            .select('id, is_available, is_featured')
-            .eq('provider_id', providerData.id),
-          supabase
-            .from('provider_orders')
-            .select('id, status, total_amount, created_at')
-            .eq('provider_id', providerData.id)
-            .order('created_at', { ascending: false })
-        ]);
+        // Step 3: Load products and orders (non-blocking, use empty arrays if fails)
+        let productsData: ProviderProduct[] = [];
+        let ordersData: ProviderOrder[] = [];
+        
+        try {
+          const [productsResult, ordersResult] = await Promise.race([
+            Promise.all([
+              supabase
+                .from('provider_products')
+                .select('id, is_available, is_featured')
+                .eq('provider_id', providerData.id),
+              supabase
+                .from('provider_orders')
+                .select('id, status, total_amount, created_at')
+                .eq('provider_id', providerData.id)
+                .order('created_at', { ascending: false })
+            ]),
+            new Promise<any>((_, reject) => setTimeout(() => reject(new Error('timeout')), 5000))
+          ]) as any;
+          
+          productsData = productsResult.data || [];
+          ordersData = ordersResult.data || [];
+        } catch (e) {
+          console.log('Products/orders fetch failed, using empty arrays');
+        }
+        
+        clearTimeout(timeoutId);
         
         if (isMounted) {
           setProvider(providerData);
-          setProducts(productsResult.data || []);
-          setOrders(ordersResult.data || []);
+          setProducts(productsData);
+          setOrders(ordersData);
           setIsLoading(false);
           setError(null);
           console.log('ProviderDashboard: Initialization complete');
@@ -137,23 +182,15 @@ const ProviderDashboard = () => {
         
       } catch (err: any) {
         console.error('Dashboard initialization error:', err);
-        
-        // Check if it's an abort error and we can retry
-        const isAbortError = err.message?.includes('aborted') || 
-                            err.message?.includes('The operation was aborted') ||
-                            err.name === 'AbortError' ||
-                            err.message?.includes('Failed to fetch');
-        
-        if (isAbortError && retryCount < maxRetries && isMounted) {
-          retryCount++;
-          console.log(`Retrying... attempt ${retryCount + 1}`);
-          // Wait before retrying (exponential backoff)
-          await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
-          return initializeDashboard();
-        }
+        clearTimeout(timeoutId);
         
         if (isMounted) {
-          setError(err.message || 'حدث خطأ غير متوقع');
+          // Make error message user-friendly
+          let errorMessage = err.message || 'حدث خطأ غير متوقع';
+          if (err.message?.includes('aborted') || err.message?.includes('Failed to fetch')) {
+            errorMessage = 'فشل الاتصال بالخادم. يرجى التحقق من اتصال الإنترنت.';
+          }
+          setError(errorMessage);
           setIsLoading(false);
         }
       }
@@ -171,9 +208,10 @@ const ProviderDashboard = () => {
     
     return () => {
       isMounted = false;
+      clearTimeout(timeoutId);
       subscription.unsubscribe();
     };
-  }, [navigate]);
+  }, []);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
