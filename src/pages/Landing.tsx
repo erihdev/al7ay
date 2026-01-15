@@ -128,6 +128,12 @@ const Landing = () => {
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
+                    {/* Slogan Top Left */}
+                    <div className="absolute top-3 left-3">
+                      <span className="text-lg font-bold text-white drop-shadow-lg bg-primary/80 px-2 py-1 rounded-md">
+                        الحي يحيييك
+                      </span>
+                    </div>
                     <div className="absolute bottom-3 right-4 left-4">
                       <Badge className="bg-primary/90 text-xs mb-1">
                         <ShoppingBag className="h-3 w-3 ml-1" />
@@ -176,6 +182,12 @@ const Landing = () => {
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
+                    {/* Slogan Top Left */}
+                    <div className="absolute top-3 left-3">
+                      <span className="text-lg font-bold text-white drop-shadow-lg bg-accent/80 px-2 py-1 rounded-md">
+                        الحي يحيييك
+                      </span>
+                    </div>
                     <div className="absolute bottom-3 right-4 left-4">
                       <Badge className="bg-accent/90 text-xs mb-1">
                         <Store className="h-3 w-3 ml-1" />
