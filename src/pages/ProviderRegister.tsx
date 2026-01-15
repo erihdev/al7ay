@@ -436,15 +436,9 @@ const ProviderRegister = () => {
           });
       }
 
-      // If paid plan, go to payment
-      if (selectedPlan.price > 0 && !selectedPlan.is_trial) {
-        setStep('payment');
-        // Here you would integrate with EdfaPay
-        toast.success('تم إنشاء الحساب! يرجى إكمال الدفع');
-      } else {
-        toast.success('تم إنشاء حسابك بنجاح! مرحباً بك في منصة الحي');
-        navigate('/provider-dashboard');
-      }
+      // Always redirect to login after successful registration
+      toast.success('تم إنشاء حسابك بنجاح! يرجى تسجيل الدخول للمتابعة');
+      navigate('/provider-login');
     } catch (error: any) {
       console.error('Registration error:', error);
       toast.error(error.message || 'حدث خطأ أثناء التسجيل');
