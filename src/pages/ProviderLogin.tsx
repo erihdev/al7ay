@@ -126,11 +126,18 @@ const ProviderLogin = () => {
 
       if (data.session?.user) {
         // Check if user is a provider
-        const { data: provider } = await supabase
+        const { data: provider, error: providerError } = await supabase
           .from('service_providers')
           .select('id')
           .eq('user_id', data.session.user.id)
           .maybeSingle();
+        
+        if (providerError) {
+          console.error('Provider check error:', providerError);
+          toast.error('حدث خطأ أثناء التحقق من الحساب');
+          setIsLoading(false);
+          return;
+        }
         
         if (!provider) {
           await supabase.auth.signOut();
@@ -140,7 +147,11 @@ const ProviderLogin = () => {
         }
 
         toast.success('تم تسجيل الدخول بنجاح');
-        navigate('/provider-dashboard', { replace: true });
+        // Use window.location for guaranteed redirect
+        window.location.href = '/provider-dashboard';
+      } else {
+        toast.error('حدث خطأ في تسجيل الدخول');
+        setIsLoading(false);
       }
     } catch (err) {
       console.error('Login error:', err);
