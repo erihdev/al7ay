@@ -59,64 +59,62 @@ const ProviderDashboard = () => {
 
   useProviderOrderNotifications(provider?.id, soundEnabled);
 
-  // Load provider data with timeout
-  const loadProviderData = async (userId: string) => {
-    console.log('loadProviderData called for userId:', userId);
+  // Load provider data - simplified direct fetch
+  const loadProviderData = async (userId: string, accessToken: string) => {
+    console.log('loadProviderData with token for userId:', userId);
     
-    const queryWithTimeout = async (
-      queryFn: () => Promise<any>,
-      timeoutMs = 10000
-    ): Promise<any> => {
-      return Promise.race([
-        queryFn(),
-        new Promise((resolve) =>
-          setTimeout(() => resolve({ data: null, error: { message: 'Query timeout' } }), timeoutMs)
-        )
-      ]);
+    const baseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const headers = {
+      'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+      'Authorization': `Bearer ${accessToken}`,
+      'Content-Type': 'application/json'
     };
     
     try {
-      // Query with timeout
-      const { data: providerData, error: providerError } = await queryWithTimeout(async () =>
-        await supabase
-          .from('service_providers')
-          .select('id, business_name, logo_url')
-          .eq('user_id', userId)
-          .maybeSingle()
+      // Fetch provider
+      const providerRes = await fetch(
+        `${baseUrl}/rest/v1/service_providers?user_id=eq.${userId}&select=id,business_name,logo_url`,
+        { headers }
       );
-
-      console.log('Provider query result:', { providerData, providerError });
-
-      if (providerError) {
-        console.error('Provider error:', providerError);
-        setError(providerError.message || 'حدث خطأ في الاستعلام');
+      
+      if (!providerRes.ok) {
+        console.error('Provider fetch failed:', providerRes.status);
+        setError('فشل في تحميل بيانات المتجر');
         setLoading(false);
         return;
       }
-
-      if (!providerData) {
-        console.log('No provider found for this user');
+      
+      const providerData = await providerRes.json();
+      console.log('Provider data:', providerData);
+      
+      if (!providerData || providerData.length === 0) {
         setError('لم يتم العثور على حساب مقدم خدمة');
         setLoading(false);
         return;
       }
-
-      console.log('Provider found:', providerData.id);
-
+      
+      const providerInfo = providerData[0];
+      
+      // Fetch products and orders in parallel
       const [productsRes, ordersRes] = await Promise.all([
-        queryWithTimeout(async () => 
-          await supabase.from('provider_products').select('id, is_available, is_featured').eq('provider_id', providerData.id)
+        fetch(
+          `${baseUrl}/rest/v1/provider_products?provider_id=eq.${providerInfo.id}&select=id,is_available,is_featured`,
+          { headers }
         ),
-        queryWithTimeout(async () =>
-          await supabase.from('provider_orders').select('id, status, total_amount, created_at').eq('provider_id', providerData.id).order('created_at', { ascending: false })
+        fetch(
+          `${baseUrl}/rest/v1/provider_orders?provider_id=eq.${providerInfo.id}&select=id,status,total_amount,created_at&order=created_at.desc`,
+          { headers }
         )
       ]);
-
-      console.log('Products:', productsRes.data?.length, 'Orders:', ordersRes.data?.length);
-
-      setProvider(providerData);
-      setProducts(productsRes.data || []);
-      setOrders(ordersRes.data || []);
+      
+      const productsData = productsRes.ok ? await productsRes.json() : [];
+      const ordersData = ordersRes.ok ? await ordersRes.json() : [];
+      
+      console.log('Loaded:', productsData.length, 'products,', ordersData.length, 'orders');
+      
+      setProvider(providerInfo);
+      setProducts(productsData);
+      setOrders(ordersData);
       setLoading(false);
     } catch (err) {
       console.error('Load error:', err);
@@ -127,70 +125,67 @@ const ProviderDashboard = () => {
 
   useEffect(() => {
     let mounted = true;
-    let dataLoaded = false;
-    let checkTimeout: NodeJS.Timeout;
     
-    const loadWithSession = async (userId: string) => {
-      if (dataLoaded || !mounted) return;
-      dataLoaded = true;
-      console.log('Loading provider data for:', userId);
-      await loadProviderData(userId);
-    };
-
-    // Listen for auth changes - this is the most reliable way
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('Auth event:', event, 'hasUser:', !!session?.user);
+    const init = async () => {
+      // First try to get session from Supabase client (with short timeout)
+      const timeout = setTimeout(() => {
+        if (mounted && loading) {
+          console.log('Supabase client timeout, trying localStorage...');
+          tryLocalStorage();
+        }
+      }, 3000);
       
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        clearTimeout(timeout);
+        
+        if (session?.user && session?.access_token) {
+          console.log('Got session from Supabase client');
+          await loadProviderData(session.user.id, session.access_token);
+        } else {
+          await tryLocalStorage();
+        }
+      } catch (e) {
+        clearTimeout(timeout);
+        console.error('getSession error:', e);
+        await tryLocalStorage();
+      }
+    };
+    
+    const tryLocalStorage = async () => {
       if (!mounted) return;
       
-      // Clear timeout since we got an auth event
-      if (checkTimeout) clearTimeout(checkTimeout);
-      
-      if (event === 'SIGNED_OUT') {
+      const storedSession = localStorage.getItem('sb-hmnpraslunhnuigeetoe-auth-token');
+      if (!storedSession) {
         navigate('/provider-login', { replace: true });
         return;
       }
       
-      if (session?.user) {
-        await loadWithSession(session.user.id);
-      } else if (event === 'INITIAL_SESSION') {
-        // No session on initial check
-        console.log('No session on INITIAL_SESSION');
+      try {
+        const parsed = JSON.parse(storedSession);
+        if (parsed?.access_token && parsed?.user?.id) {
+          console.log('Using token from localStorage');
+          await loadProviderData(parsed.user.id, parsed.access_token);
+        } else {
+          navigate('/provider-login', { replace: true });
+        }
+      } catch (e) {
+        console.error('Parse error:', e);
+        navigate('/provider-login', { replace: true });
+      }
+    };
+    
+    init();
+    
+    // Listen for sign out
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_OUT' && mounted) {
         navigate('/provider-login', { replace: true });
       }
     });
 
-    // Fallback: if no auth event within 5 seconds, try manual check
-    checkTimeout = setTimeout(async () => {
-      if (dataLoaded || !mounted) return;
-      
-      console.log('Fallback: trying manual session check...');
-      
-      // Try localStorage directly
-      const storedSession = localStorage.getItem('sb-hmnpraslunhnuigeetoe-auth-token');
-      if (storedSession) {
-        try {
-          const parsed = JSON.parse(storedSession);
-          if (parsed?.user?.id) {
-            console.log('Found user in localStorage:', parsed.user.id);
-            await loadWithSession(parsed.user.id);
-            return;
-          }
-        } catch (e) {
-          console.error('Parse error:', e);
-        }
-      }
-      
-      // No session found
-      if (mounted && !dataLoaded) {
-        console.log('No session found, redirecting');
-        navigate('/provider-login', { replace: true });
-      }
-    }, 5000);
-
     return () => {
       mounted = false;
-      if (checkTimeout) clearTimeout(checkTimeout);
       subscription.unsubscribe();
     };
   }, [navigate]);
