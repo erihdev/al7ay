@@ -360,26 +360,25 @@ const ProviderRegister = () => {
 
             {/* Loading State */}
             {isLoadingPlans ? (
-              <div className="grid md:grid-cols-3 gap-6">
+              <div className="grid md:grid-cols-3 gap-4">
                 {[1, 2, 3].map((i) => (
-                  <Card key={i} className="p-6">
-                    <Skeleton className="h-6 w-3/4 mb-4" />
-                    <Skeleton className="h-4 w-full mb-2" />
-                    <Skeleton className="h-4 w-2/3 mb-6" />
-                    <Skeleton className="h-10 w-1/2 mb-6" />
-                    <div className="space-y-2">
-                      <Skeleton className="h-4 w-full" />
-                      <Skeleton className="h-4 w-5/6" />
-                      <Skeleton className="h-4 w-4/5" />
+                  <Card key={i} className="p-4">
+                    <Skeleton className="h-5 w-3/4 mb-3" />
+                    <Skeleton className="h-3 w-full mb-1" />
+                    <Skeleton className="h-3 w-2/3 mb-4" />
+                    <Skeleton className="h-8 w-1/2 mb-4" />
+                    <div className="space-y-1.5">
+                      <Skeleton className="h-3 w-full" />
+                      <Skeleton className="h-3 w-5/6" />
                     </div>
-                    <Skeleton className="h-10 w-full mt-6" />
+                    <Skeleton className="h-8 w-full mt-4" />
                   </Card>
                 ))}
               </div>
             ) : plans.length === 0 ? (
-              <div className="text-center py-12">
-                <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
-                <p className="text-muted-foreground">جاري تحميل الخطط...</p>
+              <div className="text-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin mx-auto mb-3 text-primary" />
+                <p className="text-muted-foreground text-sm">جاري تحميل الخطط...</p>
               </div>
             ) : (
               /* Plans Cards */
