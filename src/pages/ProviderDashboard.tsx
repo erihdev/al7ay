@@ -61,6 +61,7 @@ const ProviderDashboard = () => {
 
   // Load provider data
   const loadProviderData = async (userId: string) => {
+    console.log('loadProviderData called for userId:', userId);
     try {
       const { data: providerData, error: providerError } = await supabase
         .from('service_providers')
@@ -68,22 +69,30 @@ const ProviderDashboard = () => {
         .eq('user_id', userId)
         .maybeSingle();
 
+      console.log('Provider query result:', { providerData, providerError });
+
       if (providerError) {
+        console.error('Provider error:', providerError);
         setError(providerError.message);
         setLoading(false);
         return;
       }
 
       if (!providerData) {
+        console.log('No provider found for this user');
         setError('لم يتم العثور على حساب مقدم خدمة');
         setLoading(false);
         return;
       }
 
+      console.log('Provider found:', providerData.id);
+
       const [productsRes, ordersRes] = await Promise.all([
         supabase.from('provider_products').select('id, is_available, is_featured').eq('provider_id', providerData.id),
         supabase.from('provider_orders').select('id, status, total_amount, created_at').eq('provider_id', providerData.id).order('created_at', { ascending: false })
       ]);
+
+      console.log('Products:', productsRes.data?.length, 'Orders:', ordersRes.data?.length);
 
       setProvider(providerData);
       setProducts(productsRes.data || []);
@@ -98,61 +107,51 @@ const ProviderDashboard = () => {
 
   useEffect(() => {
     let mounted = true;
-    let loaded = false;
-    let initialCheckDone = false;
     
-    // IMPORTANT: Set up auth listener FIRST
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log('Auth event:', event, 'Session:', !!session?.user);
+    const checkSession = async () => {
+      console.log('Checking session...');
       
-      if (!mounted) return;
-      
-      // Handle INITIAL_SESSION - this is the reliable first check
-      if (event === 'INITIAL_SESSION') {
-        initialCheckDone = true;
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        console.log('Session check result:', { 
+          hasSession: !!session, 
+          userId: session?.user?.id,
+          error 
+        });
+        
+        if (!mounted) return;
+        
         if (!session?.user) {
-          console.log('No session on INITIAL_SESSION, redirecting to login');
+          console.log('No session, redirecting to login');
           navigate('/provider-login', { replace: true });
-        } else if (!loaded) {
-          loaded = true;
-          console.log('Loading provider data for user:', session.user.id);
-          loadProviderData(session.user.id);
+          return;
         }
-        return;
+        
+        // Load provider data
+        await loadProviderData(session.user.id);
+      } catch (err) {
+        console.error('Session check error:', err);
+        if (mounted) {
+          setError('حدث خطأ في التحقق من الجلسة');
+          setLoading(false);
+        }
       }
-      
+    };
+    
+    // Check session immediately
+    checkSession();
+    
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      console.log('Auth state changed:', event);
       if (event === 'SIGNED_OUT') {
         navigate('/provider-login', { replace: true });
-        return;
-      }
-      
-      if (event === 'SIGNED_IN' && session?.user && !loaded) {
-        loaded = true;
-        loadProviderData(session.user.id);
       }
     });
 
-    // Fallback: If INITIAL_SESSION doesn't fire within 3 seconds, check manually
-    const fallbackTimer = setTimeout(async () => {
-      if (!mounted || loaded || initialCheckDone) return;
-      
-      console.log('Fallback: checking session manually');
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!mounted || loaded) return;
-      
-      if (!session?.user) {
-        console.log('No session in fallback, redirecting');
-        navigate('/provider-login', { replace: true });
-      } else {
-        loaded = true;
-        loadProviderData(session.user.id);
-      }
-    }, 3000);
-
     return () => {
       mounted = false;
-      clearTimeout(fallbackTimer);
       subscription.unsubscribe();
     };
   }, [navigate]);
