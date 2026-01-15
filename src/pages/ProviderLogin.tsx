@@ -20,43 +20,62 @@ const ProviderLogin = () => {
 
   useEffect(() => {
     let isMounted = true;
+    let timeoutId: NodeJS.Timeout;
     
     const initialize = async () => {
       try {
-        // Check current session
-        const { data: { session } } = await supabase.auth.getSession();
+        // Set a timeout to prevent infinite loading
+        timeoutId = setTimeout(() => {
+          if (isMounted) {
+            console.log('Session check timeout - showing login form');
+            setIsInitializing(false);
+          }
+        }, 3000);
+
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError) {
+          console.error('Session error:', sessionError);
+          if (isMounted) setIsInitializing(false);
+          return;
+        }
         
         if (session?.user && isMounted) {
-          // Check if user is a provider
-          const { data: provider } = await supabase
+          const { data: provider, error: providerError } = await supabase
             .from('service_providers')
             .select('id')
             .eq('user_id', session.user.id)
             .maybeSingle();
           
+          if (providerError) {
+            console.error('Provider check error:', providerError);
+          }
+          
           if (provider && isMounted) {
+            clearTimeout(timeoutId);
             navigate('/provider-dashboard', { replace: true });
-            // Still set initializing to false in case navigation fails
-            setIsInitializing(false);
             return;
           }
         }
-      } catch (error) {
-        console.error('Error checking session:', error);
-      } finally {
+        
         if (isMounted) {
+          clearTimeout(timeoutId);
+          setIsInitializing(false);
+        }
+      } catch (error) {
+        console.error('Initialize error:', error);
+        if (isMounted) {
+          clearTimeout(timeoutId);
           setIsInitializing(false);
         }
       }
     };
 
-    initialize();
-
-    // Listen for auth state changes
+    // Setup auth state change listener BEFORE checking session
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log('Auth state change:', event);
         if (event === 'SIGNED_IN' && session?.user && isMounted) {
-          // Check if user is a provider
           const { data: provider } = await supabase
             .from('service_providers')
             .select('id')
@@ -70,8 +89,11 @@ const ProviderLogin = () => {
       }
     );
 
+    initialize();
+
     return () => {
       isMounted = false;
+      clearTimeout(timeoutId);
       subscription.unsubscribe();
     };
   }, [navigate]);
