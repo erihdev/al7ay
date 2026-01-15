@@ -41,20 +41,33 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const root = window.document.documentElement;
     
-    const updateTheme = () => {
+    const updateTheme = (animate = true) => {
       const resolvedTheme = resolveTheme();
+      
+      // Add transition class for smooth animation
+      if (animate) {
+        root.classList.add('theme-transitioning');
+      }
+      
       root.classList.remove('light', 'dark');
       root.classList.add(resolvedTheme);
       setActualTheme(resolvedTheme);
+      
+      // Remove transition class after animation completes
+      if (animate) {
+        setTimeout(() => {
+          root.classList.remove('theme-transitioning');
+        }, 500);
+      }
     };
 
-    updateTheme();
+    updateTheme(false); // Initial load without animation
 
     // Listen for system theme changes
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
     const handleSystemChange = () => {
       if (theme === 'system') {
-        updateTheme();
+        updateTheme(true);
       }
     };
 
@@ -64,7 +77,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     let autoInterval: NodeJS.Timeout | null = null;
     if (theme === 'auto') {
       autoInterval = setInterval(() => {
-        updateTheme();
+        updateTheme(true);
       }, 60000); // Check every minute
     }
 
