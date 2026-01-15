@@ -3,8 +3,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { MapPin, Loader2, Navigation2, CheckCircle, Edit3, X, Check } from 'lucide-react';
+import { MapPin, Loader2, Navigation2, CheckCircle, Edit3, X, Check, MapPinned } from 'lucide-react';
 import { useMapboxToken } from '@/hooks/useMapboxToken';
+import { toast } from 'sonner';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 
@@ -25,6 +26,8 @@ export function StoreLocationPicker({ location, onLocationChange, deliveryRadius
   const [showManualInput, setShowManualInput] = useState(false);
   const [manualLat, setManualLat] = useState('');
   const [manualLng, setManualLng] = useState('');
+  const [currentAddress, setCurrentAddress] = useState<string | null>(null);
+  const [isFetchingAddress, setIsFetchingAddress] = useState(false);
 
   // Default to Riyadh center
   const defaultCenter = { lat: 24.7136, lng: 46.6753 };
@@ -32,6 +35,65 @@ export function StoreLocationPicker({ location, onLocationChange, deliveryRadius
 
   // Convert km to meters for the circle
   const radiusInMeters = deliveryRadiusKm * 1000;
+
+  // Reverse geocode to get address from coordinates
+  const getAddressFromCoordinates = useCallback(async (lat: number, lng: number): Promise<string | null> => {
+    if (!mapboxToken) return null;
+    
+    setIsFetchingAddress(true);
+    try {
+      const response = await fetch(
+        `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?access_token=${mapboxToken}&language=ar&types=address,poi,locality,place,neighborhood`
+      );
+      
+      if (!response.ok) throw new Error('Failed to fetch address');
+      
+      const data = await response.json();
+      
+      if (data.features && data.features.length > 0) {
+        // Get the most relevant address
+        const feature = data.features[0];
+        return feature.place_name_ar || feature.place_name || null;
+      }
+      return null;
+    } catch (error) {
+      console.error('Error fetching address:', error);
+      return null;
+    } finally {
+      setIsFetchingAddress(false);
+    }
+  }, [mapboxToken]);
+
+  // Handle location update with address fetch and toast
+  const handleLocationUpdate = useCallback(async (lat: number, lng: number, showToast: boolean = true) => {
+    onLocationChange({ lat, lng });
+    
+    // Fetch the actual address
+    const address = await getAddressFromCoordinates(lat, lng);
+    setCurrentAddress(address);
+    
+    if (showToast) {
+      toast.success(
+        <div className="flex flex-col gap-1 font-arabic" dir="rtl">
+          <div className="flex items-center gap-2 font-semibold">
+            <MapPinned className="h-4 w-4 text-green-600" />
+            تم حفظ موقع المتجر بنجاح
+          </div>
+          {address && (
+            <p className="text-xs text-muted-foreground mt-1">
+              📍 {address}
+            </p>
+          )}
+          <p className="text-xs text-muted-foreground">
+            الإحداثيات: {lat.toFixed(6)}, {lng.toFixed(6)}
+          </p>
+        </div>,
+        {
+          duration: 5000,
+        }
+      );
+    }
+  }, [onLocationChange, getAddressFromCoordinates]);
 
   // Create a GeoJSON circle from center point and radius
   const createGeoJSONCircle = useCallback((centerLng: number, centerLat: number, radiusKm: number) => {
@@ -77,12 +139,11 @@ export function StoreLocationPicker({ location, onLocationChange, deliveryRadius
 
     setIsLocating(true);
     navigator.geolocation.getCurrentPosition(
-      (position) => {
+      async (position) => {
         const newLocation = {
           lat: position.coords.latitude,
           lng: position.coords.longitude
         };
-        onLocationChange(newLocation);
         
         if (map.current) {
           map.current.flyTo({
@@ -95,27 +156,32 @@ export function StoreLocationPicker({ location, onLocationChange, deliveryRadius
           }
           updateCircle(newLocation.lng, newLocation.lat);
         }
+        
+        await handleLocationUpdate(newLocation.lat, newLocation.lng);
         setIsLocating(false);
       },
       () => {
         setIsLocating(false);
+        toast.error('فشل تحديد الموقع', {
+          description: 'يرجى السماح بالوصول للموقع أو استخدام الإدخال اليدوي',
+        });
       },
       { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
     );
-  }, [onLocationChange, updateCircle]);
+  }, [handleLocationUpdate, updateCircle]);
 
   // Apply manual coordinates
-  const applyManualCoordinates = useCallback(() => {
+  const applyManualCoordinates = useCallback(async () => {
     const lat = parseFloat(manualLat);
     const lng = parseFloat(manualLng);
     
     // Validate coordinates (roughly for Saudi Arabia region)
     if (isNaN(lat) || isNaN(lng) || lat < 15 || lat > 35 || lng < 34 || lng > 56) {
+      toast.error('إحداثيات غير صالحة', {
+        description: 'تأكد من إدخال إحداثيات صحيحة ضمن نطاق المملكة العربية السعودية',
+      });
       return;
     }
-    
-    const newLocation = { lat, lng };
-    onLocationChange(newLocation);
     
     if (map.current) {
       map.current.flyTo({
@@ -129,10 +195,12 @@ export function StoreLocationPicker({ location, onLocationChange, deliveryRadius
       updateCircle(lng, lat);
     }
     
+    await handleLocationUpdate(lat, lng);
+    
     setShowManualInput(false);
     setManualLat('');
     setManualLng('');
-  }, [manualLat, manualLng, onLocationChange, updateCircle]);
+  }, [manualLat, manualLng, handleLocationUpdate, updateCircle]);
 
   // Open manual input with current values
   const openManualInput = useCallback(() => {
@@ -188,20 +256,20 @@ export function StoreLocationPicker({ location, onLocationChange, deliveryRadius
       .addTo(map.current);
 
     // Handle marker drag
-    marker.current.on('dragend', () => {
+    marker.current.on('dragend', async () => {
       const lngLat = marker.current?.getLngLat();
       if (lngLat) {
-        onLocationChange({ lat: lngLat.lat, lng: lngLat.lng });
         updateCircle(lngLat.lng, lngLat.lat);
+        await handleLocationUpdate(lngLat.lat, lngLat.lng);
       }
     });
 
     // Handle map click
-    map.current.on('click', (e) => {
+    map.current.on('click', async (e) => {
       const { lng, lat } = e.lngLat;
       marker.current?.setLngLat([lng, lat]);
-      onLocationChange({ lat, lng });
       updateCircle(lng, lat);
+      await handleLocationUpdate(lat, lng);
     });
 
     map.current.on('load', () => {
@@ -380,9 +448,25 @@ export function StoreLocationPicker({ location, onLocationChange, deliveryRadius
       )}
 
       {location && !showManualInput && (
-        <p className="text-xs text-center text-muted-foreground font-arabic">
-          الإحداثيات: {location.lat.toFixed(6)}, {location.lng.toFixed(6)}
-        </p>
+        <div className="p-3 bg-green-50 dark:bg-green-950/30 rounded-lg border border-green-200 dark:border-green-800 space-y-2">
+          <div className="flex items-center gap-2 text-green-700 dark:text-green-400">
+            <MapPinned className="h-4 w-4" />
+            <span className="text-sm font-medium font-arabic">الموقع المحدد</span>
+          </div>
+          {isFetchingAddress ? (
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Loader2 className="h-3 w-3 animate-spin" />
+              <span className="font-arabic">جاري جلب العنوان...</span>
+            </div>
+          ) : currentAddress ? (
+            <p className="text-sm text-foreground font-arabic leading-relaxed">
+              📍 {currentAddress}
+            </p>
+          ) : null}
+          <p className="text-xs text-muted-foreground font-arabic" dir="ltr">
+            {location.lat.toFixed(6)}, {location.lng.toFixed(6)}
+          </p>
+        </div>
       )}
     </div>
   );
