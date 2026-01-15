@@ -14,6 +14,13 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { useLocation } from '@/contexts/LocationContext';
 import { useOrderStatusNotifications } from '@/hooks/useOrderStatusNotifications';
 import { 
@@ -21,11 +28,11 @@ import {
   MapPin, 
   Search, 
   Star, 
-  Coffee,
   Navigation,
-  Package,
   ArrowLeft,
-  Sparkles
+  Sparkles,
+  Filter,
+  Building2
 } from 'lucide-react';
 
 interface ServiceProvider {
@@ -68,6 +75,8 @@ function calculateDistance(
 
 const Index = () => {
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCity, setSelectedCity] = useState<string>('all');
+  const [selectedNeighborhood, setSelectedNeighborhood] = useState<string>('all');
   const { userLocation, locationPermission } = useLocation();
   
   // Enable order status notifications for logged-in customers
@@ -102,8 +111,31 @@ const Index = () => {
     },
   });
 
-  // Filter and sort providers by distance
+  // Extract unique cities and neighborhoods for filters
+  const cities = [...new Set(providers?.map(p => p.active_neighborhoods?.city).filter(Boolean) as string[])].sort();
+  const neighborhoods = providers
+    ?.filter(p => selectedCity === 'all' || p.active_neighborhoods?.city === selectedCity)
+    .map(p => p.active_neighborhoods)
+    .filter(Boolean) || [];
+  const uniqueNeighborhoods = [...new Map(neighborhoods.map(n => [n?.id, n])).values()].filter(Boolean);
+
+  // Reset neighborhood when city changes
+  const handleCityChange = (city: string) => {
+    setSelectedCity(city);
+    setSelectedNeighborhood('all');
+  };
+
+  // Filter and sort providers by filters and distance
   const filteredProviders = providers?.filter(provider => {
+    // City filter
+    if (selectedCity !== 'all' && provider.active_neighborhoods?.city !== selectedCity) {
+      return false;
+    }
+    // Neighborhood filter
+    if (selectedNeighborhood !== 'all' && provider.active_neighborhoods?.id !== selectedNeighborhood) {
+      return false;
+    }
+    // Search query filter
     if (!searchQuery.trim()) return true;
     const query = searchQuery.toLowerCase();
     return (
@@ -224,6 +256,71 @@ const Index = () => {
                 dir="rtl"
               />
             </div>
+
+            {/* Filters */}
+            <div className="flex gap-3 flex-wrap">
+              {/* City Filter */}
+              <div className="flex-1 min-w-[140px]">
+                <Select value={selectedCity} onValueChange={handleCityChange}>
+                  <SelectTrigger className="h-11 rounded-xl">
+                    <Building2 className="h-4 w-4 ml-2 text-muted-foreground" />
+                    <SelectValue placeholder="المدينة" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">جميع المدن</SelectItem>
+                    {cities.map(city => (
+                      <SelectItem key={city} value={city}>{city}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Neighborhood Filter */}
+              <div className="flex-1 min-w-[140px]">
+                <Select value={selectedNeighborhood} onValueChange={setSelectedNeighborhood}>
+                  <SelectTrigger className="h-11 rounded-xl">
+                    <MapPin className="h-4 w-4 ml-2 text-muted-foreground" />
+                    <SelectValue placeholder="الحي" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">جميع الأحياء</SelectItem>
+                    {uniqueNeighborhoods.map(neighborhood => (
+                      <SelectItem key={neighborhood?.id} value={neighborhood?.id || ''}>
+                        {neighborhood?.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Active Filters Badge */}
+            {(selectedCity !== 'all' || selectedNeighborhood !== 'all') && (
+              <div className="flex items-center gap-2 flex-wrap">
+                <Filter className="h-4 w-4 text-primary" />
+                {selectedCity !== 'all' && (
+                  <Badge variant="secondary" className="text-xs">
+                    {selectedCity}
+                  </Badge>
+                )}
+                {selectedNeighborhood !== 'all' && (
+                  <Badge variant="secondary" className="text-xs">
+                    {uniqueNeighborhoods.find(n => n?.id === selectedNeighborhood)?.name}
+                  </Badge>
+                )}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 text-xs text-muted-foreground hover:text-foreground"
+                  onClick={() => {
+                    setSelectedCity('all');
+                    setSelectedNeighborhood('all');
+                  }}
+                >
+                  مسح الفلاتر
+                </Button>
+              </div>
+            )}
           </motion.div>
 
           {/* Providers List */}
