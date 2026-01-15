@@ -446,8 +446,8 @@ const ProviderRegister = () => {
       // Just redirect to dashboard - the session should already be active
       toast.success('تم إنشاء حسابك بنجاح! جاري تحويلك للوحة التحكم...');
       
-      // Use window.location for reliable redirect
-      window.location.href = '/provider-dashboard';
+      // Use navigate for reliable redirect
+      navigate('/provider-dashboard', { replace: true });
     } catch (error: any) {
       console.error('Registration error:', error);
       toast.error(error.message || 'حدث خطأ أثناء التسجيل');
