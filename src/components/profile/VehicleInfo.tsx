@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,105 +10,118 @@ import { Car, Edit2, Save, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 
-// قائمة شاملة بماركات السيارات
-const CAR_BRANDS = [
+// قائمة شاملة بماركات السيارات مع الموديلات
+const CAR_BRANDS_WITH_MODELS: Record<string, string[]> = {
   // الماركات اليابانية
-  { value: 'تويوتا', label: 'تويوتا (Toyota)' },
-  { value: 'هوندا', label: 'هوندا (Honda)' },
-  { value: 'نيسان', label: 'نيسان (Nissan)' },
-  { value: 'مازدا', label: 'مازدا (Mazda)' },
-  { value: 'سوبارو', label: 'سوبارو (Subaru)' },
-  { value: 'ميتسوبيشي', label: 'ميتسوبيشي (Mitsubishi)' },
-  { value: 'سوزوكي', label: 'سوزوكي (Suzuki)' },
-  { value: 'لكزس', label: 'لكزس (Lexus)' },
-  { value: 'إنفينيتي', label: 'إنفينيتي (Infiniti)' },
-  { value: 'أكورا', label: 'أكورا (Acura)' },
-  { value: 'إيسوزو', label: 'إيسوزو (Isuzu)' },
-  
+  'تويوتا': ['كامري', 'كورولا', 'لاند كروزر', 'برادو', 'هايلكس', 'RAV4', 'يارس', 'أفالون', 'فورتشنر', 'إنوفا', 'هايلاندر', 'سيينا', 'سوبرا', '86', 'تندرا', 'سيكويا', 'تاكوما', 'كراون', 'كامري هايبرد'],
+  'هوندا': ['أكورد', 'سيفيك', 'CR-V', 'بايلوت', 'HR-V', 'أوديسي', 'سيتي', 'جاز', 'BR-V', 'إنتيجرا', 'NSX', 'ريدجلاين', 'باسبورت'],
+  'نيسان': ['ألتيما', 'سنترا', 'ماكسيما', 'باترول', 'إكستيرا', 'باثفايندر', 'روج', 'أرمادا', 'كيكس', 'جوك', 'مورانو', 'تيتان', 'فرونتير', 'ليف', 'Z', 'GT-R', 'صني'],
+  'مازدا': ['مازدا 3', 'مازدا 6', 'CX-3', 'CX-5', 'CX-9', 'CX-30', 'CX-50', 'CX-60', 'CX-90', 'MX-5', 'BT-50'],
+  'سوبارو': ['فورستر', 'أوت باك', 'امبريزا', 'WRX', 'ليجاسي', 'كروستريك', 'أسينت', 'BRZ', 'سولتيرا'],
+  'ميتسوبيشي': ['لانسر', 'باجيرو', 'مونتيرو', 'أوتلاندر', 'ASX', 'إكليبس كروس', 'L200', 'ميراج', 'أتراج'],
+  'سوزوكي': ['سويفت', 'فيتارا', 'جيمني', 'ألتو', 'سياز', 'إرتيجا', 'S-Cross', 'بالينو', 'XL7'],
+  'لكزس': ['ES', 'IS', 'LS', 'GS', 'RX', 'NX', 'UX', 'LX', 'GX', 'LC', 'RC', 'LM', 'RZ'],
+  'إنفينيتي': ['Q50', 'Q60', 'Q70', 'QX50', 'QX55', 'QX60', 'QX80'],
+  'أكورا': ['TLX', 'ILX', 'RDX', 'MDX', 'NSX', 'إنتيجرا'],
+  'إيسوزو': ['D-Max', 'MU-X', 'ترافيرس'],
+
   // الماركات الكورية
-  { value: 'هيونداي', label: 'هيونداي (Hyundai)' },
-  { value: 'كيا', label: 'كيا (Kia)' },
-  { value: 'جينيسيس', label: 'جينيسيس (Genesis)' },
-  { value: 'سانج يونج', label: 'سانج يونج (SsangYong)' },
-  
+  'هيونداي': ['سوناتا', 'إلنترا', 'أكسنت', 'توسان', 'سانتا في', 'كونا', 'باليسيد', 'فينيو', 'أزيرا', 'ستاريا', 'كريتا', 'أيونيك 5', 'أيونيك 6', 'نكسو', 'جينيسيس كوبيه'],
+  'كيا': ['سيراتو', 'أوبتيما', 'K5', 'K8', 'سورينتو', 'سبورتاج', 'سيلتوس', 'كارنيفال', 'تيلورايد', 'ستينجر', 'سول', 'نيرو', 'EV6', 'EV9', 'ريو', 'بيكانتو'],
+  'جينيسيس': ['G70', 'G80', 'G90', 'GV60', 'GV70', 'GV80'],
+  'سانج يونج': ['تيفولي', 'كوراندو', 'ريكستون', 'موسو'],
+
   // الماركات الأمريكية
-  { value: 'فورد', label: 'فورد (Ford)' },
-  { value: 'شيفروليه', label: 'شيفروليه (Chevrolet)' },
-  { value: 'جي إم سي', label: 'جي إم سي (GMC)' },
-  { value: 'دودج', label: 'دودج (Dodge)' },
-  { value: 'جيب', label: 'جيب (Jeep)' },
-  { value: 'كاديلاك', label: 'كاديلاك (Cadillac)' },
-  { value: 'لينكولن', label: 'لينكولن (Lincoln)' },
-  { value: 'كرايسلر', label: 'كرايسلر (Chrysler)' },
-  { value: 'بويك', label: 'بويك (Buick)' },
-  { value: 'تسلا', label: 'تسلا (Tesla)' },
-  { value: 'رام', label: 'رام (RAM)' },
-  
+  'فورد': ['فيوجن', 'توروس', 'موستانج', 'إكسبلورر', 'إكسبيديشن', 'إيدج', 'إسكيب', 'برونكو', 'F-150', 'رينجر', 'مافريك', 'ماك إي'],
+  'شيفروليه': ['ماليبو', 'إمبالا', 'كامارو', 'كورفيت', 'تاهو', 'سوبربان', 'ترافيرس', 'إكوينوكس', 'بليزر', 'ترايل بليزر', 'سيلفرادو', 'كولورادو', 'بولت'],
+  'جي إم سي': ['سييرا', 'يوكون', 'أكاديا', 'تيرين', 'كانيون', 'هامر EV'],
+  'دودج': ['تشارجر', 'تشالنجر', 'دورانجو', 'رام 1500', 'رام 2500', 'هورنت'],
+  'جيب': ['رانجلر', 'جراند شيروكي', 'شيروكي', 'كومباس', 'رينيجيد', 'جلاديتور', 'واجونير', 'جراند واجونير'],
+  'كاديلاك': ['CT4', 'CT5', 'إسكاليد', 'XT4', 'XT5', 'XT6', 'ليريك'],
+  'لينكولن': ['MKZ', 'كونتيننتال', 'أفييتور', 'نوتيلوس', 'كورسير', 'نافيجيتور'],
+  'كرايسلر': ['300', 'باسيفيكا', 'فوياجر'],
+  'بويك': ['إنكليف', 'أنفيجن', 'إنكور'],
+  'تسلا': ['موديل S', 'موديل 3', 'موديل X', 'موديل Y', 'سايبر تراك', 'رودستر'],
+  'رام': ['1500', '2500', '3500', 'بروماستر'],
+
   // الماركات الألمانية
-  { value: 'مرسيدس', label: 'مرسيدس بنز (Mercedes-Benz)' },
-  { value: 'بي إم دبليو', label: 'بي إم دبليو (BMW)' },
-  { value: 'أودي', label: 'أودي (Audi)' },
-  { value: 'فولكس واجن', label: 'فولكس واجن (Volkswagen)' },
-  { value: 'بورشه', label: 'بورشه (Porsche)' },
-  { value: 'أوبل', label: 'أوبل (Opel)' },
-  { value: 'ميني', label: 'ميني (MINI)' },
-  
+  'مرسيدس': ['C-Class', 'E-Class', 'S-Class', 'A-Class', 'CLA', 'CLS', 'GLA', 'GLB', 'GLC', 'GLE', 'GLS', 'G-Class', 'AMG GT', 'EQS', 'EQE', 'EQB', 'EQA', 'مايباخ'],
+  'بي إم دبليو': ['الفئة 3', 'الفئة 5', 'الفئة 7', 'الفئة 2', 'الفئة 4', 'X1', 'X2', 'X3', 'X4', 'X5', 'X6', 'X7', 'XM', 'iX', 'i4', 'i7', 'Z4', 'M2', 'M3', 'M4', 'M5', 'M8'],
+  'أودي': ['A3', 'A4', 'A5', 'A6', 'A7', 'A8', 'Q2', 'Q3', 'Q5', 'Q7', 'Q8', 'e-tron', 'RS3', 'RS4', 'RS5', 'RS6', 'RS7', 'R8', 'TT'],
+  'فولكس واجن': ['جيتا', 'باسات', 'أرتيون', 'جولف', 'تيجوان', 'توارق', 'أطلس', 'ID.4', 'ID.Buzz', 'تايجون', 'تي-روك'],
+  'بورشه': ['911', 'كايين', 'ماكان', 'باناميرا', 'تايكان', 'بوكستر', 'كايمان'],
+  'أوبل': ['كورسا', 'أسترا', 'إنسيجنيا', 'موكا', 'جراندلاند', 'كروسلاند', 'كومبو'],
+  'ميني': ['كوبر', 'كانتريمان', 'كلوبمان', 'كوبر إلكتريك'],
+
   // الماركات البريطانية
-  { value: 'لاند روفر', label: 'لاند روفر (Land Rover)' },
-  { value: 'رينج روفر', label: 'رينج روفر (Range Rover)' },
-  { value: 'جاكوار', label: 'جاكوار (Jaguar)' },
-  { value: 'بنتلي', label: 'بنتلي (Bentley)' },
-  { value: 'رولز رويس', label: 'رولز رويس (Rolls-Royce)' },
-  { value: 'أستون مارتن', label: 'أستون مارتن (Aston Martin)' },
-  { value: 'ماكلارين', label: 'ماكلارين (McLaren)' },
-  { value: 'لوتس', label: 'لوتس (Lotus)' },
-  { value: 'إم جي', label: 'إم جي (MG)' },
-  
+  'لاند روفر': ['ديفندر', 'ديسكفري', 'ديسكفري سبورت', 'رينج روفر', 'رينج روفر سبورت', 'رينج روفر فيلار', 'رينج روفر إيفوك'],
+  'رينج روفر': ['رينج روفر', 'رينج روفر سبورت', 'رينج روفر فيلار', 'رينج روفر إيفوك'],
+  'جاكوار': ['XE', 'XF', 'XJ', 'F-Type', 'F-Pace', 'E-Pace', 'I-Pace'],
+  'بنتلي': ['كونتيننتال GT', 'فلاينج سبير', 'بنتايجا', 'مولسان'],
+  'رولز رويس': ['فانتوم', 'جوست', 'رايث', 'داون', 'كولينان', 'سبيكتر'],
+  'أستون مارتن': ['DB11', 'DBS', 'فانتاج', 'DBX', 'فالكيري'],
+  'ماكلارين': ['GT', '720S', '765LT', 'أرتورا'],
+  'لوتس': ['إيميرا', 'إليترا', 'إيفيجا'],
+  'إم جي': ['MG5', 'MG6', 'ZS', 'HS', 'RX5', 'Marvel R', 'MG4'],
+
   // الماركات الفرنسية
-  { value: 'بيجو', label: 'بيجو (Peugeot)' },
-  { value: 'رينو', label: 'رينو (Renault)' },
-  { value: 'سيتروين', label: 'سيتروين (Citroën)' },
-  { value: 'دي إس', label: 'دي إس (DS)' },
-  
+  'بيجو': ['208', '308', '408', '508', '2008', '3008', '5008', 'رايفتر', 'لاندتريك'],
+  'رينو': ['ميجان', 'كليو', 'تاليسمان', 'كابتشر', 'كادجار', 'أركانا', 'أوسترال', 'كوليوس', 'زوي'],
+  'سيتروين': ['C3', 'C4', 'C5 X', 'C3 إيركروس', 'C5 إيركروس', 'بيرلينجو'],
+  'دي إس': ['DS 3', 'DS 4', 'DS 7', 'DS 9'],
+
   // الماركات الإيطالية
-  { value: 'فيراري', label: 'فيراري (Ferrari)' },
-  { value: 'لامبورجيني', label: 'لامبورجيني (Lamborghini)' },
-  { value: 'مازيراتي', label: 'مازيراتي (Maserati)' },
-  { value: 'ألفا روميو', label: 'ألفا روميو (Alfa Romeo)' },
-  { value: 'فيات', label: 'فيات (Fiat)' },
-  
+  'فيراري': ['روما', 'بورتوفينو', 'F8', 'SF90', '296 GTB', '812', 'بوروسانغوي'],
+  'لامبورجيني': ['هوراكان', 'أوروس', 'ريفيويلتو'],
+  'مازيراتي': ['جيبلي', 'كواتروبورتي', 'ليفانتي', 'MC20', 'جريكالي', 'جران توريزمو'],
+  'ألفا روميو': ['جوليا', 'ستيلفيو', 'تونالي'],
+  'فيات': ['500', 'تيبو', 'باندا', '500X'],
+
   // الماركات السويدية
-  { value: 'فولفو', label: 'فولفو (Volvo)' },
-  { value: 'بوليستار', label: 'بوليستار (Polestar)' },
-  
+  'فولفو': ['S60', 'S90', 'V60', 'V90', 'XC40', 'XC60', 'XC90', 'C40', 'EX30', 'EX90'],
+  'بوليستار': ['بوليستار 2', 'بوليستار 3', 'بوليستار 4'],
+
   // الماركات الصينية
-  { value: 'جيلي', label: 'جيلي (Geely)' },
-  { value: 'شيري', label: 'شيري (Chery)' },
-  { value: 'بي واي دي', label: 'بي واي دي (BYD)' },
-  { value: 'هافال', label: 'هافال (Haval)' },
-  { value: 'جريت وول', label: 'جريت وول (Great Wall)' },
-  { value: 'إم جي', label: 'إم جي (MG)' },
-  { value: 'شانجان', label: 'شانجان (Changan)' },
-  { value: 'جاك', label: 'جاك (JAC)' },
-  { value: 'فاو', label: 'فاو (FAW)' },
-  { value: 'دونج فينج', label: 'دونج فينج (Dongfeng)' },
-  { value: 'غاز', label: 'غاز (GAC)' },
-  { value: 'ليون', label: 'ليون (Lynk & Co)' },
-  { value: 'زيكر', label: 'زيكر (Zeekr)' },
-  { value: 'نيو', label: 'نيو (NIO)' },
-  { value: 'إكسبينج', label: 'إكسبينج (Xpeng)' },
-  { value: 'لي أوتو', label: 'لي أوتو (Li Auto)' },
-  
+  'جيلي': ['إمجراند', 'كولراي', 'أوكافانجو', 'ستار', 'مونجارو', 'بريتون'],
+  'شيري': ['تيجو 2', 'تيجو 4', 'تيجو 7', 'تيجو 8', 'أريزو 5', 'أريزو 6'],
+  'بي واي دي': ['هان', 'تانغ', 'سونج', 'يوان', 'دولفين', 'سيل', 'أتو 3', 'سيجال'],
+  'هافال': ['H2', 'H6', 'H9', 'جوليان', 'داركو', 'دوغ'],
+  'جريت وول': ['وينجل', 'كانون', 'تانك 300', 'تانك 500'],
+  'شانجان': ['إيدو', 'CS35', 'CS55', 'CS75', 'CS85', 'UNI-T', 'UNI-K', 'UNI-V'],
+  'جاك': ['S2', 'S3', 'S4', 'S7', 'T6', 'T8'],
+  'فاو': ['بيستون T77', 'بيستون T55', 'بيستون T99'],
+  'دونج فينج': ['AX7', 'فورتشينج', 'ريتش'],
+  'غاز': ['GS3', 'GS4', 'GS8', 'إمباو', 'أيون'],
+  'ليون': ['01', '02', '03', '05', '09'],
+  'زيكر': ['001', '007', '009', 'X'],
+  'نيو': ['ES6', 'ES7', 'ES8', 'ET5', 'ET7', 'EC6', 'EC7'],
+  'إكسبينج': ['P5', 'P7', 'G3', 'G6', 'G9', 'X9'],
+  'لي أوتو': ['L7', 'L8', 'L9', 'ميجا'],
+
   // الماركات الهندية
-  { value: 'تاتا', label: 'تاتا (Tata)' },
-  { value: 'ماهيندرا', label: 'ماهيندرا (Mahindra)' },
-  
+  'تاتا': ['نيكسون', 'هارير', 'سفاري', 'بانش', 'تياجو'],
+  'ماهيندرا': ['XUV300', 'XUV400', 'XUV700', 'ثار', 'سكوربيو'],
+
   // ماركات أخرى
-  { value: 'سكودا', label: 'سكودا (Škoda)' },
-  { value: 'سيات', label: 'سيات (SEAT)' },
-  { value: 'كوبرا', label: 'كوبرا (Cupra)' },
-  { value: 'داسيا', label: 'داسيا (Dacia)' },
-];
+  'سكودا': ['أوكتافيا', 'سوبيرب', 'كودياك', 'كاميق', 'كاروك', 'إنياك'],
+  'سيات': ['ليون', 'إيبيزا', 'أتيكا', 'تاراكو', 'أرونا'],
+  'كوبرا': ['ليون', 'فورمنتور', 'بورن', 'تافاسكان'],
+  'داسيا': ['لوجان', 'سانديرو', 'داستر', 'جوجر', 'سبرينج'],
+};
+
+// تحويل الماركات لقائمة SearchableSelect
+const CAR_BRANDS = Object.keys(CAR_BRANDS_WITH_MODELS).map(brand => ({
+  value: brand,
+  label: brand
+}));
+
+// إنشاء قائمة السنوات من 1990 إلى السنة الحالية
+const currentYear = new Date().getFullYear();
+const YEAR_OPTIONS = Array.from({ length: currentYear - 1989 }, (_, i) => {
+  const year = (currentYear - i).toString();
+  return { value: year, label: year };
+});
+
 interface VehicleData {
   vehicle_brand: string | null;
   vehicle_model: string | null;
@@ -129,6 +142,13 @@ export function VehicleInfo() {
     vehicle_color: null,
     vehicle_plate: null,
   });
+
+  // إنشاء قائمة الموديلات بناءً على الماركة المختارة
+  const modelOptions = useMemo(() => {
+    if (!vehicleData.vehicle_brand) return [];
+    const models = CAR_BRANDS_WITH_MODELS[vehicleData.vehicle_brand] || [];
+    return models.map(model => ({ value: model, label: model }));
+  }, [vehicleData.vehicle_brand]);
 
   useEffect(() => {
     if (user) {
@@ -249,7 +269,11 @@ export function VehicleInfo() {
                 <SearchableSelect
                   options={CAR_BRANDS}
                   value={vehicleData.vehicle_brand || ''}
-                  onValueChange={(value) => setVehicleData({ ...vehicleData, vehicle_brand: value })}
+                  onValueChange={(value) => setVehicleData({ 
+                    ...vehicleData, 
+                    vehicle_brand: value,
+                    vehicle_model: null // إعادة تعيين الموديل عند تغيير الماركة
+                  })}
                   placeholder="اختر الماركة..."
                   searchPlaceholder="ابحث عن الماركة..."
                   emptyMessage="لم يتم العثور على ماركة"
@@ -257,12 +281,14 @@ export function VehicleInfo() {
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="vehicle_model" className="text-xs">الموديل</Label>
-                <Input
-                  id="vehicle_model"
-                  placeholder="مثال: كامري"
+                <SearchableSelect
+                  options={modelOptions}
                   value={vehicleData.vehicle_model || ''}
-                  onChange={(e) => setVehicleData({ ...vehicleData, vehicle_model: e.target.value })}
-                  className="h-9"
+                  onValueChange={(value) => setVehicleData({ ...vehicleData, vehicle_model: value })}
+                  placeholder={vehicleData.vehicle_brand ? "اختر الموديل..." : "اختر الماركة أولاً"}
+                  searchPlaceholder="ابحث عن الموديل..."
+                  emptyMessage="لم يتم العثور على موديل"
+                  disabled={!vehicleData.vehicle_brand}
                 />
               </div>
             </div>
@@ -270,12 +296,13 @@ export function VehicleInfo() {
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label htmlFor="vehicle_year" className="text-xs">سنة الصنع</Label>
-                <Input
-                  id="vehicle_year"
-                  placeholder="مثال: 2024"
+                <SearchableSelect
+                  options={YEAR_OPTIONS}
                   value={vehicleData.vehicle_year || ''}
-                  onChange={(e) => setVehicleData({ ...vehicleData, vehicle_year: e.target.value })}
-                  className="h-9"
+                  onValueChange={(value) => setVehicleData({ ...vehicleData, vehicle_year: value })}
+                  placeholder="اختر السنة..."
+                  searchPlaceholder="ابحث عن السنة..."
+                  emptyMessage="لم يتم العثور على السنة"
                 />
               </div>
               <div className="space-y-1.5">
