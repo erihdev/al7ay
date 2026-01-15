@@ -9,6 +9,7 @@ import { SpecialOffersCarousel } from '@/components/offers/SpecialOffersCarousel
 import { LoyaltyCard } from '@/components/loyalty/LoyaltyCard';
 import { LocationPermission } from '@/components/location/LocationPermission';
 import { Skeleton } from '@/components/ui/skeleton';
+import { FloatingParticles } from '@/components/ui/InteractiveBackground';
 import { useProducts } from '@/hooks/useProducts';
 import { useOrderStatusNotifications } from '@/hooks/useOrderStatusNotifications';
 import type { Database } from '@/integrations/supabase/types';
@@ -29,7 +30,8 @@ const Index = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-background font-arabic" dir="rtl">
+    <div className="min-h-screen bg-background font-arabic relative" dir="rtl">
+      <FloatingParticles count={12} />
       <Header />
       
       <main className="container mx-auto px-4 pb-24 pt-4 space-y-6">

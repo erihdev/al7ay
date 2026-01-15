@@ -19,6 +19,7 @@ import { Link } from 'react-router-dom';
 import { AnimatedLogo } from '@/components/ui/AnimatedLogo';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { motion } from 'framer-motion';
+import { InteractiveBackground } from '@/components/ui/InteractiveBackground';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -100,7 +101,8 @@ const Install = () => {
 
   if (isInstalled || isStandalone) {
     return (
-      <div className="min-h-screen bg-background flex flex-col">
+      <div className="min-h-screen bg-background flex flex-col relative">
+        <InteractiveBackground variant="gradient" intensity="subtle" />
         <header className="sticky top-0 z-40 bg-card/95 backdrop-blur-sm border-b border-border safe-area-inset-top">
           <div className="container mx-auto px-4 py-3">
             <div className="flex items-center justify-between">
@@ -137,7 +139,8 @@ const Install = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background relative">
+      <InteractiveBackground variant="gradient" intensity="subtle" />
       {/* Header */}
       <header className="sticky top-0 z-40 bg-card/95 backdrop-blur-sm border-b border-border safe-area-inset-top">
         <div className="container mx-auto px-4 py-3">
