@@ -68,19 +68,14 @@ const ProviderLogin = () => {
     }
 
     setIsLoading(true);
-    console.log('Starting login...');
 
     try {
-      // Sign in
       const { data, error } = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password,
       });
 
-      console.log('Login response:', { hasData: !!data, hasSession: !!data?.session, error });
-
       if (error) {
-        console.error('Login error:', error);
         if (error.message?.includes('Invalid login credentials')) {
           toast.error('البريد الإلكتروني أو كلمة المرور غير صحيحة');
         } else {
@@ -91,60 +86,28 @@ const ProviderLogin = () => {
       }
 
       if (!data?.session?.user) {
-        console.log('No session in response');
         toast.error('حدث خطأ في تسجيل الدخول');
         setIsLoading(false);
         return;
       }
 
-      const userId = data.session.user.id;
-      console.log('Session obtained for user:', userId);
-      
-      // Check if user is a provider with timeout
-      const providerCheckPromise = supabase
+      // Check if user is a provider
+      const { data: provider } = await supabase
         .from('service_providers')
         .select('id')
-        .eq('user_id', userId)
+        .eq('user_id', data.session.user.id)
         .maybeSingle();
       
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Provider check timeout')), 5000)
-      );
-      
-      try {
-        const { data: provider, error: providerError } = await Promise.race([
-          providerCheckPromise,
-          timeoutPromise
-        ]) as { data: { id: string } | null; error: Error | null };
-        
-        console.log('Provider check result:', { provider, providerError });
-        
-        if (providerError) {
-          console.error('Provider check error:', providerError);
-          toast.error('حدث خطأ أثناء التحقق من الحساب');
-          setIsLoading(false);
-          return;
-        }
-        
-        if (!provider) {
-          console.log('User is not a provider, signing out');
-          await supabase.auth.signOut();
-          toast.error('هذا الحساب ليس مسجلاً كمقدم خدمة');
-          setIsLoading(false);
-          return;
-        }
-
-        console.log('Provider found! Redirecting now...');
-        toast.success('تم تسجيل الدخول بنجاح');
-        
-        // Immediate redirect using window.location.replace
-        window.location.replace('/provider-dashboard');
-      } catch (timeoutError) {
-        console.error('Provider check timeout:', timeoutError);
-        // If timeout, still try to redirect as the login was successful
-        toast.success('تم تسجيل الدخول بنجاح');
-        window.location.replace('/provider-dashboard');
+      if (!provider) {
+        await supabase.auth.signOut();
+        toast.error('هذا الحساب ليس مسجلاً كمقدم خدمة');
+        setIsLoading(false);
+        return;
       }
+
+      toast.success('تم تسجيل الدخول بنجاح');
+      // Use direct location assignment
+      window.location.href = '/provider-dashboard';
     } catch (err) {
       console.error('Login error:', err);
       toast.error('حدث خطأ غير متوقع');
