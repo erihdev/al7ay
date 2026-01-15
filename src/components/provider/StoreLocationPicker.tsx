@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { MapPin, Loader2, Navigation2, CheckCircle } from 'lucide-react';
+import { MapPin, Loader2, Navigation2, CheckCircle, Edit3, X, Check } from 'lucide-react';
 import { useMapboxToken } from '@/hooks/useMapboxToken';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
@@ -21,6 +22,9 @@ export function StoreLocationPicker({ location, onLocationChange, deliveryRadius
   
   const [isLocating, setIsLocating] = useState(false);
   const [mapReady, setMapReady] = useState(false);
+  const [showManualInput, setShowManualInput] = useState(false);
+  const [manualLat, setManualLat] = useState('');
+  const [manualLng, setManualLng] = useState('');
 
   // Default to Riyadh center
   const defaultCenter = { lat: 24.7136, lng: 46.6753 };
@@ -96,9 +100,51 @@ export function StoreLocationPicker({ location, onLocationChange, deliveryRadius
       () => {
         setIsLocating(false);
       },
-      { enableHighAccuracy: true, timeout: 10000 }
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
     );
   }, [onLocationChange, updateCircle]);
+
+  // Apply manual coordinates
+  const applyManualCoordinates = useCallback(() => {
+    const lat = parseFloat(manualLat);
+    const lng = parseFloat(manualLng);
+    
+    // Validate coordinates (roughly for Saudi Arabia region)
+    if (isNaN(lat) || isNaN(lng) || lat < 15 || lat > 35 || lng < 34 || lng > 56) {
+      return;
+    }
+    
+    const newLocation = { lat, lng };
+    onLocationChange(newLocation);
+    
+    if (map.current) {
+      map.current.flyTo({
+        center: [lng, lat],
+        zoom: 14
+      });
+      
+      if (marker.current) {
+        marker.current.setLngLat([lng, lat]);
+      }
+      updateCircle(lng, lat);
+    }
+    
+    setShowManualInput(false);
+    setManualLat('');
+    setManualLng('');
+  }, [manualLat, manualLng, onLocationChange, updateCircle]);
+
+  // Open manual input with current values
+  const openManualInput = useCallback(() => {
+    if (location) {
+      setManualLat(location.lat.toFixed(6));
+      setManualLng(location.lng.toFixed(6));
+    } else {
+      setManualLat('24.7136');
+      setManualLng('46.6753');
+    }
+    setShowManualInput(true);
+  }, [location]);
 
   // Initialize map
   useEffect(() => {
@@ -254,22 +300,86 @@ export function StoreLocationPicker({ location, onLocationChange, deliveryRadius
         )}
       </div>
 
-      <Button
-        type="button"
-        variant="outline"
-        className="w-full font-arabic gap-2"
-        onClick={getCurrentLocation}
-        disabled={isLocating}
-      >
-        {isLocating ? (
-          <Loader2 className="h-4 w-4 animate-spin" />
-        ) : (
-          <Navigation2 className="h-4 w-4" />
-        )}
-        استخدم موقعي الحالي
-      </Button>
+      <div className="grid grid-cols-2 gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          className="font-arabic gap-2"
+          onClick={getCurrentLocation}
+          disabled={isLocating}
+        >
+          {isLocating ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Navigation2 className="h-4 w-4" />
+          )}
+          موقعي الحالي
+        </Button>
+        
+        <Button
+          type="button"
+          variant="outline"
+          className="font-arabic gap-2"
+          onClick={openManualInput}
+        >
+          <Edit3 className="h-4 w-4" />
+          إدخال يدوي
+        </Button>
+      </div>
 
-      {location && (
+      {/* Manual Coordinate Input */}
+      {showManualInput && (
+        <div className="p-4 bg-muted rounded-lg border space-y-3">
+          <div className="flex items-center justify-between">
+            <Label className="font-arabic font-medium text-sm">إدخال الإحداثيات يدوياً</Label>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowManualInput(false)}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground font-arabic">
+            يمكنك الحصول على الإحداثيات من Google Maps بالضغط مطولاً على الموقع
+          </p>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <Label className="text-xs font-arabic">خط العرض (Lat)</Label>
+              <Input
+                value={manualLat}
+                onChange={(e) => setManualLat(e.target.value)}
+                placeholder="24.7136"
+                dir="ltr"
+                className="text-sm"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs font-arabic">خط الطول (Lng)</Label>
+              <Input
+                value={manualLng}
+                onChange={(e) => setManualLng(e.target.value)}
+                placeholder="46.6753"
+                dir="ltr"
+                className="text-sm"
+              />
+            </div>
+          </div>
+          <Button
+            type="button"
+            size="sm"
+            className="w-full font-arabic gap-2"
+            onClick={applyManualCoordinates}
+            disabled={!manualLat || !manualLng}
+          >
+            <Check className="h-4 w-4" />
+            تطبيق الإحداثيات
+          </Button>
+        </div>
+      )}
+
+      {location && !showManualInput && (
         <p className="text-xs text-center text-muted-foreground font-arabic">
           الإحداثيات: {location.lat.toFixed(6)}, {location.lng.toFixed(6)}
         </p>
