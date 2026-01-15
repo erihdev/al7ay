@@ -77,8 +77,15 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const getCurrentPosition = () => {
+    if (!navigator.geolocation) {
+      console.error('Geolocation not supported');
+      setLocationPermission('denied');
+      return;
+    }
+
     navigator.geolocation.getCurrentPosition(
       (position) => {
+        console.log('Location obtained:', position.coords.latitude, position.coords.longitude);
         setUserLocation({
           lat: position.coords.latitude,
           lng: position.coords.longitude,
@@ -86,19 +93,78 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
         setLocationPermission('granted');
       },
       (error) => {
-        console.error('Geolocation error:', error);
-        setLocationPermission('denied');
+        console.error('Geolocation error:', error.code, error.message);
+        // Error codes: 1 = PERMISSION_DENIED, 2 = POSITION_UNAVAILABLE, 3 = TIMEOUT
+        if (error.code === 1) {
+          setLocationPermission('denied');
+        } else if (error.code === 2) {
+          // Position unavailable - try again with lower accuracy
+          navigator.geolocation.getCurrentPosition(
+            (position) => {
+              setUserLocation({
+                lat: position.coords.latitude,
+                lng: position.coords.longitude,
+              });
+              setLocationPermission('granted');
+            },
+            () => {
+              setLocationPermission('denied');
+            },
+            {
+              enableHighAccuracy: false,
+              timeout: 30000,
+              maximumAge: 600000,
+            }
+          );
+        } else if (error.code === 3) {
+          // Timeout - retry with longer timeout
+          navigator.geolocation.getCurrentPosition(
+            (position) => {
+              setUserLocation({
+                lat: position.coords.latitude,
+                lng: position.coords.longitude,
+              });
+              setLocationPermission('granted');
+            },
+            () => {
+              setLocationPermission('denied');
+            },
+            {
+              enableHighAccuracy: false,
+              timeout: 60000,
+              maximumAge: 600000,
+            }
+          );
+        } else {
+          setLocationPermission('denied');
+        }
       },
       {
         enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 300000, // 5 minutes
+        timeout: 15000,
+        maximumAge: 300000,
       }
     );
   };
 
   const requestLocation = async () => {
     setLocationPermission('loading');
+    
+    // First check permission status
+    if ('permissions' in navigator) {
+      try {
+        const result = await navigator.permissions.query({ name: 'geolocation' });
+        console.log('Permission status:', result.state);
+        
+        if (result.state === 'denied') {
+          setLocationPermission('denied');
+          return;
+        }
+      } catch (e) {
+        console.log('Permission query not supported');
+      }
+    }
+    
     getCurrentPosition();
   };
 
