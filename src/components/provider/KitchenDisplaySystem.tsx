@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -16,7 +16,11 @@ import {
   Flame,
   Bell,
   ArrowRight,
-  ShoppingBag
+  ShoppingBag,
+  Maximize2,
+  Minimize2,
+  Volume2,
+  VolumeX
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { format, formatDistanceToNow } from 'date-fns';
@@ -25,6 +29,7 @@ import { useProviderOrders, useUpdateProviderOrder, ProviderOrder } from '@/hook
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
+import { useProviderOrderNotifications, NotificationSoundType } from '@/hooks/useProviderOrderNotifications';
 
 interface SelectedOption {
   optionName: string;
@@ -109,6 +114,37 @@ const KitchenDisplaySystem = ({ providerId }: KitchenDisplaySystemProps) => {
   const { data: orders, isLoading, refetch } = useProviderOrders(providerId);
   const updateOrderMutation = useUpdateProviderOrder();
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [soundEnabled, setSoundEnabled] = useState(true);
+  const { playNotificationSound } = useProviderOrderNotifications(providerId, soundEnabled);
+
+  // Toggle fullscreen mode
+  const toggleFullscreen = useCallback(() => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().then(() => {
+        setIsFullscreen(true);
+      }).catch(console.error);
+    } else {
+      document.exitFullscreen().then(() => {
+        setIsFullscreen(false);
+      }).catch(console.error);
+    }
+  }, []);
+
+  // Listen for fullscreen changes
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
+
+  // Test sound buttons
+  const testSound = (type: NotificationSoundType) => {
+    playNotificationSound(type);
+    toast.info(`تشغيل صوت: ${type === 'delivery' ? 'توصيل' : type === 'pickup' ? 'استلام' : 'عاجل'}`);
+  };
 
   // Fetch order items for all orders
   const orderIds = orders?.map(o => o.id) || [];
@@ -381,9 +417,65 @@ const KitchenDisplaySystem = ({ providerId }: KitchenDisplaySystemProps) => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className={`space-y-6 ${isFullscreen ? 'p-6 bg-background min-h-screen' : ''}`}>
+      {/* Control Bar */}
+      <div className="flex items-center justify-between gap-4 flex-wrap">
+        <div className="flex items-center gap-2">
+          <Button
+            variant={soundEnabled ? "default" : "outline"}
+            size="sm"
+            onClick={() => setSoundEnabled(!soundEnabled)}
+            className="gap-2"
+          >
+            {soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
+            {soundEnabled ? 'الصوت مفعل' : 'الصوت معطل'}
+          </Button>
+          
+          {/* Test Sounds */}
+          <div className="flex items-center gap-1 border rounded-lg p-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => testSound('pickup')}
+              className="text-xs h-7 px-2"
+            >
+              <Package className="h-3 w-3 ml-1" />
+              استلام
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => testSound('delivery')}
+              className="text-xs h-7 px-2"
+            >
+              <Truck className="h-3 w-3 ml-1" />
+              توصيل
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => testSound('urgent')}
+              className="text-xs h-7 px-2 text-red-600"
+            >
+              <Flame className="h-3 w-3 ml-1" />
+              عاجل
+            </Button>
+          </div>
+        </div>
+
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={toggleFullscreen}
+          className="gap-2"
+        >
+          {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+          {isFullscreen ? 'إنهاء ملء الشاشة' : 'ملء الشاشة'}
+        </Button>
+      </div>
+
       {/* Stats Bar */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className={`grid gap-4 ${isFullscreen ? 'grid-cols-3' : 'grid-cols-3'}`}>
         <Card className="bg-gradient-to-bl from-amber-500 to-orange-500 text-white border-0">
           <CardContent className="p-4 flex items-center justify-between">
             <div>
@@ -416,7 +508,7 @@ const KitchenDisplaySystem = ({ providerId }: KitchenDisplaySystemProps) => {
       </div>
 
       {/* Orders Grid - KDS Style */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className={`grid gap-4 ${isFullscreen ? 'grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'}`}>
         <AnimatePresence mode="popLayout">
           {/* Pending Orders First (Priority) */}
           {pendingOrders.map(order => (
