@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,13 +14,23 @@ import {
   DialogTitle,
   DialogFooter
 } from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { 
   Plus, 
   Edit, 
   Trash2, 
   MapPin, 
   Users,
-  Search
+  Search,
+  Filter,
+  X,
+  Building2
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -36,11 +46,31 @@ interface Neighborhood {
   created_at: string;
 }
 
+// قائمة المناطق الإدارية السعودية مع مدنها
+const SAUDI_REGIONS: Record<string, string[]> = {
+  'منطقة الرياض': ['الرياض', 'الخرج', 'الدرعية', 'المجمعة', 'الدوادمي', 'وادي الدواسر', 'الأفلاج', 'حوطة بني تميم', 'الزلفي', 'شقراء', 'ثادق', 'الغاط'],
+  'منطقة مكة المكرمة': ['مكة المكرمة', 'جدة', 'الطائف', 'رابغ', 'الليث', 'القنفذة'],
+  'المنطقة الشرقية': ['الدمام', 'الخبر', 'الظهران', 'الأحساء', 'الجبيل', 'القطيف', 'رأس تنورة', 'الخفجي', 'النعيرية', 'بقيق'],
+  'منطقة المدينة المنورة': ['المدينة المنورة', 'ينبع', 'العلا', 'مهد الذهب', 'بدر', 'خيبر'],
+  'منطقة القصيم': ['بريدة', 'عنيزة', 'الرس', 'المذنب', 'البكيرية', 'البدائع', 'رياض الخبراء'],
+  'منطقة عسير': ['أبها', 'خميس مشيط', 'بيشة', 'النماص', 'محايل عسير', 'سراة عبيدة', 'ظهران الجنوب', 'تثليث'],
+  'منطقة تبوك': ['تبوك', 'الوجه', 'ضباء', 'أملج', 'حقل', 'تيماء'],
+  'منطقة حائل': ['حائل', 'بقعاء', 'الشنان', 'الحائط', 'الغزالة'],
+  'منطقة الحدود الشمالية': ['عرعر', 'رفحاء', 'طريف', 'العويقيلة'],
+  'منطقة جازان': ['جازان', 'صبيا', 'أبو عريش', 'صامطة', 'أحد المسارحة', 'الحرث', 'فيفاء', 'العارضة', 'الدرب', 'العيدابي', 'بيش'],
+  'منطقة نجران': ['نجران', 'شرورة', 'حبونا', 'بدر الجنوب', 'يدمة'],
+  'منطقة الباحة': ['الباحة', 'بلجرشي', 'المندق', 'المخواة', 'قلوة', 'العقيق'],
+  'منطقة الجوف': ['سكاكا', 'القريات', 'دومة الجندل', 'طبرجل']
+};
+
 const NeighborhoodsManager = () => {
   const queryClient = useQueryClient();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingNeighborhood, setEditingNeighborhood] = useState<Neighborhood | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedRegion, setSelectedRegion] = useState<string>('all');
+  const [selectedCity, setSelectedCity] = useState<string>('all');
+  const [showActiveOnly, setShowActiveOnly] = useState(false);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -164,10 +194,62 @@ const NeighborhoodsManager = () => {
     }
   };
 
-  const filteredNeighborhoods = neighborhoods?.filter(n =>
-    n.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    n.city.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // استخراج المدن الفريدة من البيانات
+  const uniqueCities = useMemo(() => {
+    if (!neighborhoods) return [];
+    const cities = [...new Set(neighborhoods.map(n => n.city))];
+    return cities.sort((a, b) => a.localeCompare(b, 'ar'));
+  }, [neighborhoods]);
+
+  // تحديد المدن المتاحة بناءً على المنطقة المختارة
+  const availableCities = useMemo(() => {
+    if (selectedRegion === 'all') return uniqueCities;
+    const regionCities = SAUDI_REGIONS[selectedRegion] || [];
+    return uniqueCities.filter(city => regionCities.includes(city));
+  }, [selectedRegion, uniqueCities]);
+
+  // فلترة الأحياء
+  const filteredNeighborhoods = useMemo(() => {
+    if (!neighborhoods) return [];
+    
+    return neighborhoods.filter(n => {
+      // فلتر البحث النصي
+      const matchesSearch = searchTerm === '' || 
+        n.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        n.city.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      // فلتر المنطقة
+      const matchesRegion = selectedRegion === 'all' || 
+        (SAUDI_REGIONS[selectedRegion]?.includes(n.city));
+      
+      // فلتر المدينة
+      const matchesCity = selectedCity === 'all' || n.city === selectedCity;
+      
+      // فلتر الحالة النشطة
+      const matchesActive = !showActiveOnly || n.is_active;
+      
+      return matchesSearch && matchesRegion && matchesCity && matchesActive;
+    });
+  }, [neighborhoods, searchTerm, selectedRegion, selectedCity, showActiveOnly]);
+
+  // إحصائيات الفلترة
+  const filterStats = useMemo(() => {
+    const total = neighborhoods?.length || 0;
+    const filtered = filteredNeighborhoods.length;
+    const activeFiltered = filteredNeighborhoods.filter(n => n.is_active).length;
+    const providersFiltered = filteredNeighborhoods.reduce((sum, n) => sum + n.provider_count, 0);
+    return { total, filtered, activeFiltered, providersFiltered };
+  }, [neighborhoods, filteredNeighborhoods]);
+
+  // مسح جميع الفلاتر
+  const clearFilters = () => {
+    setSearchTerm('');
+    setSelectedRegion('all');
+    setSelectedCity('all');
+    setShowActiveOnly(false);
+  };
+
+  const hasActiveFilters = searchTerm !== '' || selectedRegion !== 'all' || selectedCity !== 'all' || showActiveOnly;
 
   if (isLoading) {
     return (
@@ -180,12 +262,12 @@ const NeighborhoodsManager = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {/* Header with Search */}
       <div className="flex flex-col md:flex-row gap-4 justify-between">
         <div className="relative flex-1 max-w-md">
           <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="البحث في الأحياء..."
+            placeholder="البحث في الأحياء أو المدن..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pr-10 font-arabic"
@@ -197,18 +279,108 @@ const NeighborhoodsManager = () => {
         </Button>
       </div>
 
+      {/* Filters */}
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Filter className="h-5 w-5 text-primary" />
+              <CardTitle className="text-lg">الفلاتر</CardTitle>
+            </div>
+            {hasActiveFilters && (
+              <Button variant="ghost" size="sm" onClick={clearFilters} className="text-muted-foreground">
+                <X className="h-4 w-4 ml-1" />
+                مسح الفلاتر
+              </Button>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            {/* فلتر المنطقة */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">المنطقة الإدارية</Label>
+              <Select value={selectedRegion} onValueChange={(value) => {
+                setSelectedRegion(value);
+                setSelectedCity('all'); // إعادة ضبط المدينة عند تغيير المنطقة
+              }}>
+                <SelectTrigger className="font-arabic">
+                  <SelectValue placeholder="جميع المناطق" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">جميع المناطق</SelectItem>
+                  {Object.keys(SAUDI_REGIONS).map(region => (
+                    <SelectItem key={region} value={region}>{region}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* فلتر المدينة */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">المدينة</Label>
+              <Select value={selectedCity} onValueChange={setSelectedCity}>
+                <SelectTrigger className="font-arabic">
+                  <SelectValue placeholder="جميع المدن" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">جميع المدن</SelectItem>
+                  {availableCities.map(city => (
+                    <SelectItem key={city} value={city}>{city}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* فلتر الحالة */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">الحالة</Label>
+              <div className="flex items-center gap-2 h-10 px-3 border rounded-md">
+                <Switch
+                  checked={showActiveOnly}
+                  onCheckedChange={setShowActiveOnly}
+                  id="active-filter"
+                />
+                <Label htmlFor="active-filter" className="text-sm cursor-pointer">
+                  النشط فقط
+                </Label>
+              </div>
+            </div>
+
+            {/* نتائج الفلترة */}
+            <div className="flex items-end">
+              <div className="flex items-center gap-2 h-10 px-3 bg-muted/50 rounded-md w-full">
+                <Building2 className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm">
+                  {hasActiveFilters ? (
+                    <span>
+                      <span className="font-bold text-primary">{filterStats.filtered}</span>
+                      <span className="text-muted-foreground"> من {filterStats.total}</span>
+                    </span>
+                  ) : (
+                    <span className="font-bold">{filterStats.total} حي</span>
+                  )}
+                </span>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Stats */}
       <div className="grid grid-cols-3 gap-4">
         <Card>
           <CardContent className="p-4 text-center">
-            <p className="text-3xl font-bold">{neighborhoods?.length || 0}</p>
-            <p className="text-sm text-muted-foreground">إجمالي الأحياء</p>
+            <p className="text-3xl font-bold">{filterStats.filtered}</p>
+            <p className="text-sm text-muted-foreground">
+              {hasActiveFilters ? 'نتائج البحث' : 'إجمالي الأحياء'}
+            </p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4 text-center">
             <p className="text-3xl font-bold text-green-600">
-              {neighborhoods?.filter(n => n.is_active).length || 0}
+              {filterStats.activeFiltered}
             </p>
             <p className="text-sm text-muted-foreground">نشط</p>
           </CardContent>
@@ -216,7 +388,7 @@ const NeighborhoodsManager = () => {
         <Card>
           <CardContent className="p-4 text-center">
             <p className="text-3xl font-bold text-primary">
-              {neighborhoods?.reduce((sum, n) => sum + n.provider_count, 0) || 0}
+              {filterStats.providersFiltered}
             </p>
             <p className="text-sm text-muted-foreground">مقدمي الخدمات</p>
           </CardContent>
