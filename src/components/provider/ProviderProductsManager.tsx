@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -27,10 +27,14 @@ import {
   Coffee,
   Search,
   Star,
-  Loader2
+  Loader2,
+  Upload,
+  X,
+  ImageIcon
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Skeleton } from '@/components/ui/skeleton';
+import { supabase } from '@/integrations/supabase/client';
 import { 
   useProviderProducts, 
   useCreateProviderProduct, 
@@ -55,6 +59,10 @@ const ProviderProductsManager = ({ providerId }: ProviderProductsManagerProps) =
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<ProviderProduct | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [formData, setFormData] = useState({
     name_ar: '',
@@ -84,7 +92,12 @@ const ProviderProductsManager = ({ providerId }: ProviderProductsManagerProps) =
       is_featured: false
     });
     setEditingProduct(null);
+    setImageFile(null);
+    setImagePreview(null);
     setIsDialogOpen(false);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   const handleEdit = (product: ProviderProduct) => {
@@ -99,7 +112,63 @@ const ProviderProductsManager = ({ providerId }: ProviderProductsManagerProps) =
       is_available: product.is_available,
       is_featured: product.is_featured
     });
+    setImagePreview(product.image_url || null);
     setIsDialogOpen(true);
+  };
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error('نوع الملف غير مدعوم. يرجى رفع صورة (JPG, PNG, WebP, GIF)');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      toast.error('حجم الصورة كبير جداً. الحد الأقصى 5 ميجابايت');
+      return;
+    }
+
+    setImageFile(file);
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setImagePreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const removeImage = () => {
+    setImageFile(null);
+    setImagePreview(null);
+    setFormData({ ...formData, image_url: '' });
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const uploadImage = async (file: File): Promise<string | null> => {
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${providerId}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('product-images')
+      .upload(fileName, file, { cacheControl: '3600', upsert: true });
+
+    if (uploadError) {
+      console.error('Upload error:', uploadError);
+      return null;
+    }
+
+    const { data } = supabase.storage
+      .from('product-images')
+      .getPublicUrl(fileName);
+
+    return data.publicUrl;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -110,20 +179,34 @@ const ProviderProductsManager = ({ providerId }: ProviderProductsManagerProps) =
       return;
     }
 
-    const productData = {
-      provider_id: providerId,
-      name_ar: formData.name_ar,
-      name_en: formData.name_en || null,
-      description_ar: formData.description_ar || null,
-      price: parseFloat(formData.price),
-      image_url: formData.image_url || null,
-      category: formData.category,
-      is_available: formData.is_available,
-      is_featured: formData.is_featured,
-      sort_order: 0
-    };
+    setIsUploading(true);
+    let finalImageUrl = formData.image_url;
 
     try {
+      // Upload new image if selected
+      if (imageFile) {
+        const uploadedUrl = await uploadImage(imageFile);
+        if (!uploadedUrl) {
+          toast.error('فشل رفع الصورة');
+          setIsUploading(false);
+          return;
+        }
+        finalImageUrl = uploadedUrl;
+      }
+
+      const productData = {
+        provider_id: providerId,
+        name_ar: formData.name_ar,
+        name_en: formData.name_en || null,
+        description_ar: formData.description_ar || null,
+        price: parseFloat(formData.price),
+        image_url: finalImageUrl || null,
+        category: formData.category,
+        is_available: formData.is_available,
+        is_featured: formData.is_featured,
+        sort_order: 0
+      };
+
       if (editingProduct) {
         await updateMutation.mutateAsync({ 
           id: editingProduct.id, 
@@ -138,6 +221,8 @@ const ProviderProductsManager = ({ providerId }: ProviderProductsManagerProps) =
       resetForm();
     } catch (error) {
       toast.error('حدث خطأ');
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -262,7 +347,7 @@ const ProviderProductsManager = ({ providerId }: ProviderProductsManagerProps) =
 
       {/* Add/Edit Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent dir="rtl" className="max-w-lg">
+        <DialogContent dir="rtl" className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="font-arabic">
               {editingProduct ? 'تعديل المنتج' : 'إضافة منتج جديد'}
@@ -270,6 +355,59 @@ const ProviderProductsManager = ({ providerId }: ProviderProductsManagerProps) =
           </DialogHeader>
 
           <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Image Upload */}
+            <div className="space-y-2">
+              <Label className="font-arabic">صورة المنتج</Label>
+              <div className="flex items-center gap-4">
+                {imagePreview ? (
+                  <div className="relative w-24 h-24">
+                    <img
+                      src={imagePreview}
+                      alt="معاينة"
+                      className="w-full h-full object-cover rounded-xl border"
+                    />
+                    <button
+                      type="button"
+                      onClick={removeImage}
+                      className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1 shadow-lg hover:bg-destructive/90 transition-colors"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <div
+                    onClick={() => fileInputRef.current?.click()}
+                    className="w-24 h-24 border-2 border-dashed border-primary/30 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-primary hover:bg-primary/5 transition-all"
+                  >
+                    <ImageIcon className="h-8 w-8 text-primary/50 mb-1" />
+                    <span className="text-xs text-muted-foreground">رفع صورة</span>
+                  </div>
+                )}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/gif"
+                  onChange={handleImageChange}
+                  className="hidden"
+                />
+                <div className="flex-1">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="font-arabic w-full"
+                  >
+                    <Upload className="h-4 w-4 ml-2" />
+                    {imagePreview ? 'تغيير الصورة' : 'اختر صورة'}
+                  </Button>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    JPG, PNG, WebP أو GIF - حد أقصى 5 ميجابايت
+                  </p>
+                </div>
+              </div>
+            </div>
+
             <div className="space-y-2">
               <Label className="font-arabic">اسم المنتج (عربي) *</Label>
               <Input
@@ -335,16 +473,6 @@ const ProviderProductsManager = ({ providerId }: ProviderProductsManagerProps) =
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label className="font-arabic">رابط الصورة</Label>
-              <Input
-                value={formData.image_url}
-                onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-                placeholder="https://..."
-                dir="ltr"
-              />
-            </div>
-
             <div className="flex gap-6">
               <div className="flex items-center gap-3">
                 <Switch
@@ -369,9 +497,9 @@ const ProviderProductsManager = ({ providerId }: ProviderProductsManagerProps) =
               <Button 
                 type="submit" 
                 className="font-arabic"
-                disabled={createMutation.isPending || updateMutation.isPending}
+                disabled={createMutation.isPending || updateMutation.isPending || isUploading}
               >
-                {(createMutation.isPending || updateMutation.isPending) ? (
+                {(createMutation.isPending || updateMutation.isPending || isUploading) ? (
                   <Loader2 className="h-4 w-4 animate-spin ml-2" />
                 ) : null}
                 {editingProduct ? 'حفظ التغييرات' : 'إضافة المنتج'}
