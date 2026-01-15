@@ -1370,9 +1370,16 @@ const ProviderRegister = () => {
 
                 {/* Payment Method Selection */}
                 {!selectedPlan.is_trial && (
-                  <div className="space-y-3 pt-4 border-t">
-                    <Label className="text-base font-semibold">طريقة استلام الأرباح *</Label>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="space-y-4 pt-4 border-t">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-base font-semibold">طريقة استلام الأرباح *</Label>
+                      <Link to="/edfapay-guide" className="text-xs text-primary hover:underline flex items-center gap-1">
+                        <Info className="h-3 w-3" />
+                        دليل EdfaPay
+                      </Link>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {/* Platform Managed Option */}
                       <motion.div
                         whileHover={{ scale: 1.02 }}
@@ -1393,19 +1400,53 @@ const ProviderRegister = () => {
                             <Check className="h-4 w-4 text-primary-foreground" />
                           </motion.div>
                         )}
+                        <Badge variant="secondary" className="absolute -top-2 left-2 text-[10px]">
+                          موصى به
+                        </Badge>
                         <div className="flex items-start gap-3">
-                          <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center shrink-0">
-                            <Building className="h-5 w-5 text-blue-600" />
+                          <div className="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center shrink-0">
+                            <Building className="h-6 w-6 text-blue-600" />
                           </div>
-                          <div>
-                            <h4 className="font-bold mb-1">عبر المنصة (موصى به)</h4>
-                            <p className="text-xs text-muted-foreground leading-relaxed">
-                              نستلم المدفوعات من العملاء ونحول لك أرباحك أسبوعياً بعد خصم العمولة
+                          <div className="flex-1">
+                            <h4 className="font-bold mb-2">عبر المنصة</h4>
+                            <p className="text-xs text-muted-foreground leading-relaxed mb-3">
+                              نستلم المدفوعات من العملاء ونحول لك أرباحك أسبوعياً
                             </p>
-                            <Badge variant="secondary" className="mt-2 text-[10px]">
-                              <Wallet className="h-3 w-3 ml-1" />
-                              تحويل أسبوعي
-                            </Badge>
+                            
+                            {/* Pros */}
+                            <div className="space-y-1.5 mb-3">
+                              <div className="flex items-center gap-1.5 text-xs text-green-600">
+                                <Check className="h-3 w-3" />
+                                <span>لا حاجة لإجراءات إضافية</span>
+                              </div>
+                              <div className="flex items-center gap-1.5 text-xs text-green-600">
+                                <Check className="h-3 w-3" />
+                                <span>دعم فني كامل من المنصة</span>
+                              </div>
+                              <div className="flex items-center gap-1.5 text-xs text-green-600">
+                                <Check className="h-3 w-3" />
+                                <span>تقارير مالية مفصلة</span>
+                              </div>
+                            </div>
+                            
+                            {/* Cons */}
+                            <div className="space-y-1.5">
+                              <div className="flex items-center gap-1.5 text-xs text-amber-600">
+                                <X className="h-3 w-3" />
+                                <span>عمولة المنصة على المبيعات</span>
+                              </div>
+                              <div className="flex items-center gap-1.5 text-xs text-amber-600">
+                                <X className="h-3 w-3" />
+                                <span>تحويل أسبوعي (ليس فوري)</span>
+                              </div>
+                            </div>
+                            
+                            <div className="flex gap-2 mt-3">
+                              <Badge variant="secondary" className="text-[10px]">
+                                <Wallet className="h-3 w-3 ml-1" />
+                                تحويل أسبوعي
+                              </Badge>
+                            </div>
                           </div>
                         </div>
                       </motion.div>
@@ -1431,18 +1472,49 @@ const ProviderRegister = () => {
                           </motion.div>
                         )}
                         <div className="flex items-start gap-3">
-                          <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center shrink-0">
-                            <CreditCard className="h-5 w-5 text-green-600" />
+                          <div className="w-12 h-12 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center shrink-0">
+                            <CreditCard className="h-6 w-6 text-green-600" />
                           </div>
-                          <div>
-                            <h4 className="font-bold mb-1">ربط مباشر (EdfaPay)</h4>
-                            <p className="text-xs text-muted-foreground leading-relaxed">
-                              تسجل مباشرة مع بوابة الدفع وتستلم أرباحك فوراً في حسابك
+                          <div className="flex-1">
+                            <h4 className="font-bold mb-2">ربط مباشر (EdfaPay)</h4>
+                            <p className="text-xs text-muted-foreground leading-relaxed mb-3">
+                              تسجل مباشرة مع بوابة الدفع وتستلم أرباحك فوراً
                             </p>
-                            <Badge variant="outline" className="mt-2 text-[10px]">
-                              <CreditCard className="h-3 w-3 ml-1" />
-                              استلام فوري
-                            </Badge>
+                            
+                            {/* Pros */}
+                            <div className="space-y-1.5 mb-3">
+                              <div className="flex items-center gap-1.5 text-xs text-green-600">
+                                <Check className="h-3 w-3" />
+                                <span>استلام فوري للأرباح</span>
+                              </div>
+                              <div className="flex items-center gap-1.5 text-xs text-green-600">
+                                <Check className="h-3 w-3" />
+                                <span>تحكم كامل في المدفوعات</span>
+                              </div>
+                              <div className="flex items-center gap-1.5 text-xs text-green-600">
+                                <Check className="h-3 w-3" />
+                                <span>بدون عمولة منصة</span>
+                              </div>
+                            </div>
+                            
+                            {/* Cons */}
+                            <div className="space-y-1.5">
+                              <div className="flex items-center gap-1.5 text-xs text-amber-600">
+                                <X className="h-3 w-3" />
+                                <span>يتطلب تسجيل في EdfaPay</span>
+                              </div>
+                              <div className="flex items-center gap-1.5 text-xs text-amber-600">
+                                <X className="h-3 w-3" />
+                                <span>عمولة بوابة الدفع (~2.5%)</span>
+                              </div>
+                            </div>
+                            
+                            <div className="flex gap-2 mt-3">
+                              <Badge variant="outline" className="text-[10px]">
+                                <CreditCard className="h-3 w-3 ml-1" />
+                                استلام فوري
+                              </Badge>
+                            </div>
                           </div>
                         </div>
                       </motion.div>
@@ -1452,14 +1524,89 @@ const ProviderRegister = () => {
                       <motion.div
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: 'auto' }}
-                        className="p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg text-sm"
+                        className="p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg"
                       >
-                        <p className="text-amber-800 dark:text-amber-200">
-                          <Info className="h-4 w-4 inline ml-1" />
-                          سيتم إرشادك بعد التسجيل لإنشاء حساب EdfaPay وربطه بمتجرك
-                        </p>
+                        <div className="flex items-start gap-3">
+                          <Info className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+                          <div className="space-y-2">
+                            <p className="text-sm text-amber-800 dark:text-amber-200 font-medium">
+                              خطوات الربط مع EdfaPay:
+                            </p>
+                            <ol className="text-xs text-amber-700 dark:text-amber-300 space-y-1 list-decimal list-inside">
+                              <li>سجل حساب تاجر في EdfaPay</li>
+                              <li>أكمل التحقق من الهوية</li>
+                              <li>احصل على Merchant ID و Secret Key</li>
+                              <li>أضفها في إعدادات متجرك</li>
+                            </ol>
+                            <Link 
+                              to="/edfapay-guide" 
+                              className="inline-flex items-center gap-1 text-xs text-primary hover:underline font-medium mt-2"
+                            >
+                              <ArrowRight className="h-3 w-3 rotate-180" />
+                              اقرأ الدليل الكامل
+                            </Link>
+                          </div>
+                        </div>
                       </motion.div>
                     )}
+
+                    {/* Comparison Table */}
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.2 }}
+                      className="mt-4"
+                    >
+                      <details className="group">
+                        <summary className="flex items-center gap-2 cursor-pointer text-sm text-muted-foreground hover:text-foreground transition-colors">
+                          <ArrowLeftRight className="h-4 w-4" />
+                          عرض مقارنة تفصيلية
+                        </summary>
+                        <div className="mt-3 overflow-x-auto">
+                          <table className="w-full text-xs border rounded-lg overflow-hidden">
+                            <thead className="bg-muted">
+                              <tr>
+                                <th className="p-2 text-right font-medium">المقارنة</th>
+                                <th className="p-2 text-center font-medium">عبر المنصة</th>
+                                <th className="p-2 text-center font-medium">ربط مباشر</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y">
+                              <tr>
+                                <td className="p-2">سرعة الاستلام</td>
+                                <td className="p-2 text-center">أسبوعياً</td>
+                                <td className="p-2 text-center text-green-600 font-medium">فوري (1-2 يوم)</td>
+                              </tr>
+                              <tr>
+                                <td className="p-2">عمولة المنصة</td>
+                                <td className="p-2 text-center">نعم</td>
+                                <td className="p-2 text-center text-green-600 font-medium">لا</td>
+                              </tr>
+                              <tr>
+                                <td className="p-2">عمولة بوابة الدفع</td>
+                                <td className="p-2 text-center text-green-600 font-medium">مشمولة</td>
+                                <td className="p-2 text-center">~2.5% + 1 ر.س</td>
+                              </tr>
+                              <tr>
+                                <td className="p-2">إجراءات التسجيل</td>
+                                <td className="p-2 text-center text-green-600 font-medium">بسيطة</td>
+                                <td className="p-2 text-center">تتطلب تسجيل إضافي</td>
+                              </tr>
+                              <tr>
+                                <td className="p-2">الدعم الفني</td>
+                                <td className="p-2 text-center text-green-600 font-medium">كامل</td>
+                                <td className="p-2 text-center">جزئي</td>
+                              </tr>
+                              <tr>
+                                <td className="p-2">التقارير المالية</td>
+                                <td className="p-2 text-center text-green-600 font-medium">متكاملة</td>
+                                <td className="p-2 text-center">منفصلة</td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                      </details>
+                    </motion.div>
                   </div>
                 )}
 
