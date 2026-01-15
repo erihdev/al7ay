@@ -55,9 +55,28 @@ const Landing = () => {
         
         {/* Header */}
         <header className="sticky top-0 z-50 bg-background/95 backdrop-blur border-b">
-          <div className="container mx-auto px-4 py-3 flex items-center justify-between">
-            <AnimatedLogo size="md" showText={true} />
-            <ThemeToggle />
+          <div className="container mx-auto px-4 py-3">
+            <div className="flex items-center justify-between mb-3">
+              <AnimatedLogo size="md" showText={true} />
+              <ThemeToggle />
+            </div>
+            {/* How it Works - 3 Steps */}
+            <div className="flex justify-center gap-2 md:gap-6 text-[10px] md:text-xs">
+              <div className="flex items-center gap-1.5">
+                <span className="w-5 h-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold text-[10px]">1</span>
+                <span className="text-muted-foreground">اختر حيّك</span>
+              </div>
+              <ArrowLeft className="h-3 w-3 text-muted-foreground/50 rotate-180" />
+              <div className="flex items-center gap-1.5">
+                <span className="w-5 h-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold text-[10px]">2</span>
+                <span className="text-muted-foreground">اطلب منتجاتك</span>
+              </div>
+              <ArrowLeft className="h-3 w-3 text-muted-foreground/50 rotate-180" />
+              <div className="flex items-center gap-1.5">
+                <span className="w-5 h-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold text-[10px]">3</span>
+                <span className="text-muted-foreground">استلم بدقائق</span>
+              </div>
+            </div>
           </div>
         </header>
 
