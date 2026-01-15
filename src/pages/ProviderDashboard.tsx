@@ -60,7 +60,71 @@ const ProviderDashboard = () => {
   useProviderOrderNotifications(provider?.id, soundEnabled);
 
   useEffect(() => {
-    loadDashboard();
+    let isMounted = true;
+    
+    const init = async () => {
+      try {
+        // Get session first
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (!session?.user) {
+          if (isMounted) {
+            navigate('/provider-login', { replace: true });
+          }
+          return;
+        }
+
+        // Get provider data
+        const { data: providerData, error: providerError } = await supabase
+          .from('service_providers')
+          .select('id, business_name, logo_url')
+          .eq('user_id', session.user.id)
+          .maybeSingle();
+
+        if (!isMounted) return;
+
+        if (providerError) {
+          setError(providerError.message);
+          setLoading(false);
+          return;
+        }
+
+        if (!providerData) {
+          setError('لم يتم العثور على حساب مقدم خدمة');
+          setLoading(false);
+          return;
+        }
+
+        // Get products and orders
+        const [productsRes, ordersRes] = await Promise.all([
+          supabase.from('provider_products').select('id, is_available, is_featured').eq('provider_id', providerData.id),
+          supabase.from('provider_orders').select('id, status, total_amount, created_at').eq('provider_id', providerData.id).order('created_at', { ascending: false })
+        ]);
+
+        if (!isMounted) return;
+
+        setProvider(providerData);
+        setProducts(productsRes.data || []);
+        setOrders(ordersRes.data || []);
+        setLoading(false);
+      } catch (err) {
+        console.error('Dashboard load error:', err);
+        if (isMounted) {
+          setError('حدث خطأ أثناء تحميل البيانات');
+          setLoading(false);
+        }
+      }
+    };
+
+    // Set timeout to prevent infinite loading
+    const timeoutId = setTimeout(() => {
+      if (isMounted && loading) {
+        setError('انتهت مهلة تحميل البيانات');
+        setLoading(false);
+      }
+    }, 10000);
+
+    init();
     
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
@@ -69,50 +133,33 @@ const ProviderDashboard = () => {
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      isMounted = false;
+      clearTimeout(timeoutId);
+      subscription.unsubscribe();
+    };
   }, [navigate]);
 
   const loadDashboard = async () => {
+    if (!provider) return;
+    
     setLoading(true);
     setError(null);
 
-    // Get session
-    const { data: { session } } = await supabase.auth.getSession();
-    
-    if (!session?.user) {
-      navigate('/provider-login', { replace: true });
-      return;
-    }
+    try {
+      const [productsRes, ordersRes] = await Promise.all([
+        supabase.from('provider_products').select('id, is_available, is_featured').eq('provider_id', provider.id),
+        supabase.from('provider_orders').select('id, status, total_amount, created_at').eq('provider_id', provider.id).order('created_at', { ascending: false })
+      ]);
 
-    // Get provider
-    const { data: providerData, error: providerError } = await supabase
-      .from('service_providers')
-      .select('id, business_name, logo_url')
-      .eq('user_id', session.user.id)
-      .maybeSingle();
-
-    if (providerError) {
-      setError(providerError.message);
+      setProducts(productsRes.data || []);
+      setOrders(ordersRes.data || []);
+    } catch (err) {
+      console.error('Refresh error:', err);
+      toast.error('حدث خطأ أثناء تحديث البيانات');
+    } finally {
       setLoading(false);
-      return;
     }
-
-    if (!providerData) {
-      setError('لم يتم العثور على حساب مقدم خدمة');
-      setLoading(false);
-      return;
-    }
-
-    // Get products and orders
-    const [productsRes, ordersRes] = await Promise.all([
-      supabase.from('provider_products').select('id, is_available, is_featured').eq('provider_id', providerData.id),
-      supabase.from('provider_orders').select('id, status, total_amount, created_at').eq('provider_id', providerData.id).order('created_at', { ascending: false })
-    ]);
-
-    setProvider(providerData);
-    setProducts(productsRes.data || []);
-    setOrders(ordersRes.data || []);
-    setLoading(false);
   };
 
   const handleLogout = async () => {
