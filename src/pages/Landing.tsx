@@ -10,7 +10,8 @@ import {
   Smartphone,
   Shield,
   Users,
-  Download
+  Download,
+  Lock
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
@@ -333,7 +334,8 @@ const Landing = () => {
                   <Link to="/contact" className="text-muted-foreground hover:text-primary transition-colors">
                     اتصل بنا
                   </Link>
-                  <Link to="/admin-login" className="text-muted-foreground hover:text-primary transition-colors">
+                  <Link to="/admin-login" className="text-muted-foreground hover:text-primary transition-colors flex items-center gap-1">
+                    <Lock className="h-3 w-3" />
                     لوحة التحكم
                   </Link>
                 </div>
