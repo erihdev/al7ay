@@ -106,37 +106,25 @@ const ProviderLogin = () => {
         throw new Error('فشل تسجيل الدخول');
       }
 
-      // Step 2: Session is now active
+      // Step 2: Success - redirect immediately without resetting loading
       toast.success('تم تسجيل الدخول بنجاح');
       
-      // Use replace for guaranteed navigation on mobile - don't add to history
-      setTimeout(() => {
-        window.location.replace('/provider-dashboard');
-      }, 100);
+      // Direct navigation - don't use setTimeout, just navigate
+      window.location.href = '/provider-dashboard';
+      // Don't set isLoading to false - let the page redirect
+      return;
       
     } catch (error: any) {
       console.error('Login error:', error);
+      setIsLoading(false);
       
-      // Handle network errors - check if session was actually created
-      if (error.name === 'AbortError' || error.message?.includes('aborted') || error.message?.includes('Failed to fetch')) {
-        // Wait a moment then check session
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        const { data: sessionCheck } = await supabase.auth.getSession();
-        if (sessionCheck?.session) {
-          toast.success('تم تسجيل الدخول بنجاح');
-          window.location.href = '/provider-dashboard';
-          return;
-        }
-        toast.error('انتهت مهلة الاتصال. يرجى المحاولة مرة أخرى');
-      } else if (error.message?.includes('Invalid login credentials')) {
+      if (error.message?.includes('Invalid login credentials')) {
         toast.error('البريد الإلكتروني أو كلمة المرور غير صحيحة');
       } else if (error.message?.includes('Email not confirmed')) {
         toast.error('يرجى تأكيد البريد الإلكتروني أولاً');
       } else {
         toast.error(error.message || 'حدث خطأ أثناء تسجيل الدخول');
       }
-    } finally {
-      setIsLoading(false);
     }
   };
 
