@@ -1,6 +1,9 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useProviderCart } from '@/contexts/ProviderCartContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { useMapboxToken } from '@/hooks/useMapboxToken';
+import mapboxgl from 'mapbox-gl';
+import 'mapbox-gl/dist/mapbox-gl.css';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -36,7 +39,9 @@ import {
   Sparkles,
   ExternalLink,
   AlertTriangle,
-  RefreshCw
+  RefreshCw,
+  Map,
+  Navigation
 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { toast } from 'sonner';
@@ -56,6 +61,234 @@ interface OrderResult {
   orderNumber: string;
 }
 
+// Manual Location Picker Component
+interface ManualLocationPickerProps {
+  storeLocation: { lat: number; lng: number };
+  deliveryRadiusKm: number;
+  onLocationSelect: (lat: number, lng: number) => void;
+  primaryColor: string;
+}
+
+function ManualLocationPicker({ storeLocation, deliveryRadiusKm, onLocationSelect, primaryColor }: ManualLocationPickerProps) {
+  const mapContainer = useRef<HTMLDivElement>(null);
+  const map = useRef<mapboxgl.Map | null>(null);
+  const marker = useRef<mapboxgl.Marker | null>(null);
+  const { data: mapboxToken, isLoading: isLoadingToken } = useMapboxToken();
+  const [selectedLocation, setSelectedLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [address, setAddress] = useState('');
+
+  // Create circle GeoJSON
+  const createCircleGeoJSON = (lng: number, lat: number, radiusKm: number) => {
+    const points = 64;
+    const coords: [number, number][] = [];
+    const radiusMeters = radiusKm * 1000;
+    
+    for (let i = 0; i < points; i++) {
+      const angle = (i / points) * 2 * Math.PI;
+      const dx = radiusMeters * Math.cos(angle);
+      const dy = radiusMeters * Math.sin(angle);
+      
+      const newLat = lat + (dy / 111320);
+      const newLng = lng + (dx / (111320 * Math.cos(lat * Math.PI / 180)));
+      
+      coords.push([newLng, newLat]);
+    }
+    coords.push(coords[0]);
+
+    return {
+      type: 'FeatureCollection' as const,
+      features: [{
+        type: 'Feature' as const,
+        properties: {},
+        geometry: {
+          type: 'Polygon' as const,
+          coordinates: [coords],
+        },
+      }],
+    };
+  };
+
+  // Reverse geocode
+  const reverseGeocode = async (lat: number, lng: number) => {
+    if (!mapboxToken) return;
+    try {
+      const response = await fetch(
+        `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?access_token=${mapboxToken}&language=ar`
+      );
+      const data = await response.json();
+      if (data.features && data.features.length > 0) {
+        setAddress(data.features[0].place_name);
+      }
+    } catch (error) {
+      console.error('Reverse geocode error:', error);
+    }
+  };
+
+  useEffect(() => {
+    if (!mapContainer.current || !mapboxToken) return;
+
+    mapboxgl.accessToken = mapboxToken;
+
+    map.current = new mapboxgl.Map({
+      container: mapContainer.current,
+      style: 'mapbox://styles/mapbox/streets-v12',
+      center: [storeLocation.lng, storeLocation.lat],
+      zoom: 13,
+      attributionControl: false,
+    });
+
+    map.current.addControl(new mapboxgl.NavigationControl(), 'top-left');
+
+    map.current.on('load', () => {
+      if (!map.current) return;
+
+      // Add store marker
+      const storeEl = document.createElement('div');
+      storeEl.innerHTML = `
+        <div style="
+          width: 36px;
+          height: 36px;
+          background: ${primaryColor};
+          border-radius: 50%;
+          border: 3px solid white;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        ">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
+            <path d="M4 7V4h16v3h-2v13H6V7H4zm2 0v11h12V7H6z"/>
+          </svg>
+        </div>
+      `;
+
+      new mapboxgl.Marker({ element: storeEl })
+        .setLngLat([storeLocation.lng, storeLocation.lat])
+        .addTo(map.current!);
+
+      // Add delivery zone circle
+      map.current.addSource('delivery-zone', {
+        type: 'geojson',
+        data: createCircleGeoJSON(storeLocation.lng, storeLocation.lat, deliveryRadiusKm),
+      });
+
+      map.current.addLayer({
+        id: 'delivery-zone-fill',
+        type: 'fill',
+        source: 'delivery-zone',
+        paint: {
+          'fill-color': primaryColor,
+          'fill-opacity': 0.1,
+        },
+      });
+
+      map.current.addLayer({
+        id: 'delivery-zone-border',
+        type: 'line',
+        source: 'delivery-zone',
+        paint: {
+          'line-color': primaryColor,
+          'line-width': 2,
+          'line-dasharray': [3, 2],
+        },
+      });
+    });
+
+    // Create draggable marker
+    marker.current = new mapboxgl.Marker({
+      color: '#3b82f6',
+      draggable: true,
+    })
+      .setLngLat([storeLocation.lng, storeLocation.lat])
+      .addTo(map.current);
+
+    marker.current.on('dragend', () => {
+      const lngLat = marker.current?.getLngLat();
+      if (lngLat) {
+        setSelectedLocation({ lat: lngLat.lat, lng: lngLat.lng });
+        reverseGeocode(lngLat.lat, lngLat.lng);
+      }
+    });
+
+    map.current.on('click', (e) => {
+      marker.current?.setLngLat(e.lngLat);
+      setSelectedLocation({ lat: e.lngLat.lat, lng: e.lngLat.lng });
+      reverseGeocode(e.lngLat.lat, e.lngLat.lng);
+    });
+
+    return () => {
+      map.current?.remove();
+    };
+  }, [mapboxToken, storeLocation, deliveryRadiusKm, primaryColor]);
+
+  const handleGetCurrentLocation = () => {
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        if (map.current && marker.current) {
+          map.current.flyTo({ center: [longitude, latitude], zoom: 15 });
+          marker.current.setLngLat([longitude, latitude]);
+          setSelectedLocation({ lat: latitude, lng: longitude });
+          reverseGeocode(latitude, longitude);
+        }
+      },
+      () => {
+        toast.error('لم نتمكن من تحديد موقعك');
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
+
+  if (isLoadingToken) {
+    return (
+      <div className="h-48 bg-muted rounded-xl flex items-center justify-center">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="relative rounded-xl overflow-hidden border">
+        <div ref={mapContainer} className="h-48 w-full" />
+        
+        <Button
+          type="button"
+          size="icon"
+          variant="secondary"
+          className="absolute bottom-2 left-2 shadow-lg h-8 w-8"
+          onClick={handleGetCurrentLocation}
+          title="موقعي الحالي"
+        >
+          <Navigation className="h-4 w-4" />
+        </Button>
+      </div>
+
+      {address && (
+        <div className="flex items-start gap-2 p-2.5 bg-muted rounded-lg text-xs">
+          <MapPin className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+          <p className="line-clamp-2">{address}</p>
+        </div>
+      )}
+
+      <Button
+        type="button"
+        className="w-full h-10 rounded-xl gap-2"
+        style={{ backgroundColor: primaryColor }}
+        onClick={() => selectedLocation && onLocationSelect(selectedLocation.lat, selectedLocation.lng)}
+        disabled={!selectedLocation}
+      >
+        <CheckCircle2 className="h-4 w-4" />
+        تأكيد الموقع
+      </Button>
+
+      <p className="text-[10px] text-muted-foreground text-center">
+        اضغط على الخريطة أو اسحب العلامة الزرقاء لتحديد موقع التوصيل
+      </p>
+    </div>
+  );
+}
+
 const StoreCart = ({ primaryColor = '#1B4332', storeLocation, deliveryRadiusKm = 5 }: StoreCartProps) => {
   const navigate = useNavigate();
   const { items, providerId, providerName, totalItems, totalPrice, updateQuantity, removeItem, clearCart } = useProviderCart();
@@ -69,6 +302,8 @@ const StoreCart = ({ primaryColor = '#1B4332', storeLocation, deliveryRadiusKm =
   const [customerLocation, setCustomerLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [isOutOfRange, setIsOutOfRange] = useState(false);
   const [distanceToStore, setDistanceToStore] = useState<number | null>(null);
+  const [useManualLocation, setUseManualLocation] = useState(false);
+  const [showMapPicker, setShowMapPicker] = useState(false);
   
   const [orderType, setOrderType] = useState<'pickup' | 'delivery'>('pickup');
   const [customerName, setCustomerName] = useState('');
@@ -120,12 +355,30 @@ const StoreCart = ({ primaryColor = '#1B4332', storeLocation, deliveryRadiusKm =
     );
   }, [storeLocation, deliveryRadiusKm]);
 
-  // Check location when switching to delivery
+  // Check location when switching to delivery (only if not using manual location)
   useEffect(() => {
-    if (orderType === 'delivery' && storeLocation && !customerLocation) {
+    if (orderType === 'delivery' && storeLocation && !customerLocation && !useManualLocation) {
       checkDeliveryRange();
     }
-  }, [orderType, storeLocation, customerLocation, checkDeliveryRange]);
+  }, [orderType, storeLocation, customerLocation, checkDeliveryRange, useManualLocation]);
+
+  // Handle manual location selection
+  const handleManualLocationSelect = (lat: number, lng: number) => {
+    if (!storeLocation) return;
+    
+    setCustomerLocation({ lat, lng });
+    
+    const distance = calculateDistance(
+      storeLocation.lat,
+      storeLocation.lng,
+      lat,
+      lng
+    );
+    
+    setDistanceToStore(distance);
+    setIsOutOfRange(distance > deliveryRadiusKm);
+    setShowMapPicker(false);
+  };
 
   // Auto-fill user data when logged in
   useEffect(() => {
@@ -427,61 +680,124 @@ const StoreCart = ({ primaryColor = '#1B4332', storeLocation, deliveryRadiusKm =
             </Label>
           </RadioGroup>
 
-          {/* Delivery Range Warning */}
+          {/* Location Selection Options */}
           {orderType === 'delivery' && (
-            <AnimatePresence>
-              {isCheckingLocation && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="flex items-center justify-center gap-2 p-3 bg-muted rounded-xl"
+            <div className="space-y-3">
+              {/* Location Mode Toggle */}
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  type="button"
+                  variant={!useManualLocation ? "default" : "outline"}
+                  size="sm"
+                  className="gap-2 h-10"
+                  onClick={() => {
+                    setUseManualLocation(false);
+                    setShowMapPicker(false);
+                    setCustomerLocation(null);
+                    setDistanceToStore(null);
+                    setIsOutOfRange(false);
+                    checkDeliveryRange();
+                  }}
+                  style={!useManualLocation ? { backgroundColor: primaryColor } : {}}
                 >
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  <span className="text-sm text-muted-foreground">جاري تحديد موقعك...</span>
-                </motion.div>
-              )}
+                  <Navigation className="h-4 w-4" />
+                  موقعي الحالي
+                </Button>
+                <Button
+                  type="button"
+                  variant={useManualLocation ? "default" : "outline"}
+                  size="sm"
+                  className="gap-2 h-10"
+                  onClick={() => {
+                    setUseManualLocation(true);
+                    setShowMapPicker(true);
+                    setCustomerLocation(null);
+                    setDistanceToStore(null);
+                    setIsOutOfRange(false);
+                  }}
+                  style={useManualLocation ? { backgroundColor: primaryColor } : {}}
+                >
+                  <Map className="h-4 w-4" />
+                  تحديد يدوي
+                </Button>
+              </div>
 
-              {!isCheckingLocation && isOutOfRange && (
-                <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                >
-                  <Alert className="border-red-300 bg-red-50 dark:bg-red-950/30 dark:border-red-800">
-                    <AlertTriangle className="h-4 w-4 text-red-600" />
-                    <AlertDescription className="text-red-700 dark:text-red-400 text-sm">
-                      <span className="font-bold block mb-1">أنت خارج نطاق التوصيل!</span>
-                      المسافة: {distanceToStore?.toFixed(1)} كم (الحد الأقصى: {deliveryRadiusKm} كم)
-                      <br />
-                      <span className="text-xs">يرجى اختيار "استلام" من المتجر بدلاً من التوصيل</span>
-                    </AlertDescription>
-                  </Alert>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="w-full mt-2 gap-2"
-                    onClick={checkDeliveryRange}
+              {/* Manual Map Picker */}
+              <AnimatePresence>
+                {useManualLocation && showMapPicker && storeLocation && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="overflow-hidden"
                   >
-                    <RefreshCw className="h-4 w-4" />
-                    إعادة تحديد الموقع
-                  </Button>
-                </motion.div>
-              )}
+                    <ManualLocationPicker
+                      storeLocation={storeLocation}
+                      deliveryRadiusKm={deliveryRadiusKm}
+                      onLocationSelect={handleManualLocationSelect}
+                      primaryColor={primaryColor}
+                    />
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
-              {!isCheckingLocation && !isOutOfRange && distanceToStore !== null && (
-                <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-950/30 rounded-xl border border-green-200 dark:border-green-800"
-                >
-                  <CheckCircle2 className="h-4 w-4 text-green-600" />
-                  <span className="text-sm text-green-700 dark:text-green-400">
-                    موقعك ضمن نطاق التوصيل ({distanceToStore?.toFixed(1)} كم)
-                  </span>
-                </motion.div>
-              )}
-            </AnimatePresence>
+              {/* Auto Location Status */}
+              <AnimatePresence>
+                {!useManualLocation && isCheckingLocation && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="flex items-center justify-center gap-2 p-3 bg-muted rounded-xl"
+                  >
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span className="text-sm text-muted-foreground">جاري تحديد موقعك...</span>
+                  </motion.div>
+                )}
+
+                {!isCheckingLocation && isOutOfRange && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                  >
+                    <Alert className="border-red-300 bg-red-50 dark:bg-red-950/30 dark:border-red-800">
+                      <AlertTriangle className="h-4 w-4 text-red-600" />
+                      <AlertDescription className="text-red-700 dark:text-red-400 text-sm">
+                        <span className="font-bold block mb-1">أنت خارج نطاق التوصيل!</span>
+                        المسافة: {distanceToStore?.toFixed(1)} كم (الحد الأقصى: {deliveryRadiusKm} كم)
+                        <br />
+                        <span className="text-xs">يرجى اختيار "استلام" من المتجر أو تحديد موقع آخر</span>
+                      </AlertDescription>
+                    </Alert>
+                    {!useManualLocation && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="w-full mt-2 gap-2"
+                        onClick={checkDeliveryRange}
+                      >
+                        <RefreshCw className="h-4 w-4" />
+                        إعادة تحديد الموقع
+                      </Button>
+                    )}
+                  </motion.div>
+                )}
+
+                {!isCheckingLocation && !isOutOfRange && distanceToStore !== null && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-950/30 rounded-xl border border-green-200 dark:border-green-800"
+                  >
+                    <CheckCircle2 className="h-4 w-4 text-green-600" />
+                    <span className="text-sm text-green-700 dark:text-green-400">
+                      موقعك ضمن نطاق التوصيل ({distanceToStore?.toFixed(1)} كم)
+                    </span>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           )}
         </div>
 
