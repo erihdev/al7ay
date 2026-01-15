@@ -27,6 +27,7 @@ import ProviderDashboard from "./pages/ProviderDashboard";
 import NotFound from "./pages/NotFound";
 import Install from "./pages/Install";
 import Changelog from "./pages/Changelog";
+import ProviderRegister from "./pages/ProviderRegister";
 
 const queryClient = new QueryClient();
 
@@ -67,6 +68,7 @@ const App = () => {
                     <Route path="/admin-forgot-password" element={<AdminForgotPassword />} />
                     <Route path="/payment-result" element={<PaymentResult />} />
                     <Route path="/provider-login" element={<ProviderLogin />} />
+                    <Route path="/provider-register" element={<ProviderRegister />} />
                     <Route path="/provider-dashboard" element={<ProviderDashboard />} />
                     <Route path="/store/:providerId" element={<ProviderStore />} />
                     <Route path="/install" element={<Install />} />
