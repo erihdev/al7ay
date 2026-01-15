@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -9,13 +10,15 @@ import {
   Package,
   Phone,
   MapPin,
-  User
+  User,
+  Navigation2
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { useProviderOrders, useUpdateProviderOrder, ProviderOrder } from '@/hooks/useProviderOrders';
+import { ProviderDeliveryTracker } from './ProviderDeliveryTracker';
 
 interface ProviderOrdersManagerProps {
   providerId: string;
@@ -35,6 +38,7 @@ const statusFlow = ['pending', 'preparing', 'ready', 'out_for_delivery', 'comple
 const ProviderOrdersManager = ({ providerId }: ProviderOrdersManagerProps) => {
   const { data: orders, isLoading } = useProviderOrders(providerId);
   const updateOrderMutation = useUpdateProviderOrder();
+  const [trackingOrderId, setTrackingOrderId] = useState<string | null>(null);
 
   const handleStatusChange = async (order: ProviderOrder, newStatus: string) => {
     try {
@@ -122,7 +126,20 @@ const ProviderOrdersManager = ({ providerId }: ProviderOrdersManagerProps) => {
             </p>
           )}
 
-          {order.status !== 'completed' && order.status !== 'cancelled' && (
+          {/* Delivery Tracker for out_for_delivery orders */}
+          {order.status === 'out_for_delivery' && order.order_type === 'delivery' && (
+            <div className="mb-3">
+              <ProviderDeliveryTracker
+                orderId={order.id}
+                customerName={order.customer_name}
+                customerPhone={order.customer_phone}
+                deliveryAddress={order.delivery_address}
+                onDeliveryComplete={() => handleStatusChange(order, 'completed')}
+              />
+            </div>
+          )}
+
+          {order.status !== 'completed' && order.status !== 'cancelled' && order.status !== 'out_for_delivery' && (
             <div className="flex gap-2">
               {nextStatus && (
                 <Button

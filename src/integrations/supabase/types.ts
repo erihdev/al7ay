@@ -763,6 +763,82 @@ export type Database = {
         }
         Relationships: []
       }
+      provider_delivery_route_history: {
+        Row: {
+          id: string
+          lat: number
+          lng: number
+          order_id: string
+          recorded_at: string
+          speed: number | null
+        }
+        Insert: {
+          id?: string
+          lat: number
+          lng: number
+          order_id: string
+          recorded_at?: string
+          speed?: number | null
+        }
+        Update: {
+          id?: string
+          lat?: number
+          lng?: number
+          order_id?: string
+          recorded_at?: string
+          speed?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "provider_delivery_route_history_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "provider_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      provider_delivery_tracking: {
+        Row: {
+          created_at: string
+          current_lat: number
+          current_lng: number
+          heading: number | null
+          id: string
+          order_id: string
+          speed: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          current_lat: number
+          current_lng: number
+          heading?: number | null
+          id?: string
+          order_id: string
+          speed?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          current_lat?: number
+          current_lng?: number
+          heading?: number | null
+          id?: string
+          order_id?: string
+          speed?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "provider_delivery_tracking_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: true
+            referencedRelation: "provider_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       provider_order_items: {
         Row: {
           created_at: string
