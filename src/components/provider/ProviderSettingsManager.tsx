@@ -46,7 +46,9 @@ const ProviderSettingsManager = ({ provider, onUpdate }: ProviderSettingsManager
   const [paymentData, setPaymentData] = useState({
     bank_name: '',
     iban: '',
-    national_address: ''
+    national_address: '',
+    payment_method: 'platform_managed' as 'direct_gateway' | 'platform_managed',
+    gateway_approval_url: ''
   });
 
   useEffect(() => {
@@ -61,7 +63,9 @@ const ProviderSettingsManager = ({ provider, onUpdate }: ProviderSettingsManager
       setPaymentData({
         bank_name: provider.bank_name || '',
         iban: provider.iban || '',
-        national_address: provider.national_address || ''
+        national_address: provider.national_address || '',
+        payment_method: provider.payment_method || 'platform_managed',
+        gateway_approval_url: provider.gateway_approval_url || ''
       });
       if (provider.logo_url) {
         setLogoPreview(provider.logo_url);
@@ -186,7 +190,9 @@ const ProviderSettingsManager = ({ provider, onUpdate }: ProviderSettingsManager
         bank_name: paymentData.bank_name || null,
         iban: ibanClean || null,
         national_address: paymentData.national_address || null,
-        freelance_certificate_url: certificateUrl
+        freelance_certificate_url: certificateUrl,
+        payment_method: paymentData.payment_method,
+        gateway_approval_url: paymentData.gateway_approval_url || null
       };
 
       if (onUpdate) {
@@ -359,6 +365,83 @@ const ProviderSettingsManager = ({ provider, onUpdate }: ProviderSettingsManager
         </CardHeader>
         <CardContent>
           <form onSubmit={handlePaymentSubmit} className="space-y-6">
+            {/* Payment Method Selection */}
+            <div className="space-y-4">
+              <Label className="font-arabic font-medium">طريقة استقبال المدفوعات *</Label>
+              <div className="grid md:grid-cols-2 gap-4">
+                <div
+                  className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                    paymentData.payment_method === 'platform_managed'
+                      ? 'border-primary bg-primary/5'
+                      : 'border-muted hover:border-primary/50'
+                  }`}
+                  onClick={() => setPaymentData({ ...paymentData, payment_method: 'platform_managed' })}
+                >
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className={`w-4 h-4 rounded-full border-2 ${
+                      paymentData.payment_method === 'platform_managed' ? 'border-primary bg-primary' : 'border-muted-foreground'
+                    }`}>
+                      {paymentData.payment_method === 'platform_managed' && (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <div className="w-1.5 h-1.5 rounded-full bg-white" />
+                        </div>
+                      )}
+                    </div>
+                    <span className="font-medium font-arabic">من خلال المنصة</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground font-arabic pr-7">
+                    المنصة تستقبل المدفوعات وتحول لك أرباحك أسبوعياً بعد خصم العمولة
+                  </p>
+                </div>
+                <div
+                  className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                    paymentData.payment_method === 'direct_gateway'
+                      ? 'border-primary bg-primary/5'
+                      : 'border-muted hover:border-primary/50'
+                  }`}
+                  onClick={() => setPaymentData({ ...paymentData, payment_method: 'direct_gateway' })}
+                >
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className={`w-4 h-4 rounded-full border-2 ${
+                      paymentData.payment_method === 'direct_gateway' ? 'border-primary bg-primary' : 'border-muted-foreground'
+                    }`}>
+                      {paymentData.payment_method === 'direct_gateway' && (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <div className="w-1.5 h-1.5 rounded-full bg-white" />
+                        </div>
+                      )}
+                    </div>
+                    <span className="font-medium font-arabic">التسجيل المباشر مع ادفع باي</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground font-arabic pr-7">
+                    تسجل مباشرة مع بوابة الدفع وترسل لنا الموافقة للتفعيل
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Direct Gateway Instructions */}
+            {paymentData.payment_method === 'direct_gateway' && (
+              <div className="space-y-4 p-4 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-900">
+                <h4 className="font-medium font-arabic text-blue-800 dark:text-blue-300">خطوات التسجيل مع ادفع باي:</h4>
+                <ol className="list-decimal list-inside space-y-2 text-sm font-arabic text-blue-700 dark:text-blue-400">
+                  <li>اذهب إلى موقع ادفع باي وأنشئ حساب تاجر</li>
+                  <li>أكمل عملية التحقق وربط حسابك البنكي معهم</li>
+                  <li>بعد الموافقة، ارفع صورة أو رابط خطاب الموافقة أدناه</li>
+                  <li>سنقوم بمراجعة الموافقة وتفعيل حسابك</li>
+                </ol>
+                <div className="space-y-2 pt-2">
+                  <Label className="font-arabic text-sm">رابط أو رقم موافقة ادفع باي</Label>
+                  <Input
+                    value={paymentData.gateway_approval_url}
+                    onChange={(e) => setPaymentData({ ...paymentData, gateway_approval_url: e.target.value })}
+                    placeholder="أدخل رابط الموافقة أو رقم الحساب في ادفع باي"
+                    dir="ltr"
+                  />
+                </div>
+              </div>
+            )}
+
             {/* Commission Rate Display */}
             <div className="bg-muted/50 rounded-lg p-4 flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -367,7 +450,11 @@ const ProviderSettingsManager = ({ provider, onUpdate }: ProviderSettingsManager
                 </div>
                 <div>
                   <p className="font-medium font-arabic">نسبة المنصة من الطلبات</p>
-                  <p className="text-sm text-muted-foreground font-arabic">يتم خصمها تلقائياً من كل طلب</p>
+                  <p className="text-sm text-muted-foreground font-arabic">
+                    {paymentData.payment_method === 'platform_managed' 
+                      ? 'يتم خصمها قبل التحويل الأسبوعي'
+                      : 'يجب تحويلها للمنصة بعد كل طلب'}
+                  </p>
                 </div>
               </div>
               <span className="text-2xl font-bold text-primary">{provider.commission_rate}%</span>

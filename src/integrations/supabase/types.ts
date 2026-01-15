@@ -825,6 +825,65 @@ export type Database = {
           },
         ]
       }
+      provider_payouts: {
+        Row: {
+          amount: number
+          commission_amount: number
+          created_at: string
+          id: string
+          net_amount: number
+          notes: string | null
+          payout_method: string
+          period_end: string
+          period_start: string
+          processed_at: string | null
+          provider_id: string
+          status: string
+          transaction_reference: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          commission_amount: number
+          created_at?: string
+          id?: string
+          net_amount: number
+          notes?: string | null
+          payout_method?: string
+          period_end: string
+          period_start: string
+          processed_at?: string | null
+          provider_id: string
+          status?: string
+          transaction_reference?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          commission_amount?: number
+          created_at?: string
+          id?: string
+          net_amount?: number
+          notes?: string | null
+          payout_method?: string
+          period_end?: string
+          period_start?: string
+          processed_at?: string | null
+          provider_id?: string
+          status?: string
+          transaction_reference?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "provider_payouts_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "service_providers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       provider_product_reviews: {
         Row: {
           comment: string | null
@@ -1140,14 +1199,20 @@ export type Database = {
           description: string | null
           email: string
           freelance_certificate_url: string | null
+          gateway_account_id: string | null
+          gateway_approval_url: string | null
           iban: string | null
           id: string
           is_active: boolean
           is_payment_verified: boolean | null
           is_verified: boolean
+          last_payout_date: string | null
           logo_url: string | null
           national_address: string | null
           neighborhood_id: string | null
+          payment_method: string | null
+          payout_frequency: string | null
+          pending_payout: number | null
           phone: string | null
           store_settings: Json | null
           subscription_status: string | null
@@ -1164,14 +1229,20 @@ export type Database = {
           description?: string | null
           email: string
           freelance_certificate_url?: string | null
+          gateway_account_id?: string | null
+          gateway_approval_url?: string | null
           iban?: string | null
           id?: string
           is_active?: boolean
           is_payment_verified?: boolean | null
           is_verified?: boolean
+          last_payout_date?: string | null
           logo_url?: string | null
           national_address?: string | null
           neighborhood_id?: string | null
+          payment_method?: string | null
+          payout_frequency?: string | null
+          pending_payout?: number | null
           phone?: string | null
           store_settings?: Json | null
           subscription_status?: string | null
@@ -1188,14 +1259,20 @@ export type Database = {
           description?: string | null
           email?: string
           freelance_certificate_url?: string | null
+          gateway_account_id?: string | null
+          gateway_approval_url?: string | null
           iban?: string | null
           id?: string
           is_active?: boolean
           is_payment_verified?: boolean | null
           is_verified?: boolean
+          last_payout_date?: string | null
           logo_url?: string | null
           national_address?: string | null
           neighborhood_id?: string | null
+          payment_method?: string | null
+          payout_frequency?: string | null
+          pending_payout?: number | null
           phone?: string | null
           store_settings?: Json | null
           subscription_status?: string | null
