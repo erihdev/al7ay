@@ -1,9 +1,9 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import heroCustomerImage from '@/assets/hero-customer.jpg';
-import heroProviderImage from '@/assets/hero-provider.jpg';
-import { 
+import heroCustomerVideo from '@/assets/hero-customer.mp4';
+import heroProviderVideo from '@/assets/hero-provider.mp4';
+import {
   MapPin, 
   Truck, 
   Star, 
@@ -122,9 +122,12 @@ const Landing = () => {
               >
                 <Card className="overflow-hidden border-2 hover:border-primary/50 transition-all group h-full">
                   <div className="relative h-40 overflow-hidden">
-                    <img 
-                      src={heroCustomerImage} 
-                      alt="اطلب من جيرانك" 
+                    <video 
+                      src={heroCustomerVideo} 
+                      autoPlay 
+                      loop 
+                      muted 
+                      playsInline
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
@@ -176,9 +179,12 @@ const Landing = () => {
               >
                 <Card className="overflow-hidden border-2 hover:border-accent/50 transition-all group h-full">
                   <div className="relative h-40 overflow-hidden">
-                    <img 
-                      src={heroProviderImage} 
-                      alt="ابدأ مشروعك" 
+                    <video 
+                      src={heroProviderVideo} 
+                      autoPlay 
+                      loop 
+                      muted 
+                      playsInline
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
