@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ProductCustomizationDialog } from './ProductCustomizationDialog';
 import { useProductAverageRating } from '@/hooks/useProductReviews';
+import { FavoriteButton } from '@/components/favorites/FavoriteButton';
 import { motion } from 'framer-motion';
 import type { Database } from '@/integrations/supabase/types';
 
@@ -68,12 +69,19 @@ export function ProductCard({ product }: ProductCardProps) {
             </motion.div>
           )}
 
+          {/* Favorite button */}
+          <FavoriteButton 
+            productId={product.id} 
+            productType="main" 
+            variant="badge" 
+          />
+
           {/* Rating badge on image */}
           {count > 0 && (
             <motion.div 
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="absolute bottom-2 left-2 bg-background/90 backdrop-blur-sm rounded-full px-2 py-1 flex items-center gap-1 shadow-md"
+              className="absolute bottom-2 right-2 bg-background/90 backdrop-blur-sm rounded-full px-2 py-1 flex items-center gap-1 shadow-md"
             >
               <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
               <span className="text-xs font-bold">{average.toFixed(1)}</span>
