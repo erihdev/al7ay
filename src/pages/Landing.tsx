@@ -121,7 +121,7 @@ const Landing = () => {
                   دخول مقدمي الخدمات
                 </Button>
               </Link>
-              <Link to="/app">
+              <Link to="/profile">
                 <Button className="font-arabic text-xs sm:text-sm">
                   دخول العملاء
                   <ArrowLeft className="h-4 w-4 mr-2" />
