@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useMapboxToken } from '@/hooks/useMapboxToken';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -11,15 +11,13 @@ import {
   XCircle,
   MapPin,
   Loader2,
-  X,
-  Car,
   Navigation2,
-  Hand
+  Hand,
+  Store
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
-import { useRef } from 'react';
 
 interface OrderItem {
   id: string;
@@ -50,42 +48,48 @@ interface PullUpStyleOrderCardProps {
   onDetailsClick?: () => void;
 }
 
-const statusConfig: Record<string, { label: string; icon: any; color: string; bgColor: string }> = {
+const statusConfig: Record<string, { label: string; icon: any; color: string; bgColor: string; step: number }> = {
   pending: { 
     label: 'قيد الانتظار', 
     icon: Clock, 
     color: 'text-amber-700',
-    bgColor: 'bg-amber-100'
+    bgColor: 'bg-amber-100',
+    step: 1
   },
   preparing: { 
-    label: 'جاري تحضير الطلب', 
+    label: 'جاري التحضير', 
     icon: ChefHat, 
-    color: 'text-red-600',
-    bgColor: 'bg-red-100'
+    color: 'text-orange-600',
+    bgColor: 'bg-orange-100',
+    step: 2
   },
   ready: { 
     label: 'جاهز للاستلام', 
     icon: CheckCircle2, 
     color: 'text-green-600',
-    bgColor: 'bg-green-100'
+    bgColor: 'bg-green-100',
+    step: 3
   },
   out_for_delivery: { 
     label: 'في الطريق', 
     icon: Truck, 
     color: 'text-purple-600',
-    bgColor: 'bg-purple-100'
+    bgColor: 'bg-purple-100',
+    step: 3
   },
   completed: { 
     label: 'مكتمل', 
     icon: CheckCircle2, 
     color: 'text-emerald-600',
-    bgColor: 'bg-emerald-100'
+    bgColor: 'bg-emerald-100',
+    step: 4
   },
   cancelled: { 
     label: 'ملغي', 
     icon: XCircle, 
     color: 'text-red-600',
-    bgColor: 'bg-red-100'
+    bgColor: 'bg-red-100',
+    step: 0
   }
 };
 
@@ -100,11 +104,11 @@ export function PullUpStyleOrderCard({
   const watchId = useRef<number | null>(null);
   const { data: mapboxToken, isLoading: isLoadingToken } = useMapboxToken();
 
-  const [showMap, setShowMap] = useState(true);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [routeInfo, setRouteInfo] = useState<{ distance: string; duration: string; durationMinutes: number } | null>(null);
   const [isLocating, setIsLocating] = useState(true);
   const [heading, setHeading] = useState<number>(0);
+  const [mapReady, setMapReady] = useState(false);
 
   const status = statusConfig[order.status] || statusConfig.pending;
   const StatusIcon = status.icon;
@@ -127,7 +131,7 @@ export function PullUpStyleOrderCard({
 
   // Fetch route
   const fetchRoute = useCallback(async (origin: { lat: number; lng: number }) => {
-    if (!map.current) return;
+    if (!map.current || !mapReady) return;
 
     try {
       const { data, error } = await supabase.functions.invoke('calculate-eta', {
@@ -164,7 +168,7 @@ export function PullUpStyleOrderCard({
           data.geometry.coordinates.forEach((coord: [number, number]) => {
             bounds.extend(coord);
           });
-          map.current?.fitBounds(bounds, { padding: 60 });
+          map.current?.fitBounds(bounds, { padding: 50 });
         }
       }
     } catch (error) {
@@ -177,7 +181,7 @@ export function PullUpStyleOrderCard({
         durationMinutes
       });
     }
-  }, [storeLocation, calculateDistance]);
+  }, [storeLocation, calculateDistance, mapReady]);
 
   // Start watching location
   const startLocationWatch = useCallback(() => {
@@ -226,7 +230,7 @@ export function PullUpStyleOrderCard({
 
   // Initialize map
   useEffect(() => {
-    if (!mapContainer.current || !mapboxToken || !showMap) return;
+    if (!mapContainer.current || !mapboxToken) return;
 
     mapboxgl.accessToken = mapboxToken;
 
@@ -234,27 +238,27 @@ export function PullUpStyleOrderCard({
       container: mapContainer.current,
       style: 'mapbox://styles/mapbox/streets-v12',
       center: [storeLocation.lng, storeLocation.lat],
-      zoom: 13,
+      zoom: 14,
       attributionControl: false,
     });
 
-    map.current.addControl(new mapboxgl.NavigationControl(), 'top-left');
-
-    // Store marker
+    // Store marker with orange color
     const storeEl = document.createElement('div');
     storeEl.innerHTML = `
       <div style="
-        width: 40px;
-        height: 40px;
-        background: #f97316;
-        border-radius: 8px;
-        border: 2px solid white;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        width: 44px;
+        height: 44px;
+        background: linear-gradient(135deg, #f97316, #ea580c);
+        border-radius: 50%;
+        border: 3px solid white;
+        box-shadow: 0 4px 14px rgba(249, 115, 22, 0.5);
         display: flex;
         align-items: center;
         justify-content: center;
       ">
-        <span style="color: white; font-weight: bold; font-size: 10px;">STORE</span>
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="white">
+          <path d="M4 7V4h16v3h-2v13H6V7H4zm2 0v11h12V7H6zm3 2h2v7H9V9zm4 0h2v7h-2V9z"/>
+        </svg>
       </div>
     `;
 
@@ -278,10 +282,11 @@ export function PullUpStyleOrderCard({
         paint: {
           'line-color': '#6366f1',
           'line-width': 5,
-          'line-opacity': 0.9,
+          'line-opacity': 0.85,
         },
       });
 
+      setMapReady(true);
       startLocationWatch();
     });
 
@@ -291,22 +296,22 @@ export function PullUpStyleOrderCard({
       }
       map.current?.remove();
     };
-  }, [mapboxToken, storeLocation, showMap, startLocationWatch]);
+  }, [mapboxToken, storeLocation, startLocationWatch]);
 
   // Update user marker
   useEffect(() => {
-    if (!map.current || !userLocation) return;
+    if (!map.current || !userLocation || !mapReady) return;
 
     if (!userMarker.current) {
       const el = document.createElement('div');
       el.innerHTML = `
         <div style="
-          width: 36px;
-          height: 36px;
-          background: #3b82f6;
+          width: 40px;
+          height: 40px;
+          background: linear-gradient(135deg, #3b82f6, #1d4ed8);
           border-radius: 50%;
           border: 3px solid white;
-          box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+          box-shadow: 0 4px 14px rgba(59, 130, 246, 0.5);
           display: flex;
           align-items: center;
           justify-content: center;
@@ -314,12 +319,12 @@ export function PullUpStyleOrderCard({
         ">
           <div style="
             position: absolute;
-            inset: -6px;
+            inset: -8px;
             border-radius: 50%;
-            border: 2px solid rgba(59, 130, 246, 0.4);
+            border: 2px solid rgba(59, 130, 246, 0.3);
             animation: pulse 2s infinite;
           "></div>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="white" style="transform: rotate(${heading}deg);">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="white" style="transform: rotate(${heading}deg);">
             <path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/>
           </svg>
         </div>
@@ -331,154 +336,128 @@ export function PullUpStyleOrderCard({
     } else {
       userMarker.current.setLngLat([userLocation.lng, userLocation.lat]);
     }
-  }, [userLocation, heading]);
+  }, [userLocation, heading, mapReady]);
 
-  // Calculate progress percentage
-  const progressPercent = routeInfo ? Math.min(90, Math.max(10, 100 - (routeInfo.durationMinutes / 30) * 100)) : 30;
+  // Progress steps based on order status
+  const getProgressWidth = () => {
+    if (status.step === 1) return '15%';
+    if (status.step === 2) return '50%';
+    if (status.step >= 3) return '85%';
+    return '0%';
+  };
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="rounded-2xl overflow-hidden shadow-lg bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30"
+      className="rounded-2xl overflow-hidden shadow-xl bg-card border"
     >
-      {/* Header with gradient */}
-      <div className="bg-gradient-to-l from-orange-400 to-amber-400 p-4">
-        <div className="flex items-start justify-between">
-          {/* Left - Order Info */}
+      {/* Header Section */}
+      <div className="bg-gradient-to-l from-orange-500 to-amber-500 p-4">
+        <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            {/* Status Icon */}
-            <div className="w-14 h-14 rounded-xl bg-white/90 flex items-center justify-center">
-              <StatusIcon className="h-7 w-7 text-amber-600" />
+            <div className="w-12 h-12 rounded-xl bg-white/90 flex items-center justify-center shadow-md">
+              <Store className="h-6 w-6 text-orange-600" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <h3 className="text-lg font-bold text-white">
-                  Order #{order.id.slice(-4).toUpperCase()}
-                </h3>
-                <Badge className="bg-orange-600 text-white border-0 text-xs">
-                  مباشر
-                </Badge>
-              </div>
-              <p className="text-white/90 text-sm mt-1">{status.label}</p>
+              <h3 className="text-lg font-bold text-white">
+                {order.service_providers?.business_name || 'المتجر'}
+              </h3>
+              <p className="text-white/90 text-sm">
+                طلب #{order.id.slice(-4).toUpperCase()}
+              </p>
             </div>
           </div>
-
-          {/* Right - Price */}
           <div className="text-left">
             <p className="text-2xl font-bold text-white">
-              {order.total_amount.toFixed(2)}
+              {order.total_amount.toFixed(0)}
               <span className="text-sm font-normal mr-1">ر.س</span>
             </p>
-            <Badge className={`${status.bgColor} ${status.color} border-0 text-xs mt-1`}>
-              <span className="w-1.5 h-1.5 rounded-full bg-current ml-1 animate-pulse" />
-              {status.label}
-            </Badge>
+          </div>
+        </div>
+      </div>
+
+      {/* Status & Progress Section */}
+      <div className="p-4 bg-muted/30">
+        {/* Status Badge */}
+        <div className="flex items-center justify-between mb-4">
+          <Badge className={`${status.bgColor} ${status.color} border-0 px-3 py-1 text-sm font-medium`}>
+            <StatusIcon className="h-4 w-4 ml-1.5" />
+            {status.label}
+          </Badge>
+          {routeInfo && (
+            <span className="text-sm font-medium text-muted-foreground">
+              {routeInfo.distance} • {routeInfo.duration}
+            </span>
+          )}
+        </div>
+
+        {/* Progress Bar */}
+        <div className="flex items-center gap-3 mb-3">
+          <div className="flex flex-col items-center">
+            <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center shadow">
+              <Navigation2 className="h-4 w-4 text-primary-foreground" />
+            </div>
+            <span className="text-[10px] text-muted-foreground mt-1">موقعك</span>
+          </div>
+
+          <div className="flex-1 relative h-2.5 bg-muted rounded-full overflow-hidden">
+            <motion.div 
+              className="absolute left-0 top-0 h-full bg-gradient-to-r from-primary to-primary/80 rounded-full"
+              initial={{ width: '0%' }}
+              animate={{ width: getProgressWidth() }}
+              transition={{ duration: 0.8, ease: 'easeOut' }}
+            />
+          </div>
+
+          <div className="flex flex-col items-center">
+            <div className="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center shadow">
+              <MapPin className="h-4 w-4 text-white" />
+            </div>
+            <span className="text-[10px] text-muted-foreground mt-1">المتجر</span>
           </div>
         </div>
 
         {/* "I'm here" button for ready orders */}
         {order.status === 'ready' && order.order_type === 'pickup' && (
           <Button 
-            className="w-full mt-3 bg-amber-800 hover:bg-amber-900 text-white gap-2"
+            className="w-full bg-green-600 hover:bg-green-700 text-white gap-2 shadow-lg"
             onClick={() => {
               if (order.service_providers?.phone) {
                 window.open(`tel:${order.service_providers.phone}`, '_self');
               }
             }}
           >
-            <Hand className="h-4 w-4" />
-            وصلت المتجر؟ اضغط أنا هنا
+            <Hand className="h-5 w-5" />
+            وصلت؟ أبلغ المتجر
           </Button>
         )}
       </div>
 
-      {/* Progress Bar Section */}
-      <div className="p-4 bg-white dark:bg-card">
-        <div className="flex items-center justify-between mb-2">
-          {routeInfo && (
-            <Badge className="bg-primary text-primary-foreground text-xs">
-              {routeInfo.durationMinutes} min
-            </Badge>
-          )}
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-primary text-sm h-auto p-0"
-            onClick={() => setShowMap(!showMap)}
-          >
-            {showMap ? 'إغلاق' : 'عرض الخريطة'}
-          </Button>
-        </div>
-
-        {/* Progress Track */}
-        <div className="flex items-center gap-2">
-          <div className="flex flex-col items-center">
-            <div className="w-3 h-3 rounded-full bg-muted" />
-            <span className="text-[10px] text-muted-foreground mt-1">أنت</span>
+      {/* Map Section - Always visible */}
+      <div className="relative">
+        {isLoadingToken ? (
+          <div className="h-48 bg-muted flex items-center justify-center">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
           </div>
+        ) : (
+          <div ref={mapContainer} className="h-48 w-full" />
+        )}
 
-          <div className="flex-1 relative h-2 bg-muted rounded-full">
-            <div 
-              className="absolute left-0 top-0 h-full bg-primary rounded-full transition-all duration-500"
-              style={{ width: `${progressPercent}%` }}
-            />
-            <div 
-              className="absolute top-1/2 -translate-y-1/2 transition-all duration-500"
-              style={{ left: `${progressPercent}%` }}
-            >
-              <div className="w-6 h-6 -mt-2 bg-primary rounded-full flex items-center justify-center shadow-md">
-                <Car className="h-3.5 w-3.5 text-primary-foreground" />
-              </div>
+        {isLocating && (
+          <div className="absolute inset-0 bg-background/60 backdrop-blur-sm flex items-center justify-center">
+            <div className="text-center">
+              <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2 text-primary" />
+              <p className="text-sm text-muted-foreground">جاري تحديد موقعك...</p>
             </div>
           </div>
-
-          <div className="flex flex-col items-center">
-            <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center">
-              <MapPin className="h-3 w-3 text-primary-foreground" />
-            </div>
-            <span className="text-[10px] text-muted-foreground mt-1">المتجر</span>
-          </div>
-        </div>
+        )}
       </div>
 
-      {/* Map Section */}
-      <AnimatePresence>
-        {showMap && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            className="overflow-hidden"
-          >
-            <div className="relative">
-              {isLoadingToken ? (
-                <div className="h-56 bg-muted flex items-center justify-center">
-                  <Loader2 className="h-6 w-6 animate-spin" />
-                </div>
-              ) : (
-                <div ref={mapContainer} className="h-56 w-full" />
-              )}
-
-              {isLocating && (
-                <div className="absolute inset-0 bg-background/70 flex items-center justify-center">
-                  <div className="text-center">
-                    <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2 text-primary" />
-                    <p className="text-xs text-muted-foreground">جاري تحديد موقعك...</p>
-                  </div>
-                </div>
-              )}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Footer */}
-      <div className="p-4 border-t flex items-center justify-between">
+      {/* Footer Actions */}
+      <div className="p-4 border-t flex items-center gap-3">
         <Button
-          variant="default"
-          size="sm"
-          className="gap-2"
+          className="flex-1 gap-2 bg-primary hover:bg-primary/90"
           onClick={openExternalNavigation}
         >
           <Navigation2 className="h-4 w-4" />
@@ -486,13 +465,11 @@ export function PullUpStyleOrderCard({
         </Button>
 
         <Button
-          variant="ghost"
-          size="sm"
-          className="text-primary gap-1"
+          variant="outline"
+          className="flex-1 gap-1"
           onClick={onDetailsClick}
         >
-          التفاصيل
-          <span className="text-lg">›</span>
+          تفاصيل الطلب
         </Button>
       </div>
     </motion.div>
