@@ -97,6 +97,9 @@ const App = () => {
                       <Route path="/privacy" element={<Privacy />} />
                       <Route path="/faq" element={<FAQ />} />
                       <Route path="/contact" element={<Contact />} />
+                      {/* Redirect old routes to home */}
+                      <Route path="/for-providers" element={<Landing />} />
+                      <Route path="/welcome" element={<Landing />} />
                       <Route path="*" element={<NotFound />} />
                     </Routes>
                   </Suspense>
