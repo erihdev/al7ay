@@ -10,6 +10,11 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import StoreCart from '@/components/store/StoreCart';
 import ProductReviews from '@/components/store/ProductReviews';
+import ProviderReviewDialog from '@/components/reviews/ProviderReviewDialog';
+import ProviderReviewsList from '@/components/reviews/ProviderReviewsList';
+import ProviderRatingBadge from '@/components/reviews/ProviderRatingBadge';
+import { useProviderRatingSummary } from '@/hooks/useProviderReviews';
+import { useAuth } from '@/contexts/AuthContext';
 import { 
   ArrowRight, 
   Store, 
@@ -36,6 +41,7 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface Product {
   id: string;
@@ -52,12 +58,17 @@ interface Product {
 const ProviderStoreContent = () => {
   const { providerId } = useParams<{ providerId: string }>();
   const { addItem, totalItems } = useProviderCart();
+  const { user } = useAuth();
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [activeCategory, setActiveCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [showReviews, setShowReviews] = useState(false);
   const categoryScrollRef = useRef<HTMLDivElement>(null);
   const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  
+  // Provider rating summary
+  const ratingSummary = useProviderRatingSummary(providerId);
 
   // Fetch provider data
   const { data: provider, isLoading: providerLoading } = useQuery({
@@ -264,12 +275,23 @@ const ProviderStoreContent = () => {
               <h1 className="text-base font-bold text-white leading-tight">
                 {provider.business_name}
               </h1>
-              {provider.active_neighborhoods && (
-                <p className="text-[11px] text-white/70 flex items-center gap-1">
-                  <MapPin className="h-3 w-3" />
-                  {(provider.active_neighborhoods as any).name}
-                </p>
-              )}
+              <div className="flex items-center gap-2">
+                {provider.active_neighborhoods && (
+                  <p className="text-[11px] text-white/70 flex items-center gap-1">
+                    <MapPin className="h-3 w-3" />
+                    {(provider.active_neighborhoods as any).name}
+                  </p>
+                )}
+                {ratingSummary.totalReviews > 0 && (
+                  <button 
+                    onClick={() => setShowReviews(true)}
+                    className="text-[11px] text-white/90 flex items-center gap-1 bg-white/20 px-1.5 py-0.5 rounded-full"
+                  >
+                    <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                    {ratingSummary.averageRating.toFixed(1)}
+                  </button>
+                )}
+              </div>
             </div>
           </div>
           
@@ -533,6 +555,43 @@ const ProviderStoreContent = () => {
 
       {/* Floating Cart */}
       <StoreCart primaryColor={primaryColor} />
+      
+      {/* Reviews Dialog */}
+      <Dialog open={showReviews} onOpenChange={setShowReviews}>
+        <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-bold">تقييمات {provider.business_name}</h2>
+              {user && providerId && (
+                <ProviderReviewDialog 
+                  providerId={providerId} 
+                  providerName={provider.business_name} 
+                />
+              )}
+            </div>
+            {providerId && <ProviderReviewsList providerId={providerId} />}
+          </div>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Floating Review Button */}
+      {user && providerId && (
+        <div className="fixed bottom-24 left-4 z-40">
+          <ProviderReviewDialog 
+            providerId={providerId} 
+            providerName={provider.business_name}
+            trigger={
+              <Button
+                size="icon"
+                className="h-12 w-12 rounded-full shadow-lg"
+                style={{ backgroundColor: accentColor }}
+              >
+                <Star className="h-5 w-5" />
+              </Button>
+            }
+          />
+        </div>
+      )}
     </div>
   );
 };

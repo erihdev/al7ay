@@ -6,10 +6,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { MapPin, Users, Coffee, Store, ArrowLeft } from 'lucide-react';
+import { MapPin, Users, Coffee, Store, ArrowLeft, Star } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
+import { useAllProviderRatings } from '@/hooks/useProviderReviews';
 
 interface Neighborhood {
   id: string;
@@ -35,6 +36,7 @@ const NeighborhoodsMap = () => {
   const [selectedNeighborhood, setSelectedNeighborhood] = useState<Neighborhood | null>(null);
 
   const { data: mapboxToken, isLoading: tokenLoading } = useMapboxToken();
+  const { data: providerRatings } = useAllProviderRatings();
 
   const { data: neighborhoods, isLoading } = useQuery({
     queryKey: ['active-neighborhoods'],
@@ -247,32 +249,43 @@ const NeighborhoodsMap = () => {
                   {providers && providers.length > 0 && (
                     <div className="space-y-2 border-t pt-3">
                       <p className="text-sm font-medium mb-2">المتاجر في هذا الحي:</p>
-                      {providers.map(provider => (
-                        <Link 
-                          key={provider.id} 
-                          to={`/store/${provider.id}`}
-                          className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted transition-colors"
-                        >
-                          <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center overflow-hidden">
-                            {provider.logo_url ? (
-                              <img 
-                                src={provider.logo_url} 
-                                alt={provider.business_name}
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              <Store className="h-5 w-5 text-muted-foreground" />
-                            )}
-                          </div>
-                          <div className="flex-1">
-                            <p className="font-medium text-sm">{provider.business_name}</p>
-                            {provider.is_verified && (
-                              <Badge variant="secondary" className="text-xs">موثّق</Badge>
-                            )}
-                          </div>
-                          <ArrowLeft className="h-4 w-4 text-muted-foreground" />
-                        </Link>
-                      ))}
+                      {providers.map(provider => {
+                        const rating = providerRatings?.[provider.id];
+                        return (
+                          <Link 
+                            key={provider.id} 
+                            to={`/store/${provider.id}`}
+                            className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted transition-colors"
+                          >
+                            <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center overflow-hidden">
+                              {provider.logo_url ? (
+                                <img 
+                                  src={provider.logo_url} 
+                                  alt={provider.business_name}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <Store className="h-5 w-5 text-muted-foreground" />
+                              )}
+                            </div>
+                            <div className="flex-1">
+                              <p className="font-medium text-sm">{provider.business_name}</p>
+                              <div className="flex items-center gap-2">
+                                {provider.is_verified && (
+                                  <Badge variant="secondary" className="text-xs">موثّق</Badge>
+                                )}
+                                {rating && rating.count > 0 && (
+                                  <span className="flex items-center gap-0.5 text-xs text-muted-foreground">
+                                    <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                                    {rating.average.toFixed(1)} ({rating.count})
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            <ArrowLeft className="h-4 w-4 text-muted-foreground" />
+                          </Link>
+                        );
+                      })}
                     </div>
                   )}
                 </CardContent>
