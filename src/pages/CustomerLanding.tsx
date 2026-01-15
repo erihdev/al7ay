@@ -1,6 +1,10 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import heroCustomerImage from '@/assets/hero-customer.jpg';
+import categoryCoffeeImage from '@/assets/category-coffee.jpg';
+import categorySweetsImage from '@/assets/category-sweets.jpg';
+import promoDeliveryVideo from '@/assets/promo-delivery.mp4';
 import { 
   MapPin, 
   Coffee, 
@@ -175,77 +179,113 @@ const CustomerLanding = () => {
           </div>
         </header>
 
-        {/* Hero Section */}
+        {/* Hero Section with Image */}
         <section className="relative py-16 md:py-24 overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-accent/5" />
           <div className="container mx-auto px-4 relative">
-            <motion.div 
-              className="max-w-4xl mx-auto text-center"
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-            >
-              <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
-                className="inline-block mb-6"
-              >
-                <Badge variant="secondary" className="px-4 py-2 text-sm gap-2">
-                  <Clock className="h-4 w-4 text-primary" />
-                  توصيل سريع خلال 15-30 دقيقة
-                </Badge>
-              </motion.div>
-              
-              <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-6 leading-tight">
-                اطلب من 
-                <span className="text-primary bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent"> جيرانك </span>
-                <br className="hidden sm:block" />
-                واستمتع بالطعم الأصيل
-              </h1>
-              
-              <p className="text-xl md:text-2xl text-muted-foreground mb-8 leading-relaxed max-w-2xl mx-auto">
-                اكتشف أشهى المأكولات والمشروبات من مقدمي الخدمات في حيّك.
-                طازجة، محلية، وتصلك بأسرع وقت!
-              </p>
-              
-              <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
-                <Button size="lg" className="text-lg px-8 font-arabic group" asChild>
-                  <Link to="/app">
-                    <ShoppingBag className="h-5 w-5 ml-2 group-hover:animate-pulse" />
-                    ابدأ الطلب الآن
-                    <ArrowLeft className="h-5 w-5 mr-2 group-hover:-translate-x-1 transition-transform" />
-                  </Link>
-                </Button>
-                <Button size="lg" variant="outline" className="text-lg px-8 font-arabic" asChild>
-                  <Link to="/install">
-                    <Download className="h-5 w-5 ml-2" />
-                    حمّل التطبيق
-                  </Link>
-                </Button>
-              </div>
-
-              {/* Trust Badges */}
+            <div className="grid lg:grid-cols-2 gap-12 items-center">
               <motion.div 
-                className="flex flex-wrap justify-center gap-4 text-sm text-muted-foreground"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.5 }}
+                className="text-center lg:text-right order-2 lg:order-1"
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6 }}
               >
-                <div className="flex items-center gap-2">
-                  <Shield className="h-4 w-4 text-green-500" />
-                  <span>دفع آمن 100%</span>
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+                  className="inline-block mb-6"
+                >
+                  <Badge variant="secondary" className="px-4 py-2 text-sm gap-2">
+                    <Clock className="h-4 w-4 text-primary" />
+                    توصيل سريع خلال 15-30 دقيقة
+                  </Badge>
+                </motion.div>
+                
+                <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
+                  اطلب من 
+                  <span className="text-primary bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent"> جيرانك </span>
+                  <br className="hidden sm:block" />
+                  واستمتع بالطعم الأصيل
+                </h1>
+                
+                <p className="text-lg md:text-xl text-muted-foreground mb-8 leading-relaxed">
+                  اكتشف أشهى المأكولات والمشروبات من مقدمي الخدمات في حيّك.
+                  طازجة، محلية، وتصلك بأسرع وقت!
+                </p>
+                
+                <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start mb-8">
+                  <Button size="lg" className="text-lg px-8 font-arabic group" asChild>
+                    <Link to="/app">
+                      <ShoppingBag className="h-5 w-5 ml-2 group-hover:animate-pulse" />
+                      ابدأ الطلب الآن
+                      <ArrowLeft className="h-5 w-5 mr-2 group-hover:-translate-x-1 transition-transform" />
+                    </Link>
+                  </Button>
+                  <Button size="lg" variant="outline" className="text-lg px-8 font-arabic" asChild>
+                    <Link to="/install">
+                      <Download className="h-5 w-5 ml-2" />
+                      حمّل التطبيق
+                    </Link>
+                  </Button>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Truck className="h-4 w-4 text-primary" />
-                  <span>توصيل مجاني للطلبات +50 ريال</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Gift className="h-4 w-4 text-accent" />
-                  <span>نقاط مع كل طلب</span>
+
+                {/* Trust Badges */}
+                <motion.div 
+                  className="flex flex-wrap justify-center lg:justify-start gap-4 text-sm text-muted-foreground"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.5 }}
+                >
+                  <div className="flex items-center gap-2">
+                    <Shield className="h-4 w-4 text-green-500" />
+                    <span>دفع آمن 100%</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Truck className="h-4 w-4 text-primary" />
+                    <span>توصيل مجاني للطلبات +50 ريال</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Gift className="h-4 w-4 text-accent" />
+                    <span>نقاط مع كل طلب</span>
+                  </div>
+                </motion.div>
+              </motion.div>
+
+              {/* Hero Image */}
+              <motion.div 
+                className="order-1 lg:order-2"
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.3, duration: 0.6 }}
+              >
+                <div className="relative">
+                  <img 
+                    src={heroCustomerImage} 
+                    alt="منتجات طازجة للتوصيل" 
+                    className="rounded-3xl shadow-2xl w-full object-cover"
+                  />
+                  <div className="absolute inset-0 rounded-3xl bg-gradient-to-t from-background/20 to-transparent" />
+                  
+                  {/* Floating Badge */}
+                  <motion.div 
+                    className="absolute -bottom-4 -right-4 bg-card p-4 rounded-2xl shadow-xl border"
+                    animate={{ y: [0, -10, 0] }}
+                    transition={{ duration: 3, repeat: Infinity }}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center">
+                        <Star className="h-6 w-6 text-yellow-500 fill-yellow-500" />
+                      </div>
+                      <div>
+                        <p className="font-bold text-lg">4.9</p>
+                        <p className="text-xs text-muted-foreground">+50,000 تقييم</p>
+                      </div>
+                    </div>
+                  </motion.div>
                 </div>
               </motion.div>
-            </motion.div>
+            </div>
           </div>
         </section>
 
