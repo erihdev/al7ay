@@ -77,16 +77,41 @@ const Admin = () => {
   const { updateLocation } = useUpdateDeliveryLocation();
   const [trackingOrderId, setTrackingOrderId] = useState<string | null>(null);
   const [soundEnabled, setSoundEnabled] = useState(true);
+  const [verifiedAdmin, setVerifiedAdmin] = useState<boolean | null>(null);
   
   // Enable audio notifications for new orders
   const { playNotificationSound } = useOrderNotifications(isAdmin && soundEnabled);
 
+  // Verify admin role directly from database
+  useEffect(() => {
+    const verifyAdminRole = async () => {
+      if (!user) {
+        setVerifiedAdmin(false);
+        return;
+      }
+      
+      const { data: roles } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .eq('role', 'admin')
+        .maybeSingle();
+      
+      setVerifiedAdmin(!!roles);
+    };
+    
+    if (!authLoading) {
+      verifyAdminRole();
+    }
+  }, [user, authLoading]);
+
   // Redirect non-admin users
   useEffect(() => {
-    if (!authLoading && (!user || !isAdmin)) {
+    if (verifiedAdmin === false) {
+      toast.error('غير مصرح لك بالوصول إلى هذه الصفحة');
       navigate('/');
     }
-  }, [user, isAdmin, authLoading, navigate]);
+  }, [verifiedAdmin, navigate]);
 
   // Fetch store settings
   const { data: settings, isLoading: settingsLoading } = useQuery({
@@ -220,7 +245,7 @@ const Admin = () => {
     return statusFlow[currentIndex + 1].status;
   };
 
-  if (authLoading || !isAdmin) {
+  if (authLoading || verifiedAdmin === null) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
@@ -229,6 +254,10 @@ const Admin = () => {
         </div>
       </div>
     );
+  }
+
+  if (!verifiedAdmin) {
+    return null;
   }
 
   return (
