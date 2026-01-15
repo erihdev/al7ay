@@ -249,7 +249,7 @@ const ProviderLanding = () => {
                 <Button size="lg" className="text-lg px-8 font-arabic group" asChild>
                   <Link to="/provider-register">
                     <Zap className="h-5 w-5 ml-2 group-hover:animate-pulse" />
-                    ابدأ مجاناً - 7 أيام تجربة
+                    ابدأ مجاناً - 30 يوم تجربة
                     <ArrowLeft className="h-5 w-5 mr-2 group-hover:-translate-x-1 transition-transform" />
                   </Link>
                 </Button>
@@ -446,7 +446,7 @@ const ProviderLanding = () => {
                 عرض خاص
               </Badge>
               <h2 className="text-3xl md:text-4xl font-bold mb-4">ابدأ مجاناً اليوم</h2>
-              <p className="text-muted-foreground text-lg">جرّب جميع المميزات لمدة 7 أيام بدون أي التزام</p>
+              <p className="text-muted-foreground text-lg">جرّب جميع المميزات لمدة 30 يوم بدون أي التزام</p>
             </motion.div>
             
             <motion.div 
@@ -464,7 +464,7 @@ const ProviderLanding = () => {
                   <div className="text-center mb-6">
                     <div className="inline-flex items-center gap-2 bg-green-500/10 text-green-600 px-4 py-2 rounded-full text-sm mb-4">
                       <Clock className="h-4 w-4" />
-                      <span>7 أيام تجربة مجانية</span>
+                      <span>30 يوم تجربة مجانية</span>
                     </div>
                     <h3 className="text-3xl font-bold mb-2">ابدأ مشروعك الآن</h3>
                     <p className="text-muted-foreground">
@@ -616,7 +616,7 @@ const ProviderLanding = () => {
               </motion.div>
               <h2 className="text-3xl md:text-4xl font-bold mb-4">جاهز تبدأ رحلتك؟</h2>
               <p className="text-muted-foreground text-lg mb-8">
-                انضم لأكثر من 1,200 مقدم خدمة ناجح وابدأ تحقيق دخلك من المنزل
+                انضم لأكثر من 1,200 مقدم خدمة ناجح واحصل على 30 يوم تجربة مجانية
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Button size="lg" className="text-lg px-8 font-arabic group" asChild>

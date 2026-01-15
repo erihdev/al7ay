@@ -166,8 +166,8 @@ const ProviderRegister = () => {
               id: 'default-trial',
               name_ar: 'تجربة مجانية',
               name_en: 'Free Trial',
-              description_ar: 'جرّب المنصة مجاناً لمدة 7 أيام',
-              duration_days: 7,
+              description_ar: 'جرّب المنصة مجاناً لمدة 30 يوم',
+              duration_days: 30,
               price: 0,
               is_trial: true,
               features: ['إدارة المنتجات', 'استقبال الطلبات', 'لوحة إحصائيات']

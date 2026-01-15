@@ -292,7 +292,7 @@ const Landing = () => {
             >
               <h2 className="text-3xl font-bold mb-4">جاهز للبدء؟</h2>
               <p className="text-muted-foreground text-lg mb-8">
-                انضم الآن واحصل على 7 أيام تجربة مجانية!
+                انضم الآن واحصل على 30 يوم تجربة مجانية!
               </p>
               <Button size="lg" className="text-lg px-8 font-arabic" asChild>
                 <Link to="/provider-register">
