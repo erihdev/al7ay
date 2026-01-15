@@ -21,20 +21,34 @@ const ProviderLogin = () => {
   const [mode, setMode] = useState<'login' | 'signup' | 'forgot'>('login');
   const [fullName, setFullName] = useState('');
 
-  // Check if user is already logged in
+  // Check if user is already logged in - with timeout to prevent hanging
   useEffect(() => {
+    let isMounted = true;
+    
     const checkSession = async () => {
+      // Set a timeout to prevent hanging
+      const timeout = setTimeout(() => {
+        if (isMounted) {
+          console.log('Session check timeout - proceeding to login form');
+          setIsCheckingSession(false);
+        }
+      }, 3000);
+
       try {
         const { data: { session } } = await supabase.auth.getSession();
+        
+        if (!isMounted) return;
+        
         if (session?.user) {
-          // Check if user has provider role or profile
+          // Check if user has provider profile
           const { data: providerData } = await supabase
             .from('service_providers')
             .select('id')
             .eq('user_id', session.user.id)
             .maybeSingle();
           
-          if (providerData) {
+          if (providerData && isMounted) {
+            clearTimeout(timeout);
             navigate('/provider-dashboard');
             return;
           }
@@ -42,11 +56,18 @@ const ProviderLogin = () => {
       } catch (error) {
         console.error('Session check error:', error);
       } finally {
-        setIsCheckingSession(false);
+        clearTimeout(timeout);
+        if (isMounted) {
+          setIsCheckingSession(false);
+        }
       }
     };
 
     checkSession();
+    
+    return () => {
+      isMounted = false;
+    };
   }, [navigate]);
 
   // Check URL params for signup action
