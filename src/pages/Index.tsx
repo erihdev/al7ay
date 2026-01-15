@@ -1,36 +1,145 @@
-import { useState, useCallback } from 'react';
+import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { Header } from '@/components/layout/Header';
 import { BottomNav } from '@/components/layout/BottomNav';
-import { CategoryTabs } from '@/components/menu/CategoryTabs';
-import { ProductCard } from '@/components/menu/ProductCard';
-import { ProductSearch } from '@/components/menu/ProductSearch';
-import { FeaturedProducts } from '@/components/menu/FeaturedProducts';
-import { SpecialOffersCarousel } from '@/components/offers/SpecialOffersCarousel';
-import { LoyaltyCard } from '@/components/loyalty/LoyaltyCard';
 import { LocationPermission } from '@/components/location/LocationPermission';
+import { LoyaltyCard } from '@/components/loyalty/LoyaltyCard';
 import { FloatingParticles } from '@/components/ui/InteractiveBackground';
-import { PageTransition, staggerContainer, fadeInUp } from '@/components/ui/PageTransition';
-import { ProductGridSkeleton } from '@/components/ui/CardSkeleton';
-import { useProducts } from '@/hooks/useProducts';
+import { PageTransition, fadeInUp } from '@/components/ui/PageTransition';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Input } from '@/components/ui/input';
+import { useLocation } from '@/contexts/LocationContext';
 import { useOrderStatusNotifications } from '@/hooks/useOrderStatusNotifications';
-import { Coffee, Sparkles, ShoppingBag, TrendingUp } from 'lucide-react';
-import type { Database } from '@/integrations/supabase/types';
+import { 
+  Store, 
+  MapPin, 
+  Search, 
+  Star, 
+  Coffee,
+  Navigation,
+  Package,
+  ArrowLeft,
+  Sparkles
+} from 'lucide-react';
 
-type ProductCategory = Database['public']['Enums']['product_category'];
-type Product = Database['public']['Tables']['products']['Row'];
+interface ServiceProvider {
+  id: string;
+  business_name: string;
+  business_name_en: string | null;
+  logo_url: string | null;
+  description: string | null;
+  phone: string | null;
+  is_verified: boolean;
+  active_neighborhoods: {
+    id: string;
+    name: string;
+    city: string;
+    lat: number;
+    lng: number;
+  } | null;
+}
+
+// Calculate distance between two points in meters
+function calculateDistance(
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number
+): number {
+  const R = 6371e3;
+  const φ1 = (lat1 * Math.PI) / 180;
+  const φ2 = (lat2 * Math.PI) / 180;
+  const Δφ = ((lat2 - lat1) * Math.PI) / 180;
+  const Δλ = ((lon2 - lon1) * Math.PI) / 180;
+
+  const a =
+    Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+    Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+  return R * c;
+}
 
 const Index = () => {
-  const [activeCategory, setActiveCategory] = useState<ProductCategory | 'all'>('all');
-  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
-  const { data: allProducts, isLoading } = useProducts();
+  const [searchQuery, setSearchQuery] = useState('');
+  const { userLocation, locationPermission } = useLocation();
   
   // Enable order status notifications for logged-in customers
   useOrderStatusNotifications();
 
-  const handleFilteredProducts = useCallback((products: Product[]) => {
-    setFilteredProducts(products);
-  }, []);
+  // Fetch all active service providers with their neighborhoods
+  const { data: providers, isLoading } = useQuery({
+    queryKey: ['service-providers-list'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('service_providers')
+        .select(`
+          id,
+          business_name,
+          business_name_en,
+          logo_url,
+          description,
+          phone,
+          is_verified,
+          active_neighborhoods (
+            id,
+            name,
+            city,
+            lat,
+            lng
+          )
+        `)
+        .eq('is_active', true);
+      
+      if (error) throw error;
+      return data as ServiceProvider[];
+    },
+  });
+
+  // Filter and sort providers by distance
+  const filteredProviders = providers?.filter(provider => {
+    if (!searchQuery.trim()) return true;
+    const query = searchQuery.toLowerCase();
+    return (
+      provider.business_name.toLowerCase().includes(query) ||
+      (provider.business_name_en && provider.business_name_en.toLowerCase().includes(query)) ||
+      (provider.active_neighborhoods?.name.toLowerCase().includes(query)) ||
+      (provider.active_neighborhoods?.city.toLowerCase().includes(query))
+    );
+  }) || [];
+
+  // Calculate distances and sort
+  const providersWithDistance = filteredProviders.map(provider => {
+    let distance: number | null = null;
+    if (userLocation && provider.active_neighborhoods) {
+      distance = calculateDistance(
+        userLocation.lat,
+        userLocation.lng,
+        provider.active_neighborhoods.lat,
+        provider.active_neighborhoods.lng
+      );
+    }
+    return { ...provider, distance };
+  }).sort((a, b) => {
+    if (a.distance === null) return 1;
+    if (b.distance === null) return -1;
+    return a.distance - b.distance;
+  });
+
+  // Format distance for display
+  const formatDistance = (meters: number | null) => {
+    if (meters === null) return null;
+    if (meters < 1000) {
+      return `${Math.round(meters)} م`;
+    }
+    return `${(meters / 1000).toFixed(1)} كم`;
+  };
 
   return (
     <PageTransition>
@@ -49,30 +158,32 @@ const Index = () => {
             <div className="relative z-10">
               <div className="flex items-center gap-3 mb-3">
                 <div className="bg-primary/20 p-3 rounded-2xl">
-                  <Coffee className="h-7 w-7 text-primary" />
+                  <Store className="h-7 w-7 text-primary" />
                 </div>
                 <div>
-                  <h1 className="text-xl font-bold">مرحباً بك! ☕</h1>
-                  <p className="text-sm text-muted-foreground">اختر مشروبك المفضل</p>
+                  <h1 className="text-xl font-bold">مرحباً بك في الحي! 👋</h1>
+                  <p className="text-sm text-muted-foreground">اكتشف مقدمي الخدمات القريبين منك</p>
                 </div>
               </div>
               
               {/* Quick Stats */}
               <div className="grid grid-cols-3 gap-2 mt-4">
                 <div className="bg-background/60 backdrop-blur-sm rounded-xl p-3 text-center">
-                  <ShoppingBag className="h-5 w-5 mx-auto mb-1 text-primary" />
-                  <p className="text-xs text-muted-foreground">منتجات</p>
-                  <p className="font-bold text-sm">{allProducts?.length || 0}</p>
+                  <Store className="h-5 w-5 mx-auto mb-1 text-primary" />
+                  <p className="text-xs text-muted-foreground">مقدم خدمة</p>
+                  <p className="font-bold text-sm">{providers?.length || 0}</p>
                 </div>
                 <div className="bg-background/60 backdrop-blur-sm rounded-xl p-3 text-center">
                   <Sparkles className="h-5 w-5 mx-auto mb-1 text-amber-500" />
-                  <p className="text-xs text-muted-foreground">مميز</p>
-                  <p className="font-bold text-sm">{allProducts?.filter(p => p.is_featured).length || 0}</p>
+                  <p className="text-xs text-muted-foreground">موثق</p>
+                  <p className="font-bold text-sm">{providers?.filter(p => p.is_verified).length || 0}</p>
                 </div>
                 <div className="bg-background/60 backdrop-blur-sm rounded-xl p-3 text-center">
-                  <TrendingUp className="h-5 w-5 mx-auto mb-1 text-green-500" />
-                  <p className="text-xs text-muted-foreground">أصناف</p>
-                  <p className="font-bold text-sm">3</p>
+                  <MapPin className="h-5 w-5 mx-auto mb-1 text-green-500" />
+                  <p className="text-xs text-muted-foreground">أحياء</p>
+                  <p className="font-bold text-sm">
+                    {new Set(providers?.map(p => p.active_neighborhoods?.id).filter(Boolean)).size}
+                  </p>
                 </div>
               </div>
             </div>
@@ -88,52 +199,52 @@ const Index = () => {
             <LoyaltyCard />
           </motion.div>
 
-          {/* Special Offers */}
-          <motion.div variants={fadeInUp}>
-            <SpecialOffersCarousel />
-          </motion.div>
-
-          {/* Featured Products */}
-          <motion.div variants={fadeInUp}>
-            <FeaturedProducts />
-          </motion.div>
-
-          {/* Browse Menu Section */}
-          <motion.div 
-            className="space-y-4"
-            variants={fadeInUp}
-          >
-            {/* Section Header */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="bg-primary/10 p-2.5 rounded-xl">
-                  <ShoppingBag className="h-5 w-5 text-primary" />
-                </div>
-                <div>
-                  <h2 className="text-lg font-bold font-arabic">تصفح القائمة</h2>
-                  <p className="text-xs text-muted-foreground">{filteredProducts.length} منتج</p>
-                </div>
+          {/* Search Section */}
+          <motion.div variants={fadeInUp} className="space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="bg-primary/10 p-2.5 rounded-xl">
+                <Store className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold">مقدمو الخدمات</h2>
+                <p className="text-xs text-muted-foreground">
+                  {providersWithDistance.length} مقدم خدمة {userLocation ? 'قريب منك' : 'متاح'}
+                </p>
               </div>
             </div>
-            
-            {/* Search */}
-            <ProductSearch
-              products={allProducts}
-              onFilteredProducts={handleFilteredProducts}
-              category={activeCategory}
-            />
-            
-            {/* Category Tabs */}
-            <CategoryTabs
-              activeCategory={activeCategory}
-              onCategoryChange={setActiveCategory}
-            />
+
+            {/* Search Input */}
+            <div className="relative">
+              <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="ابحث عن مقدم خدمة أو حي..."
+                className="pr-10 h-12 rounded-xl"
+                dir="rtl"
+              />
+            </div>
           </motion.div>
 
-          {/* Product Grid */}
+          {/* Providers List */}
           {isLoading ? (
-            <ProductGridSkeleton count={6} />
-          ) : filteredProducts.length === 0 ? (
+            <div className="space-y-4">
+              {[1, 2, 3].map(i => (
+                <Card key={i} className="overflow-hidden">
+                  <CardContent className="p-4">
+                    <div className="flex gap-4">
+                      <Skeleton className="h-20 w-20 rounded-xl flex-shrink-0" />
+                      <div className="flex-1 space-y-2">
+                        <Skeleton className="h-5 w-3/4" />
+                        <Skeleton className="h-4 w-1/2" />
+                        <Skeleton className="h-4 w-1/3" />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : providersWithDistance.length === 0 ? (
             <motion.div 
               className="text-center py-16"
               initial={{ opacity: 0, scale: 0.9 }}
@@ -142,27 +253,90 @@ const Index = () => {
               <div className="relative inline-block mb-4">
                 <div className="absolute inset-0 bg-primary/20 rounded-full blur-2xl animate-pulse" />
                 <div className="relative bg-gradient-to-br from-muted to-muted/50 rounded-full p-6">
-                  <Coffee className="h-12 w-12 text-muted-foreground" />
+                  <Store className="h-12 w-12 text-muted-foreground" />
                 </div>
               </div>
-              <p className="text-muted-foreground font-arabic text-lg">لا توجد نتائج</p>
-              <p className="text-sm text-muted-foreground/70 mt-1">جرب البحث بكلمات مختلفة</p>
+              <p className="text-muted-foreground font-arabic text-lg">
+                {searchQuery ? 'لا توجد نتائج' : 'لا يوجد مقدمو خدمات حالياً'}
+              </p>
+              <p className="text-sm text-muted-foreground/70 mt-1">
+                {searchQuery ? 'جرب البحث بكلمات مختلفة' : 'سيتم إضافة مقدمي خدمات قريباً'}
+              </p>
             </motion.div>
           ) : (
             <motion.div 
-              className="grid grid-cols-2 gap-4"
-              variants={staggerContainer}
-              initial="initial"
-              animate="animate"
+              className="space-y-4"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
             >
-              {filteredProducts.map((product, index) => (
+              {providersWithDistance.map((provider, index) => (
                 <motion.div
-                  key={product.id}
-                  variants={fadeInUp}
-                  custom={index}
-                  className="transform-gpu"
+                  key={provider.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.1 }}
                 >
-                  <ProductCard product={product} />
+                  <Link to={`/store/${provider.id}`}>
+                    <Card className="overflow-hidden hover:shadow-lg transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]">
+                      <CardContent className="p-4">
+                        <div className="flex gap-4">
+                          {/* Logo */}
+                          <div className="w-20 h-20 rounded-xl bg-muted flex items-center justify-center overflow-hidden flex-shrink-0">
+                            {provider.logo_url ? (
+                              <img 
+                                src={provider.logo_url} 
+                                alt={provider.business_name}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <Store className="h-8 w-8 text-muted-foreground" />
+                            )}
+                          </div>
+
+                          {/* Info */}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="min-w-0">
+                                <h3 className="font-bold text-base truncate flex items-center gap-2">
+                                  {provider.business_name}
+                                  {provider.is_verified && (
+                                    <Badge variant="secondary" className="text-xs px-1.5 py-0">
+                                      <Star className="h-3 w-3 ml-0.5 fill-amber-500 text-amber-500" />
+                                      موثق
+                                    </Badge>
+                                  )}
+                                </h3>
+                                {provider.active_neighborhoods && (
+                                  <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
+                                    <MapPin className="h-3.5 w-3.5 flex-shrink-0" />
+                                    <span className="truncate">
+                                      {provider.active_neighborhoods.name}، {provider.active_neighborhoods.city}
+                                    </span>
+                                  </p>
+                                )}
+                              </div>
+                              <ArrowLeft className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                            </div>
+
+                            {/* Distance & Description */}
+                            <div className="mt-2 flex items-center gap-2 flex-wrap">
+                              {provider.distance !== null && (
+                                <Badge variant="outline" className="text-xs">
+                                  <Navigation className="h-3 w-3 ml-1" />
+                                  {formatDistance(provider.distance)}
+                                </Badge>
+                              )}
+                              {provider.description && (
+                                <p className="text-xs text-muted-foreground truncate flex-1">
+                                  {provider.description}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </Link>
                 </motion.div>
               ))}
             </motion.div>
