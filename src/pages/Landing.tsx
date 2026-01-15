@@ -340,10 +340,10 @@ const Landing = () => {
                   </Link>
                 </div>
                 <p className="text-muted-foreground text-sm">
-                  © 2025 منصة الحي. جميع الحقوق محفوظة.
+                  © 2026 منصة الحي. جميع الحقوق محفوظة.
                 </p>
                 <Link to="/changelog" className="text-xs text-muted-foreground/60 hover:text-primary transition-colors">
-                  الإصدار 1.1.0
+                  الإصدار 1.2.0
                 </Link>
               </div>
             </div>
