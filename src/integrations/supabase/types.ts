@@ -720,6 +720,7 @@ export type Database = {
           product_id: string | null
           product_name: string
           quantity: number
+          selected_options: Json | null
           total_price: number
           unit_price: number
         }
@@ -730,6 +731,7 @@ export type Database = {
           product_id?: string | null
           product_name: string
           quantity?: number
+          selected_options?: Json | null
           total_price: number
           unit_price: number
         }
@@ -740,6 +742,7 @@ export type Database = {
           product_id?: string | null
           product_name?: string
           quantity?: number
+          selected_options?: Json | null
           total_price?: number
           unit_price?: number
         }

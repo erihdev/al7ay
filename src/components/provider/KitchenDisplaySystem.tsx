@@ -26,12 +26,19 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 
+interface SelectedOption {
+  optionName: string;
+  valueName: string;
+  priceModifier: number;
+}
+
 interface OrderItem {
   id: string;
   product_name: string;
   quantity: number;
   unit_price: number;
   total_price: number;
+  selected_options?: SelectedOption[] | null;
 }
 
 interface KitchenDisplaySystemProps {
@@ -122,7 +129,14 @@ const KitchenDisplaySystem = ({ providerId }: KitchenDisplaySystemProps) => {
         if (!grouped[item.order_id]) {
           grouped[item.order_id] = [];
         }
-        grouped[item.order_id].push(item);
+        grouped[item.order_id].push({
+          id: item.id,
+          product_name: item.product_name,
+          quantity: item.quantity,
+          unit_price: item.unit_price,
+          total_price: item.total_price,
+          selected_options: item.selected_options as unknown as SelectedOption[] | null,
+        });
       });
       return grouped;
     },
@@ -241,21 +255,40 @@ const KitchenDisplaySystem = ({ providerId }: KitchenDisplaySystemProps) => {
                 <ShoppingBag className="h-4 w-4 text-primary" />
                 <span>المنتجات ({items.length})</span>
               </div>
-              <div className="space-y-1.5 max-h-32 overflow-y-auto">
+              <div className="space-y-2 max-h-40 overflow-y-auto">
                 {items.map((item) => (
                   <div 
                     key={item.id} 
-                    className="flex items-center justify-between text-sm bg-muted/50 rounded-lg px-2 py-1.5"
+                    className="bg-muted/50 rounded-lg px-2 py-2"
                   >
-                    <div className="flex items-center gap-2">
-                      <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold">
-                        {item.quantity}
+                    <div className="flex items-center justify-between text-sm">
+                      <div className="flex items-center gap-2">
+                        <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold shrink-0">
+                          {item.quantity}
+                        </span>
+                        <span className="font-medium text-foreground">{item.product_name}</span>
+                      </div>
+                      <span className="text-muted-foreground font-mono text-xs shrink-0">
+                        {item.total_price} ر.س
                       </span>
-                      <span className="font-medium text-foreground">{item.product_name}</span>
                     </div>
-                    <span className="text-muted-foreground font-mono text-xs">
-                      {item.total_price} ر.س
-                    </span>
+                    {/* Selected Options */}
+                    {item.selected_options && item.selected_options.length > 0 && (
+                      <div className="mt-1.5 mr-8 flex flex-wrap gap-1">
+                        {item.selected_options.map((option, idx) => (
+                          <span 
+                            key={idx}
+                            className="inline-flex items-center gap-1 text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full"
+                          >
+                            <span className="font-medium">{option.optionName}:</span>
+                            <span>{option.valueName}</span>
+                            {option.priceModifier > 0 && (
+                              <span className="text-primary/70">(+{option.priceModifier})</span>
+                            )}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
