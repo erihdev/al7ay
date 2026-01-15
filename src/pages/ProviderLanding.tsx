@@ -36,6 +36,7 @@ import {
 import { Link } from 'react-router-dom';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { AnimatedLogo } from '@/components/ui/AnimatedLogo';
+import { AnimatedSlogan } from '@/components/ui/AnimatedSlogan';
 import { InteractiveBackground } from '@/components/ui/InteractiveBackground';
 import { PageTransition } from '@/components/ui/PageTransition';
 import { motion } from 'framer-motion';
@@ -314,6 +315,13 @@ const ProviderLanding = () => {
                 </div>
               </motion.div>
             </div>
+          </div>
+        </section>
+
+        {/* Animated Slogan Section */}
+        <section className="py-16 bg-gradient-to-br from-primary/5 via-background to-accent/5">
+          <div className="container mx-auto px-4">
+            <AnimatedSlogan size="lg" showLogo={true} />
           </div>
         </section>
 
