@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -34,14 +35,32 @@ const AdminLogin = () => {
     }
   }, [user, isAdmin, authLoading, navigate]);
 
+  const logLoginAttempt = async (success: boolean, errorMessage?: string) => {
+    try {
+      await supabase.from('login_attempts').insert({
+        email,
+        attempt_type: success ? 'success' : 'failed_login',
+        success,
+        error_message: errorMessage,
+        user_agent: navigator.userAgent,
+      });
+    } catch (error) {
+      console.error('Error logging attempt:', error);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
       const { error } = await signIn(email, password);
-      if (error) throw error;
+      if (error) {
+        await logLoginAttempt(false, error.message);
+        throw error;
+      }
       
+      await logLoginAttempt(true);
       toast.success('تم تسجيل الدخول بنجاح');
       
       // Give time for auth state to update and check admin role
