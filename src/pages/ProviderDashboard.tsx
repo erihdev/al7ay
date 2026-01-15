@@ -35,8 +35,24 @@ import { motion } from 'framer-motion';
 
 interface Provider {
   id: string;
+  user_id: string;
+  application_id: string | null;
   business_name: string;
+  business_name_en: string | null;
   logo_url: string | null;
+  description: string | null;
+  phone: string | null;
+  email: string;
+  neighborhood_id: string | null;
+  is_active: boolean;
+  is_verified: boolean;
+  subscription_status: string | null;
+  store_settings: {
+    primary_color: string;
+    accent_color: string;
+  } | null;
+  created_at: string;
+  updated_at: string;
 }
 
 interface ProviderOrder {
@@ -76,9 +92,9 @@ const ProviderDashboard = () => {
     };
     
     try {
-      // Fetch provider
+      // Fetch provider - get all fields needed for settings
       const providerRes = await fetch(
-        `${baseUrl}/rest/v1/service_providers?user_id=eq.${userId}&select=id,business_name,logo_url`,
+        `${baseUrl}/rest/v1/service_providers?user_id=eq.${userId}&select=*`,
         { headers }
       );
       
@@ -545,7 +561,10 @@ const ProviderDashboard = () => {
           </TabsContent>
 
           <TabsContent value="settings">
-            <ProviderSettingsManager provider={provider as any} />
+            <ProviderSettingsManager 
+              provider={provider} 
+              onUpdate={(updatedProvider) => setProvider(updatedProvider)}
+            />
           </TabsContent>
         </Tabs>
       </main>
