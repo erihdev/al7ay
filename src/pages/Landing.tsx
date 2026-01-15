@@ -664,7 +664,7 @@ const Landing = () => {
                 © 2024 منصة الحي. جميع الحقوق محفوظة.
               </p>
               <p className="text-xs text-muted-foreground/60 mt-1">
-                الإصدار 1.0.0
+                الإصدار 1.1.0
               </p>
             </div>
           </div>

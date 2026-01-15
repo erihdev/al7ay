@@ -9,6 +9,7 @@ import { CartProvider } from "@/contexts/CartContext";
 import { LocationProvider } from "@/contexts/LocationContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
+import { UpdateNotification } from "@/components/notifications/UpdateNotification";
 import Landing from "./pages/Landing";
 import Index from "./pages/Index";
 import ProviderStore from "./pages/ProviderStore";
@@ -47,6 +48,7 @@ const App = () => {
             <LocationProvider>
               <TooltipProvider>
                 <LoadingScreen isLoading={isLoading} />
+                <UpdateNotification />
                 <Toaster />
                 <Sonner />
                 <BrowserRouter>

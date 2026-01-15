@@ -50,6 +50,30 @@ export type Database = {
         }
         Relationships: []
       }
+      app_versions: {
+        Row: {
+          created_at: string
+          id: string
+          is_current: boolean | null
+          release_notes: string | null
+          version: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_current?: boolean | null
+          release_notes?: string | null
+          version: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_current?: boolean | null
+          release_notes?: string | null
+          version?: string
+        }
+        Relationships: []
+      }
       coupon_usage: {
         Row: {
           coupon_id: string
@@ -1219,6 +1243,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_app_versions: {
+        Row: {
+          id: string
+          last_seen_version: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          last_seen_version: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          last_seen_version?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       user_roles: {
         Row: {
