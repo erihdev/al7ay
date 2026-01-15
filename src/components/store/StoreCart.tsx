@@ -502,6 +502,23 @@ const StoreCart = ({ primaryColor = '#1B4332', storeLocation, deliveryRadiusKm =
 
       if (itemsError) throw itemsError;
 
+      // Send push notification to provider for new order
+      try {
+        await supabase.functions.invoke('send-notification', {
+          body: {
+            type: 'new_order',
+            orderId: order.id,
+            providerId: providerId,
+            customerName: customerName.trim(),
+            totalAmount: totalPrice,
+            orderType: orderType
+          }
+        });
+      } catch (notifError) {
+        console.error('Failed to send provider notification:', notifError);
+        // Don't fail the order if notification fails
+      }
+
       // Set success state
       setOrderResult({
         orderId: order.id,

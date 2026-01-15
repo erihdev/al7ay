@@ -15,26 +15,70 @@ const statusMessages: Record<string, string> = {
   cancelled: 'تم إلغاء طلبك ❌',
 };
 
-// VAPID keys for web push - these need to be generated for production
-// Generate using: npx web-push generate-vapid-keys
-const VAPID_PUBLIC_KEY = 'BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuBkr3qBUYIHBQFLXYp5Nksh8U';
+// Send Aimtell push notification
+async function sendAimtellNotification(
+  title: string,
+  body: string,
+  url: string,
+  tags?: string[]
+): Promise<boolean> {
+  const apiKey = Deno.env.get('AIMTELL_API_KEY');
+  const siteId = Deno.env.get('AIMTELL_SITE_ID');
 
-// Helper function to send web push notification
-async function sendWebPushNotification(
-  subscription: { endpoint: string; p256dh: string; auth: string },
-  payload: string
+  if (!apiKey || !siteId) {
+    console.log('Aimtell credentials not configured');
+    return false;
+  }
+
+  try {
+    const response = await fetch('https://api.aimtell.com/prod/push', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        siteId: siteId,
+        title: title,
+        body: body,
+        url: url,
+        tags: tags || [],
+        requireInteraction: true,
+        icon: '/icons/icon-192.png',
+      }),
+    });
+
+    if (response.ok) {
+      console.log('Aimtell notification sent successfully');
+      return true;
+    } else {
+      const errorText = await response.text();
+      console.error('Aimtell API error:', response.status, errorText);
+      return false;
+    }
+  } catch (error) {
+    console.error('Error sending Aimtell notification:', error);
+    return false;
+  }
+}
+
+// Helper function for realtime broadcast
+async function sendRealtimeBroadcast(
+  supabase: any,
+  channelName: string,
+  event: string,
+  payload: any
 ): Promise<boolean> {
   try {
-    // For web push, we need to use the Web Push protocol
-    // This is a simplified implementation - in production, use a proper web-push library
-    console.log('Sending push notification to:', subscription.endpoint);
-    console.log('Payload:', payload);
-    
-    // Note: Full Web Push implementation requires VAPID signing
-    // For now, we'll simulate success and rely on realtime for in-app notifications
+    const channel = supabase.channel(channelName);
+    await channel.send({
+      type: 'broadcast',
+      event: event,
+      payload: payload
+    });
     return true;
   } catch (error) {
-    console.error('Error sending push notification:', error);
+    console.error('Error sending realtime broadcast:', error);
     return false;
   }
 }
@@ -51,7 +95,70 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     const requestBody = await req.json();
-    const { type, orderId, status, customerId, providerId, message, customerName } = requestBody;
+    const { type, orderId, status, customerId, providerId, message, customerName, totalAmount, orderType } = requestBody;
+
+    // Handle new order notification to provider
+    if (type === 'new_order') {
+      if (!orderId || !providerId) {
+        return new Response(
+          JSON.stringify({ error: 'Missing orderId or providerId for new_order' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Get the provider's info
+      const { data: provider, error: providerError } = await supabase
+        .from('service_providers')
+        .select('user_id, business_name')
+        .eq('id', providerId)
+        .single();
+
+      if (providerError || !provider) {
+        console.error('Error fetching provider:', providerError);
+        return new Response(
+          JSON.stringify({ error: 'Provider not found' }),
+          { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      const orderTypeLabel = orderType === 'delivery' ? 'توصيل 🚗' : 'استلام 📦';
+      const notificationTitle = `🔔 طلب جديد - ${orderTypeLabel}`;
+      const notificationBody = `طلب من ${customerName || 'عميل'} - ${totalAmount || 0} ر.س`;
+
+      // Send realtime broadcast for in-app notification
+      await sendRealtimeBroadcast(
+        supabase,
+        `provider-new-orders-${providerId}`,
+        'new_order',
+        {
+          orderId,
+          customerName: customerName || 'عميل',
+          totalAmount,
+          orderType,
+          timestamp: new Date().toISOString()
+        }
+      );
+
+      // Send Aimtell push notification for background notification
+      const aimtellSent = await sendAimtellNotification(
+        notificationTitle,
+        notificationBody,
+        `/provider-dashboard?tab=orders`,
+        [`provider:${providerId}`]
+      );
+
+      console.log('New order notification sent for order:', orderId, 'aimtellSent:', aimtellSent);
+
+      return new Response(
+        JSON.stringify({ 
+          success: true,
+          message: 'Provider notified of new order',
+          broadcastSent: true,
+          aimtellSent: aimtellSent
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     // Handle customer arrival notification to store
     if (type === 'customer_arrived') {
@@ -77,125 +184,76 @@ serve(async (req) => {
         );
       }
 
+      const arrivalMessage = message || `العميل وصل لاستلام الطلب #${orderId.slice(-4).toUpperCase()}`;
+
       // Send broadcast to the provider's channel for real-time in-app notification
-      const channel = supabase.channel(`provider-arrivals-${providerId}`);
-      await channel.send({
-        type: 'broadcast',
-        event: 'customer_arrived',
-        payload: {
+      await sendRealtimeBroadcast(
+        supabase,
+        `provider-arrivals-${providerId}`,
+        'customer_arrived',
+        {
           orderId,
           customerName: customerName || 'العميل',
-          message: message || `العميل وصل لاستلام الطلب #${orderId.slice(-4).toUpperCase()}`,
+          message: arrivalMessage,
           timestamp: new Date().toISOString()
         }
-      });
+      );
 
-      // Get provider's push subscriptions for background notifications
-      const { data: subscriptions, error: subError } = await supabase
-        .from('push_subscriptions')
-        .select('*')
-        .eq('user_id', provider.user_id);
+      // Send Aimtell push notification for background notification
+      const aimtellSent = await sendAimtellNotification(
+        '🙋 وصول عميل',
+        arrivalMessage,
+        `/provider-dashboard?tab=orders`,
+        [`provider:${providerId}`]
+      );
 
-      if (subError) {
-        console.error('Error fetching subscriptions:', subError);
-      }
-
-      const notificationPayload = JSON.stringify({
-        title: '🙋 وصول عميل',
-        body: message || `عميل وصل لاستلام الطلب #${orderId.slice(-4).toUpperCase()}`,
-        icon: '/icons/icon-192.png',
-        badge: '/icons/icon-192.png',
-        tag: `arrival-${orderId}`,
-        requireInteraction: true,
-        data: {
-          type: 'customer_arrived',
-          orderId,
-          url: '/provider-dashboard?tab=orders',
-        },
-      });
-
-      // Send push notifications to all provider subscriptions
-      let pushSent = 0;
-      if (subscriptions && subscriptions.length > 0) {
-        const results = await Promise.allSettled(
-          subscriptions.map(sub => sendWebPushNotification(sub, notificationPayload))
-        );
-        pushSent = results.filter(r => r.status === 'fulfilled' && r.value).length;
-      }
-
-      console.log('Customer arrival notification sent for order:', orderId, 'pushSent:', pushSent);
+      console.log('Customer arrival notification sent for order:', orderId, 'aimtellSent:', aimtellSent);
 
       return new Response(
         JSON.stringify({ 
           success: true,
           message: 'Store notified of customer arrival',
           broadcastSent: true,
-          pushNotificationsSent: pushSent
+          aimtellSent: aimtellSent
         }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
     // Handle order status update notification to customer
-    if (!orderId || !status || !customerId) {
-      return new Response(
-        JSON.stringify({ error: 'Missing required fields: orderId, status, customerId' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    if (type === 'order_status' || (!type && orderId && status && customerId)) {
+      if (!orderId || !status || !customerId) {
+        return new Response(
+          JSON.stringify({ error: 'Missing required fields: orderId, status, customerId' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      const statusMessage = statusMessages[status] || 'تحديث على طلبك';
+
+      // Send Aimtell push notification for customer
+      const aimtellSent = await sendAimtellNotification(
+        'الحي - تحديث الطلب',
+        statusMessage,
+        `/my-store-orders`,
+        [`customer:${customerId}`]
       );
-    }
 
-    // Get user's push subscriptions
-    const { data: subscriptions, error: subError } = await supabase
-      .from('push_subscriptions')
-      .select('*')
-      .eq('user_id', customerId);
-
-    if (subError) {
-      console.error('Error fetching subscriptions:', subError);
       return new Response(
-        JSON.stringify({ error: 'Failed to fetch subscriptions' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    if (!subscriptions || subscriptions.length === 0) {
-      return new Response(
-        JSON.stringify({ message: 'No subscriptions found for user' }),
+        JSON.stringify({ 
+          success: true,
+          message: 'Customer notification sent',
+          aimtellSent: aimtellSent,
+        }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const statusMessage = statusMessages[status] || 'تحديث على طلبك';
-    const notificationPayload = JSON.stringify({
-      title: 'الحي - تحديث الطلب',
-      body: statusMessage,
-      icon: '/icons/icon-192.png',
-      badge: '/icons/icon-192.png',
-      tag: `order-${orderId}`,
-      data: {
-        type: 'order_status',
-        orderId,
-        status,
-        url: '/my-store-orders',
-      },
-    });
-
-    // Send push notifications to all subscriptions
-    const results = await Promise.allSettled(
-      subscriptions.map(sub => sendWebPushNotification(sub, notificationPayload))
-    );
-
-    const successCount = results.filter(r => r.status === 'fulfilled' && r.value).length;
-
     return new Response(
-      JSON.stringify({ 
-        success: true,
-        message: 'Notifications processed',
-        total: subscriptions.length,
-        sent: successCount,
-      }),
-      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ error: 'Invalid notification type' }),
+      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
+
   } catch (error) {
     console.error('Error:', error);
     return new Response(
