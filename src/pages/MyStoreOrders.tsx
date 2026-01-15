@@ -24,7 +24,8 @@ import {
   ArrowRight,
   Loader2,
   ShoppingBag,
-  Navigation2
+  Navigation2,
+  RefreshCw
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
@@ -206,7 +207,15 @@ const MyStoreOrders = () => {
               <ArrowRight className="h-5 w-5" />
             </Button>
           </Link>
-          <h1 className="text-xl font-bold">طلباتي من المتاجر</h1>
+          <h1 className="text-xl font-bold flex-1">طلباتي من المتاجر</h1>
+          <Button 
+            variant="ghost" 
+            size="icon"
+            onClick={() => window.location.reload()}
+            title="تحديث الصفحة"
+          >
+            <RefreshCw className="h-5 w-5" />
+          </Button>
         </div>
 
         {orders?.length === 0 ? (
