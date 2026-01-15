@@ -31,7 +31,9 @@ import {
   Loader2,
   X,
   ArrowLeftRight,
-  Info
+  Info,
+  Building,
+  Wallet
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -94,7 +96,8 @@ const ProviderRegister = () => {
     city: '',
     neighborhood: '',
     customCity: '',
-    customNeighborhood: ''
+    customNeighborhood: '',
+    paymentMethod: 'platform_managed' as 'platform_managed' | 'direct_gateway'
   });
   const [useCustomCity, setUseCustomCity] = useState(false);
   const [useCustomNeighborhood, setUseCustomNeighborhood] = useState(false);
@@ -392,6 +395,8 @@ const ProviderRegister = () => {
           neighborhood_id: neighborhoodId,
           is_active: true,
           subscription_status: selectedPlan.is_trial ? 'trial' : 'active',
+          payment_method: formData.paymentMethod,
+          payout_frequency: 'weekly',
         })
         .select()
         .single();
@@ -1360,6 +1365,101 @@ const ProviderRegister = () => {
                   <div className="p-3 bg-muted rounded-lg text-sm">
                     <MapPin className="h-4 w-4 inline ml-1" />
                     {customLocation.address}
+                  </div>
+                )}
+
+                {/* Payment Method Selection */}
+                {!selectedPlan.is_trial && (
+                  <div className="space-y-3 pt-4 border-t">
+                    <Label className="text-base font-semibold">طريقة استلام الأرباح *</Label>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {/* Platform Managed Option */}
+                      <motion.div
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => setFormData({ ...formData, paymentMethod: 'platform_managed' })}
+                        className={`relative cursor-pointer rounded-xl border-2 p-4 transition-all ${
+                          formData.paymentMethod === 'platform_managed'
+                            ? 'border-primary bg-primary/5 shadow-md'
+                            : 'border-muted hover:border-primary/50'
+                        }`}
+                      >
+                        {formData.paymentMethod === 'platform_managed' && (
+                          <motion.div
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            className="absolute -top-2 -right-2 w-6 h-6 bg-primary rounded-full flex items-center justify-center"
+                          >
+                            <Check className="h-4 w-4 text-primary-foreground" />
+                          </motion.div>
+                        )}
+                        <div className="flex items-start gap-3">
+                          <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center shrink-0">
+                            <Building className="h-5 w-5 text-blue-600" />
+                          </div>
+                          <div>
+                            <h4 className="font-bold mb-1">عبر المنصة (موصى به)</h4>
+                            <p className="text-xs text-muted-foreground leading-relaxed">
+                              نستلم المدفوعات من العملاء ونحول لك أرباحك أسبوعياً بعد خصم العمولة
+                            </p>
+                            <Badge variant="secondary" className="mt-2 text-[10px]">
+                              <Wallet className="h-3 w-3 ml-1" />
+                              تحويل أسبوعي
+                            </Badge>
+                          </div>
+                        </div>
+                      </motion.div>
+
+                      {/* Direct Gateway Option */}
+                      <motion.div
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => setFormData({ ...formData, paymentMethod: 'direct_gateway' })}
+                        className={`relative cursor-pointer rounded-xl border-2 p-4 transition-all ${
+                          formData.paymentMethod === 'direct_gateway'
+                            ? 'border-primary bg-primary/5 shadow-md'
+                            : 'border-muted hover:border-primary/50'
+                        }`}
+                      >
+                        {formData.paymentMethod === 'direct_gateway' && (
+                          <motion.div
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            className="absolute -top-2 -right-2 w-6 h-6 bg-primary rounded-full flex items-center justify-center"
+                          >
+                            <Check className="h-4 w-4 text-primary-foreground" />
+                          </motion.div>
+                        )}
+                        <div className="flex items-start gap-3">
+                          <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center shrink-0">
+                            <CreditCard className="h-5 w-5 text-green-600" />
+                          </div>
+                          <div>
+                            <h4 className="font-bold mb-1">ربط مباشر (EdfaPay)</h4>
+                            <p className="text-xs text-muted-foreground leading-relaxed">
+                              تسجل مباشرة مع بوابة الدفع وتستلم أرباحك فوراً في حسابك
+                            </p>
+                            <Badge variant="outline" className="mt-2 text-[10px]">
+                              <CreditCard className="h-3 w-3 ml-1" />
+                              استلام فوري
+                            </Badge>
+                          </div>
+                        </div>
+                      </motion.div>
+                    </div>
+
+                    {formData.paymentMethod === 'direct_gateway' && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        className="p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg text-sm"
+                      >
+                        <p className="text-amber-800 dark:text-amber-200">
+                          <Info className="h-4 w-4 inline ml-1" />
+                          سيتم إرشادك بعد التسجيل لإنشاء حساب EdfaPay وربطه بمتجرك
+                        </p>
+                      </motion.div>
+                    )}
                   </div>
                 )}
 
