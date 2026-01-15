@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -7,6 +8,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { CartProvider } from "@/contexts/CartContext";
 import { LocationProvider } from "@/contexts/LocationContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
+import { LoadingScreen } from "@/components/ui/LoadingScreen";
 import Landing from "./pages/Landing";
 import Index from "./pages/Index";
 import ProviderStore from "./pages/ProviderStore";
@@ -25,40 +27,54 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <ThemeProvider>
-      <AuthProvider>
-        <CartProvider>
-          <LocationProvider>
-            <TooltipProvider>
-              <Toaster />
-              <Sonner />
-              <BrowserRouter>
-                <Routes>
-                  <Route path="/" element={<Landing />} />
-                  <Route path="/app" element={<Index />} />
-                  <Route path="/product/:productId" element={<ProductDetails />} />
-                  <Route path="/cart" element={<Cart />} />
-                  <Route path="/orders" element={<Orders />} />
-                  <Route path="/profile" element={<Profile />} />
-                  <Route path="/loyalty" element={<LoyaltyTiers />} />
-                  <Route path="/admin" element={<Admin />} />
-                  <Route path="/admin-login" element={<AdminLogin />} />
-                  <Route path="/admin-forgot-password" element={<AdminForgotPassword />} />
-                  <Route path="/payment-result" element={<PaymentResult />} />
-                  <Route path="/provider-login" element={<ProviderLogin />} />
-                  <Route path="/provider-dashboard" element={<ProviderDashboard />} />
-                  <Route path="/store/:providerId" element={<ProviderStore />} />
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </BrowserRouter>
-            </TooltipProvider>
-          </LocationProvider>
-        </CartProvider>
-      </AuthProvider>
-    </ThemeProvider>
-  </QueryClientProvider>
-);
+const App = () => {
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    // Simulate initial app loading
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 2000);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider>
+        <AuthProvider>
+          <CartProvider>
+            <LocationProvider>
+              <TooltipProvider>
+                <LoadingScreen isLoading={isLoading} />
+                <Toaster />
+                <Sonner />
+                <BrowserRouter>
+                  <Routes>
+                    <Route path="/" element={<Landing />} />
+                    <Route path="/app" element={<Index />} />
+                    <Route path="/product/:productId" element={<ProductDetails />} />
+                    <Route path="/cart" element={<Cart />} />
+                    <Route path="/orders" element={<Orders />} />
+                    <Route path="/profile" element={<Profile />} />
+                    <Route path="/loyalty" element={<LoyaltyTiers />} />
+                    <Route path="/admin" element={<Admin />} />
+                    <Route path="/admin-login" element={<AdminLogin />} />
+                    <Route path="/admin-forgot-password" element={<AdminForgotPassword />} />
+                    <Route path="/payment-result" element={<PaymentResult />} />
+                    <Route path="/provider-login" element={<ProviderLogin />} />
+                    <Route path="/provider-dashboard" element={<ProviderDashboard />} />
+                    <Route path="/store/:providerId" element={<ProviderStore />} />
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </BrowserRouter>
+              </TooltipProvider>
+            </LocationProvider>
+          </CartProvider>
+        </AuthProvider>
+      </ThemeProvider>
+    </QueryClientProvider>
+  );
+};
 
 export default App;
