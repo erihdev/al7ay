@@ -42,7 +42,7 @@ const ProviderDashboard = () => {
   const [soundEnabled, setSoundEnabled] = useState(true);
 
   // Check if user has service_provider role and auto-fix if needed
-  const { hasRole: hasProviderRole, isLoading: roleLoading } = useAutoFixProviderRole();
+  const { hasRole: hasProviderRole, hasProfile, isLoading: roleLoading, checkComplete } = useAutoFixProviderRole();
 
   const { data: provider, isLoading: providerLoading } = useProviderProfile();
   const { data: products } = useProviderProducts(provider?.id);
@@ -52,15 +52,17 @@ const ProviderDashboard = () => {
   useProviderOrderNotifications(provider?.id, soundEnabled);
 
   useEffect(() => {
-    if (!authLoading && !roleLoading) {
+    // Only redirect after all checks are complete
+    if (!authLoading && checkComplete) {
       if (!user) {
         navigate('/provider-login');
-      } else if (!hasProviderRole) {
+      } else if (!hasProviderRole && !hasProfile) {
+        // Only redirect if user has neither role nor profile
         toast.error('ليس لديك صلاحية الوصول لهذه الصفحة');
         navigate('/provider-login');
       }
     }
-  }, [user, authLoading, roleLoading, hasProviderRole, navigate]);
+  }, [user, authLoading, checkComplete, hasProviderRole, hasProfile, navigate]);
 
   const handleLogout = async () => {
     await signOut();
