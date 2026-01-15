@@ -13,6 +13,7 @@ import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { InteractiveBackground } from '@/components/ui/InteractiveBackground';
 import { SearchableSelect } from '@/components/ui/searchable-select';
 import { LocationPickerDialog } from '@/components/landing/LocationPickerDialog';
+import { Skeleton } from '@/components/ui/skeleton';
 import { 
   Check, 
   Gift, 
@@ -24,7 +25,8 @@ import {
   Phone,
   Lock,
   MapPin,
-  Sparkles
+  Sparkles,
+  Loader2
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -50,6 +52,7 @@ const ProviderRegister = () => {
   const { user } = useAuth();
   const [step, setStep] = useState<'plan' | 'info' | 'payment'>('plan');
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingPlans, setIsLoadingPlans] = useState(true);
   const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
   const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan | null>(null);
   const [neighborhoods, setNeighborhoods] = useState<Neighborhood[]>([]);
@@ -96,19 +99,28 @@ const ProviderRegister = () => {
   // Fetch plans
   useEffect(() => {
     const fetchPlans = async () => {
-      const { data, error } = await supabase
-        .from('subscription_plans')
-        .select('*')
-        .eq('is_active', true)
-        .order('sort_order');
-      
-      if (!error && data) {
-        setPlans(data.map(plan => ({
-          ...plan,
-          features: Array.isArray(plan.features) 
-            ? (plan.features as unknown as string[]) 
-            : []
-        })));
+      setIsLoadingPlans(true);
+      try {
+        const { data, error } = await supabase
+          .from('subscription_plans')
+          .select('*')
+          .eq('is_active', true)
+          .order('sort_order');
+        
+        console.log('Fetched plans:', data, error);
+        
+        if (!error && data) {
+          setPlans(data.map(plan => ({
+            ...plan,
+            features: Array.isArray(plan.features) 
+              ? (plan.features as unknown as string[]) 
+              : []
+          })));
+        }
+      } catch (err) {
+        console.error('Error fetching plans:', err);
+      } finally {
+        setIsLoadingPlans(false);
       }
     };
     fetchPlans();
@@ -346,14 +358,38 @@ const ProviderRegister = () => {
               <p className="text-muted-foreground">ابدأ مجاناً أو اختر خطة تناسب احتياجاتك</p>
             </div>
 
-            {/* Plans Cards */}
-            <div className="grid md:grid-cols-3 gap-6">
-              {plans.map((plan, index) => (
-                <motion.div
-                  key={plan.id}
-                  initial={{ opacity: 0, y: 30 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 }}
+            {/* Loading State */}
+            {isLoadingPlans ? (
+              <div className="grid md:grid-cols-3 gap-6">
+                {[1, 2, 3].map((i) => (
+                  <Card key={i} className="p-6">
+                    <Skeleton className="h-6 w-3/4 mb-4" />
+                    <Skeleton className="h-4 w-full mb-2" />
+                    <Skeleton className="h-4 w-2/3 mb-6" />
+                    <Skeleton className="h-10 w-1/2 mb-6" />
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-full" />
+                      <Skeleton className="h-4 w-5/6" />
+                      <Skeleton className="h-4 w-4/5" />
+                    </div>
+                    <Skeleton className="h-10 w-full mt-6" />
+                  </Card>
+                ))}
+              </div>
+            ) : plans.length === 0 ? (
+              <div className="text-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
+                <p className="text-muted-foreground">جاري تحميل الخطط...</p>
+              </div>
+            ) : (
+              /* Plans Cards */
+              <div className="grid md:grid-cols-3 gap-6">
+                {plans.map((plan, index) => (
+                  <motion.div
+                    key={plan.id}
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.1 }}
                 >
                   <Card 
                     className={`cursor-pointer transition-all hover:shadow-xl hover:scale-105 h-full ${
@@ -427,7 +463,8 @@ const ProviderRegister = () => {
                   </Card>
                 </motion.div>
               ))}
-            </div>
+              </div>
+            )}
 
             {/* Features Comparison Table */}
             {plans.length > 0 && (
