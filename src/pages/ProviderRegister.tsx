@@ -451,7 +451,7 @@ const ProviderRegister = () => {
             ) : (
               /* Plans Cards with Stagger Animation */
               <motion.div 
-                className="grid md:grid-cols-3 gap-3"
+                className="grid grid-cols-3 gap-2"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.3 }}
