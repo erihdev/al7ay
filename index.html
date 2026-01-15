@@ -2,14 +2,31 @@
 <html lang="ar" dir="rtl">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, minimum-scale=1.0, user-scalable=yes, viewport-fit=cover" />
     <title>الحي - منصة الخدمات المحلية</title>
     <meta name="description" content="منصة الحي - اكتشف مقدمي الخدمات المحلية في حيك واطلب خدماتهم بسهولة" />
     <meta name="author" content="الحي" />
-    <meta name="theme-color" content="#c97435" />
+    <meta name="theme-color" content="#1a3d2e" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0d1f17" media="(prefers-color-scheme: dark)" />
     <link rel="manifest" href="/manifest.json" />
     <link rel="icon" href="/icons/icon-192.png" type="image/png" />
     <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-192.png" />
+    
+    <!-- iOS specific meta tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="الحي" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    
+    <!-- Format detection -->
+    <meta name="format-detection" content="telephone=no" />
+    
+    <!-- Disable automatic link detection on iOS -->
+    <meta name="format-detection" content="address=no" />
+    
+    <!-- Prevent zoom on input focus (iOS fix) -->
+    <meta name="HandheldFriendly" content="true" />
 
     <meta property="og:title" content="الحي - منصة الخدمات المحلية" />
     <meta property="og:description" content="اكتشف مقدمي الخدمات المحلية في حيك واطلب خدماتهم بسهولة" />
