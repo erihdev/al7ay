@@ -294,7 +294,29 @@ const ProviderLanding = () => {
                     alt="مقدمة خدمة ناجحة" 
                     className="rounded-3xl shadow-2xl w-full object-cover"
                   />
-                  <div className="absolute inset-0 rounded-3xl bg-gradient-to-t from-background/20 to-transparent" />
+                  <div className="absolute inset-0 rounded-3xl bg-gradient-to-t from-background/40 to-transparent" />
+                  
+                  {/* Slogan Overlay */}
+                  <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <motion.h2 
+                      className="text-4xl md:text-5xl lg:text-6xl font-bold text-white drop-shadow-2xl text-center"
+                      style={{ textShadow: '0 4px 20px rgba(0,0,0,0.5), 0 2px 10px rgba(0,0,0,0.3)' }}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.5 }}
+                    >
+                      الحي يحيييك
+                    </motion.h2>
+                    <motion.p
+                      className="text-lg md:text-xl text-white/90 mt-3 drop-shadow-lg"
+                      style={{ textShadow: '0 2px 10px rgba(0,0,0,0.4)' }}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.7 }}
+                    >
+                      منصة الخدمات المحلية
+                    </motion.p>
+                  </div>
                   
                   {/* Floating Stats Badge */}
                   <motion.div 
