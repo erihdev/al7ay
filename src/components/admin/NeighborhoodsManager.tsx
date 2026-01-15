@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Dialog,
   DialogContent,
@@ -30,10 +31,13 @@ import {
   Search,
   Filter,
   X,
-  Building2
+  Building2,
+  LayoutGrid,
+  Map
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Skeleton } from '@/components/ui/skeleton';
+import NeighborhoodsMap from './NeighborhoodsMap';
 
 interface Neighborhood {
   id: string;
@@ -395,55 +399,85 @@ const NeighborhoodsManager = () => {
         </Card>
       </div>
 
-      {/* Neighborhoods Grid */}
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filteredNeighborhoods?.map((neighborhood) => (
-          <Card key={neighborhood.id} className={!neighborhood.is_active ? 'opacity-60' : ''}>
-            <CardContent className="p-4">
-              <div className="flex items-start justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <MapPin className="h-5 w-5 text-primary" />
-                  <h3 className="font-bold">{neighborhood.name}</h3>
-                </div>
-                <Badge variant={neighborhood.is_active ? 'default' : 'secondary'}>
-                  {neighborhood.is_active ? 'نشط' : 'معطل'}
-                </Badge>
-              </div>
-              
-              <p className="text-sm text-muted-foreground mb-3">{neighborhood.city}</p>
-              
-              <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
-                <Users className="h-4 w-4" />
-                <span>{neighborhood.provider_count} مقدم خدمة</span>
-              </div>
+      {/* Map and Grid Tabs */}
+      <Tabs defaultValue="map" className="w-full">
+        <TabsList className="grid w-full grid-cols-2 max-w-[300px]">
+          <TabsTrigger value="map" className="gap-2">
+            <Map className="h-4 w-4" />
+            الخريطة
+          </TabsTrigger>
+          <TabsTrigger value="grid" className="gap-2">
+            <LayoutGrid className="h-4 w-4" />
+            القائمة
+          </TabsTrigger>
+        </TabsList>
 
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleEdit(neighborhood)}
-                  className="flex-1 font-arabic"
-                >
-                  <Edit className="h-4 w-4 ml-1" />
-                  تعديل
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    if (confirm('هل أنت متأكد من حذف هذا الحي؟')) {
-                      deleteMutation.mutate(neighborhood.id);
-                    }
-                  }}
-                  className="text-red-600 hover:bg-red-50"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+        <TabsContent value="map" className="mt-4">
+          <NeighborhoodsMap 
+            neighborhoods={filteredNeighborhoods} 
+            onEdit={handleEdit}
+          />
+        </TabsContent>
+
+        <TabsContent value="grid" className="mt-4">
+          {/* Neighborhoods Grid */}
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filteredNeighborhoods?.map((neighborhood) => (
+              <Card key={neighborhood.id} className={!neighborhood.is_active ? 'opacity-60' : ''}>
+                <CardContent className="p-4">
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <MapPin className="h-5 w-5 text-primary" />
+                      <h3 className="font-bold">{neighborhood.name}</h3>
+                    </div>
+                    <Badge variant={neighborhood.is_active ? 'default' : 'secondary'}>
+                      {neighborhood.is_active ? 'نشط' : 'معطل'}
+                    </Badge>
+                  </div>
+                  
+                  <p className="text-sm text-muted-foreground mb-3">{neighborhood.city}</p>
+                  
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
+                    <Users className="h-4 w-4" />
+                    <span>{neighborhood.provider_count} مقدم خدمة</span>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleEdit(neighborhood)}
+                      className="flex-1 font-arabic"
+                    >
+                      <Edit className="h-4 w-4 ml-1" />
+                      تعديل
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        if (confirm('هل أنت متأكد من حذف هذا الحي؟')) {
+                          deleteMutation.mutate(neighborhood.id);
+                        }
+                      }}
+                      className="text-red-600 hover:bg-red-50"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {filteredNeighborhoods.length === 0 && (
+            <div className="text-center py-12 text-muted-foreground">
+              <MapPin className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <p>لا توجد أحياء تطابق معايير البحث</p>
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
 
       {/* Add/Edit Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
