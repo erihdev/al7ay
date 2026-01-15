@@ -97,7 +97,17 @@ const ProviderLogin = () => {
       }
     } catch (error: any) {
       console.error('Login error:', error);
-      toast.error(error.message || 'حدث خطأ أثناء تسجيل الدخول');
+      
+      // Handle specific error types
+      if (error.name === 'AbortError' || error.message?.includes('aborted')) {
+        toast.error('انتهت مهلة الاتصال. يرجى المحاولة مرة أخرى');
+      } else if (error.message?.includes('Invalid login credentials')) {
+        toast.error('البريد الإلكتروني أو كلمة المرور غير صحيحة');
+      } else if (error.message?.includes('Email not confirmed')) {
+        toast.error('يرجى تأكيد البريد الإلكتروني أولاً');
+      } else {
+        toast.error(error.message || 'حدث خطأ أثناء تسجيل الدخول');
+      }
     } finally {
       setIsLoading(false);
     }
