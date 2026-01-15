@@ -199,6 +199,67 @@ const EdfaPayGuide = () => {
           </p>
         </motion.div>
 
+        {/* Video Tutorial Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.05 }}
+        >
+          <Card className="mb-8 overflow-hidden">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-red-500">
+                  <polygon points="5 3 19 12 5 21 5 3"/>
+                </svg>
+                فيديو تعليمي - خطوات التسجيل
+              </CardTitle>
+              <CardDescription>
+                شاهد الفيديو لمعرفة كيفية إنشاء حساب تاجر في EdfaPay خطوة بخطوة
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="relative w-full rounded-xl overflow-hidden bg-muted" style={{ paddingBottom: '56.25%' }}>
+                {/* Placeholder for video - replace with actual video embed */}
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-primary/5 to-primary/10">
+                  <div className="w-20 h-20 rounded-full bg-primary/20 flex items-center justify-center mb-4 backdrop-blur-sm">
+                    <div className="w-16 h-16 rounded-full bg-primary flex items-center justify-center shadow-lg">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="white" className="mr-[-2px]">
+                        <polygon points="5 3 19 12 5 21 5 3"/>
+                      </svg>
+                    </div>
+                  </div>
+                  <p className="text-muted-foreground text-sm font-medium">فيديو شرح التسجيل في EdfaPay</p>
+                  <p className="text-xs text-muted-foreground mt-1">المدة: 5 دقائق</p>
+                  
+                  {/* Uncomment and replace with actual YouTube/Vimeo embed when video is available */}
+                  {/* 
+                  <iframe 
+                    className="absolute inset-0 w-full h-full"
+                    src="https://www.youtube.com/embed/VIDEO_ID" 
+                    title="شرح التسجيل في EdfaPay"
+                    frameBorder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
+                  */}
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-2 mt-4">
+                <Badge variant="outline" className="text-xs">
+                  <Clock className="h-3 w-3 ml-1" />
+                  5 دقائق
+                </Badge>
+                <Badge variant="outline" className="text-xs">
+                  عربي
+                </Badge>
+                <Badge variant="outline" className="text-xs">
+                  خطوة بخطوة
+                </Badge>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+
         {/* Registration Link Card */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
