@@ -300,6 +300,16 @@ const MyStoreOrders = () => {
                               </span>
                             </div>
 
+                            {/* Auto-show Delivery Tracking Map for out_for_delivery orders */}
+                            {order.order_type === 'delivery' && 
+                             order.status === 'out_for_delivery' && 
+                             order.delivery_lat && 
+                             order.delivery_lng && (
+                              <div className="mt-3" onClick={(e) => e.stopPropagation()}>
+                                <ProviderOrderTrackingMap orderId={order.id} />
+                              </div>
+                            )}
+
                             {/* Expanded Details */}
                             <AnimatePresence>
                               {isExpanded && (
@@ -337,41 +347,6 @@ const MyStoreOrders = () => {
                                         </>
                                       )}
                                     </div>
-
-                                    {/* Delivery Tracking Map for out_for_delivery orders */}
-                                    {order.order_type === 'delivery' && 
-                                     order.status === 'out_for_delivery' && 
-                                     order.delivery_lat && 
-                                     order.delivery_lng && (
-                                      <div className="space-y-2">
-                                        <Button 
-                                          variant="default" 
-                                          size="sm" 
-                                          className="w-full gap-2 bg-purple-600 hover:bg-purple-700"
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            setShowMapForOrder(showMapForOrder === order.id ? null : order.id);
-                                          }}
-                                        >
-                                          <Truck className="h-4 w-4" />
-                                          {showMapForOrder === order.id ? 'إخفاء خريطة التتبع' : 'تتبع موقع السائق'}
-                                        </Button>
-                                        
-                                        <AnimatePresence>
-                                          {showMapForOrder === order.id && (
-                                            <motion.div
-                                              initial={{ height: 0, opacity: 0 }}
-                                              animate={{ height: 'auto', opacity: 1 }}
-                                              exit={{ height: 0, opacity: 0 }}
-                                              className="overflow-hidden"
-                                              onClick={(e) => e.stopPropagation()}
-                                            >
-                                              <ProviderOrderTrackingMap orderId={order.id} />
-                                            </motion.div>
-                                          )}
-                                        </AnimatePresence>
-                                      </div>
-                                    )}
 
                                     {/* Navigation Map for Pickup Orders */}
                                     {order.order_type === 'pickup' && 
