@@ -65,15 +65,14 @@ const ProviderDashboard = () => {
     // Only redirect after all checks are complete
     if (!authLoading && checkComplete) {
       if (!user) {
-        // Use window.location for more reliable redirect on mobile
-        window.location.href = '/provider-login';
+        navigate('/provider-login', { replace: true });
       } else if (!hasProviderRole && !hasProfile) {
         // Only redirect if user has neither role nor profile
         toast.error('ليس لديك صلاحية الوصول لهذه الصفحة');
-        window.location.href = '/provider-login';
+        navigate('/provider-login', { replace: true });
       }
     }
-  }, [user, authLoading, checkComplete, hasProviderRole, hasProfile]);
+  }, [user, authLoading, checkComplete, hasProviderRole, hasProfile, navigate]);
 
   const handleLogout = async () => {
     await signOut();
