@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { 
   BarChart, 
   Bar, 
@@ -22,10 +23,12 @@ import {
   Package,
   Users,
   Calendar,
-  Award
+  Award,
+  FileText
 } from 'lucide-react';
 import { format, subDays, startOfDay, endOfDay, isWithinInterval } from 'date-fns';
 import { ar } from 'date-fns/locale';
+import { exportProviderFinancialReportToPDF, ProviderFinancialData } from '@/utils/exportProviderFinancialReport';
 
 interface ProviderOrder {
   id: string;
@@ -47,11 +50,23 @@ interface ProviderProduct {
 interface ProviderStatsProps {
   orders: ProviderOrder[];
   products: ProviderProduct[];
+  providerData?: {
+    business_name: string;
+    email: string;
+    commission_rate?: number;
+  };
+  payoutHistory?: Array<{
+    created_at: string;
+    amount: number;
+    commission_amount: number;
+    net_amount: number;
+    transaction_reference: string | null;
+  }>;
 }
 
 const COLORS = ['#1B4332', '#2D6A4F', '#40916C', '#52B788', '#74C69D', '#95D5B2'];
 
-const ProviderStats = ({ orders, products }: ProviderStatsProps) => {
+const ProviderStats = ({ orders, products, providerData, payoutHistory = [] }: ProviderStatsProps) => {
   // Calculate statistics
   const stats = useMemo(() => {
     const today = new Date();
@@ -188,8 +203,61 @@ const ProviderStats = ({ orders, products }: ProviderStatsProps) => {
     };
   }, [products]);
 
+  // Export financial report
+  const handleExportPDF = () => {
+    if (!providerData) {
+      return;
+    }
+
+    const completedOrders = orders.filter(o => o.status === 'completed');
+    const cancelledOrders = orders.filter(o => o.status === 'cancelled');
+    const totalRevenue = completedOrders.reduce((sum, o) => sum + o.total_amount, 0);
+    const commissionRate = providerData.commission_rate || 10;
+    const platformCommission = totalRevenue * (commissionRate / 100);
+    const netEarnings = totalRevenue - platformCommission;
+
+    const reportData: ProviderFinancialData = {
+      businessName: providerData.business_name,
+      email: providerData.email,
+      commissionRate,
+      periodStart: subDays(new Date(), 30).toISOString(),
+      periodEnd: new Date().toISOString(),
+      totalRevenue,
+      platformCommission,
+      netEarnings,
+      totalOrders: orders.length,
+      completedOrders: completedOrders.length,
+      cancelledOrders: cancelledOrders.length,
+      avgOrderValue: completedOrders.length > 0 ? totalRevenue / completedOrders.length : 0,
+      dailyBreakdown: trendData.map(d => ({
+        date: d.date,
+        orders: d.orders,
+        revenue: d.revenue,
+      })),
+      payoutHistory: payoutHistory.map(p => ({
+        date: format(new Date(p.created_at), 'dd/MM/yyyy'),
+        amount: p.amount,
+        commission: p.commission_amount,
+        netAmount: p.net_amount,
+        reference: p.transaction_reference,
+      })),
+    };
+
+    exportProviderFinancialReportToPDF(reportData);
+  };
+
   return (
     <div className="space-y-6">
+      {/* Export Button */}
+      {providerData && (
+        <div className="flex justify-end">
+          <Button onClick={handleExportPDF} variant="outline" className="gap-2">
+            <FileText className="h-4 w-4" />
+            تصدير التقرير المالي PDF
+          </Button>
+        </div>
+      )}
+
       {/* Summary Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card>

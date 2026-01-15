@@ -10,7 +10,7 @@ const corsHeaders = {
 };
 
 interface ApplicationEmailRequest {
-  type?: 'applicant_notification' | 'admin_notification' | 'neighborhood_suggestion' | 'neighborhood_approved' | 'neighborhood_rejected' | 'provider_registered' | 'verification_approved' | 'verification_rejected';
+  type?: 'applicant_notification' | 'admin_notification' | 'neighborhood_suggestion' | 'neighborhood_approved' | 'neighborhood_rejected' | 'provider_registered' | 'verification_approved' | 'verification_rejected' | 'payout_completed';
   email: string;
   fullName: string;
   businessName?: string;
@@ -23,6 +23,13 @@ interface ApplicationEmailRequest {
   neighborhoodName?: string;
   city?: string;
   commissionRate?: number;
+  // Payout notification fields
+  payoutAmount?: number;
+  grossAmount?: number;
+  commissionAmount?: number;
+  periodStart?: string;
+  periodEnd?: string;
+  transactionRef?: string;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -31,14 +38,99 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { type = 'applicant_notification', email, fullName, businessName, neighborhood, phone, status, notes, customNeighborhood, customCity, neighborhoodName, city, commissionRate }: ApplicationEmailRequest = await req.json();
+    const { type = 'applicant_notification', email, fullName, businessName, neighborhood, phone, status, notes, customNeighborhood, customCity, neighborhoodName, city, commissionRate, payoutAmount, grossAmount, commissionAmount, periodStart, periodEnd, transactionRef }: ApplicationEmailRequest = await req.json();
 
     let subject: string;
     let htmlContent: string;
     let toEmail: string;
 
-    // Verification approved notification
-    if (type === 'verification_approved') {
+    // Payout completed notification
+    if (type === 'payout_completed') {
+      toEmail = email;
+      subject = `💰 تم تحويل أرباحك - ${payoutAmount?.toFixed(2)} ر.س`;
+      htmlContent = `
+        <!DOCTYPE html>
+        <html dir="rtl" lang="ar">
+        <head>
+          <meta charset="utf-8">
+          <style>
+            body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f5f5f5; margin: 0; padding: 20px; }
+            .container { max-width: 600px; margin: 0 auto; background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+            .header { background: linear-gradient(135deg, #059669, #047857); color: white; padding: 40px 30px; text-align: center; }
+            .header h1 { margin: 0; font-size: 24px; }
+            .success-icon { font-size: 64px; margin-bottom: 20px; }
+            .content { padding: 30px; }
+            .amount-box { background: #ECFDF5; border: 2px solid #10B981; border-radius: 16px; padding: 30px; margin: 20px 0; text-align: center; }
+            .amount-value { font-size: 40px; font-weight: bold; color: #059669; margin: 0; }
+            .info-card { background: #f9fafb; border-radius: 12px; padding: 20px; margin: 20px 0; }
+            .info-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #e5e7eb; }
+            .info-row:last-child { border-bottom: none; }
+            .info-label { color: #6b7280; }
+            .info-value { font-weight: bold; color: #1f2937; }
+            .commission { color: #DC2626; }
+            .cta-button { display: inline-block; background: #059669; color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: bold; margin-top: 20px; }
+            .footer { background: #f9fafb; padding: 20px; text-align: center; color: #6b7280; font-size: 14px; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <div class="success-icon">💰</div>
+              <h1>تم تحويل أرباحك!</h1>
+            </div>
+            <div class="content">
+              <p>مرحباً <strong>${fullName || businessName}</strong>،</p>
+              <p>يسعدنا إبلاغك بأنه تم تحويل أرباحك الأسبوعية إلى حسابك البنكي المسجل.</p>
+              
+              <div class="amount-box">
+                <p style="color: #6b7280; margin: 0 0 10px 0;">صافي المبلغ المحول</p>
+                <p class="amount-value">${payoutAmount?.toFixed(2)} ر.س</p>
+              </div>
+
+              <div class="info-card">
+                <div class="info-row">
+                  <span class="info-label">إجمالي الإيرادات</span>
+                  <span class="info-value">${grossAmount?.toFixed(2)} ر.س</span>
+                </div>
+                <div class="info-row">
+                  <span class="info-label">عمولة المنصة (${commissionRate || 10}%)</span>
+                  <span class="info-value commission">- ${commissionAmount?.toFixed(2)} ر.س</span>
+                </div>
+                <div class="info-row">
+                  <span class="info-label">صافي التحويل</span>
+                  <span class="info-value" style="color: #059669; font-size: 18px;">${payoutAmount?.toFixed(2)} ر.س</span>
+                </div>
+                ${periodStart && periodEnd ? `
+                <div class="info-row">
+                  <span class="info-label">فترة التقرير</span>
+                  <span class="info-value">${periodStart} - ${periodEnd}</span>
+                </div>
+                ` : ''}
+                ${transactionRef ? `
+                <div class="info-row">
+                  <span class="info-label">رقم المرجع</span>
+                  <span class="info-value" style="font-family: monospace;">${transactionRef}</span>
+                </div>
+                ` : ''}
+              </div>
+
+              <p style="background: #FEF3C7; border-radius: 8px; padding: 12px; color: #92400E;">
+                📌 <strong>ملاحظة:</strong> قد يستغرق ظهور المبلغ في حسابك من 1-3 أيام عمل حسب البنك.
+              </p>
+
+              <div style="text-align: center;">
+                <a href="https://al7ay.lovable.app/provider-dashboard" class="cta-button">عرض التقرير المالي</a>
+              </div>
+            </div>
+            <div class="footer">
+              <p>شكراً لشراكتك معنا! 💚</p>
+              <p>فريق منصة الحي</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `;
+    } else if (type === 'verification_approved') {
       toEmail = email;
       subject = `🎉 تم توثيق حسابك في منصة الحي - ${businessName}`;
       htmlContent = `
