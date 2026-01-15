@@ -62,66 +62,38 @@ const ProviderDashboard = () => {
 
   useEffect(() => {
     let cancelled = false;
-    let timeoutId: NodeJS.Timeout;
+    let hasLoaded = false;
 
-    const load = async () => {
-      console.log('[Dashboard] Starting load...');
+    const loadDashboard = async (userId: string) => {
+      if (hasLoaded || cancelled) return;
+      hasLoaded = true;
       
-      // Set a maximum timeout of 8 seconds
-      timeoutId = setTimeout(() => {
-        if (!cancelled && state === 'loading') {
-          console.log('[Dashboard] Timeout reached - forcing error state');
-          setErrorMessage('انتهت المهلة - الاتصال بطيء');
-          setState('error');
-        }
-      }, 8000);
+      console.log('[Dashboard] Loading for user:', userId);
 
       try {
-        // 1. Check session
-        console.log('[Dashboard] Getting session...');
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-        console.log('[Dashboard] Session result:', session?.user?.id, sessionError);
-        
-        if (sessionError) {
-          console.error('[Dashboard] Session error:', sessionError);
-          throw sessionError;
-        }
-        
-        if (!session?.user) {
-          console.log('[Dashboard] No session - redirecting');
-          if (!cancelled) setState('no-session');
-          return;
-        }
-
-        // 2. Get provider
-        console.log('[Dashboard] Getting provider for user:', session.user.id);
+        // Get provider
         const { data: providerData, error: providerError } = await supabase
           .from('service_providers')
           .select('id, business_name, logo_url')
-          .eq('user_id', session.user.id)
+          .eq('user_id', userId)
           .maybeSingle();
 
-        console.log('[Dashboard] Provider result:', providerData, providerError);
+        console.log('[Dashboard] Provider:', providerData?.id, providerError);
 
         if (providerError) throw providerError;
         
         if (!providerData) {
-          console.log('[Dashboard] No provider found');
           if (!cancelled) setState('no-provider');
           return;
         }
 
-        // 3. Get products and orders (don't fail if these fail)
-        console.log('[Dashboard] Getting products and orders...');
+        // Get products and orders
         const [productsRes, ordersRes] = await Promise.all([
           supabase.from('provider_products').select('id, is_available, is_featured').eq('provider_id', providerData.id),
           supabase.from('provider_orders').select('id, status, total_amount, created_at').eq('provider_id', providerData.id).order('created_at', { ascending: false })
         ]);
 
-        console.log('[Dashboard] Products:', productsRes.data?.length, 'Orders:', ordersRes.data?.length);
-
         if (!cancelled) {
-          clearTimeout(timeoutId);
           setProvider(providerData);
           setProducts(productsRes.data || []);
           setOrders(ordersRes.data || []);
@@ -130,7 +102,6 @@ const ProviderDashboard = () => {
         }
       } catch (err: any) {
         console.error('[Dashboard] Error:', err);
-        clearTimeout(timeoutId);
         if (!cancelled) {
           setErrorMessage(err.message || 'حدث خطأ');
           setState('error');
@@ -138,18 +109,46 @@ const ProviderDashboard = () => {
       }
     };
 
-    load();
-
+    // Use onAuthStateChange - it's more reliable on mobile than getSession
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log('[Dashboard] Auth state change:', event, session?.user?.id);
+      console.log('[Dashboard] Auth event:', event, session?.user?.id);
+      
       if (event === 'SIGNED_OUT') {
         window.location.href = '/provider-login';
+        return;
+      }
+
+      if (session?.user) {
+        loadDashboard(session.user.id);
+      } else if (event === 'INITIAL_SESSION') {
+        // No session on initial load
+        if (!cancelled) setState('no-session');
       }
     });
 
+    // Fallback timeout - if no auth event after 5 seconds, check manually
+    const fallbackTimeout = setTimeout(async () => {
+      if (hasLoaded || cancelled) return;
+      console.log('[Dashboard] Fallback: checking session manually');
+      
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          loadDashboard(session.user.id);
+        } else if (!cancelled && !hasLoaded) {
+          setState('no-session');
+        }
+      } catch (e) {
+        console.log('[Dashboard] Fallback failed:', e);
+        if (!cancelled && !hasLoaded) {
+          setState('no-session');
+        }
+      }
+    }, 3000);
+
     return () => {
       cancelled = true;
-      clearTimeout(timeoutId);
+      clearTimeout(fallbackTimeout);
       subscription.unsubscribe();
     };
   }, []);
