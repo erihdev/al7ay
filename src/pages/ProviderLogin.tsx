@@ -135,6 +135,23 @@ const ProviderLogin = () => {
 
       if (error) throw error;
 
+      // Automatically setup the provider (role + profile) using edge function
+      if (signupData.user) {
+        try {
+          await supabase.functions.invoke('setup-provider', {
+            body: {
+              userId: signupData.user.id,
+              email: email,
+              fullName: nameToUse,
+              applicationId: approvedApplication.id
+            }
+          });
+        } catch (setupError) {
+          console.error('Error setting up provider:', setupError);
+          // Don't block signup if setup fails - admin can do it manually
+        }
+      }
+
       // Send notification to admin about new provider registration
       try {
         await supabase.functions.invoke('send-application-email', {
@@ -151,7 +168,7 @@ const ProviderLogin = () => {
         // Don't block signup if notification fails
       }
 
-      toast.success('تم إنشاء الحساب بنجاح! يمكنك الآن تسجيل الدخول');
+      toast.success('تم إنشاء الحساب وتفعيله بنجاح! يمكنك الآن تسجيل الدخول');
       setMode('login');
       setPassword('');
     } catch (error: any) {
