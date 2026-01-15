@@ -17,28 +17,24 @@ const ProviderLogin = () => {
   const [password, setPassword] = useState('');
   const [showForgotPassword, setShowForgotPassword] = useState(false);
 
-  // Check for existing session on mount and redirect if provider
+  // Listen for auth state changes and redirect when signed in
   useEffect(() => {
-    const checkSession = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session?.user) {
-          const { data: provider } = await supabase
-            .from('service_providers')
-            .select('id')
-            .eq('user_id', session.user.id)
-            .maybeSingle();
-          
-          if (provider) {
-            window.location.href = '/provider-dashboard';
-          }
-        }
-      } catch (error) {
-        // Silently fail - just show login form
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' && session?.user) {
+        // Redirect to dashboard - it will handle provider verification
+        navigate('/provider-dashboard', { replace: true });
       }
-    };
-    checkSession();
-  }, []);
+    });
+
+    // Check for existing session on mount
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        navigate('/provider-dashboard', { replace: true });
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,7 +47,7 @@ const ProviderLogin = () => {
     setIsLoading(true);
 
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const { error } = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password,
       });
@@ -66,34 +62,9 @@ const ProviderLogin = () => {
         return;
       }
 
-      if (!data?.session?.user) {
-        setIsLoading(false);
-        toast.error('حدث خطأ في تسجيل الدخول');
-        return;
-      }
-
-      // Check if user is a provider
-      const { data: provider, error: providerError } = await supabase
-        .from('service_providers')
-        .select('id')
-        .eq('user_id', data.session.user.id)
-        .maybeSingle();
-      
-      if (providerError) {
-        setIsLoading(false);
-        toast.error('حدث خطأ أثناء التحقق');
-        return;
-      }
-      
-      if (!provider) {
-        await supabase.auth.signOut();
-        setIsLoading(false);
-        toast.error('هذا الحساب ليس مسجلاً كمقدم خدمة');
-        return;
-      }
-
+      // Login successful - redirect to dashboard
+      // The dashboard will handle provider verification
       toast.success('تم تسجيل الدخول بنجاح');
-      setIsLoading(false);
       navigate('/provider-dashboard', { replace: true });
     } catch (err) {
       console.error('Login error:', err);
