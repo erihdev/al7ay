@@ -44,62 +44,35 @@ const ProviderLogin = () => {
     setIsLoading(true);
 
     try {
+      // Step 1: Sign in
       const { data, error } = await supabase.auth.signInWithPassword({
-        email,
+        email: email.trim(),
         password,
       });
 
       if (error) throw error;
 
-      // Check if user has service_provider role
-      const { data: roles } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', data.user.id)
-        .in('role', ['service_provider', 'admin'])
-        .maybeSingle();
-
-      if (roles) {
-        toast.success('تم تسجيل الدخول بنجاح');
-        if (roles.role === 'admin') {
-          navigate('/admin');
-        } else {
-          navigate('/provider-dashboard');
-        }
-      } else {
-        // Check if user has a service_providers profile but missing role
-        const { data: providerProfile } = await supabase
-          .from('service_providers')
-          .select('id')
-          .eq('user_id', data.user.id)
-          .maybeSingle();
-
-        if (providerProfile) {
-          // Auto-fix: Add missing service_provider role
-          console.log('Auto-fixing missing service_provider role for user:', data.user.id);
-          const { error: roleError } = await supabase
-            .from('user_roles')
-            .insert({
-              user_id: data.user.id,
-              role: 'service_provider'
-            });
-
-          if (roleError && roleError.code !== '23505') {
-            console.error('Error adding role:', roleError);
-          }
-
-          toast.success('تم تسجيل الدخول بنجاح');
-          navigate('/provider-dashboard');
-        } else {
-          toast.error('هذا الحساب غير مسجل كمقدم خدمة');
-          await supabase.auth.signOut();
-        }
+      if (!data.user) {
+        throw new Error('فشل تسجيل الدخول');
       }
+
+      // Step 2: Navigate directly - let the dashboard handle role checking
+      // This avoids the abort issue from multiple sequential queries
+      toast.success('تم تسجيل الدخول بنجاح');
+      navigate('/provider-dashboard');
+      
     } catch (error: any) {
       console.error('Login error:', error);
       
       // Handle specific error types
       if (error.name === 'AbortError' || error.message?.includes('aborted')) {
+        // Try to check if user is already logged in
+        const { data: session } = await supabase.auth.getSession();
+        if (session?.session) {
+          toast.success('تم تسجيل الدخول بنجاح');
+          navigate('/provider-dashboard');
+          return;
+        }
         toast.error('انتهت مهلة الاتصال. يرجى المحاولة مرة أخرى');
       } else if (error.message?.includes('Invalid login credentials')) {
         toast.error('البريد الإلكتروني أو كلمة المرور غير صحيحة');
