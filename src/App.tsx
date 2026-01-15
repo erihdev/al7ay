@@ -13,6 +13,7 @@ import { UpdateNotification } from "@/components/notifications/UpdateNotificatio
 import { AppFooter } from "@/components/layout/AppFooter";
 
 // Import main pages directly for instant load
+import Welcome from "./pages/Welcome";
 import CustomerLanding from "./pages/CustomerLanding";
 import ProviderLanding from "./pages/ProviderLanding";
 import Index from "./pages/Index";
@@ -75,7 +76,8 @@ const App = () => {
                 <BrowserRouter>
                   <Suspense fallback={<PageLoader />}>
                     <Routes>
-                      <Route path="/" element={<CustomerLanding />} />
+                      <Route path="/" element={<Welcome />} />
+                      <Route path="/for-customers" element={<CustomerLanding />} />
                       <Route path="/for-providers" element={<ProviderLanding />} />
                       <Route path="/app" element={<Index />} />
                       <Route path="/product/:productId" element={<ProductDetails />} />
