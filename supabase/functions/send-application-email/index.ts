@@ -304,6 +304,8 @@ const handler = async (req: Request): Promise<Response> => {
     } else if (status === 'approved') {
       toEmail = email;
       subject = `🎉 تم قبول طلبك للانضمام إلى منصة الحي`;
+      // Create signup link with email pre-filled
+      const signupUrl = `https://al7ay.lovable.app/provider-login?action=signup&email=${encodeURIComponent(email)}`;
       htmlContent = `
         <!DOCTYPE html>
         <html dir="rtl" lang="ar">
@@ -318,10 +320,12 @@ const handler = async (req: Request): Promise<Response> => {
             .content { padding: 30px; }
             .highlight-box { background: #ECFDF5; border: 1px solid #A7F3D0; border-radius: 12px; padding: 20px; margin: 20px 0; text-align: center; }
             .cta-button { display: inline-block; background: #1B4332; color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: bold; margin-top: 20px; }
+            .cta-button-secondary { display: inline-block; background: #6B7280; color: white; padding: 12px 28px; border-radius: 8px; text-decoration: none; font-weight: bold; margin-top: 10px; font-size: 14px; }
             .footer { background: #f9fafb; padding: 20px; text-align: center; color: #6b7280; font-size: 14px; }
             .steps { background: #f9fafb; border-radius: 12px; padding: 20px; margin: 20px 0; }
             .step { display: flex; align-items: flex-start; gap: 15px; margin-bottom: 15px; }
             .step-number { background: #1B4332; color: white; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; flex-shrink: 0; }
+            .important-box { background: #FEF3C7; border: 1px solid #FCD34D; border-radius: 12px; padding: 20px; margin: 20px 0; }
           </style>
         </head>
         <body>
@@ -338,13 +342,19 @@ const handler = async (req: Request): Promise<Response> => {
                 <p style="margin: 0; font-size: 18px; color: #059669;">🏪 أنت الآن جزء من عائلة الحي!</p>
               </div>
 
+              <div class="important-box">
+                <h3 style="margin-top: 0; color: #B45309;">⚠️ مهم - إنشاء حسابك</h3>
+                <p style="margin-bottom: 0;">يجب عليك إنشاء حساب جديد للوصول إلى لوحة تحكم مقدمي الخدمات. اضغط على الزر أدناه لإنشاء حسابك باستخدام بريدك الإلكتروني:</p>
+                <p style="margin-top: 10px; font-weight: bold; direction: ltr; text-align: center;">${email}</p>
+              </div>
+
               <div class="steps">
                 <h3 style="margin-top: 0;">الخطوات التالية:</h3>
                 <div class="step">
                   <div class="step-number">1</div>
                   <div>
-                    <strong>سجّل دخولك</strong><br>
-                    <span style="color: #6b7280;">انتقل إلى صفحة تسجيل الدخول وأنشئ حسابك</span>
+                    <strong>أنشئ حسابك</strong><br>
+                    <span style="color: #6b7280;">اضغط على الزر أدناه وأنشئ كلمة مرور جديدة</span>
                   </div>
                 </div>
                 <div class="step">
@@ -366,7 +376,9 @@ const handler = async (req: Request): Promise<Response> => {
               ${notes ? `<p><strong>ملاحظة من الإدارة:</strong> ${notes}</p>` : ''}
 
               <div style="text-align: center;">
-                <a href="https://al7ay.lovable.app/provider-login" class="cta-button">تسجيل الدخول الآن</a>
+                <a href="${signupUrl}" class="cta-button">🔐 إنشاء حسابي الآن</a>
+                <br>
+                <a href="https://al7ay.lovable.app/provider-login" class="cta-button-secondary">تسجيل الدخول إذا كان لديك حساب</a>
               </div>
             </div>
             <div class="footer">
