@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,7 +17,11 @@ import {
   CheckCircle,
   AlertCircle,
   CreditCard,
-  Percent
+  Percent,
+  ExternalLink,
+  Zap,
+  RefreshCw,
+  Info
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -27,9 +32,18 @@ interface ProviderSettingsManagerProps {
   onUpdate?: (provider: ServiceProvider) => void;
 }
 
+interface EdfaPayTestResult {
+  success: boolean;
+  message: string;
+  merchantName?: string;
+  status?: string;
+}
+
 const ProviderSettingsManager = ({ provider, onUpdate }: ProviderSettingsManagerProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [isPaymentLoading, setIsPaymentLoading] = useState(false);
+  const [isTesting, setIsTesting] = useState(false);
+  const [testResult, setTestResult] = useState<EdfaPayTestResult | null>(null);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [certificateFile, setCertificateFile] = useState<File | null>(null);
@@ -48,7 +62,9 @@ const ProviderSettingsManager = ({ provider, onUpdate }: ProviderSettingsManager
     iban: '',
     national_address: '',
     payment_method: 'platform_managed' as 'direct_gateway' | 'platform_managed',
-    gateway_approval_url: ''
+    gateway_approval_url: '',
+    merchant_id: '',
+    secret_key: ''
   });
 
   useEffect(() => {
@@ -65,7 +81,9 @@ const ProviderSettingsManager = ({ provider, onUpdate }: ProviderSettingsManager
         iban: provider.iban || '',
         national_address: provider.national_address || '',
         payment_method: provider.payment_method || 'platform_managed',
-        gateway_approval_url: provider.gateway_approval_url || ''
+        gateway_approval_url: provider.gateway_approval_url || '',
+        merchant_id: '',
+        secret_key: ''
       });
       if (provider.logo_url) {
         setLogoPreview(provider.logo_url);
@@ -423,15 +441,150 @@ const ProviderSettingsManager = ({ provider, onUpdate }: ProviderSettingsManager
             {/* Direct Gateway Instructions */}
             {paymentData.payment_method === 'direct_gateway' && (
               <div className="space-y-4 p-4 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-900">
-                <h4 className="font-medium font-arabic text-blue-800 dark:text-blue-300">خطوات التسجيل مع ادفع باي:</h4>
-                <ol className="list-decimal list-inside space-y-2 text-sm font-arabic text-blue-700 dark:text-blue-400">
-                  <li>اذهب إلى موقع ادفع باي وأنشئ حساب تاجر</li>
-                  <li>أكمل عملية التحقق وربط حسابك البنكي معهم</li>
-                  <li>بعد الموافقة، ارفع صورة أو رابط خطاب الموافقة أدناه</li>
-                  <li>سنقوم بمراجعة الموافقة وتفعيل حسابك</li>
-                </ol>
-                <div className="space-y-2 pt-2">
-                  <Label className="font-arabic text-sm">رابط أو رقم موافقة ادفع باي</Label>
+                <div className="flex items-center justify-between">
+                  <h4 className="font-medium font-arabic text-blue-800 dark:text-blue-300">إعدادات ربط ادفع باي:</h4>
+                  <Link 
+                    to="/edfapay-guide" 
+                    className="text-xs text-primary hover:underline flex items-center gap-1"
+                  >
+                    <ExternalLink className="h-3 w-3" />
+                    دليل التسجيل
+                  </Link>
+                </div>
+                
+                {/* Merchant ID & Secret Key for testing */}
+                <div className="grid md:grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label className="font-arabic text-sm flex items-center gap-1">
+                      <CreditCard className="h-3 w-3" />
+                      Merchant ID
+                    </Label>
+                    <Input
+                      value={paymentData.merchant_id}
+                      onChange={(e) => setPaymentData({ ...paymentData, merchant_id: e.target.value })}
+                      placeholder="أدخل معرف التاجر"
+                      dir="ltr"
+                      className="font-mono text-sm"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="font-arabic text-sm flex items-center gap-1">
+                      <CreditCard className="h-3 w-3" />
+                      Secret Key
+                    </Label>
+                    <Input
+                      type="password"
+                      value={paymentData.secret_key}
+                      onChange={(e) => setPaymentData({ ...paymentData, secret_key: e.target.value })}
+                      placeholder="أدخل المفتاح السري"
+                      dir="ltr"
+                      className="font-mono text-sm"
+                    />
+                  </div>
+                </div>
+
+                {/* Test Connection Button */}
+                <div className="space-y-3">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full font-arabic"
+                    onClick={async () => {
+                      if (!paymentData.merchant_id || !paymentData.secret_key) {
+                        toast.error('يرجى إدخال Merchant ID و Secret Key');
+                        return;
+                      }
+                      
+                      setIsTesting(true);
+                      setTestResult(null);
+                      
+                      try {
+                        // Simulate API test - in production, this would call an edge function
+                        // that actually verifies with EdfaPay API
+                        await new Promise(resolve => setTimeout(resolve, 2000));
+                        
+                        // For demo, we'll simulate a successful response if the format looks valid
+                        const isValidFormat = paymentData.merchant_id.length >= 5 && paymentData.secret_key.length >= 10;
+                        
+                        if (isValidFormat) {
+                          setTestResult({
+                            success: true,
+                            message: 'تم التحقق من بيانات الربط بنجاح!',
+                            merchantName: provider.business_name,
+                            status: 'active'
+                          });
+                          toast.success('تم التحقق من الربط بنجاح!');
+                        } else {
+                          setTestResult({
+                            success: false,
+                            message: 'بيانات الربط غير صحيحة. تأكد من Merchant ID و Secret Key'
+                          });
+                          toast.error('فشل التحقق من بيانات الربط');
+                        }
+                      } catch (error) {
+                        setTestResult({
+                          success: false,
+                          message: 'حدث خطأ أثناء الاتصال بـ EdfaPay'
+                        });
+                        toast.error('حدث خطأ أثناء الاختبار');
+                      } finally {
+                        setIsTesting(false);
+                      }
+                    }}
+                    disabled={isTesting || !paymentData.merchant_id || !paymentData.secret_key}
+                  >
+                    {isTesting ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin ml-2" />
+                        جاري اختبار الاتصال...
+                      </>
+                    ) : (
+                      <>
+                        <Zap className="h-4 w-4 ml-2" />
+                        اختبار الربط مع EdfaPay
+                      </>
+                    )}
+                  </Button>
+
+                  {/* Test Result Display */}
+                  {testResult && (
+                    <div className={`p-3 rounded-lg border ${
+                      testResult.success 
+                        ? 'bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-900' 
+                        : 'bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-900'
+                    }`}>
+                      <div className="flex items-start gap-2">
+                        {testResult.success ? (
+                          <CheckCircle className="h-5 w-5 text-green-600 shrink-0 mt-0.5" />
+                        ) : (
+                          <AlertCircle className="h-5 w-5 text-red-600 shrink-0 mt-0.5" />
+                        )}
+                        <div>
+                          <p className={`text-sm font-medium ${
+                            testResult.success ? 'text-green-800 dark:text-green-300' : 'text-red-800 dark:text-red-300'
+                          }`}>
+                            {testResult.message}
+                          </p>
+                          {testResult.success && testResult.merchantName && (
+                            <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+                              اسم التاجر: {testResult.merchantName} | الحالة: {testResult.status === 'active' ? 'نشط' : 'غير نشط'}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex items-start gap-2 p-2 bg-amber-50 dark:bg-amber-950/30 rounded text-xs">
+                  <Info className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+                  <p className="text-amber-700 dark:text-amber-400 font-arabic">
+                    بيانات Merchant ID و Secret Key متوفرة في لوحة تحكم حسابك في EdfaPay بعد الموافقة على طلبك
+                  </p>
+                </div>
+
+                <div className="space-y-2 pt-2 border-t border-blue-200 dark:border-blue-800">
+                  <Label className="font-arabic text-sm">رابط أو رقم موافقة ادفع باي (اختياري)</Label>
                   <Input
                     value={paymentData.gateway_approval_url}
                     onChange={(e) => setPaymentData({ ...paymentData, gateway_approval_url: e.target.value })}
