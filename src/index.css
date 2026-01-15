@@ -381,3 +381,58 @@ html {
   box-shadow: 0 0 20px -5px hsl(var(--primary) / 0.3),
               inset 0 0 20px -10px hsl(var(--primary) / 0.1);
 }
+
+/* Ripple effect */
+@keyframes ripple {
+  0% {
+    transform: scale(0);
+    opacity: 0.6;
+  }
+  100% {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
+
+.ripple-container {
+  position: relative;
+  overflow: hidden;
+}
+
+.ripple {
+  position: absolute;
+  border-radius: 50%;
+  background: hsl(var(--background) / 0.4);
+  pointer-events: none;
+  animation: ripple 0.6s ease-out forwards;
+}
+
+/* Bottom nav animations */
+@keyframes nav-bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+@keyframes nav-pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.nav-item-active {
+  animation: nav-bounce 0.3s ease-out;
+}
+
+.nav-icon-active {
+  animation: nav-pulse 0.3s ease-out;
+}
