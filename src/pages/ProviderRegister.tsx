@@ -14,6 +14,7 @@ import { InteractiveBackground } from '@/components/ui/InteractiveBackground';
 import { SearchableSelect } from '@/components/ui/searchable-select';
 import { LocationPickerDialog } from '@/components/landing/LocationPickerDialog';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useClickSound } from '@/hooks/useClickSound';
 import { 
   Check, 
   Gift, 
@@ -26,9 +27,11 @@ import {
   Lock,
   MapPin,
   Sparkles,
-  Loader2
+  Loader2,
+  X,
+  ArrowLeftRight
 } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface SubscriptionPlan {
   id: string;
@@ -50,11 +53,14 @@ interface Neighborhood {
 const ProviderRegister = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { playClickSound } = useClickSound();
   const [step, setStep] = useState<'plan' | 'info' | 'payment'>('plan');
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingPlans, setIsLoadingPlans] = useState(true);
   const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
   const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan | null>(null);
+  const [comparePlans, setComparePlans] = useState<SubscriptionPlan[]>([]);
+  const [showCompareModal, setShowCompareModal] = useState(false);
   const [neighborhoods, setNeighborhoods] = useState<Neighborhood[]>([]);
   const [cities, setCities] = useState<string[]>([]);
   const [filteredNeighborhoods, setFilteredNeighborhoods] = useState<Neighborhood[]>([]);
@@ -75,6 +81,28 @@ const ProviderRegister = () => {
   });
   const [useCustomCity, setUseCustomCity] = useState(false);
   const [useCustomNeighborhood, setUseCustomNeighborhood] = useState(false);
+
+  // Toggle plan in compare list
+  const toggleCompare = (plan: SubscriptionPlan) => {
+    playClickSound();
+    setComparePlans(prev => {
+      const exists = prev.find(p => p.id === plan.id);
+      if (exists) {
+        return prev.filter(p => p.id !== plan.id);
+      }
+      if (prev.length >= 2) {
+        toast.info('يمكنك مقارنة خطتين فقط');
+        return prev;
+      }
+      return [...prev, plan];
+    });
+  };
+
+  // Handle plan selection with sound
+  const handlePlanSelectWithSound = (plan: SubscriptionPlan) => {
+    playClickSound();
+    handleSelectPlan(plan);
+  };
 
   // Redirect if already logged in as provider
   useEffect(() => {
@@ -467,8 +495,8 @@ const ProviderRegister = () => {
                       plan.is_trial ? 'border-green-500 ring-2 ring-green-500/20 relative overflow-hidden hover:ring-green-500/40 hover:shadow-green-500/20 hover:shadow-xl' : 
                       index === 1 ? 'border-primary ring-2 ring-primary/20 relative overflow-hidden hover:ring-primary/40 hover:shadow-primary/20 hover:shadow-xl' : 
                       'hover:border-primary/50 hover:shadow-lg'
-                    }`}
-                    onClick={() => handleSelectPlan(plan)}
+                    } ${comparePlans.find(p => p.id === plan.id) ? 'ring-2 ring-amber-500' : ''}`}
+                    onClick={() => handlePlanSelectWithSound(plan)}
                   >
                     {plan.is_trial && (
                       <motion.div 
@@ -568,12 +596,164 @@ const ProviderRegister = () => {
                           </motion.span>
                         </Button>
                       </motion.div>
+                      
+                      {/* Compare Button */}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="w-full mt-2 text-xs"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleCompare(plan);
+                        }}
+                      >
+                        <ArrowLeftRight className="h-3 w-3 ml-1" />
+                        {comparePlans.find(p => p.id === plan.id) ? 'إزالة من المقارنة' : 'أضف للمقارنة'}
+                      </Button>
                     </CardContent>
                   </Card>
                 </motion.div>
               ))}
               </motion.div>
             )}
+
+            {/* Floating Compare Button */}
+            <AnimatePresence>
+              {comparePlans.length >= 2 && (
+                <motion.div
+                  initial={{ opacity: 0, y: 50, scale: 0.9 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 50, scale: 0.9 }}
+                  className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50"
+                >
+                  <Button
+                    onClick={() => {
+                      playClickSound();
+                      setShowCompareModal(true);
+                    }}
+                    className="shadow-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white px-6 py-3 rounded-full"
+                    size="lg"
+                  >
+                    <ArrowLeftRight className="h-5 w-5 ml-2" />
+                    قارن الخطط ({comparePlans.length})
+                  </Button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Compare Modal */}
+            <AnimatePresence>
+              {showCompareModal && comparePlans.length >= 2 && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+                  onClick={() => setShowCompareModal(false)}
+                >
+                  <motion.div
+                    initial={{ scale: 0.9, y: 20 }}
+                    animate={{ scale: 1, y: 0 }}
+                    exit={{ scale: 0.9, y: 20 }}
+                    className="bg-background rounded-2xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-auto"
+                    onClick={e => e.stopPropagation()}
+                  >
+                    <div className="sticky top-0 bg-background border-b p-4 flex items-center justify-between">
+                      <h2 className="text-xl font-bold flex items-center gap-2">
+                        <ArrowLeftRight className="h-5 w-5 text-primary" />
+                        مقارنة الخطط
+                      </h2>
+                      <Button variant="ghost" size="icon" onClick={() => setShowCompareModal(false)}>
+                        <X className="h-5 w-5" />
+                      </Button>
+                    </div>
+                    
+                    <div className="p-4">
+                      {/* Plan Headers */}
+                      <div className="grid grid-cols-3 gap-4 mb-6">
+                        <div className="font-bold text-muted-foreground">المميزات</div>
+                        {comparePlans.map(plan => (
+                          <motion.div
+                            key={plan.id}
+                            initial={{ opacity: 0, y: -10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="text-center"
+                          >
+                            <div className="font-bold text-lg">{plan.name_ar}</div>
+                            <Badge variant={plan.is_trial ? 'default' : 'secondary'} className={plan.is_trial ? 'bg-green-500' : ''}>
+                              {plan.price === 0 ? 'مجاني' : `${plan.price} ر.س`}
+                            </Badge>
+                          </motion.div>
+                        ))}
+                      </div>
+
+                      {/* Comparison Rows */}
+                      <div className="space-y-3">
+                        {[
+                          { label: '📦 عدد المنتجات', getValue: (idx: number) => idx === 0 ? '10' : idx === 1 ? '50' : 'غير محدود' },
+                          { label: '📊 لوحة التحكم', getValue: () => '✓' },
+                          { label: '📱 إشعارات الطلبات', getValue: () => '✓' },
+                          { label: '🏪 متجر خاص', getValue: (idx: number) => idx === 0 ? '✗' : '✓' },
+                          { label: '📈 تقارير متقدمة', getValue: (idx: number) => idx < 2 ? '✗' : '✓' },
+                          { label: '🎨 تخصيص الشعار', getValue: (idx: number) => idx === 0 ? '✗' : '✓' },
+                          { label: '💬 دعم أولوي', getValue: (idx: number) => idx < 2 ? '✗' : '✓' },
+                        ].map((row, rowIdx) => (
+                          <motion.div
+                            key={rowIdx}
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: rowIdx * 0.05 }}
+                            className="grid grid-cols-3 gap-4 py-3 border-b last:border-0 hover:bg-muted/30 rounded-lg px-2 transition-colors"
+                          >
+                            <div className="font-medium">{row.label}</div>
+                            {comparePlans.map((plan, idx) => {
+                              const planIndex = plans.findIndex(p => p.id === plan.id);
+                              const value = row.getValue(planIndex);
+                              return (
+                                <div key={plan.id} className="text-center">
+                                  {value === '✓' ? (
+                                    <motion.div
+                                      initial={{ scale: 0 }}
+                                      animate={{ scale: 1 }}
+                                      transition={{ delay: rowIdx * 0.05 + 0.1 }}
+                                    >
+                                      <Check className="h-5 w-5 text-green-500 mx-auto" />
+                                    </motion.div>
+                                  ) : value === '✗' ? (
+                                    <span className="text-muted-foreground">-</span>
+                                  ) : (
+                                    <span className="font-bold text-primary">{value}</span>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </motion.div>
+                        ))}
+                      </div>
+
+                      {/* Action Buttons */}
+                      <div className="grid grid-cols-2 gap-4 mt-6 pt-4 border-t">
+                        {comparePlans.map(plan => (
+                          <motion.div key={plan.id} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                            <Button
+                              className="w-full"
+                              variant={plan.is_trial ? 'default' : 'outline'}
+                              onClick={() => {
+                                playClickSound();
+                                setShowCompareModal(false);
+                                handleSelectPlan(plan);
+                              }}
+                            >
+                              اختر {plan.name_ar}
+                            </Button>
+                          </motion.div>
+                        ))}
+                      </div>
+                    </div>
+                  </motion.div>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             {/* Features Comparison Table */}
             {plans.length > 0 && (
