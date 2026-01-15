@@ -10,6 +10,7 @@ import { LocationProvider } from "@/contexts/LocationContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
 import { UpdateNotification } from "@/components/notifications/UpdateNotification";
+import { AppFooter } from "@/components/layout/AppFooter";
 
 // Import main pages directly for instant load
 import Landing from "./pages/Landing";
@@ -98,6 +99,7 @@ const App = () => {
                       <Route path="*" element={<NotFound />} />
                     </Routes>
                   </Suspense>
+                  <AppFooter />
                 </BrowserRouter>
               </TooltipProvider>
             </LocationProvider>
