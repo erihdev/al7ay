@@ -20,62 +20,12 @@ const ProviderLogin = () => {
 
   useEffect(() => {
     let isMounted = true;
-    let timeoutId: NodeJS.Timeout;
     
-    const initialize = async () => {
+    const checkExistingSession = async () => {
       try {
-        // Set a timeout to prevent infinite loading
-        timeoutId = setTimeout(() => {
-          if (isMounted) {
-            console.log('Session check timeout - showing login form');
-            setIsInitializing(false);
-          }
-        }, 3000);
-
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-        
-        if (sessionError) {
-          console.error('Session error:', sessionError);
-          if (isMounted) setIsInitializing(false);
-          return;
-        }
+        const { data: { session } } = await supabase.auth.getSession();
         
         if (session?.user && isMounted) {
-          const { data: provider, error: providerError } = await supabase
-            .from('service_providers')
-            .select('id')
-            .eq('user_id', session.user.id)
-            .maybeSingle();
-          
-          if (providerError) {
-            console.error('Provider check error:', providerError);
-          }
-          
-          if (provider && isMounted) {
-            clearTimeout(timeoutId);
-            navigate('/provider-dashboard', { replace: true });
-            return;
-          }
-        }
-        
-        if (isMounted) {
-          clearTimeout(timeoutId);
-          setIsInitializing(false);
-        }
-      } catch (error) {
-        console.error('Initialize error:', error);
-        if (isMounted) {
-          clearTimeout(timeoutId);
-          setIsInitializing(false);
-        }
-      }
-    };
-
-    // Setup auth state change listener BEFORE checking session
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log('Auth state change:', event);
-        if (event === 'SIGNED_IN' && session?.user && isMounted) {
           const { data: provider } = await supabase
             .from('service_providers')
             .select('id')
@@ -83,20 +33,31 @@ const ProviderLogin = () => {
             .maybeSingle();
           
           if (provider && isMounted) {
-            navigate('/provider-dashboard', { replace: true });
+            window.location.href = '/provider-dashboard';
+            return;
           }
         }
+      } catch (error) {
+        console.error('Session check error:', error);
       }
-    );
+      
+      if (isMounted) {
+        setIsInitializing(false);
+      }
+    };
 
-    initialize();
+    // Set timeout to prevent infinite loading
+    const timeoutId = setTimeout(() => {
+      if (isMounted) setIsInitializing(false);
+    }, 3000);
+
+    checkExistingSession();
 
     return () => {
       isMounted = false;
       clearTimeout(timeoutId);
-      subscription.unsubscribe();
     };
-  }, [navigate]);
+  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -107,12 +68,15 @@ const ProviderLogin = () => {
     }
 
     setIsLoading(true);
+    console.log('Starting login...');
 
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password,
       });
+
+      console.log('Login response:', { data: !!data, error });
 
       if (error) {
         if (error.message?.includes('Invalid login credentials')) {
@@ -125,12 +89,16 @@ const ProviderLogin = () => {
       }
 
       if (data.session?.user) {
+        console.log('Session obtained, checking provider status for user:', data.session.user.id);
+        
         // Check if user is a provider
         const { data: provider, error: providerError } = await supabase
           .from('service_providers')
           .select('id')
           .eq('user_id', data.session.user.id)
           .maybeSingle();
+        
+        console.log('Provider check result:', { provider, providerError });
         
         if (providerError) {
           console.error('Provider check error:', providerError);
@@ -146,10 +114,15 @@ const ProviderLogin = () => {
           return;
         }
 
+        console.log('Provider found! Redirecting to dashboard...');
         toast.success('تم تسجيل الدخول بنجاح');
-        // Use window.location for guaranteed redirect
-        window.location.href = '/provider-dashboard';
+        
+        // Small delay to allow toast to show
+        setTimeout(() => {
+          window.location.href = '/provider-dashboard';
+        }, 500);
       } else {
+        console.log('No session in response');
         toast.error('حدث خطأ في تسجيل الدخول');
         setIsLoading(false);
       }
