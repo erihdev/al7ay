@@ -30,7 +30,8 @@ import {
   Ticket,
   CreditCard,
   FileText,
-  LogOut
+  LogOut,
+  Users
 } from 'lucide-react';
 import { CouponManager } from '@/components/admin/CouponManager';
 import { SalesReports } from '@/components/admin/SalesReports';
@@ -42,6 +43,7 @@ import { PaymentsManager } from '@/components/admin/PaymentsManager';
 import ApplicationsManager from '@/components/admin/ApplicationsManager';
 import NeighborhoodsManager from '@/components/admin/NeighborhoodsManager';
 import { SuggestedNeighborhoodsManager } from '@/components/admin/SuggestedNeighborhoodsManager';
+import RegisteredProvidersManager from '@/components/admin/RegisteredProvidersManager';
 import { useUpdateDeliveryLocation } from '@/hooks/useOrderTracking';
 import { useOrderNotifications } from '@/hooks/useOrderNotifications';
 import { format } from 'date-fns';
@@ -265,7 +267,7 @@ const Admin = () => {
 
       <main className="container mx-auto px-4 py-6">
         <Tabs defaultValue="orders" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5 lg:grid-cols-10">
+          <TabsList className="grid w-full grid-cols-6 lg:grid-cols-12">
             <TabsTrigger value="orders" className="font-arabic">
               <Package className="h-4 w-4 ml-2" />
               الطلبات
@@ -297,6 +299,10 @@ const Admin = () => {
             <TabsTrigger value="applications" className="font-arabic">
               <FileText className="h-4 w-4 ml-2" />
               طلبات الانضمام
+            </TabsTrigger>
+            <TabsTrigger value="registered-providers" className="font-arabic">
+              <Users className="h-4 w-4 ml-2" />
+              مقدمي الخدمات
             </TabsTrigger>
             <TabsTrigger value="neighborhoods" className="font-arabic">
               <MapPin className="h-4 w-4 ml-2" />
@@ -615,6 +621,11 @@ const Admin = () => {
           {/* Applications Tab */}
           <TabsContent value="applications">
             <ApplicationsManager />
+          </TabsContent>
+
+          {/* Registered Providers Tab */}
+          <TabsContent value="registered-providers">
+            <RegisteredProvidersManager />
           </TabsContent>
 
           {/* Neighborhoods Tab */}
