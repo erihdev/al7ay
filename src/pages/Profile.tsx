@@ -4,13 +4,14 @@ import { useLoyaltyTier } from '@/hooks/useLoyaltyTier';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { AuthForm } from '@/components/auth/AuthForm';
 import { NotificationSettings } from '@/components/notifications/NotificationSettings';
+import { LocalNotificationSettings } from '@/components/notifications/LocalNotificationSettings';
 import { ReferralCard } from '@/components/referral/ReferralCard';
 import { LoyaltyTierBadge, tierConfigs } from '@/components/loyalty/LoyaltyTierBadge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Progress } from '@/components/ui/progress';
-import { LogOut, Star, User, History, Settings, ChevronLeft } from 'lucide-react';
+import { LogOut, Star, User, History, Settings, ChevronLeft, Download } from 'lucide-react';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { Link } from 'react-router-dom';
@@ -166,6 +167,22 @@ const Profile = () => {
         <div className="mb-6">
           <NotificationSettings />
         </div>
+
+        {/* Local Notification Settings */}
+        <div className="mb-6">
+          <LocalNotificationSettings />
+        </div>
+
+        {/* Install App Link */}
+        <Link to="/install">
+          <Card className="mb-6 border-accent/30 bg-accent/5 cursor-pointer hover:bg-accent/10 transition-colors">
+            <CardContent className="p-4 flex items-center gap-3">
+              <Download className="h-5 w-5 text-accent" />
+              <span className="font-semibold">تثبيت التطبيق</span>
+              <ChevronLeft className="h-4 w-4 mr-auto text-muted-foreground" />
+            </CardContent>
+          </Card>
+        </Link>
 
         {/* Admin Link */}
         {isAdmin && (
