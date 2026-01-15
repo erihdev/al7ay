@@ -72,12 +72,24 @@ interface ProviderOrder {
   status: string;
   total_amount: number;
   created_at: string;
+  customer_name: string;
+  order_type: string;
 }
 
 interface ProviderProduct {
   id: string;
+  name_ar: string;
+  price: number;
   is_available: boolean;
   is_featured: boolean;
+}
+
+interface PayoutRecord {
+  created_at: string;
+  amount: number;
+  commission_amount: number;
+  net_amount: number;
+  transaction_reference: string | null;
 }
 
 const ProviderDashboard = () => {
@@ -87,6 +99,7 @@ const ProviderDashboard = () => {
   const [provider, setProvider] = useState<Provider | null>(null);
   const [products, setProducts] = useState<ProviderProduct[]>([]);
   const [orders, setOrders] = useState<ProviderOrder[]>([]);
+  const [payoutHistory, setPayoutHistory] = useState<PayoutRecord[]>([]);
   const [activeTab, setActiveTab] = useState('kitchen');
   const [soundEnabled, setSoundEnabled] = useState(true);
 
@@ -128,26 +141,32 @@ const ProviderDashboard = () => {
       
       const providerInfo = providerData[0];
       
-      // Fetch products and orders in parallel
-      const [productsRes, ordersRes] = await Promise.all([
+      // Fetch products, orders, and payout history in parallel
+      const [productsRes, ordersRes, payoutsRes] = await Promise.all([
         fetch(
-          `${baseUrl}/rest/v1/provider_products?provider_id=eq.${providerInfo.id}&select=id,is_available,is_featured`,
+          `${baseUrl}/rest/v1/provider_products?provider_id=eq.${providerInfo.id}&select=id,name_ar,price,is_available,is_featured`,
           { headers }
         ),
         fetch(
-          `${baseUrl}/rest/v1/provider_orders?provider_id=eq.${providerInfo.id}&select=id,status,total_amount,created_at&order=created_at.desc`,
+          `${baseUrl}/rest/v1/provider_orders?provider_id=eq.${providerInfo.id}&select=id,status,total_amount,created_at,customer_name,order_type&order=created_at.desc`,
+          { headers }
+        ),
+        fetch(
+          `${baseUrl}/rest/v1/provider_payouts?provider_id=eq.${providerInfo.id}&select=created_at,amount,commission_amount,net_amount,transaction_reference&order=created_at.desc&limit=10`,
           { headers }
         )
       ]);
       
       const productsData = productsRes.ok ? await productsRes.json() : [];
       const ordersData = ordersRes.ok ? await ordersRes.json() : [];
+      const payoutsData = payoutsRes.ok ? await payoutsRes.json() : [];
       
-      console.log('Loaded:', productsData.length, 'products,', ordersData.length, 'orders');
+      console.log('Loaded:', productsData.length, 'products,', ordersData.length, 'orders,', payoutsData.length, 'payouts');
       
       setProvider(providerInfo);
       setProducts(productsData);
       setOrders(ordersData);
+      setPayoutHistory(payoutsData);
       setLoading(false);
     } catch (err) {
       console.error('Load error:', err);
@@ -230,13 +249,15 @@ const ProviderDashboard = () => {
     setError(null);
 
     try {
-      const [productsRes, ordersRes] = await Promise.all([
-        supabase.from('provider_products').select('id, is_available, is_featured').eq('provider_id', provider.id),
-        supabase.from('provider_orders').select('id, status, total_amount, created_at').eq('provider_id', provider.id).order('created_at', { ascending: false })
+      const [productsRes, ordersRes, payoutsRes] = await Promise.all([
+        supabase.from('provider_products').select('id, name_ar, price, is_available, is_featured').eq('provider_id', provider.id),
+        supabase.from('provider_orders').select('id, status, total_amount, created_at, customer_name, order_type').eq('provider_id', provider.id).order('created_at', { ascending: false }),
+        supabase.from('provider_payouts').select('created_at, amount, commission_amount, net_amount, transaction_reference').eq('provider_id', provider.id).order('created_at', { ascending: false }).limit(10)
       ]);
 
       setProducts(productsRes.data || []);
       setOrders(ordersRes.data || []);
+      setPayoutHistory(payoutsRes.data || []);
     } catch (err) {
       console.error('Refresh error:', err);
       toast.error('حدث خطأ أثناء تحديث البيانات');
@@ -565,7 +586,16 @@ const ProviderDashboard = () => {
           </TabsContent>
 
           <TabsContent value="stats">
-            <ProviderStats orders={orders as any} products={products as any} />
+            <ProviderStats 
+              orders={orders} 
+              products={products} 
+              providerData={{
+                business_name: provider.business_name,
+                email: provider.email,
+                commission_rate: provider.commission_rate,
+              }}
+              payoutHistory={payoutHistory}
+            />
           </TabsContent>
 
           <TabsContent value="products">

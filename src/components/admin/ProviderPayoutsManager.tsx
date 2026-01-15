@@ -199,11 +199,32 @@ export function ProviderPayoutsManager() {
         .eq('id', payout.provider_id);
 
       if (updateError) throw updateError;
+
+      // Send email notification to provider
+      try {
+        await supabase.functions.invoke('send-application-email', {
+          body: {
+            type: 'payout_completed',
+            email: payout.email,
+            businessName: payout.business_name,
+            payoutAmount: payout.netAmount,
+            grossAmount: payout.totalRevenue,
+            commissionAmount: payout.platformCommission,
+            commissionRate: payout.commission_rate,
+            periodStart: format(periodStart, 'dd/MM/yyyy', { locale: ar }),
+            periodEnd: format(periodEnd, 'dd/MM/yyyy', { locale: ar }),
+            transactionRef: transactionRef || null,
+          },
+        });
+      } catch (emailError) {
+        console.error('Failed to send payout email:', emailError);
+        // Don't throw - payout was successful, just email failed
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['provider-payouts-pending'] });
       queryClient.invalidateQueries({ queryKey: ['payout-history'] });
-      toast.success('تم تسجيل التحويل بنجاح');
+      toast.success('تم تسجيل التحويل وإرسال إشعار للمزود');
       setSelectedProvider(null);
       setTransactionRef('');
       setPayoutNotes('');
