@@ -333,6 +333,9 @@ const Landing = () => {
                   <Link to="/contact" className="text-muted-foreground hover:text-primary transition-colors">
                     اتصل بنا
                   </Link>
+                  <Link to="/admin-login" className="text-muted-foreground hover:text-primary transition-colors">
+                    لوحة التحكم
+                  </Link>
                 </div>
                 <p className="text-muted-foreground text-sm">
                   © 2025 منصة الحي. جميع الحقوق محفوظة.
