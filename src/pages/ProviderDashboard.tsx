@@ -61,29 +61,15 @@ const ProviderDashboard = () => {
 
   useEffect(() => {
     let isMounted = true;
-    let isCompleted = false;
     
-    const init = async () => {
-      console.log('Starting dashboard init...');
+    const loadProviderData = async (userId: string) => {
+      console.log('Loading provider data for user:', userId);
       try {
-        // Get session first
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-        console.log('Session result:', session?.user?.id, sessionError);
-        
-        if (!isMounted) return;
-        
-        if (sessionError || !session?.user) {
-          console.log('No session, redirecting to login');
-          navigate('/provider-login', { replace: true });
-          return;
-        }
-
         // Get provider data
-        console.log('Fetching provider for user:', session.user.id);
         const { data: providerData, error: providerError } = await supabase
           .from('service_providers')
           .select('id, business_name, logo_url')
-          .eq('user_id', session.user.id)
+          .eq('user_id', userId)
           .maybeSingle();
 
         console.log('Provider result:', providerData, providerError);
@@ -94,15 +80,13 @@ const ProviderDashboard = () => {
           console.error('Provider error:', providerError);
           setError(providerError.message);
           setLoading(false);
-          isCompleted = true;
           return;
         }
 
         if (!providerData) {
-          console.log('No provider found');
-          setError('لم يتم العثور على حساب مقدم خدمة');
+          console.log('No provider found for this user');
+          setError('لم يتم العثور على حساب مقدم خدمة. يرجى التواصل مع الإدارة.');
           setLoading(false);
-          isCompleted = true;
           return;
         }
 
@@ -121,39 +105,34 @@ const ProviderDashboard = () => {
         setProducts(productsRes.data || []);
         setOrders(ordersRes.data || []);
         setLoading(false);
-        isCompleted = true;
         console.log('Dashboard loaded successfully');
       } catch (err) {
         console.error('Dashboard load error:', err);
         if (isMounted) {
           setError('حدث خطأ أثناء تحميل البيانات');
           setLoading(false);
-          isCompleted = true;
         }
       }
     };
 
-    // Set timeout to prevent infinite loading - check isCompleted flag
-    const timeoutId = setTimeout(() => {
-      if (isMounted && !isCompleted) {
-        console.log('Timeout triggered - data not loaded');
-        setError('انتهت مهلة تحميل البيانات');
-        setLoading(false);
+    // Listen for auth state changes - this is the reliable way to get session
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log('Auth state changed:', event, session?.user?.id);
+      
+      if (event === 'SIGNED_OUT' || !session?.user) {
+        if (isMounted && event === 'SIGNED_OUT') {
+          navigate('/provider-login', { replace: true });
+        }
+        return;
       }
-    }, 15000);
-
-    init();
-    
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'SIGNED_OUT') {
-        navigate('/provider-login', { replace: true });
+      
+      if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION' || event === 'TOKEN_REFRESHED') && session?.user) {
+        loadProviderData(session.user.id);
       }
     });
 
     return () => {
       isMounted = false;
-      clearTimeout(timeoutId);
       subscription.unsubscribe();
     };
   }, [navigate]);
