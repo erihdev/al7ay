@@ -9,13 +9,25 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { MapPin, Navigation, Loader2, Search } from 'lucide-react';
+import { MapPin, Navigation, Loader2, Search, Database } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { supabase } from '@/integrations/supabase/client';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface LocationPickerDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onLocationSelect: (location: { lat: number; lng: number; address: string }) => void;
+}
+
+interface SearchResult {
+  id: string;
+  name: string;
+  city: string;
+  lat: number;
+  lng: number;
+  source: 'database' | 'mapbox';
+  fullAddress?: string;
 }
 
 export function LocationPickerDialog({ 
@@ -32,6 +44,8 @@ export function LocationPickerDialog({
   const [address, setAddress] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [showResults, setShowResults] = useState(false);
 
   // Default to Saudi Arabia center
   const defaultCenter = { lat: 24.7136, lng: 46.6753 };
@@ -100,35 +114,75 @@ export function LocationPickerDialog({
   };
 
   const searchLocation = async () => {
-    if (!searchQuery.trim() || !mapboxToken) return;
+    if (!searchQuery.trim()) return;
     
     setIsSearching(true);
+    setShowResults(true);
+    const results: SearchResult[] = [];
+
     try {
-      const response = await fetch(
-        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(searchQuery)}.json?access_token=${mapboxToken}&language=ar&country=sa`
-      );
-      const data = await response.json();
-      
-      if (data.features && data.features.length > 0) {
-        const [lng, lat] = data.features[0].center;
+      // 1. Search in database first
+      const { data: dbResults } = await supabase
+        .from('active_neighborhoods')
+        .select('id, name, city, lat, lng')
+        .eq('is_active', true)
+        .or(`name.ilike.%${searchQuery}%,city.ilike.%${searchQuery}%`)
+        .limit(10);
+
+      if (dbResults && dbResults.length > 0) {
+        results.push(...dbResults.map(r => ({
+          id: r.id,
+          name: r.name,
+          city: r.city,
+          lat: r.lat,
+          lng: r.lng,
+          source: 'database' as const,
+          fullAddress: `${r.name}، ${r.city}، السعودية`
+        })));
+      }
+
+      // 2. Search in Mapbox
+      if (mapboxToken) {
+        const response = await fetch(
+          `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(searchQuery + ' السعودية')}.json?access_token=${mapboxToken}&language=ar&country=sa&limit=5`
+        );
+        const data = await response.json();
         
-        if (map.current && marker.current) {
-          map.current.flyTo({
-            center: [lng, lat],
-            zoom: 14,
-          });
-          marker.current.setLngLat([lng, lat]);
-          if (!marker.current.getElement().parentElement) {
-            marker.current.addTo(map.current);
-          }
-          setSelectedLocation({ lat, lng });
-          setAddress(data.features[0].place_name);
+        if (data.features && data.features.length > 0) {
+          results.push(...data.features.map((f: any, i: number) => ({
+            id: `mapbox-${i}`,
+            name: f.text || f.place_name.split(',')[0],
+            city: f.context?.find((c: any) => c.id.startsWith('place'))?.text || '',
+            lat: f.center[1],
+            lng: f.center[0],
+            source: 'mapbox' as const,
+            fullAddress: f.place_name
+          })));
         }
       }
+
+      setSearchResults(results);
     } catch (error) {
       console.error('Search error:', error);
     } finally {
       setIsSearching(false);
+    }
+  };
+
+  const selectResult = (result: SearchResult) => {
+    if (map.current && marker.current) {
+      map.current.flyTo({
+        center: [result.lng, result.lat],
+        zoom: 14,
+      });
+      marker.current.setLngLat([result.lng, result.lat]);
+      if (!marker.current.getElement().parentElement) {
+        marker.current.addTo(map.current);
+      }
+      setSelectedLocation({ lat: result.lat, lng: result.lng });
+      setAddress(result.fullAddress || `${result.name}، ${result.city}`);
+      setShowResults(false);
+      setSearchQuery(result.name);
     }
   };
 
@@ -175,25 +229,63 @@ export function LocationPickerDialog({
 
         <div className="space-y-4">
           {/* Search bar */}
-          <div className="flex gap-2">
-            <Input
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="ابحث عن مدينة أو حي..."
-              className="font-arabic"
-              onKeyDown={(e) => e.key === 'Enter' && searchLocation()}
-            />
-            <Button 
-              variant="secondary" 
-              onClick={searchLocation}
-              disabled={isSearching}
-            >
-              {isSearching ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Search className="h-4 w-4" />
-              )}
-            </Button>
+          <div className="relative">
+            <div className="flex gap-2">
+              <Input
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  if (e.target.value.length >= 2) {
+                    searchLocation();
+                  } else {
+                    setShowResults(false);
+                  }
+                }}
+                placeholder="ابحث عن مدينة أو حي (مثال: حي النرجس، الرياض)..."
+                className="font-arabic"
+                onKeyDown={(e) => e.key === 'Enter' && searchLocation()}
+                onFocus={() => searchResults.length > 0 && setShowResults(true)}
+              />
+              <Button 
+                variant="secondary" 
+                onClick={searchLocation}
+                disabled={isSearching}
+              >
+                {isSearching ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Search className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
+
+            {/* Search Results Dropdown */}
+            {showResults && searchResults.length > 0 && (
+              <div className="absolute top-full left-0 right-0 z-50 mt-1 bg-card border rounded-lg shadow-lg overflow-hidden">
+                <ScrollArea className="max-h-60">
+                  {searchResults.map((result) => (
+                    <button
+                      key={result.id}
+                      onClick={() => selectResult(result)}
+                      className="w-full flex items-center gap-3 p-3 hover:bg-muted transition-colors text-right border-b last:border-0"
+                    >
+                      {result.source === 'database' ? (
+                        <Database className="h-4 w-4 text-primary shrink-0" />
+                      ) : (
+                        <MapPin className="h-4 w-4 text-muted-foreground shrink-0" />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm truncate">{result.name}</p>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {result.city && `${result.city} • `}
+                          {result.source === 'database' ? 'من قاعدة البيانات' : 'Mapbox'}
+                        </p>
+                      </div>
+                    </button>
+                  ))}
+                </ScrollArea>
+              </div>
+            )}
           </div>
 
           {/* Map */}
