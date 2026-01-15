@@ -314,9 +314,6 @@ const Landing = () => {
                   <Link to="/install" className="text-muted-foreground hover:text-primary transition-colors">
                     تثبيت التطبيق
                   </Link>
-                  <Link to="/changelog" className="text-muted-foreground hover:text-primary transition-colors">
-                    سجل التحديثات
-                  </Link>
                   <Link to="/provider-register" className="text-muted-foreground hover:text-primary transition-colors">
                     تسجيل مقدم خدمة
                   </Link>
@@ -342,9 +339,6 @@ const Landing = () => {
                 <p className="text-muted-foreground text-sm">
                   © 2026 منصة الحي. جميع الحقوق محفوظة.
                 </p>
-                <Link to="/changelog" className="text-xs text-muted-foreground/60 hover:text-primary transition-colors">
-                  الإصدار 1.2.0
-                </Link>
               </div>
             </div>
           </div>
