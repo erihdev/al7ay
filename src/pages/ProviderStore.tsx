@@ -792,7 +792,11 @@ const ProviderStoreContent = () => {
       </Dialog>
 
       {/* Floating Cart */}
-      <StoreCart primaryColor={primaryColor} />
+      <StoreCart 
+        primaryColor={primaryColor} 
+        storeLocation={provider?.store_lat && provider?.store_lng ? { lat: provider.store_lat, lng: provider.store_lng } : null}
+        deliveryRadiusKm={provider?.delivery_radius_km ?? 5}
+      />
       
       {/* Reviews Dialog */}
       <Dialog open={showReviews} onOpenChange={setShowReviews}>

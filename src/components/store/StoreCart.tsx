@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useProviderCart } from '@/contexts/ProviderCartContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -34,14 +34,19 @@ import {
   Package,
   Clock,
   Sparkles,
-  ExternalLink
+  ExternalLink,
+  AlertTriangle,
+  RefreshCw
 } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 
 interface StoreCartProps {
   primaryColor?: string;
+  storeLocation?: { lat: number; lng: number } | null;
+  deliveryRadiusKm?: number;
 }
 
 type ViewState = 'cart' | 'checkout' | 'success';
@@ -51,7 +56,7 @@ interface OrderResult {
   orderNumber: string;
 }
 
-const StoreCart = ({ primaryColor = '#1B4332' }: StoreCartProps) => {
+const StoreCart = ({ primaryColor = '#1B4332', storeLocation, deliveryRadiusKm = 5 }: StoreCartProps) => {
   const navigate = useNavigate();
   const { items, providerId, providerName, totalItems, totalPrice, updateQuantity, removeItem, clearCart } = useProviderCart();
   const { user } = useAuth();
@@ -60,6 +65,10 @@ const StoreCart = ({ primaryColor = '#1B4332' }: StoreCartProps) => {
   const [viewState, setViewState] = useState<ViewState>('cart');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [orderResult, setOrderResult] = useState<OrderResult | null>(null);
+  const [isCheckingLocation, setIsCheckingLocation] = useState(false);
+  const [customerLocation, setCustomerLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [isOutOfRange, setIsOutOfRange] = useState(false);
+  const [distanceToStore, setDistanceToStore] = useState<number | null>(null);
   
   const [orderType, setOrderType] = useState<'pickup' | 'delivery'>('pickup');
   const [customerName, setCustomerName] = useState('');
@@ -67,6 +76,56 @@ const StoreCart = ({ primaryColor = '#1B4332' }: StoreCartProps) => {
   const [customerEmail, setCustomerEmail] = useState('');
   const [deliveryAddress, setDeliveryAddress] = useState('');
   const [notes, setNotes] = useState('');
+
+  // Calculate distance between two points using Haversine formula
+  const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2: number): number => {
+    const R = 6371; // Earth's radius in km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLng = (lng2 - lng1) * Math.PI / 180;
+    const a = 
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+      Math.sin(dLng / 2) * Math.sin(dLng / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  };
+
+  // Check delivery range when order type is delivery
+  const checkDeliveryRange = useCallback(() => {
+    if (!storeLocation) return;
+    
+    setIsCheckingLocation(true);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const userLat = position.coords.latitude;
+        const userLng = position.coords.longitude;
+        setCustomerLocation({ lat: userLat, lng: userLng });
+        
+        const distance = calculateDistance(
+          storeLocation.lat,
+          storeLocation.lng,
+          userLat,
+          userLng
+        );
+        
+        setDistanceToStore(distance);
+        setIsOutOfRange(distance > deliveryRadiusKm);
+        setIsCheckingLocation(false);
+      },
+      () => {
+        setIsCheckingLocation(false);
+        toast.error('لم نتمكن من تحديد موقعك. يرجى السماح بالوصول للموقع');
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  }, [storeLocation, deliveryRadiusKm]);
+
+  // Check location when switching to delivery
+  useEffect(() => {
+    if (orderType === 'delivery' && storeLocation && !customerLocation) {
+      checkDeliveryRange();
+    }
+  }, [orderType, storeLocation, customerLocation, checkDeliveryRange]);
 
   // Auto-fill user data when logged in
   useEffect(() => {
@@ -129,6 +188,12 @@ const StoreCart = ({ primaryColor = '#1B4332' }: StoreCartProps) => {
 
     if (orderType === 'delivery' && !deliveryAddress.trim()) {
       toast.error('يرجى إدخال عنوان التوصيل');
+      return;
+    }
+
+    // Check delivery range
+    if (orderType === 'delivery' && isOutOfRange) {
+      toast.error(`أنت خارج نطاق التوصيل (${deliveryRadiusKm} كم). يرجى اختيار الاستلام من المتجر`);
       return;
     }
 
@@ -361,6 +426,63 @@ const StoreCart = ({ primaryColor = '#1B4332' }: StoreCartProps) => {
               <RadioGroupItem value="delivery" id="delivery" className="sr-only" />
             </Label>
           </RadioGroup>
+
+          {/* Delivery Range Warning */}
+          {orderType === 'delivery' && (
+            <AnimatePresence>
+              {isCheckingLocation && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="flex items-center justify-center gap-2 p-3 bg-muted rounded-xl"
+                >
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span className="text-sm text-muted-foreground">جاري تحديد موقعك...</span>
+                </motion.div>
+              )}
+
+              {!isCheckingLocation && isOutOfRange && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                >
+                  <Alert className="border-red-300 bg-red-50 dark:bg-red-950/30 dark:border-red-800">
+                    <AlertTriangle className="h-4 w-4 text-red-600" />
+                    <AlertDescription className="text-red-700 dark:text-red-400 text-sm">
+                      <span className="font-bold block mb-1">أنت خارج نطاق التوصيل!</span>
+                      المسافة: {distanceToStore?.toFixed(1)} كم (الحد الأقصى: {deliveryRadiusKm} كم)
+                      <br />
+                      <span className="text-xs">يرجى اختيار "استلام" من المتجر بدلاً من التوصيل</span>
+                    </AlertDescription>
+                  </Alert>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="w-full mt-2 gap-2"
+                    onClick={checkDeliveryRange}
+                  >
+                    <RefreshCw className="h-4 w-4" />
+                    إعادة تحديد الموقع
+                  </Button>
+                </motion.div>
+              )}
+
+              {!isCheckingLocation && !isOutOfRange && distanceToStore !== null && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-950/30 rounded-xl border border-green-200 dark:border-green-800"
+                >
+                  <CheckCircle2 className="h-4 w-4 text-green-600" />
+                  <span className="text-sm text-green-700 dark:text-green-400">
+                    موقعك ضمن نطاق التوصيل ({distanceToStore?.toFixed(1)} كم)
+                  </span>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          )}
         </div>
 
         {/* Customer Info */}

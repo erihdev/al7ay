@@ -10,9 +10,10 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 interface StoreLocationPickerProps {
   location: { lat: number; lng: number } | null;
   onLocationChange: (location: { lat: number; lng: number }) => void;
+  deliveryRadiusKm?: number;
 }
 
-export function StoreLocationPicker({ location, onLocationChange }: StoreLocationPickerProps) {
+export function StoreLocationPicker({ location, onLocationChange, deliveryRadiusKm = 5 }: StoreLocationPickerProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const marker = useRef<mapboxgl.Marker | null>(null);
@@ -24,6 +25,45 @@ export function StoreLocationPicker({ location, onLocationChange }: StoreLocatio
   // Default to Riyadh center
   const defaultCenter = { lat: 24.7136, lng: 46.6753 };
   const center = location || defaultCenter;
+
+  // Convert km to meters for the circle
+  const radiusInMeters = deliveryRadiusKm * 1000;
+
+  // Create a GeoJSON circle from center point and radius
+  const createGeoJSONCircle = useCallback((centerLng: number, centerLat: number, radiusKm: number) => {
+    const points = 64;
+    const coords: [number, number][] = [];
+    const distanceX = radiusKm / (111.320 * Math.cos((centerLat * Math.PI) / 180));
+    const distanceY = radiusKm / 110.574;
+
+    for (let i = 0; i < points; i++) {
+      const theta = (i / points) * (2 * Math.PI);
+      const x = distanceX * Math.cos(theta);
+      const y = distanceY * Math.sin(theta);
+      coords.push([centerLng + x, centerLat + y]);
+    }
+    coords.push(coords[0]); // Close the polygon
+
+    return {
+      type: 'Feature' as const,
+      geometry: {
+        type: 'Polygon' as const,
+        coordinates: [coords]
+      },
+      properties: {}
+    };
+  }, []);
+
+  // Update circle on map
+  const updateCircle = useCallback((lng: number, lat: number) => {
+    if (!map.current || !mapReady) return;
+
+    const circleData = createGeoJSONCircle(lng, lat, deliveryRadiusKm);
+
+    if (map.current.getSource('delivery-radius')) {
+      (map.current.getSource('delivery-radius') as mapboxgl.GeoJSONSource).setData(circleData as GeoJSON.Feature);
+    }
+  }, [mapReady, deliveryRadiusKm, createGeoJSONCircle]);
 
   // Get current location
   const getCurrentLocation = useCallback(() => {
@@ -43,12 +83,13 @@ export function StoreLocationPicker({ location, onLocationChange }: StoreLocatio
         if (map.current) {
           map.current.flyTo({
             center: [newLocation.lng, newLocation.lat],
-            zoom: 16
+            zoom: 14
           });
           
           if (marker.current) {
             marker.current.setLngLat([newLocation.lng, newLocation.lat]);
           }
+          updateCircle(newLocation.lng, newLocation.lat);
         }
         setIsLocating(false);
       },
@@ -57,7 +98,7 @@ export function StoreLocationPicker({ location, onLocationChange }: StoreLocatio
       },
       { enableHighAccuracy: true, timeout: 10000 }
     );
-  }, [onLocationChange]);
+  }, [onLocationChange, updateCircle]);
 
   // Initialize map
   useEffect(() => {
@@ -69,7 +110,7 @@ export function StoreLocationPicker({ location, onLocationChange }: StoreLocatio
       container: mapContainer.current,
       style: 'mapbox://styles/mapbox/streets-v12',
       center: [center.lng, center.lat],
-      zoom: location ? 16 : 12,
+      zoom: location ? 13 : 12,
       attributionControl: false,
     });
 
@@ -105,6 +146,7 @@ export function StoreLocationPicker({ location, onLocationChange }: StoreLocatio
       const lngLat = marker.current?.getLngLat();
       if (lngLat) {
         onLocationChange({ lat: lngLat.lat, lng: lngLat.lng });
+        updateCircle(lngLat.lng, lngLat.lat);
       }
     });
 
@@ -113,10 +155,42 @@ export function StoreLocationPicker({ location, onLocationChange }: StoreLocatio
       const { lng, lat } = e.lngLat;
       marker.current?.setLngLat([lng, lat]);
       onLocationChange({ lat, lng });
+      updateCircle(lng, lat);
     });
 
     map.current.on('load', () => {
       setMapReady(true);
+      
+      // Add delivery radius circle source and layer
+      const initialCircle = createGeoJSONCircle(center.lng, center.lat, deliveryRadiusKm);
+      
+      map.current?.addSource('delivery-radius', {
+        type: 'geojson',
+        data: initialCircle as GeoJSON.Feature
+      });
+
+      // Add fill layer
+      map.current?.addLayer({
+        id: 'delivery-radius-fill',
+        type: 'fill',
+        source: 'delivery-radius',
+        paint: {
+          'fill-color': '#22c55e',
+          'fill-opacity': 0.15
+        }
+      });
+
+      // Add outline layer
+      map.current?.addLayer({
+        id: 'delivery-radius-outline',
+        type: 'line',
+        source: 'delivery-radius',
+        paint: {
+          'line-color': '#16a34a',
+          'line-width': 2,
+          'line-dasharray': [3, 2]
+        }
+      });
     });
 
     return () => {
@@ -128,8 +202,16 @@ export function StoreLocationPicker({ location, onLocationChange }: StoreLocatio
   useEffect(() => {
     if (marker.current && location && mapReady) {
       marker.current.setLngLat([location.lng, location.lat]);
+      updateCircle(location.lng, location.lat);
     }
-  }, [location, mapReady]);
+  }, [location, mapReady, updateCircle]);
+
+  // Update circle when radius changes
+  useEffect(() => {
+    if (location && mapReady) {
+      updateCircle(location.lng, location.lat);
+    }
+  }, [deliveryRadiusKm, location, mapReady, updateCircle]);
 
   return (
     <div className="space-y-4 p-4 bg-muted/50 rounded-lg border">
@@ -148,15 +230,18 @@ export function StoreLocationPicker({ location, onLocationChange }: StoreLocatio
 
       <p className="text-sm text-muted-foreground font-arabic">
         حدد موقع متجرك بدقة ليتمكن العملاء من الوصول إليك بسهولة. اضغط على الخريطة أو اسحب العلامة.
+        <span className="block mt-1 text-green-600 dark:text-green-400 font-medium">
+          الدائرة الخضراء تمثل نطاق التوصيل ({deliveryRadiusKm} كم)
+        </span>
       </p>
 
       <div className="relative rounded-lg overflow-hidden border">
         {isLoadingToken ? (
-          <div className="h-64 bg-muted flex items-center justify-center">
+          <div className="h-72 bg-muted flex items-center justify-center">
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
           </div>
         ) : (
-          <div ref={mapContainer} className="h-64 w-full" />
+          <div ref={mapContainer} className="h-72 w-full" />
         )}
 
         {isLocating && (
