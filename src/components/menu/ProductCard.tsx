@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ProductCustomizationDialog } from './ProductCustomizationDialog';
 import { useProductAverageRating } from '@/hooks/useProductReviews';
+import { motion } from 'framer-motion';
 import type { Database } from '@/integrations/supabase/types';
 
 type Product = Database['public']['Tables']['products']['Row'];
@@ -22,6 +23,21 @@ export function ProductCard({ product }: ProductCardProps) {
 
   const cartItems = items.filter((item) => item.id.startsWith(product.id));
   const quantityInCart = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+
+  const renderStars = (rating: number) => (
+    <div className="flex gap-0.5">
+      {[1, 2, 3, 4, 5].map((star) => (
+        <Star
+          key={star}
+          className={`h-3 w-3 transition-colors ${
+            star <= Math.round(rating) 
+              ? 'fill-amber-400 text-amber-400' 
+              : 'text-muted-foreground/30'
+          }`}
+        />
+      ))}
+    </div>
+  );
 
   return (
     <>
@@ -43,9 +59,25 @@ export function ProductCard({ product }: ProductCardProps) {
           )}
           
           {quantityInCart > 0 && (
-            <div className="absolute top-2 right-2 bg-accent text-accent-foreground rounded-full h-6 w-6 flex items-center justify-center text-xs font-bold shadow-md">
+            <motion.div 
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              className="absolute top-2 right-2 bg-accent text-accent-foreground rounded-full h-6 w-6 flex items-center justify-center text-xs font-bold shadow-md"
+            >
               {quantityInCart}
-            </div>
+            </motion.div>
+          )}
+
+          {/* Rating badge on image */}
+          {count > 0 && (
+            <motion.div 
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="absolute bottom-2 left-2 bg-background/90 backdrop-blur-sm rounded-full px-2 py-1 flex items-center gap-1 shadow-md"
+            >
+              <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+              <span className="text-xs font-bold">{average.toFixed(1)}</span>
+            </motion.div>
           )}
         </div>
 
@@ -60,20 +92,26 @@ export function ProductCard({ product }: ProductCardProps) {
                   {product.description_ar}
                 </p>
               )}
-              {count > 0 && (
-                <button 
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    navigate(`/product/${product.id}`);
-                  }}
-                  className="flex items-center gap-1 mt-1 hover:underline"
-                >
-                  <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
-                  <span className="text-xs font-medium">{average.toFixed(1)}</span>
-                  <span className="text-xs text-muted-foreground">({count})</span>
-                </button>
-              )}
-              <p className="text-primary font-bold mt-1 font-arabic">
+              
+              {/* Stars and rating */}
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate(`/product/${product.id}`);
+                }}
+                className="flex items-center gap-1.5 mt-1.5 hover:opacity-80 transition-opacity"
+              >
+                {count > 0 ? (
+                  <>
+                    {renderStars(average)}
+                    <span className="text-xs text-muted-foreground">({count})</span>
+                  </>
+                ) : (
+                  <span className="text-xs text-muted-foreground font-arabic">لا توجد تقييمات</span>
+                )}
+              </button>
+
+              <p className="text-primary font-bold mt-1.5 font-arabic text-base">
                 {Number(product.price).toFixed(0)} ر.س
               </p>
             </div>
@@ -81,7 +119,7 @@ export function ProductCard({ product }: ProductCardProps) {
             <Button
               size="icon"
               variant="default"
-              className="h-9 w-9 rounded-full shrink-0"
+              className="h-9 w-9 rounded-full shrink-0 shadow-md"
               onClick={(e) => {
                 e.stopPropagation();
                 setIsCustomizing(true);
