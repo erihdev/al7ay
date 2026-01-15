@@ -2,9 +2,58 @@ import { Button } from '@/components/ui/button';
 import { RefreshCw, X, Sparkles } from 'lucide-react';
 import { useAppVersion } from '@/hooks/useAppVersion';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useEffect, useRef } from 'react';
+
+// Create notification sound using Web Audio API
+const playNotificationSound = () => {
+  try {
+    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    
+    // Create a pleasant notification melody
+    const playNote = (frequency: number, startTime: number, duration: number) => {
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime + startTime);
+      
+      // Smooth envelope
+      gainNode.gain.setValueAtTime(0, audioContext.currentTime + startTime);
+      gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + startTime + 0.05);
+      gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + startTime + duration);
+      
+      oscillator.start(audioContext.currentTime + startTime);
+      oscillator.stop(audioContext.currentTime + startTime + duration);
+    };
+    
+    // Play a pleasant ascending melody (C5 - E5 - G5)
+    playNote(523.25, 0, 0.15);      // C5
+    playNote(659.25, 0.12, 0.15);   // E5
+    playNote(783.99, 0.24, 0.25);   // G5
+    
+  } catch (error) {
+    console.log('Audio playback not supported');
+  }
+};
 
 export function UpdateBanner() {
   const { hasUpdate, latestVersion, dismissUpdate, refreshApp } = useAppVersion();
+  const hasPlayedSound = useRef(false);
+
+  // Play notification sound when update banner appears
+  useEffect(() => {
+    if (hasUpdate && latestVersion && !hasPlayedSound.current) {
+      hasPlayedSound.current = true;
+      // Small delay to ensure the banner animation has started
+      const timer = setTimeout(() => {
+        playNotificationSound();
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [hasUpdate, latestVersion]);
 
   if (!hasUpdate || !latestVersion) return null;
 
