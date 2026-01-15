@@ -31,6 +31,7 @@ export interface ServiceProvider {
   is_active: boolean;
   is_verified: boolean;
   subscription_status: string | null;
+  delivery_scope: 'neighborhood' | 'city';
   store_settings: {
     primary_color: string;
     accent_color: string;
