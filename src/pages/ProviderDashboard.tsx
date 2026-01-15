@@ -46,112 +46,63 @@ interface ProviderProduct {
   is_featured: boolean;
 }
 
-type LoadingState = 'loading' | 'no-session' | 'no-provider' | 'ready' | 'error';
-
 const ProviderDashboard = () => {
-  const [activeTab, setActiveTab] = useState('overview');
-  const [soundEnabled, setSoundEnabled] = useState(true);
-  
-  const [state, setState] = useState<LoadingState>('loading');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [provider, setProvider] = useState<Provider | null>(null);
   const [products, setProducts] = useState<ProviderProduct[]>([]);
   const [orders, setOrders] = useState<ProviderOrder[]>([]);
-  const [errorMessage, setErrorMessage] = useState('');
+  const [activeTab, setActiveTab] = useState('overview');
+  const [soundEnabled, setSoundEnabled] = useState(true);
 
   useProviderOrderNotifications(provider?.id, soundEnabled);
 
   useEffect(() => {
-    let cancelled = false;
-    let hasLoaded = false;
-
-    const loadDashboard = async (userId: string) => {
-      if (hasLoaded || cancelled) return;
-      hasLoaded = true;
-      
-      console.log('[Dashboard] Loading for user:', userId);
-
-      try {
-        // Get provider
-        const { data: providerData, error: providerError } = await supabase
-          .from('service_providers')
-          .select('id, business_name, logo_url')
-          .eq('user_id', userId)
-          .maybeSingle();
-
-        console.log('[Dashboard] Provider:', providerData?.id, providerError);
-
-        if (providerError) throw providerError;
-        
-        if (!providerData) {
-          if (!cancelled) setState('no-provider');
-          return;
-        }
-
-        // Get products and orders
-        const [productsRes, ordersRes] = await Promise.all([
-          supabase.from('provider_products').select('id, is_available, is_featured').eq('provider_id', providerData.id),
-          supabase.from('provider_orders').select('id, status, total_amount, created_at').eq('provider_id', providerData.id).order('created_at', { ascending: false })
-        ]);
-
-        if (!cancelled) {
-          setProvider(providerData);
-          setProducts(productsRes.data || []);
-          setOrders(ordersRes.data || []);
-          setState('ready');
-          console.log('[Dashboard] Ready!');
-        }
-      } catch (err: any) {
-        console.error('[Dashboard] Error:', err);
-        if (!cancelled) {
-          setErrorMessage(err.message || 'حدث خطأ');
-          setState('error');
-        }
-      }
-    };
-
-    // Use onAuthStateChange - it's more reliable on mobile than getSession
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log('[Dashboard] Auth event:', event, session?.user?.id);
-      
-      if (event === 'SIGNED_OUT') {
-        window.location.href = '/provider-login';
-        return;
-      }
-
-      if (session?.user) {
-        loadDashboard(session.user.id);
-      } else if (event === 'INITIAL_SESSION') {
-        // No session on initial load
-        if (!cancelled) setState('no-session');
-      }
-    });
-
-    // Fallback timeout - if no auth event after 5 seconds, check manually
-    const fallbackTimeout = setTimeout(async () => {
-      if (hasLoaded || cancelled) return;
-      console.log('[Dashboard] Fallback: checking session manually');
-      
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session?.user) {
-          loadDashboard(session.user.id);
-        } else if (!cancelled && !hasLoaded) {
-          setState('no-session');
-        }
-      } catch (e) {
-        console.log('[Dashboard] Fallback failed:', e);
-        if (!cancelled && !hasLoaded) {
-          setState('no-session');
-        }
-      }
-    }, 3000);
-
-    return () => {
-      cancelled = true;
-      clearTimeout(fallbackTimeout);
-      subscription.unsubscribe();
-    };
+    loadDashboard();
   }, []);
+
+  const loadDashboard = async () => {
+    setLoading(true);
+    setError(null);
+
+    // Get session
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session?.user) {
+      window.location.href = '/provider-login';
+      return;
+    }
+
+    // Get provider
+    const { data: providerData, error: providerError } = await supabase
+      .from('service_providers')
+      .select('id, business_name, logo_url')
+      .eq('user_id', session.user.id)
+      .maybeSingle();
+
+    if (providerError) {
+      setError(providerError.message);
+      setLoading(false);
+      return;
+    }
+
+    if (!providerData) {
+      setError('لم يتم العثور على حساب مقدم خدمة');
+      setLoading(false);
+      return;
+    }
+
+    // Get products and orders
+    const [productsRes, ordersRes] = await Promise.all([
+      supabase.from('provider_products').select('id, is_available, is_featured').eq('provider_id', providerData.id),
+      supabase.from('provider_orders').select('id, status, total_amount, created_at').eq('provider_id', providerData.id).order('created_at', { ascending: false })
+    ]);
+
+    setProvider(providerData);
+    setProducts(productsRes.data || []);
+    setOrders(ordersRes.data || []);
+    setLoading(false);
+  };
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -159,8 +110,8 @@ const ProviderDashboard = () => {
     window.location.href = '/provider-login';
   };
 
-  // Loading
-  if (state === 'loading') {
+  // Loading state
+  if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center" dir="rtl">
         <div className="text-center">
@@ -171,23 +122,17 @@ const ProviderDashboard = () => {
     );
   }
 
-  // No session - redirect
-  if (state === 'no-session') {
-    window.location.href = '/provider-login';
-    return null;
-  }
-
-  // Error
-  if (state === 'error') {
+  // Error state
+  if (error) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4" dir="rtl">
         <Card className="max-w-md w-full">
           <CardContent className="p-8 text-center">
             <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
             <h2 className="text-xl font-bold mb-2">حدث خطأ</h2>
-            <p className="text-muted-foreground mb-4">{errorMessage}</p>
+            <p className="text-muted-foreground mb-4">{error}</p>
             <div className="flex gap-2 justify-center">
-              <Button onClick={() => window.location.reload()}>
+              <Button onClick={loadDashboard}>
                 <RefreshCw className="h-4 w-4 ml-2" />
                 إعادة المحاولة
               </Button>
@@ -201,15 +146,15 @@ const ProviderDashboard = () => {
     );
   }
 
-  // No provider profile
-  if (state === 'no-provider') {
+  // No provider
+  if (!provider) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4" dir="rtl">
         <Card className="max-w-md w-full">
           <CardContent className="p-8 text-center">
             <AlertCircle className="h-12 w-12 text-yellow-500 mx-auto mb-4" />
-            <h2 className="text-xl font-bold mb-2">حسابك قيد الإعداد</h2>
-            <p className="text-muted-foreground mb-4">يقوم فريقنا بتجهيز متجرك.</p>
+            <h2 className="text-xl font-bold mb-2">لم يتم العثور على حسابك</h2>
+            <p className="text-muted-foreground mb-4">يرجى التواصل مع الإدارة</p>
             <Button variant="outline" onClick={handleLogout}>
               تسجيل الخروج
             </Button>
@@ -219,9 +164,7 @@ const ProviderDashboard = () => {
     );
   }
 
-  // Ready - show dashboard
-  if (!provider) return null;
-
+  // Dashboard
   const todayOrders = orders.filter(o => new Date(o.created_at).toDateString() === new Date().toDateString());
   const pendingOrders = orders.filter(o => o.status === 'pending').length;
   const preparingOrders = orders.filter(o => o.status === 'preparing').length;
@@ -245,7 +188,7 @@ const ProviderDashboard = () => {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" onClick={() => setSoundEnabled(!soundEnabled)} title={soundEnabled ? 'إيقاف الصوت' : 'تفعيل الصوت'}>
+            <Button variant="ghost" size="icon" onClick={() => setSoundEnabled(!soundEnabled)}>
               {soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4 text-muted-foreground" />}
             </Button>
             <ThemeToggle />

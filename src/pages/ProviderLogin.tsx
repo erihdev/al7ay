@@ -1,6 +1,5 @@
-import { useState, useEffect } from 'react';
-import { useNavigate, Link, useSearchParams } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -8,80 +7,14 @@ import { Label } from '@/components/ui/label';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { ArrowRight, Store, Mail, Lock, Loader2, UserPlus, LogIn, KeyRound, UserCheck } from 'lucide-react';
+import { ArrowRight, Store, Mail, Lock, Loader2, LogIn, KeyRound } from 'lucide-react';
 import { AnimatedLogo } from '@/components/ui/AnimatedLogo';
 
 const ProviderLogin = () => {
-  const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
-  const [isCheckingSession, setIsCheckingSession] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [mode, setMode] = useState<'login' | 'signup' | 'forgot'>('login');
-  const [fullName, setFullName] = useState('');
-
-  // Check if user is already logged in - with timeout to prevent hanging
-  useEffect(() => {
-    let isMounted = true;
-    
-    const checkSession = async () => {
-      // Set a timeout to prevent hanging
-      const timeout = setTimeout(() => {
-        if (isMounted) {
-          console.log('Session check timeout - proceeding to login form');
-          setIsCheckingSession(false);
-        }
-      }, 3000);
-
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        if (!isMounted) return;
-        
-        if (session?.user) {
-          // Check if user has provider profile
-          const { data: providerData } = await supabase
-            .from('service_providers')
-            .select('id')
-            .eq('user_id', session.user.id)
-            .maybeSingle();
-          
-          if (providerData && isMounted) {
-            clearTimeout(timeout);
-            window.location.replace('/provider-dashboard');
-            return;
-          }
-        }
-      } catch (error) {
-        console.error('Session check error:', error);
-      } finally {
-        clearTimeout(timeout);
-        if (isMounted) {
-          setIsCheckingSession(false);
-        }
-      }
-    };
-
-    checkSession();
-    
-    return () => {
-      isMounted = false;
-    };
-  }, [navigate]);
-
-  // Check URL params for signup action
-  useEffect(() => {
-    const action = searchParams.get('action');
-    const emailParam = searchParams.get('email');
-    
-    if (action === 'signup') {
-      setMode('signup');
-      if (emailParam) {
-        setEmail(decodeURIComponent(emailParam));
-      }
-    }
-  }, [searchParams]);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -93,131 +26,24 @@ const ProviderLogin = () => {
 
     setIsLoading(true);
 
-    try {
-      // Step 1: Sign in
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
-        password,
-      });
+    const { error } = await supabase.auth.signInWithPassword({
+      email: email.trim(),
+      password,
+    });
 
-      if (error) throw error;
-
-      if (!data.user || !data.session) {
-        throw new Error('فشل تسجيل الدخول');
-      }
-
-      // Step 2: Success - redirect immediately without resetting loading
-      toast.success('تم تسجيل الدخول بنجاح');
-      
-      // Direct navigation - don't use setTimeout, just navigate
-      window.location.href = '/provider-dashboard';
-      // Don't set isLoading to false - let the page redirect
-      return;
-      
-    } catch (error: any) {
-      console.error('Login error:', error);
+    if (error) {
       setIsLoading(false);
-      
       if (error.message?.includes('Invalid login credentials')) {
         toast.error('البريد الإلكتروني أو كلمة المرور غير صحيحة');
-      } else if (error.message?.includes('Email not confirmed')) {
-        toast.error('يرجى تأكيد البريد الإلكتروني أولاً');
       } else {
         toast.error(error.message || 'حدث خطأ أثناء تسجيل الدخول');
       }
-    }
-  };
-
-  const handleSignup = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!email || !password || !fullName) {
-      toast.error('يرجى ملء جميع الحقول');
       return;
     }
 
-    if (password.length < 6) {
-      toast.error('كلمة المرور يجب أن تكون 6 أحرف على الأقل');
-      return;
-    }
-
-    setIsLoading(true);
-
-    try {
-      // First, verify the email exists in approved applications
-      const { data: approvedApplication, error: checkError } = await supabase
-        .from('service_provider_applications')
-        .select('id, full_name, business_name, neighborhood')
-        .eq('email', email.toLowerCase().trim())
-        .eq('status', 'approved')
-        .maybeSingle();
-
-      if (checkError) throw checkError;
-
-      if (!approvedApplication) {
-        toast.error('هذا البريد الإلكتروني غير مسجل في طلبات الانضمام المقبولة. يرجى التقديم أولاً أو استخدام نفس البريد الإلكتروني المستخدم في الطلب.');
-        setIsLoading(false);
-        return;
-      }
-
-      // Pre-fill the name from the application if empty
-      const nameToUse = fullName || approvedApplication.full_name;
-
-      const { data: signupData, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: window.location.origin + '/provider-login',
-          data: {
-            full_name: nameToUse,
-          },
-        },
-      });
-
-      if (error) throw error;
-
-      // Automatically setup the provider (role + profile) using edge function
-      if (signupData.user) {
-        try {
-          await supabase.functions.invoke('setup-provider', {
-            body: {
-              userId: signupData.user.id,
-              email: email,
-              fullName: nameToUse,
-              applicationId: approvedApplication.id
-            }
-          });
-        } catch (setupError) {
-          console.error('Error setting up provider:', setupError);
-          // Don't block signup if setup fails - admin can do it manually
-        }
-      }
-
-      // Send notification to admin about new provider registration
-      try {
-        await supabase.functions.invoke('send-application-email', {
-          body: {
-            type: 'provider_registered',
-            email: email,
-            fullName: nameToUse,
-            businessName: approvedApplication.business_name,
-            neighborhood: approvedApplication.neighborhood,
-          }
-        });
-      } catch (notifyError) {
-        console.error('Error sending admin notification:', notifyError);
-        // Don't block signup if notification fails
-      }
-
-      toast.success('تم إنشاء الحساب وتفعيله بنجاح! يمكنك الآن تسجيل الدخول');
-      setMode('login');
-      setPassword('');
-    } catch (error: any) {
-      console.error('Signup error:', error);
-      toast.error(error.message || 'حدث خطأ أثناء إنشاء الحساب');
-    } finally {
-      setIsLoading(false);
-    }
+    // Success - navigate directly
+    toast.success('تم تسجيل الدخول بنجاح');
+    window.location.href = '/provider-dashboard';
   };
 
   const handleForgotPassword = async (e: React.FormEvent) => {
@@ -230,42 +56,25 @@ const ProviderLogin = () => {
 
     setIsLoading(true);
 
-    try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/provider-login`,
-      });
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/provider-login`,
+    });
 
-      if (error) throw error;
+    setIsLoading(false);
 
-      toast.success('تم إرسال رابط استعادة كلمة المرور إلى بريدك الإلكتروني');
-      setMode('login');
-    } catch (error: any) {
-      console.error('Password reset error:', error);
-      toast.error(error.message || 'حدث خطأ أثناء إرسال رابط الاستعادة');
-    } finally {
-      setIsLoading(false);
+    if (error) {
+      toast.error(error.message || 'حدث خطأ');
+      return;
     }
-  };
 
-  // Show loading while checking session
-  if (isCheckingSession) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center" dir="rtl">
-        <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
-          <p className="mt-2 text-muted-foreground">جاري التحقق...</p>
-        </div>
-      </div>
-    );
-  }
+    toast.success('تم إرسال رابط استعادة كلمة المرور إلى بريدك الإلكتروني');
+    setShowForgotPassword(false);
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5 font-arabic flex flex-col" dir="rtl">
-      {/* Background Pattern */}
-      <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSA2MCAwIEwgMCAwIDAgNjAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzAwMDAwMDA4IiBzdHJva2Utd2lkdGg9IjEiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjZ3JpZCkiLz48L3N2Zz4=')] opacity-50" />
-
       {/* Header */}
-      <header className="relative z-10 sticky top-0 bg-background/95 backdrop-blur border-b">
+      <header className="sticky top-0 z-50 bg-background/95 backdrop-blur border-b">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <Link to="/">
             <AnimatedLogo size="md" showText={true} />
@@ -273,7 +82,7 @@ const ProviderLogin = () => {
           <div className="flex items-center gap-4">
             <ThemeToggle />
             <Link to="/">
-              <Button variant="ghost" size="sm" className="font-arabic">
+              <Button variant="ghost" size="sm">
                 <ArrowRight className="h-4 w-4 ml-2" />
                 العودة للرئيسية
               </Button>
@@ -283,251 +92,145 @@ const ProviderLogin = () => {
       </header>
 
       {/* Main Content */}
-      <main className="relative z-10 flex-1 flex items-center justify-center p-4">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="w-full max-w-md"
-        >
-          <Card className="shadow-xl border-0 bg-card/80 backdrop-blur-sm">
-            <CardHeader className="text-center pb-2">
-              <motion.div 
-                className="w-20 h-20 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg border border-primary/20"
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ type: "spring", stiffness: 200, damping: 15 }}
-              >
-                {mode === 'signup' ? (
-                  <UserCheck className="h-10 w-10 text-primary" />
-                ) : mode === 'forgot' ? (
-                  <KeyRound className="h-10 w-10 text-primary" />
-                ) : (
-                  <Store className="h-10 w-10 text-primary" />
-                )}
-              </motion.div>
-              <CardTitle className="text-2xl font-arabic">
-                {mode === 'signup' ? 'إنشاء حساب مقدم خدمة' : mode === 'forgot' ? 'استعادة كلمة المرور' : 'بوابة مقدمي الخدمات'}
-              </CardTitle>
-              <CardDescription className="font-arabic">
-                {mode === 'signup' 
-                  ? 'أنشئ حسابك للوصول إلى لوحة التحكم'
-                  : mode === 'forgot'
-                    ? 'أدخل بريدك الإلكتروني لاستعادة كلمة المرور'
-                    : 'سجّل دخولك للوصول إلى لوحة التحكم'}
-              </CardDescription>
-            </CardHeader>
-            
-            <CardContent className="space-y-6">
-              {/* Login Form */}
-              {mode === 'login' && (
-                <form onSubmit={handleLogin} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="email" className="font-arabic">البريد الإلكتروني</Label>
-                    <div className="relative">
-                      <Mail className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="email"
-                        type="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        placeholder="example@email.com"
-                        className="pr-10"
-                        dir="ltr"
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <Label htmlFor="password" className="font-arabic">كلمة المرور</Label>
-                      <button
-                        type="button"
-                        onClick={() => setMode('forgot')}
-                        className="text-xs text-primary hover:underline font-arabic"
-                      >
-                        نسيت كلمة المرور؟
-                      </button>
-                    </div>
-                    <div className="relative">
-                      <Lock className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="password"
-                        type="password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        placeholder="••••••••"
-                        className="pr-10"
-                      />
-                    </div>
-                  </div>
-
-                  <Button type="submit" className="w-full font-arabic h-11" disabled={isLoading}>
-                    {isLoading ? (
-                      <>
-                        <Loader2 className="h-4 w-4 ml-2 animate-spin" />
-                        جاري تسجيل الدخول...
-                      </>
-                    ) : (
-                      <>
-                        <LogIn className="h-4 w-4 ml-2" />
-                        تسجيل الدخول
-                      </>
-                    )}
-                  </Button>
-                </form>
+      <main className="flex-1 flex items-center justify-center p-4">
+        <Card className="w-full max-w-md shadow-xl">
+          <CardHeader className="text-center pb-2">
+            <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              {showForgotPassword ? (
+                <KeyRound className="h-8 w-8 text-primary" />
+              ) : (
+                <Store className="h-8 w-8 text-primary" />
               )}
-
-              {/* Signup Form */}
-              {mode === 'signup' && (
-                <form onSubmit={handleSignup} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="fullName" className="font-arabic">الاسم الكامل</Label>
+            </div>
+            <CardTitle className="text-2xl">
+              {showForgotPassword ? 'استعادة كلمة المرور' : 'بوابة مقدمي الخدمات'}
+            </CardTitle>
+            <CardDescription>
+              {showForgotPassword 
+                ? 'أدخل بريدك الإلكتروني لاستعادة كلمة المرور'
+                : 'سجّل دخولك للوصول إلى لوحة التحكم'}
+            </CardDescription>
+          </CardHeader>
+          
+          <CardContent className="space-y-6">
+            {showForgotPassword ? (
+              <form onSubmit={handleForgotPassword} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="email">البريد الإلكتروني</Label>
+                  <div className="relative">
+                    <Mail className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
-                      id="fullName"
-                      type="text"
-                      value={fullName}
-                      onChange={(e) => setFullName(e.target.value)}
-                      placeholder="أدخل اسمك الكامل"
-                      className="font-arabic"
+                      id="email"
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="example@email.com"
+                      className="pr-10"
+                      dir="ltr"
                     />
                   </div>
+                </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-email" className="font-arabic">البريد الإلكتروني</Label>
-                    <div className="relative">
-                      <Mail className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="signup-email"
-                        type="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        placeholder="example@email.com"
-                        className="pr-10"
-                        dir="ltr"
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-password" className="font-arabic">كلمة المرور</Label>
-                    <div className="relative">
-                      <Lock className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="signup-password"
-                        type="password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        placeholder="6 أحرف على الأقل"
-                        className="pr-10"
-                      />
-                    </div>
-                  </div>
+                <Button type="submit" className="w-full" disabled={isLoading}>
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 ml-2 animate-spin" />
+                      جاري الإرسال...
+                    </>
+                  ) : (
+                    'إرسال رابط الاستعادة'
+                  )}
+                </Button>
 
-                  <Button type="submit" className="w-full font-arabic h-11" disabled={isLoading}>
-                    {isLoading ? (
-                      <>
-                        <Loader2 className="h-4 w-4 ml-2 animate-spin" />
-                        جاري إنشاء الحساب...
-                      </>
-                    ) : (
-                      <>
-                        <UserCheck className="h-4 w-4 ml-2" />
-                        إنشاء الحساب
-                      </>
-                    )}
-                  </Button>
-
-                  <button
-                    type="button"
-                    onClick={() => setMode('login')}
-                    className="w-full text-sm text-primary hover:underline font-arabic"
-                  >
-                    لديك حساب بالفعل؟ سجّل دخولك
-                  </button>
-                </form>
-              )}
-
-              {/* Forgot Password Form */}
-              {mode === 'forgot' && (
-                <form onSubmit={handleForgotPassword} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="forgot-email" className="font-arabic">البريد الإلكتروني</Label>
-                    <div className="relative">
-                      <Mail className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="forgot-email"
-                        type="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        placeholder="example@email.com"
-                        className="pr-10"
-                        dir="ltr"
-                      />
-                    </div>
-                  </div>
-
-                  <Button type="submit" className="w-full font-arabic h-11" disabled={isLoading}>
-                    {isLoading ? (
-                      <>
-                        <Loader2 className="h-4 w-4 ml-2 animate-spin" />
-                        جاري الإرسال...
-                      </>
-                    ) : (
-                      <>
-                        <KeyRound className="h-4 w-4 ml-2" />
-                        إرسال رابط الاستعادة
-                      </>
-                    )}
-                  </Button>
-
-                  <button
-                    type="button"
-                    onClick={() => setMode('login')}
-                    className="w-full text-sm text-primary hover:underline font-arabic"
-                  >
-                    العودة لتسجيل الدخول
-                  </button>
-                </form>
-              )}
-
-              {/* Divider - only show for login mode */}
-              {mode === 'login' && (
-                <>
+                <Button 
+                  type="button" 
+                  variant="ghost" 
+                  className="w-full"
+                  onClick={() => setShowForgotPassword(false)}
+                >
+                  العودة لتسجيل الدخول
+                </Button>
+              </form>
+            ) : (
+              <form onSubmit={handleLogin} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="email">البريد الإلكتروني</Label>
                   <div className="relative">
-                    <div className="absolute inset-0 flex items-center">
-                      <span className="w-full border-t" />
-                    </div>
-                    <div className="relative flex justify-center text-xs uppercase">
-                      <span className="bg-card px-2 text-muted-foreground font-arabic">
-                        أو
-                      </span>
-                    </div>
+                    <Mail className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="email"
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="example@email.com"
+                      className="pr-10"
+                      dir="ltr"
+                    />
                   </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="password">كلمة المرور</Label>
+                    <button
+                      type="button"
+                      onClick={() => setShowForgotPassword(true)}
+                      className="text-xs text-primary hover:underline"
+                    >
+                      نسيت كلمة المرور؟
+                    </button>
+                  </div>
+                  <div className="relative">
+                    <Lock className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="password"
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="••••••••"
+                      className="pr-10"
+                    />
+                  </div>
+                </div>
 
-                  {/* Apply Button */}
-                  <div className="space-y-3">
-                    <Link to="/#provider-form" className="block">
-                      <Button variant="outline" className="w-full font-arabic h-11 gap-2">
-                        <UserPlus className="h-4 w-4" />
-                        قدّم طلب انضمام
-                      </Button>
-                    </Link>
-                    
-                    <p className="text-xs text-center text-muted-foreground font-arabic">
-                      إذا لم يكن لديك حساب، قدّم طلب انضمام وسيتم إنشاء حسابك بعد الموافقة
-                    </p>
-                  </div>
-                </>
-              )}
-            </CardContent>
-          </Card>
-        </motion.div>
+                <Button type="submit" className="w-full h-11" disabled={isLoading}>
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 ml-2 animate-spin" />
+                      جاري تسجيل الدخول...
+                    </>
+                  ) : (
+                    <>
+                      <LogIn className="h-4 w-4 ml-2" />
+                      تسجيل الدخول
+                    </>
+                  )}
+                </Button>
+              </form>
+            )}
+
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-card px-2 text-muted-foreground">أو</span>
+              </div>
+            </div>
+
+            <Link to="/provider-register" className="block">
+              <Button variant="outline" className="w-full">
+                <Store className="h-4 w-4 ml-2" />
+                التسجيل كمقدم خدمة جديد
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
       </main>
 
       {/* Footer */}
-      <footer className="relative z-10 py-6 text-center text-sm text-muted-foreground">
-        <p>© 2024 منصة الحي. جميع الحقوق محفوظة.</p>
+      <footer className="py-4 text-center text-sm text-muted-foreground">
+        © 2024 منصة الحي. جميع الحقوق محفوظة.
       </footer>
     </div>
   );
