@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -11,6 +11,7 @@ import { ArrowRight, Store, Mail, Lock, Loader2, LogIn, KeyRound } from 'lucide-
 import { AnimatedLogo } from '@/components/ui/AnimatedLogo';
 
 const ProviderLogin = () => {
+  const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -56,42 +57,48 @@ const ProviderLogin = () => {
       });
 
       if (error) {
+        setIsLoading(false);
         if (error.message?.includes('Invalid login credentials')) {
           toast.error('البريد الإلكتروني أو كلمة المرور غير صحيحة');
         } else {
           toast.error(error.message || 'حدث خطأ أثناء تسجيل الدخول');
         }
-        setIsLoading(false);
         return;
       }
 
       if (!data?.session?.user) {
-        toast.error('حدث خطأ في تسجيل الدخول');
         setIsLoading(false);
+        toast.error('حدث خطأ في تسجيل الدخول');
         return;
       }
 
       // Check if user is a provider
-      const { data: provider } = await supabase
+      const { data: provider, error: providerError } = await supabase
         .from('service_providers')
         .select('id')
         .eq('user_id', data.session.user.id)
         .maybeSingle();
       
+      if (providerError) {
+        setIsLoading(false);
+        toast.error('حدث خطأ أثناء التحقق');
+        return;
+      }
+      
       if (!provider) {
         await supabase.auth.signOut();
-        toast.error('هذا الحساب ليس مسجلاً كمقدم خدمة');
         setIsLoading(false);
+        toast.error('هذا الحساب ليس مسجلاً كمقدم خدمة');
         return;
       }
 
       toast.success('تم تسجيل الدخول بنجاح');
-      // Use direct location assignment
-      window.location.href = '/provider-dashboard';
+      setIsLoading(false);
+      navigate('/provider-dashboard', { replace: true });
     } catch (err) {
       console.error('Login error:', err);
-      toast.error('حدث خطأ غير متوقع');
       setIsLoading(false);
+      toast.error('حدث خطأ غير متوقع');
     }
   };
 
