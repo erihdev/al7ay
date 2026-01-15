@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { 
   TrendingUp, 
@@ -19,13 +20,13 @@ import {
   PieChart,
   FileText
 } from 'lucide-react';
-import { format, subDays, startOfMonth, endOfMonth, startOfWeek, endOfWeek } from 'date-fns';
+import { format, subDays, startOfMonth, endOfMonth, startOfWeek, endOfWeek, getHours, subWeeks } from 'date-fns';
 import { ar } from 'date-fns/locale';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPieChart, Pie, Cell, BarChart, Bar, Legend } from 'recharts';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPieChart, Pie, Cell, BarChart, Bar, Legend, ComposedChart } from 'recharts';
 import { exportAdvancedStatsToPDF } from '@/utils/exportAdvancedStats';
 import { toast } from 'sonner';
 
-const COLORS = ['hsl(var(--primary))', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899'];
+const COLORS = ['hsl(var(--primary))', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#14B8A6', '#6366F1'];
 
 export function AdvancedStats() {
   // Fetch comprehensive stats
@@ -37,6 +38,8 @@ export function AdvancedStats() {
       const endOfMonthDate = endOfMonth(today);
       const weekStart = startOfWeek(today, { weekStartsOn: 0 });
       const weekEnd = endOfWeek(today, { weekStartsOn: 0 });
+      const lastWeekStart = startOfWeek(subWeeks(today, 1), { weekStartsOn: 0 });
+      const lastWeekEnd = endOfWeek(subWeeks(today, 1), { weekStartsOn: 0 });
 
       // Get all orders
       const { data: allOrders } = await supabase
@@ -56,6 +59,11 @@ export function AdvancedStats() {
         return orderDate >= weekStart && orderDate <= weekEnd;
       }) || [];
 
+      // Get last week's orders
+      const lastWeekOrders = allOrders?.filter(o => {
+        const orderDate = new Date(o.created_at);
+        return orderDate >= lastWeekStart && orderDate <= lastWeekEnd;
+      }) || [];
       // Get today's orders
       const todayStr = format(today, 'yyyy-MM-dd');
       const todayOrders = allOrders?.filter(o => 
@@ -82,6 +90,10 @@ export function AdvancedStats() {
         .reduce((sum, o) => sum + Number(o.total_amount), 0);
 
       const weeklyRevenue = weeklyOrders
+        .filter(o => o.status === 'completed')
+        .reduce((sum, o) => sum + Number(o.total_amount), 0);
+
+      const lastWeekRevenue = lastWeekOrders
         .filter(o => o.status === 'completed')
         .reduce((sum, o) => sum + Number(o.total_amount), 0);
 
@@ -116,6 +128,52 @@ export function AdvancedStats() {
           revenue: dayRevenue,
         };
       });
+
+      // Hourly distribution (for today)
+      const hourlyDistribution = Array.from({ length: 24 }, (_, hour) => {
+        const hourOrders = todayOrders.filter(o => {
+          const orderHour = getHours(new Date(o.created_at));
+          return orderHour === hour;
+        });
+        return {
+          hour: `${hour}:00`,
+          orders: hourOrders.length,
+          revenue: hourOrders.reduce((sum, o) => sum + Number(o.total_amount), 0),
+        };
+      });
+
+      // Weekly comparison (this week vs last week per day)
+      const weekComparison = Array.from({ length: 7 }, (_, i) => {
+        const dayOfWeek = i; // 0 = Sunday
+        const thisWeekDay = weeklyOrders.filter(o => new Date(o.created_at).getDay() === dayOfWeek);
+        const lastWeekDay = lastWeekOrders.filter(o => new Date(o.created_at).getDay() === dayOfWeek);
+        const dayNames = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
+        return {
+          day: dayNames[dayOfWeek],
+          thisWeek: thisWeekDay.reduce((sum, o) => sum + Number(o.total_amount), 0),
+          lastWeek: lastWeekDay.reduce((sum, o) => sum + Number(o.total_amount), 0),
+        };
+      });
+
+      // Top performing products
+      const productSales: Record<string, { name: string; quantity: number; revenue: number }> = {};
+      allOrders?.forEach(order => {
+        order.order_items?.forEach((item: any) => {
+          const productId = item.product_id || item.product_name;
+          if (!productSales[productId]) {
+            productSales[productId] = {
+              name: item.product_name,
+              quantity: 0,
+              revenue: 0,
+            };
+          }
+          productSales[productId].quantity += item.quantity;
+          productSales[productId].revenue += Number(item.total_price);
+        });
+      });
+      const topProducts = Object.values(productSales)
+        .sort((a, b) => b.revenue - a.revenue)
+        .slice(0, 8);
 
       // Get products
       const { data: products } = await supabase
@@ -169,6 +227,12 @@ export function AdvancedStats() {
         productsCount: products?.length || 0,
         avgOrderValue,
         categoryBreakdown,
+        hourlyDistribution,
+        weekComparison,
+        topProducts,
+        weeklyOrdersCount: weeklyOrders.length,
+        lastWeekOrdersCount: lastWeekOrders.length,
+        lastWeekRevenue,
       };
     },
   });
@@ -542,6 +606,153 @@ export function AdvancedStats() {
                     }}
                   />
                 </RechartsPieChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Weekly Comparison Chart */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <BarChart3 className="h-5 w-5 text-primary" />
+            مقارنة الأسبوع الحالي مع السابق
+            <Badge variant="outline" className="mr-auto text-xs">
+              {stats?.weeklyRevenue && stats?.lastWeekRevenue ? (
+                stats.weeklyRevenue > stats.lastWeekRevenue ? (
+                  <span className="text-green-600 flex items-center gap-1">
+                    <TrendingUp className="h-3 w-3" />
+                    +{(((stats.weeklyRevenue - stats.lastWeekRevenue) / stats.lastWeekRevenue) * 100).toFixed(0)}%
+                  </span>
+                ) : (
+                  <span className="text-red-600 flex items-center gap-1">
+                    <TrendingDown className="h-3 w-3" />
+                    {(((stats.weeklyRevenue - stats.lastWeekRevenue) / stats.lastWeekRevenue) * 100).toFixed(0)}%
+                  </span>
+                )
+              ) : null}
+            </Badge>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-72">
+            <ResponsiveContainer width="100%" height="100%">
+              <ComposedChart data={stats?.weekComparison || []}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                <XAxis dataKey="day" className="text-xs" />
+                <YAxis className="text-xs" />
+                <Tooltip 
+                  contentStyle={{ 
+                    backgroundColor: 'hsl(var(--card))',
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '8px',
+                    direction: 'rtl'
+                  }}
+                  formatter={(value: number, name: string) => [
+                    `${value.toFixed(0)} ر.س`,
+                    name === 'thisWeek' ? 'هذا الأسبوع' : 'الأسبوع السابق'
+                  ]}
+                />
+                <Legend 
+                  formatter={(value) => value === 'thisWeek' ? 'هذا الأسبوع' : 'الأسبوع السابق'}
+                />
+                <Bar dataKey="lastWeek" fill="#94a3b8" radius={[4, 4, 0, 0]} name="lastWeek" />
+                <Bar dataKey="thisWeek" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} name="thisWeek" />
+              </ComposedChart>
+            </ResponsiveContainer>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Hourly Distribution & Top Products */}
+      <div className="grid md:grid-cols-2 gap-6">
+        {/* Hourly Distribution */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Clock className="h-5 w-5 text-primary" />
+              توزيع الطلبات على ساعات اليوم
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={stats?.hourlyDistribution || []}>
+                  <defs>
+                    <linearGradient id="colorHourly" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#10B981" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="#10B981" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                  <XAxis 
+                    dataKey="hour" 
+                    className="text-xs" 
+                    interval={3}
+                    tick={{ fontSize: 10 }}
+                  />
+                  <YAxis className="text-xs" />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: 'hsl(var(--card))',
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '8px',
+                      direction: 'rtl'
+                    }}
+                    formatter={(value: number, name: string) => [
+                      name === 'orders' ? `${value} طلب` : `${value} ر.س`,
+                      name === 'orders' ? 'الطلبات' : 'الإيرادات'
+                    ]}
+                  />
+                  <Area 
+                    type="monotone" 
+                    dataKey="orders" 
+                    stroke="#10B981" 
+                    fillOpacity={1} 
+                    fill="url(#colorHourly)" 
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Top Products */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Package className="h-5 w-5 text-primary" />
+              أفضل المنتجات مبيعاً
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={stats?.topProducts?.slice(0, 5) || []} layout="vertical">
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                  <XAxis type="number" className="text-xs" />
+                  <YAxis 
+                    dataKey="name" 
+                    type="category" 
+                    className="text-xs" 
+                    width={100}
+                    tick={{ fontSize: 10 }}
+                  />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: 'hsl(var(--card))',
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '8px',
+                      direction: 'rtl'
+                    }}
+                    formatter={(value: number, name: string) => [
+                      name === 'revenue' ? `${value.toFixed(0)} ر.س` : `${value} وحدة`,
+                      name === 'revenue' ? 'الإيرادات' : 'الكمية'
+                    ]}
+                  />
+                  <Bar dataKey="revenue" fill="#8B5CF6" radius={[0, 4, 4, 0]} />
+                </BarChart>
               </ResponsiveContainer>
             </div>
           </CardContent>
