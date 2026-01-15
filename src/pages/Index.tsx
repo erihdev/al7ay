@@ -32,8 +32,11 @@ import {
   ArrowLeft,
   Sparkles,
   Filter,
-  Building2
+  Building2,
+  Globe,
+  AlertCircle
 } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface ServiceProvider {
   id: string;
@@ -43,6 +46,7 @@ interface ServiceProvider {
   description: string | null;
   phone: string | null;
   is_verified: boolean;
+  delivery_scope: 'neighborhood' | 'city' | null;
   active_neighborhoods: {
     id: string;
     name: string;
@@ -96,6 +100,7 @@ const Index = () => {
           description,
           phone,
           is_verified,
+          delivery_scope,
           active_neighborhoods (
             id,
             name,
@@ -125,7 +130,7 @@ const Index = () => {
     setSelectedNeighborhood('all');
   };
 
-  // Filter and sort providers by filters and distance
+  // Filter and sort providers by filters, distance, and delivery_scope
   const filteredProviders = providers?.filter(provider => {
     // City filter
     if (selectedCity !== 'all' && provider.active_neighborhoods?.city !== selectedCity) {
@@ -146,9 +151,11 @@ const Index = () => {
     );
   }) || [];
 
-  // Calculate distances and sort
+  // Calculate distances and determine if provider serves user's location
   const providersWithDistance = filteredProviders.map(provider => {
     let distance: number | null = null;
+    let servesUserLocation = true; // Default to true if no location
+    
     if (userLocation && provider.active_neighborhoods) {
       distance = calculateDistance(
         userLocation.lat,
@@ -156,13 +163,32 @@ const Index = () => {
         provider.active_neighborhoods.lat,
         provider.active_neighborhoods.lng
       );
+      
+      // Check if provider serves user's location based on delivery_scope
+      const deliveryScope = provider.delivery_scope || 'neighborhood';
+      if (deliveryScope === 'neighborhood') {
+        // Provider only serves their neighborhood - check if user is within ~2km
+        servesUserLocation = distance <= 2000;
+      } else {
+        // Provider serves entire city - check if user is within reasonable city distance (~30km)
+        servesUserLocation = distance <= 30000;
+      }
     }
-    return { ...provider, distance };
+    
+    return { ...provider, distance, servesUserLocation };
   }).sort((a, b) => {
+    // Prioritize providers that serve user's location
+    if (a.servesUserLocation && !b.servesUserLocation) return -1;
+    if (!a.servesUserLocation && b.servesUserLocation) return 1;
+    // Then sort by distance
     if (a.distance === null) return 1;
     if (b.distance === null) return -1;
     return a.distance - b.distance;
   });
+
+  // Split providers into those serving user and those not
+  const servingProviders = providersWithDistance.filter(p => p.servesUserLocation);
+  const notServingProviders = providersWithDistance.filter(p => !p.servesUserLocation && userLocation);
 
   // Format distance for display
   const formatDistance = (meters: number | null) => {
@@ -366,7 +392,8 @@ const Index = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
             >
-              {providersWithDistance.map((provider, index) => (
+              {/* Providers that serve user's location */}
+              {servingProviders.map((provider, index) => (
                 <motion.div
                   key={provider.id}
                   initial={{ opacity: 0, y: 20 }}
@@ -423,6 +450,12 @@ const Index = () => {
                                   {formatDistance(provider.distance)}
                                 </Badge>
                               )}
+                              {provider.delivery_scope === 'city' && (
+                                <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+                                  <Globe className="h-3 w-3 ml-1" />
+                                  يخدم كل المدينة
+                                </Badge>
+                              )}
                               {provider.description && (
                                 <p className="text-xs text-muted-foreground truncate flex-1">
                                   {provider.description}
@@ -436,6 +469,90 @@ const Index = () => {
                   </Link>
                 </motion.div>
               ))}
+
+              {/* Separator and providers outside coverage */}
+              {notServingProviders.length > 0 && (
+                <>
+                  <div className="py-4">
+                    <Alert className="border-amber-500/50 bg-amber-50 dark:bg-amber-950/20">
+                      <AlertCircle className="h-4 w-4 text-amber-600" />
+                      <AlertDescription className="font-arabic text-amber-700 dark:text-amber-300 text-sm">
+                        المتاجر التالية قد لا تخدم منطقتك حالياً، لكن يمكنك تصفحها
+                      </AlertDescription>
+                    </Alert>
+                  </div>
+                  
+                  {notServingProviders.map((provider, index) => (
+                    <motion.div
+                      key={provider.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: (servingProviders.length + index) * 0.1 }}
+                    >
+                      <Link to={`/store/${provider.id}`}>
+                        <Card className="overflow-hidden hover:shadow-lg transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] opacity-70 hover:opacity-100">
+                          <CardContent className="p-4">
+                            <div className="flex gap-4">
+                              {/* Logo */}
+                              <div className="w-20 h-20 rounded-xl bg-muted flex items-center justify-center overflow-hidden flex-shrink-0">
+                                {provider.logo_url ? (
+                                  <img 
+                                    src={provider.logo_url} 
+                                    alt={provider.business_name}
+                                    className="w-full h-full object-cover"
+                                  />
+                                ) : (
+                                  <Store className="h-8 w-8 text-muted-foreground" />
+                                )}
+                              </div>
+
+                              {/* Info */}
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-start justify-between gap-2">
+                                  <div className="min-w-0">
+                                    <h3 className="font-bold text-base truncate flex items-center gap-2">
+                                      {provider.business_name}
+                                      {provider.is_verified && (
+                                        <Badge variant="secondary" className="text-xs px-1.5 py-0">
+                                          <Star className="h-3 w-3 ml-0.5 fill-amber-500 text-amber-500" />
+                                          موثق
+                                        </Badge>
+                                      )}
+                                    </h3>
+                                    {provider.active_neighborhoods && (
+                                      <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
+                                        <MapPin className="h-3.5 w-3.5 flex-shrink-0" />
+                                        <span className="truncate">
+                                          {provider.active_neighborhoods.name}، {provider.active_neighborhoods.city}
+                                        </span>
+                                      </p>
+                                    )}
+                                  </div>
+                                  <ArrowLeft className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                                </div>
+
+                                {/* Distance & Out of range badge */}
+                                <div className="mt-2 flex items-center gap-2 flex-wrap">
+                                  {provider.distance !== null && (
+                                    <Badge variant="outline" className="text-xs">
+                                      <Navigation className="h-3 w-3 ml-1" />
+                                      {formatDistance(provider.distance)}
+                                    </Badge>
+                                  )}
+                                  <Badge variant="outline" className="text-xs border-amber-500 text-amber-600">
+                                    <AlertCircle className="h-3 w-3 ml-1" />
+                                    خارج نطاق التغطية
+                                  </Badge>
+                                </div>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </Link>
+                    </motion.div>
+                  ))}
+                </>
+              )}
             </motion.div>
           )}
 
