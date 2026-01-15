@@ -49,7 +49,8 @@ const ProviderLogin = () => {
           
           if (providerData && isMounted) {
             clearTimeout(timeout);
-            navigate('/provider-dashboard');
+            // Use direct location for reliable mobile redirect
+            window.location.href = '/provider-dashboard';
             return;
           }
         }
@@ -106,9 +107,11 @@ const ProviderLogin = () => {
         throw new Error('فشل تسجيل الدخول');
       }
 
-      // Step 2: Session is now active, navigate immediately
+      // Step 2: Session is now active
       toast.success('تم تسجيل الدخول بنجاح');
-      navigate('/provider-dashboard', { replace: true });
+      
+      // Use direct location change for guaranteed navigation on mobile
+      window.location.href = '/provider-dashboard';
       
     } catch (error: any) {
       console.error('Login error:', error);
@@ -120,7 +123,7 @@ const ProviderLogin = () => {
         const { data: sessionCheck } = await supabase.auth.getSession();
         if (sessionCheck?.session) {
           toast.success('تم تسجيل الدخول بنجاح');
-          navigate('/provider-dashboard', { replace: true });
+          window.location.href = '/provider-dashboard';
           return;
         }
         toast.error('انتهت مهلة الاتصال. يرجى المحاولة مرة أخرى');
