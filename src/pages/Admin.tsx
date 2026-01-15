@@ -51,6 +51,8 @@ import { ProviderSubscriptionsManager } from '@/components/admin/ProviderSubscri
 import { ProviderVerificationManager } from '@/components/admin/ProviderVerificationManager';
 import { ProviderCommissionsManager } from '@/components/admin/ProviderCommissionsManager';
 import { ProviderPayoutsManager } from '@/components/admin/ProviderPayoutsManager';
+import { EdfaPayVerificationManager } from '@/components/admin/EdfaPayVerificationManager';
+import { EdfaPayReports } from '@/components/admin/EdfaPayReports';
 import { InteractiveBackground } from '@/components/ui/InteractiveBackground';
 import { useUpdateDeliveryLocation } from '@/hooks/useOrderTracking';
 import { useOrderNotifications } from '@/hooks/useOrderNotifications';
@@ -336,6 +338,14 @@ const Admin = () => {
             <TabsTrigger value="payouts" className="font-arabic">
               <CreditCard className="h-4 w-4 ml-2" />
               التحويلات
+            </TabsTrigger>
+            <TabsTrigger value="edfapay-verification" className="font-arabic">
+              <CreditCard className="h-4 w-4 ml-2" />
+              ربط EdfaPay
+            </TabsTrigger>
+            <TabsTrigger value="edfapay-reports" className="font-arabic">
+              <BarChart3 className="h-4 w-4 ml-2" />
+              تقارير EdfaPay
             </TabsTrigger>
             <TabsTrigger value="versions" className="font-arabic">
               <Rocket className="h-4 w-4 ml-2" />
@@ -686,6 +696,16 @@ const Admin = () => {
           {/* Payouts Tab */}
           <TabsContent value="payouts">
             <ProviderPayoutsManager />
+          </TabsContent>
+
+          {/* EdfaPay Verification Tab */}
+          <TabsContent value="edfapay-verification">
+            <EdfaPayVerificationManager />
+          </TabsContent>
+
+          {/* EdfaPay Reports Tab */}
+          <TabsContent value="edfapay-reports">
+            <EdfaPayReports />
           </TabsContent>
 
           {/* Versions Tab */}
