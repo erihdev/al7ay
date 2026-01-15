@@ -11,9 +11,8 @@ import {
   Save
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { Skeleton } from '@/components/ui/skeleton';
 import { supabase } from '@/integrations/supabase/client';
-import { ServiceProvider, useUpdateProviderProfile } from '@/hooks/useProviderData';
+import { ServiceProvider } from '@/hooks/useProviderData';
 
 interface ProviderSettingsManagerProps {
   provider: ServiceProvider;
@@ -32,8 +31,6 @@ const ProviderSettingsManager = ({ provider, onUpdate }: ProviderSettingsManager
     phone: '',
     email: ''
   });
-
-  const updateProfileMutation = useUpdateProviderProfile();
 
   useEffect(() => {
     if (provider) {
@@ -92,39 +89,44 @@ const ProviderSettingsManager = ({ provider, onUpdate }: ProviderSettingsManager
     try {
       let logoUrl = provider.logo_url;
       
+      // Upload logo first if there's a new file
       if (logoFile) {
         logoUrl = await uploadLogo();
       }
 
-      await updateProfileMutation.mutateAsync({
-        id: provider.id,
-        data: {
-          business_name: formData.business_name,
-          business_name_en: formData.business_name_en || null,
-          description: formData.description || null,
-          phone: formData.phone || null,
-          email: formData.email,
-          logo_url: logoUrl
-        }
-      });
+      const updatedData = {
+        business_name: formData.business_name,
+        business_name_en: formData.business_name_en || null,
+        description: formData.description || null,
+        phone: formData.phone || null,
+        email: formData.email,
+        logo_url: logoUrl
+      };
 
-      // Update parent component with new data
+      // Update parent immediately for instant feedback (optimistic update)
       if (onUpdate) {
         onUpdate({
           ...provider,
-          business_name: formData.business_name,
-          business_name_en: formData.business_name_en || null,
-          description: formData.description || null,
-          phone: formData.phone || null,
-          email: formData.email,
-          logo_url: logoUrl
+          ...updatedData
         });
       }
+
+      // Then save to database
+      const { error } = await supabase
+        .from('service_providers')
+        .update(updatedData)
+        .eq('id', provider.id);
+
+      if (error) throw error;
 
       toast.success('تم حفظ الإعدادات بنجاح');
     } catch (error) {
       console.error('Error saving settings:', error);
       toast.error('حدث خطأ أثناء حفظ الإعدادات');
+      // Revert optimistic update on error
+      if (onUpdate) {
+        onUpdate(provider);
+      }
     } finally {
       setIsLoading(false);
     }
