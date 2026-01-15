@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useCartReminder } from '@/hooks/useCartReminder';
 
 export interface SelectedOption {
   option_id: string;
@@ -29,11 +30,20 @@ interface CartContextType {
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
-export function CartProvider({ children }: { children: React.ReactNode }) {
+function CartProviderInner({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<CartItem[]>(() => {
     const saved = localStorage.getItem('cart');
     return saved ? JSON.parse(saved) : [];
   });
+
+  const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
+  const totalAmount = items.reduce(
+    (sum, item) => sum + item.price * item.quantity,
+    0
+  );
+
+  // Cart reminder hook
+  const { resetReminder } = useCartReminder(totalItems);
 
   useEffect(() => {
     localStorage.setItem('cart', JSON.stringify(items));
@@ -67,13 +77,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   const clearCart = () => {
     setItems([]);
+    resetReminder();
   };
-
-  const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
-  const totalAmount = items.reduce(
-    (sum, item) => sum + item.price * item.quantity,
-    0
-  );
 
   return (
     <CartContext.Provider
@@ -90,6 +95,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       {children}
     </CartContext.Provider>
   );
+}
+
+export function CartProvider({ children }: { children: React.ReactNode }) {
+  return <CartProviderInner>{children}</CartProviderInner>;
 }
 
 export function useCart() {
