@@ -27,25 +27,33 @@ const ProviderLogin = () => {
 
     setIsLoading(true);
 
-    const { error } = await supabase.auth.signInWithPassword({
-      email: email.trim(),
-      password,
-    });
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      });
 
-    if (error) {
-      setIsLoading(false);
-      if (error.message?.includes('Invalid login credentials')) {
-        toast.error('البريد الإلكتروني أو كلمة المرور غير صحيحة');
-      } else {
-        toast.error(error.message || 'حدث خطأ أثناء تسجيل الدخول');
+      if (error) {
+        if (error.message?.includes('Invalid login credentials')) {
+          toast.error('البريد الإلكتروني أو كلمة المرور غير صحيحة');
+        } else {
+          toast.error(error.message || 'حدث خطأ أثناء تسجيل الدخول');
+        }
+        setIsLoading(false);
+        return;
       }
-      return;
-    }
 
-    // Success - navigate using React Router
-    toast.success('تم تسجيل الدخول بنجاح');
-    setIsLoading(false);
-    navigate('/provider-dashboard', { replace: true });
+      if (data.session) {
+        toast.success('تم تسجيل الدخول بنجاح');
+        // Use setTimeout to ensure session is stored before navigation
+        setTimeout(() => {
+          navigate('/provider-dashboard', { replace: true });
+        }, 100);
+      }
+    } catch (err) {
+      toast.error('حدث خطأ غير متوقع');
+      setIsLoading(false);
+    }
   };
 
   const handleForgotPassword = async (e: React.FormEvent) => {
