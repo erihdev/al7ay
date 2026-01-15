@@ -5,10 +5,38 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { toast } from 'sonner';
 import { Loader2, Mail, Lock, User, ArrowLeft, ArrowRight, KeyRound, Phone, Car, Camera, Palette } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
+
+// Car brands and models data
+const carBrands: Record<string, string[]> = {
+  'تويوتا': ['كامري', 'كورولا', 'لاند كروزر', 'برادو', 'هايلكس', 'يارس', 'افالون', 'فورتشنر', 'راف فور', 'هايلاندر'],
+  'هوندا': ['اكورد', 'سيفيك', 'سي آر في', 'بايلوت', 'اتش آر في'],
+  'نيسان': ['التيما', 'باترول', 'صني', 'اكس تريل', 'مكسيما', 'باثفايندر', 'سنترا'],
+  'هيونداي': ['سوناتا', 'النترا', 'توسان', 'سانتافي', 'اكسنت', 'كريتا', 'كونا'],
+  'كيا': ['اوبتيما', 'سبورتاج', 'سورينتو', 'سيراتو', 'كارنيفال', 'سيلتوس'],
+  'شيفروليه': ['ماليبو', 'تاهو', 'سيلفرادو', 'ترافيرس', 'كابتيفا', 'ايكوينوكس'],
+  'فورد': ['توروس', 'اكسبلورر', 'اكسبيديشن', 'فيوجن', 'ايدج', 'اف 150'],
+  'مرسيدس': ['S-Class', 'E-Class', 'C-Class', 'GLE', 'GLC', 'A-Class', 'GLA'],
+  'بي ام دبليو': ['الفئة الثالثة', 'الفئة الخامسة', 'الفئة السابعة', 'X3', 'X5', 'X7'],
+  'لكزس': ['ES', 'LS', 'RX', 'LX', 'NX', 'GX', 'IS'],
+  'جي ام سي': ['يوكن', 'سييرا', 'اكاديا', 'تيرين'],
+  'جيب': ['شيروكي', 'جراند شيروكي', 'رانجلر', 'كومباس'],
+  'مازدا': ['مازدا 3', 'مازدا 6', 'CX-5', 'CX-9', 'CX-30'],
+  'ميتسوبيشي': ['باجيرو', 'مونتيرو', 'لانسر', 'اوتلاندر', 'اكليبس كروس'],
+  'أخرى': ['موديل آخر'],
+};
+
+const carYears = Array.from({ length: 30 }, (_, i) => (new Date().getFullYear() - i).toString());
 
 type AuthMode = 'login' | 'signup' | 'forgot-password';
 
@@ -321,34 +349,50 @@ export function AuthForm({ redirectTo = '/app' }: AuthFormProps) {
 
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-2">
-                      <Label htmlFor="vehicleBrand" className="font-arabic flex items-center gap-2 text-sm">
+                      <Label className="font-arabic flex items-center gap-2 text-sm">
                         <Car className="h-4 w-4 text-muted-foreground" />
                         ماركة السيارة
                       </Label>
-                      <Input
-                        id="vehicleBrand"
-                        type="text"
-                        value={vehicleBrand}
-                        onChange={(e) => setVehicleBrand(e.target.value)}
-                        placeholder="تويوتا"
-                        className="font-arabic text-right rounded-xl h-11"
-                        dir="rtl"
-                      />
+                      <Select 
+                        value={vehicleBrand} 
+                        onValueChange={(value) => {
+                          setVehicleBrand(value);
+                          setVehicleModel(''); // Reset model when brand changes
+                        }}
+                      >
+                        <SelectTrigger className="rounded-xl h-11 font-arabic">
+                          <SelectValue placeholder="اختر الماركة" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-background z-50 max-h-60">
+                          {Object.keys(carBrands).map((brand) => (
+                            <SelectItem key={brand} value={brand} className="font-arabic">
+                              {brand}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                     
                     <div className="space-y-2">
-                      <Label htmlFor="vehicleModel" className="font-arabic flex items-center gap-2 text-sm">
+                      <Label className="font-arabic flex items-center gap-2 text-sm">
                         الموديل
                       </Label>
-                      <Input
-                        id="vehicleModel"
-                        type="text"
-                        value={vehicleModel}
-                        onChange={(e) => setVehicleModel(e.target.value)}
-                        placeholder="كامري"
-                        className="font-arabic text-right rounded-xl h-11"
-                        dir="rtl"
-                      />
+                      <Select 
+                        value={vehicleModel} 
+                        onValueChange={setVehicleModel}
+                        disabled={!vehicleBrand}
+                      >
+                        <SelectTrigger className="rounded-xl h-11 font-arabic">
+                          <SelectValue placeholder="اختر الموديل" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-background z-50 max-h-60">
+                          {vehicleBrand && carBrands[vehicleBrand]?.map((model) => (
+                            <SelectItem key={model} value={model} className="font-arabic">
+                              {model}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
 
@@ -370,18 +414,21 @@ export function AuthForm({ redirectTo = '/app' }: AuthFormProps) {
                     </div>
                     
                     <div className="space-y-2">
-                      <Label htmlFor="vehicleYear" className="font-arabic flex items-center gap-2 text-sm">
+                      <Label className="font-arabic flex items-center gap-2 text-sm">
                         السنة
                       </Label>
-                      <Input
-                        id="vehicleYear"
-                        type="text"
-                        value={vehicleYear}
-                        onChange={(e) => setVehicleYear(e.target.value)}
-                        placeholder="2024"
-                        className="rounded-xl h-11"
-                        dir="ltr"
-                      />
+                      <Select value={vehicleYear} onValueChange={setVehicleYear}>
+                        <SelectTrigger className="rounded-xl h-11">
+                          <SelectValue placeholder="اختر السنة" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-background z-50 max-h-60">
+                          {carYears.map((year) => (
+                            <SelectItem key={year} value={year}>
+                              {year}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
 
