@@ -16,7 +16,9 @@ import {
   Upload,
   Image,
   X,
-  Trash2
+  Trash2,
+  Lock,
+  Crown
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -30,6 +32,9 @@ import {
 } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Link } from 'react-router-dom';
+
 interface StoreThemeCustomizerProps {
   provider: ServiceProvider;
   onUpdate?: (provider: ServiceProvider) => void;
@@ -117,6 +122,10 @@ const StoreThemeCustomizer = ({ provider, onUpdate }: StoreThemeCustomizerProps)
   const [isUploading, setIsUploading] = useState(false);
   const [theme, setTheme] = useState<StoreTheme>(defaultTheme);
   const [showPreview, setShowPreview] = useState(false);
+
+  // Check if provider has professional subscription (not trial)
+  const isProfessionalPlan = provider?.subscription_status === 'active';
+  const isTrialPlan = provider?.subscription_status === 'trial';
 
   useEffect(() => {
     if (provider?.store_theme) {
@@ -237,6 +246,87 @@ const StoreThemeCustomizer = ({ provider, onUpdate }: StoreThemeCustomizerProps)
     return values[radius] || '8px';
   };
 
+  // If not professional plan, show upgrade message
+  if (!isProfessionalPlan) {
+    return (
+      <Card className="border-primary/20">
+        <CardHeader>
+          <CardTitle className="font-arabic flex items-center gap-2">
+            <Palette className="h-5 w-5 text-primary" />
+            تخصيص الهوية البصرية
+          </CardTitle>
+          <CardDescription className="font-arabic mt-1">
+            خصص ألوان وشكل متجرك ليتناسب مع علامتك التجارية
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Alert className="border-amber-500/50 bg-amber-50 dark:bg-amber-950/20">
+            <Lock className="h-5 w-5 text-amber-600" />
+            <AlertTitle className="font-arabic text-amber-800 dark:text-amber-200 flex items-center gap-2">
+              <Crown className="h-4 w-4" />
+              ميزة حصرية للاشتراك الاحترافي
+            </AlertTitle>
+            <AlertDescription className="font-arabic text-amber-700 dark:text-amber-300 mt-2">
+              {isTrialPlan ? (
+                <>
+                  أنت حالياً في الفترة التجريبية. قم بالترقية إلى الاشتراك الاحترافي للوصول إلى:
+                </>
+              ) : (
+                <>
+                  هذه الميزة متاحة فقط للمشتركين في الخطة الاحترافية. قم بالاشتراك للوصول إلى:
+                </>
+              )}
+              <ul className="list-disc list-inside mt-2 space-y-1 text-sm">
+                <li>تخصيص الألوان والثيمات</li>
+                <li>رفع صورة خلفية مخصصة للهيدر</li>
+                <li>اختيار الخطوط وأنماط الأزرار</li>
+                <li>ثيمات جاهزة احترافية</li>
+                <li>معاينة فورية للتغييرات</li>
+              </ul>
+            </AlertDescription>
+          </Alert>
+          
+          {/* Preview of what they could have */}
+          <div className="mt-6 relative">
+            <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-10 rounded-lg flex items-center justify-center">
+              <div className="text-center">
+                <Lock className="h-10 w-10 text-muted-foreground mx-auto mb-2" />
+                <p className="font-arabic text-muted-foreground">معاينة مقفلة</p>
+              </div>
+            </div>
+            <div className="opacity-50 pointer-events-none">
+              <div className="grid grid-cols-3 gap-2 mb-4">
+                {presetThemes.slice(0, 3).map((preset, index) => (
+                  <div
+                    key={index}
+                    className="p-3 rounded-lg border flex items-center gap-2"
+                  >
+                    <div className="flex gap-1">
+                      <div 
+                        className="w-4 h-4 rounded-full border"
+                        style={{ backgroundColor: preset.theme.primary_color }}
+                      />
+                      <div 
+                        className="w-4 h-4 rounded-full border"
+                        style={{ backgroundColor: preset.theme.accent_color }}
+                      />
+                    </div>
+                    <span className="text-xs font-arabic">{preset.name}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                <div className="h-10 bg-muted rounded animate-pulse" />
+                <div className="h-10 bg-muted rounded animate-pulse" />
+                <div className="h-10 bg-muted rounded animate-pulse" />
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card className="border-primary/20">
       <CardHeader>
@@ -245,6 +335,10 @@ const StoreThemeCustomizer = ({ provider, onUpdate }: StoreThemeCustomizerProps)
             <CardTitle className="font-arabic flex items-center gap-2">
               <Palette className="h-5 w-5 text-primary" />
               تخصيص الهوية البصرية
+              <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full flex items-center gap-1">
+                <Crown className="h-3 w-3" />
+                احترافي
+              </span>
             </CardTitle>
             <CardDescription className="font-arabic mt-1">
               خصص ألوان وشكل متجرك ليتناسب مع علامتك التجارية
