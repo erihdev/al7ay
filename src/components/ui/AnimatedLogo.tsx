@@ -118,7 +118,7 @@ export const AnimatedLogo = ({
         {/* Glow Effect */}
         <motion.div
           className={cn(
-            "absolute inset-0 rounded-xl bg-primary/30 blur-xl",
+            "absolute inset-0 rounded-full bg-primary/30 blur-xl",
             sizeClasses[size]
           )}
           animate={{
@@ -128,10 +128,10 @@ export const AnimatedLogo = ({
           transition={{ duration: 0.3 }}
         />
         
-        {/* Logo Container */}
+        {/* Logo Container - CIRCULAR */}
         <motion.div
           className={cn(
-            "relative rounded-xl overflow-hidden shadow-lg",
+            "relative rounded-full overflow-hidden shadow-lg border-2 border-primary/20",
             sizeClasses[size]
           )}
           animate={{
@@ -147,7 +147,7 @@ export const AnimatedLogo = ({
           <motion.img 
             src={logo} 
             alt="الحي" 
-            className="w-full h-full object-contain"
+            className="w-full h-full object-cover"
             animate={{
               filter: isHovered || isClicked ? 'brightness(1.2) saturate(1.2)' : 'brightness(1)',
             }}
