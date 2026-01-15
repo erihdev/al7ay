@@ -56,24 +56,40 @@ const ProviderLogin = () => {
         .from('user_roles')
         .select('role')
         .eq('user_id', data.user.id)
-        .eq('role', 'service_provider')
+        .in('role', ['service_provider', 'admin'])
         .maybeSingle();
 
       if (roles) {
         toast.success('تم تسجيل الدخول بنجاح');
-        navigate('/provider-dashboard');
+        if (roles.role === 'admin') {
+          navigate('/admin');
+        } else {
+          navigate('/provider-dashboard');
+        }
       } else {
-        // Check if they are admin
-        const { data: adminRole } = await supabase
-          .from('user_roles')
-          .select('role')
+        // Check if user has a service_providers profile but missing role
+        const { data: providerProfile } = await supabase
+          .from('service_providers')
+          .select('id')
           .eq('user_id', data.user.id)
-          .eq('role', 'admin')
           .maybeSingle();
 
-        if (adminRole) {
+        if (providerProfile) {
+          // Auto-fix: Add missing service_provider role
+          console.log('Auto-fixing missing service_provider role for user:', data.user.id);
+          const { error: roleError } = await supabase
+            .from('user_roles')
+            .insert({
+              user_id: data.user.id,
+              role: 'service_provider'
+            });
+
+          if (roleError && roleError.code !== '23505') {
+            console.error('Error adding role:', roleError);
+          }
+
           toast.success('تم تسجيل الدخول بنجاح');
-          navigate('/admin');
+          navigate('/provider-dashboard');
         } else {
           toast.error('هذا الحساب غير مسجل كمقدم خدمة');
           await supabase.auth.signOut();

@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { useProviderProfile, useProviderProducts, useProviderOrders } from '@/hooks/useProviderData';
+import { useAutoFixProviderRole } from '@/hooks/useAutoFixProviderRole';
 import { useProviderOrderNotifications } from '@/hooks/useProviderOrderNotifications';
 import ProviderProductsManager from '@/components/provider/ProviderProductsManager';
 import ProviderOrdersManager from '@/components/provider/ProviderOrdersManager';
@@ -40,23 +41,8 @@ const ProviderDashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [soundEnabled, setSoundEnabled] = useState(true);
 
-  // Check if user has service_provider role
-  const { data: hasProviderRole, isLoading: roleLoading } = useQuery({
-    queryKey: ['provider-role', user?.id],
-    queryFn: async () => {
-      if (!user) return false;
-      
-      const { data } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', user.id)
-        .in('role', ['service_provider', 'admin'])
-        .maybeSingle();
-      
-      return !!data;
-    },
-    enabled: !!user,
-  });
+  // Check if user has service_provider role and auto-fix if needed
+  const { hasRole: hasProviderRole, isLoading: roleLoading } = useAutoFixProviderRole();
 
   const { data: provider, isLoading: providerLoading } = useProviderProfile();
   const { data: products } = useProviderProducts(provider?.id);
