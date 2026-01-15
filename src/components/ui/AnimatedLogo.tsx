@@ -1,8 +1,11 @@
 import { useState } from 'react';
 import { motion, useAnimation } from 'framer-motion';
-import logo from '@/assets/logo.png';
+import logoImage from '@/assets/logo.png';
 import { cn } from '@/lib/utils';
 import { useClickSound } from '@/hooks/useClickSound';
+
+// Add cache-busting timestamp to force reload
+const logo = `${logoImage}?v=${Date.now()}`;
 
 interface AnimatedLogoProps {
   size?: 'sm' | 'md' | 'lg' | 'xl';
