@@ -422,6 +422,7 @@ const ProviderSettingsManager = ({ provider, onUpdate }: ProviderSettingsManager
             <StoreLocationPicker 
               location={formData.store_lat && formData.store_lng ? { lat: formData.store_lat, lng: formData.store_lng } : null}
               onLocationChange={(location) => setFormData({ ...formData, store_lat: location.lat, store_lng: location.lng })}
+              deliveryRadiusKm={formData.delivery_radius_km}
             />
 
             {/* Delivery Radius Setting */}
