@@ -34,6 +34,7 @@ export interface ServiceProvider {
   delivery_scope: 'neighborhood' | 'city';
   store_lat: number | null;
   store_lng: number | null;
+  delivery_radius_km: number;
   store_settings: {
     primary_color: string;
     accent_color: string;

@@ -60,7 +60,8 @@ const ProviderSettingsManager = ({ provider, onUpdate }: ProviderSettingsManager
     email: '',
     delivery_scope: 'neighborhood' as 'neighborhood' | 'city',
     store_lat: null as number | null,
-    store_lng: null as number | null
+    store_lng: null as number | null,
+    delivery_radius_km: 5
   });
 
   const [paymentData, setPaymentData] = useState({
@@ -83,7 +84,8 @@ const ProviderSettingsManager = ({ provider, onUpdate }: ProviderSettingsManager
         email: provider.email || '',
         delivery_scope: provider.delivery_scope || 'neighborhood',
         store_lat: provider.store_lat || null,
-        store_lng: provider.store_lng || null
+        store_lng: provider.store_lng || null,
+        delivery_radius_km: provider.delivery_radius_km ?? 5
       });
       setPaymentData({
         bank_name: provider.bank_name || '',
@@ -168,7 +170,8 @@ const ProviderSettingsManager = ({ provider, onUpdate }: ProviderSettingsManager
         logo_url: logoUrl,
         delivery_scope: formData.delivery_scope,
         store_lat: formData.store_lat,
-        store_lng: formData.store_lng
+        store_lng: formData.store_lng,
+        delivery_radius_km: formData.delivery_radius_km
       };
 
       if (onUpdate) {
@@ -420,6 +423,40 @@ const ProviderSettingsManager = ({ provider, onUpdate }: ProviderSettingsManager
               location={formData.store_lat && formData.store_lng ? { lat: formData.store_lat, lng: formData.store_lng } : null}
               onLocationChange={(location) => setFormData({ ...formData, store_lat: location.lat, store_lng: location.lng })}
             />
+
+            {/* Delivery Radius Setting */}
+            {formData.store_lat && formData.store_lng && (
+              <div className="space-y-4 p-4 bg-muted/50 rounded-lg border">
+                <Label className="font-arabic font-medium flex items-center gap-2">
+                  <MapPin className="h-4 w-4" />
+                  نطاق التوصيل (بالكيلومترات)
+                </Label>
+                <div className="flex items-center gap-4">
+                  <input
+                    type="range"
+                    min="1"
+                    max="50"
+                    value={formData.delivery_radius_km}
+                    onChange={(e) => setFormData({ ...formData, delivery_radius_km: Number(e.target.value) })}
+                    className="flex-1 h-2 bg-muted rounded-lg appearance-none cursor-pointer accent-primary"
+                  />
+                  <div className="flex items-center gap-2 min-w-[100px]">
+                    <Input
+                      type="number"
+                      min="1"
+                      max="50"
+                      value={formData.delivery_radius_km}
+                      onChange={(e) => setFormData({ ...formData, delivery_radius_km: Math.min(50, Math.max(1, Number(e.target.value))) })}
+                      className="w-20 text-center"
+                    />
+                    <span className="text-sm text-muted-foreground font-arabic">كم</span>
+                  </div>
+                </div>
+                <p className="text-sm text-muted-foreground font-arabic">
+                  سيتم قبول طلبات التوصيل فقط من العملاء ضمن نطاق {formData.delivery_radius_km} كيلومتر من موقع متجرك
+                </p>
+              </div>
+            )}
 
             <Button
               type="submit" 

@@ -1323,6 +1323,7 @@ export type Database = {
           business_name_en: string | null
           commission_rate: number | null
           created_at: string
+          delivery_radius_km: number | null
           delivery_scope: string | null
           description: string | null
           edfapay_credentials_verified: boolean | null
@@ -1360,6 +1361,7 @@ export type Database = {
           business_name_en?: string | null
           commission_rate?: number | null
           created_at?: string
+          delivery_radius_km?: number | null
           delivery_scope?: string | null
           description?: string | null
           edfapay_credentials_verified?: boolean | null
@@ -1397,6 +1399,7 @@ export type Database = {
           business_name_en?: string | null
           commission_rate?: number | null
           created_at?: string
+          delivery_radius_km?: number | null
           delivery_scope?: string | null
           description?: string | null
           edfapay_credentials_verified?: boolean | null
