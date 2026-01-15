@@ -11,6 +11,7 @@ import KitchenDisplaySystem from '@/components/provider/KitchenDisplaySystem';
 import ProviderSettingsManager from '@/components/provider/ProviderSettingsManager';
 import StoreThemeCustomizer from '@/components/provider/StoreThemeCustomizer';
 import ProviderStats from '@/components/provider/ProviderStats';
+import { StoreLocationAlert } from '@/components/provider/StoreLocationAlert';
 import { 
   ShoppingBag, 
   TrendingUp, 
@@ -49,6 +50,10 @@ interface Provider {
   is_active: boolean;
   is_verified: boolean;
   subscription_status: string | null;
+  delivery_scope: 'neighborhood' | 'city';
+  store_lat: number | null;
+  store_lng: number | null;
+  delivery_radius_km: number;
   store_settings: {
     primary_color: string;
     accent_color: string;
@@ -485,6 +490,11 @@ const ProviderDashboard = () => {
               </TabsTrigger>
             </TabsList>
           </div>
+
+          {/* Store Location Alert - Show if location not set */}
+          {(!provider.store_lat || !provider.store_lng) && (
+            <StoreLocationAlert onNavigateToSettings={() => setActiveTab('settings')} />
+          )}
 
           {/* Kitchen Display System - Main Screen */}
           <TabsContent value="kitchen" className="mt-0">
