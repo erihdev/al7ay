@@ -15,7 +15,7 @@ import { toast } from 'sonner';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
-import { useProviderOrders, useUpdateProviderOrder, ProviderOrder } from '@/hooks/useProviderData';
+import { useProviderOrders, useUpdateProviderOrder, ProviderOrder } from '@/hooks/useProviderOrders';
 
 interface ProviderOrdersManagerProps {
   providerId: string;
@@ -39,8 +39,7 @@ const ProviderOrdersManager = ({ providerId }: ProviderOrdersManagerProps) => {
   const handleStatusChange = async (order: ProviderOrder, newStatus: string) => {
     try {
       await updateOrderMutation.mutateAsync({ 
-        id: order.id, 
-        providerId, 
+        orderId: order.id, 
         status: newStatus 
       });
       toast.success('تم تحديث حالة الطلب');

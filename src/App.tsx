@@ -34,6 +34,7 @@ const Changelog = lazy(() => import("./pages/Changelog"));
 const ProviderRegister = lazy(() => import("./pages/ProviderRegister"));
 const EdfaPayGuide = lazy(() => import("./pages/EdfaPayGuide"));
 const Favorites = lazy(() => import("./pages/Favorites"));
+const MyStoreOrders = lazy(() => import("./pages/MyStoreOrders"));
 const Terms = lazy(() => import("./pages/Terms"));
 const Privacy = lazy(() => import("./pages/Privacy"));
 const FAQ = lazy(() => import("./pages/FAQ"));
@@ -82,6 +83,7 @@ const App = () => {
                       <Route path="/profile" element={<Profile />} />
                       <Route path="/loyalty" element={<LoyaltyTiers />} />
                       <Route path="/favorites" element={<Favorites />} />
+                      <Route path="/my-store-orders" element={<MyStoreOrders />} />
                       <Route path="/admin" element={<Admin />} />
                       <Route path="/admin-login" element={<AdminLogin />} />
                       <Route path="/admin-forgot-password" element={<AdminForgotPassword />} />

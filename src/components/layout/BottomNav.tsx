@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Coffee, ShoppingBag, ClipboardList, User, Heart } from 'lucide-react';
+import { Coffee, ShoppingBag, ClipboardList, User, Heart, Store } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { useFavorites } from '@/hooks/useFavorites';
 import { cn } from '@/lib/utils';
@@ -9,7 +9,7 @@ const navItems = [
   { path: '/app', icon: Coffee, label: 'القائمة' },
   { path: '/favorites', icon: Heart, label: 'المفضلة' },
   { path: '/cart', icon: ShoppingBag, label: 'السلة' },
-  { path: '/orders', icon: ClipboardList, label: 'طلباتي' },
+  { path: '/my-store-orders', icon: Store, label: 'طلباتي' },
   { path: '/profile', icon: User, label: 'حسابي' },
 ];
 

@@ -27,7 +27,7 @@ import {
 import { toast } from 'sonner';
 import { format, formatDistanceToNow } from 'date-fns';
 import { ar } from 'date-fns/locale';
-import { useProviderOrders, useUpdateProviderOrder, ProviderOrder } from '@/hooks/useProviderData';
+import { useProviderOrders, useUpdateProviderOrder, ProviderOrder } from '@/hooks/useProviderOrders';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
@@ -323,8 +323,7 @@ const KitchenDisplaySystem = ({ providerId }: KitchenDisplaySystemProps) => {
   const handleStatusChange = async (order: ProviderOrder, newStatus: string) => {
     try {
       await updateOrderMutation.mutateAsync({ 
-        id: order.id, 
-        providerId, 
+        orderId: order.id, 
         status: newStatus 
       });
       toast.success('تم تحديث حالة الطلب');
