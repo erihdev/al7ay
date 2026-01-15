@@ -730,13 +730,13 @@ const ProviderRegister = () => {
                       {/* Comparison Rows */}
                       <div className="space-y-3">
                         {[
-                          { label: '📦 عدد المنتجات', getValue: (idx: number) => idx === 0 ? '10' : idx === 1 ? '50' : 'غير محدود' },
-                          { label: '📊 لوحة التحكم', getValue: () => '✓' },
-                          { label: '📱 إشعارات الطلبات', getValue: () => '✓' },
-                          { label: '🏪 متجر خاص', getValue: (idx: number) => idx === 0 ? '✗' : '✓' },
-                          { label: '📈 تقارير متقدمة', getValue: (idx: number) => idx < 2 ? '✗' : '✓' },
-                          { label: '🎨 تخصيص الشعار', getValue: (idx: number) => idx === 0 ? '✗' : '✓' },
-                          { label: '💬 دعم أولوي', getValue: (idx: number) => idx < 2 ? '✗' : '✓' },
+                          { label: '📦 عدد المنتجات', tooltip: 'عدد المنتجات المسموح إضافتها في خطتك', getValue: (idx: number) => idx === 0 ? '10' : idx === 1 ? '50' : 'غير محدود' },
+                          { label: '📊 لوحة التحكم', tooltip: 'تحكم بجميع جوانب متجرك من مكان واحد', getValue: () => '✓' },
+                          { label: '📱 إشعارات الطلبات', tooltip: 'تنبيهات فورية عند وصول طلبات جديدة', getValue: () => '✓' },
+                          { label: '🏪 متجر خاص', tooltip: 'صفحة متجر مخصصة بشعارك وهويتك', getValue: (idx: number) => idx === 0 ? '✗' : '✓' },
+                          { label: '📈 تقارير متقدمة', tooltip: 'تحليلات مفصلة للمبيعات والأداء', getValue: (idx: number) => idx < 2 ? '✗' : '✓' },
+                          { label: '🎨 تخصيص الشعار', tooltip: 'ارفع شعار نشاطك التجاري', getValue: (idx: number) => idx === 0 ? '✗' : '✓' },
+                          { label: '💬 دعم أولوي', tooltip: 'خط دعم مباشر مع أولوية في الرد', getValue: (idx: number) => idx < 2 ? '✗' : '✓' },
                         ].map((row, rowIdx) => (
                           <motion.div
                             key={rowIdx}
@@ -745,8 +745,30 @@ const ProviderRegister = () => {
                             transition={{ delay: rowIdx * 0.05 }}
                             className="grid grid-cols-3 gap-4 py-3 border-b last:border-0 hover:bg-muted/30 rounded-lg px-2 transition-colors"
                           >
-                            <div className="font-medium">{row.label}</div>
-                            {comparePlans.map((plan, idx) => {
+                            <TooltipProvider delayDuration={200}>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <div className="font-medium flex items-center gap-1.5 cursor-help group">
+                                    <span>{row.label}</span>
+                                    <Info className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                                  </div>
+                                </TooltipTrigger>
+                                <TooltipContent 
+                                  side="top" 
+                                  className="max-w-[220px] text-center"
+                                  asChild
+                                >
+                                  <motion.div
+                                    initial={{ opacity: 0, y: 5, scale: 0.95 }}
+                                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                                    transition={{ duration: 0.15, ease: "easeOut" }}
+                                  >
+                                    <p className="text-xs">{row.tooltip}</p>
+                                  </motion.div>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                            {comparePlans.map((plan) => {
                               const planIndex = plans.findIndex(p => p.id === plan.id);
                               const value = row.getValue(planIndex);
                               return (
@@ -831,99 +853,70 @@ const ProviderRegister = () => {
                           </tr>
                         </thead>
                         <tbody>
-                          {/* Common Features Comparison */}
-                          <tr className="border-b hover:bg-muted/20 transition-colors">
-                            <td className="p-4 font-medium">📦 عدد المنتجات</td>
-                            {plans.map((plan, idx) => (
-                              <td key={plan.id} className="p-4 text-center">
-                                <span className="font-bold text-primary">
-                                  {idx === 0 ? '10' : idx === 1 ? '50' : 'غير محدود'}
-                                </span>
+                          {/* Common Features Comparison with Tooltips */}
+                          {[
+                            { label: '📦 عدد المنتجات', tooltip: 'عدد المنتجات المسموح إضافتها في خطتك', getValue: (idx: number) => idx === 0 ? '10' : idx === 1 ? '50' : 'غير محدود', type: 'value' },
+                            { label: '📊 لوحة التحكم', tooltip: 'تحكم بجميع جوانب متجرك من مكان واحد - الطلبات، المنتجات، والإحصائيات', getValue: () => true, type: 'check' },
+                            { label: '📱 إشعارات الطلبات', tooltip: 'احصل على تنبيهات فورية عند وصول طلبات جديدة عبر الموقع والجوال', getValue: () => true, type: 'check' },
+                            { label: '🏪 متجر خاص', tooltip: 'صفحة متجر مخصصة لعرض منتجاتك بشعارك وهويتك التجارية', getValue: (idx: number) => idx > 0, type: 'check' },
+                            { label: '📈 تقارير متقدمة', tooltip: 'تحليلات مفصلة للمبيعات، الأداء، وسلوك العملاء', getValue: (idx: number) => idx >= 2, type: 'check' },
+                            { label: '🎨 تخصيص المتجر', tooltip: 'خصص ألوان وتصميم متجرك ليتناسب مع هويتك', getValue: (idx: number) => idx >= 2, type: 'check' },
+                            { label: '💬 دعم فني', tooltip: 'فريق دعم متخصص لمساعدتك في أي وقت', getValue: (idx: number) => idx === 0 ? 'أساسي' : idx === 1 ? 'بريد إلكتروني' : 'أولوية 24/7', type: 'value' },
+                            { label: '🏷️ كوبونات خصم', tooltip: 'أنشئ كوبونات خصم لعملائك لزيادة المبيعات', getValue: (idx: number) => idx > 0, type: 'check' },
+                            { label: '📍 عرض في الخريطة', tooltip: 'يظهر متجرك على خريطة المنطقة ليجدك العملاء بسهولة', getValue: () => true, type: 'check' },
+                          ].map((row, rowIdx) => (
+                            <tr key={rowIdx} className={`${rowIdx < 8 ? 'border-b' : ''} hover:bg-muted/20 transition-colors`}>
+                              <td className="p-4 font-medium">
+                                <TooltipProvider delayDuration={200}>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <span className="flex items-center gap-1.5 cursor-help group">
+                                        {row.label}
+                                        <Info className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                                      </span>
+                                    </TooltipTrigger>
+                                    <TooltipContent 
+                                      side="top" 
+                                      className="max-w-[250px] text-center"
+                                      asChild
+                                    >
+                                      <motion.div
+                                        initial={{ opacity: 0, y: 5, scale: 0.95 }}
+                                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                                        transition={{ duration: 0.15, ease: "easeOut" }}
+                                      >
+                                        <p className="text-xs">{row.tooltip}</p>
+                                      </motion.div>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
                               </td>
-                            ))}
-                          </tr>
-                          <tr className="border-b hover:bg-muted/20 transition-colors">
-                            <td className="p-4 font-medium">📊 لوحة التحكم</td>
-                            {plans.map((plan) => (
-                              <td key={plan.id} className="p-4 text-center">
-                                <Check className="h-5 w-5 text-green-500 mx-auto" />
-                              </td>
-                            ))}
-                          </tr>
-                          <tr className="border-b hover:bg-muted/20 transition-colors">
-                            <td className="p-4 font-medium">📱 إشعارات الطلبات</td>
-                            {plans.map((plan) => (
-                              <td key={plan.id} className="p-4 text-center">
-                                <Check className="h-5 w-5 text-green-500 mx-auto" />
-                              </td>
-                            ))}
-                          </tr>
-                          <tr className="border-b hover:bg-muted/20 transition-colors">
-                            <td className="p-4 font-medium">🏪 متجر خاص</td>
-                            {plans.map((plan, idx) => (
-                              <td key={plan.id} className="p-4 text-center">
-                                {idx === 0 ? (
-                                  <span className="text-muted-foreground">-</span>
-                                ) : (
-                                  <Check className="h-5 w-5 text-green-500 mx-auto" />
-                                )}
-                              </td>
-                            ))}
-                          </tr>
-                          <tr className="border-b hover:bg-muted/20 transition-colors">
-                            <td className="p-4 font-medium">📈 تقارير متقدمة</td>
-                            {plans.map((plan, idx) => (
-                              <td key={plan.id} className="p-4 text-center">
-                                {idx < 2 ? (
-                                  <span className="text-muted-foreground">-</span>
-                                ) : (
-                                  <Check className="h-5 w-5 text-green-500 mx-auto" />
-                                )}
-                              </td>
-                            ))}
-                          </tr>
-                          <tr className="border-b hover:bg-muted/20 transition-colors">
-                            <td className="p-4 font-medium">🎨 تخصيص المتجر</td>
-                            {plans.map((plan, idx) => (
-                              <td key={plan.id} className="p-4 text-center">
-                                {idx < 2 ? (
-                                  <span className="text-muted-foreground">-</span>
-                                ) : (
-                                  <Check className="h-5 w-5 text-green-500 mx-auto" />
-                                )}
-                              </td>
-                            ))}
-                          </tr>
-                          <tr className="border-b hover:bg-muted/20 transition-colors">
-                            <td className="p-4 font-medium">💬 دعم فني</td>
-                            {plans.map((plan, idx) => (
-                              <td key={plan.id} className="p-4 text-center">
-                                <span className={idx === 2 ? 'text-primary font-bold' : ''}>
-                                  {idx === 0 ? 'أساسي' : idx === 1 ? 'بريد إلكتروني' : 'أولوية 24/7'}
-                                </span>
-                              </td>
-                            ))}
-                          </tr>
-                          <tr className="border-b hover:bg-muted/20 transition-colors">
-                            <td className="p-4 font-medium">🏷️ كوبونات خصم</td>
-                            {plans.map((plan, idx) => (
-                              <td key={plan.id} className="p-4 text-center">
-                                {idx === 0 ? (
-                                  <span className="text-muted-foreground">-</span>
-                                ) : (
-                                  <Check className="h-5 w-5 text-green-500 mx-auto" />
-                                )}
-                              </td>
-                            ))}
-                          </tr>
-                          <tr className="hover:bg-muted/20 transition-colors">
-                            <td className="p-4 font-medium">📍 عرض في الخريطة</td>
-                            {plans.map((plan) => (
-                              <td key={plan.id} className="p-4 text-center">
-                                <Check className="h-5 w-5 text-green-500 mx-auto" />
-                              </td>
-                            ))}
-                          </tr>
+                              {plans.map((plan, idx) => {
+                                const value = row.getValue(idx);
+                                return (
+                                  <td key={plan.id} className="p-4 text-center">
+                                    {row.type === 'check' ? (
+                                      value ? (
+                                        <motion.div
+                                          initial={{ scale: 0 }}
+                                          animate={{ scale: 1 }}
+                                          transition={{ delay: rowIdx * 0.03 }}
+                                        >
+                                          <Check className="h-5 w-5 text-green-500 mx-auto" />
+                                        </motion.div>
+                                      ) : (
+                                        <span className="text-muted-foreground">-</span>
+                                      )
+                                    ) : (
+                                      <span className={typeof value === 'string' && value.includes('أولوية') ? 'text-primary font-bold' : 'font-bold text-primary'}>
+                                        {value}
+                                      </span>
+                                    )}
+                                  </td>
+                                );
+                              })}
+                            </tr>
+                          ))}
                         </tbody>
                         <tfoot>
                           <tr className="bg-muted/50">
