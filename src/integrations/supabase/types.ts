@@ -1132,15 +1132,21 @@ export type Database = {
       service_providers: {
         Row: {
           application_id: string | null
+          bank_name: string | null
           business_name: string
           business_name_en: string | null
+          commission_rate: number | null
           created_at: string
           description: string | null
           email: string
+          freelance_certificate_url: string | null
+          iban: string | null
           id: string
           is_active: boolean
+          is_payment_verified: boolean | null
           is_verified: boolean
           logo_url: string | null
+          national_address: string | null
           neighborhood_id: string | null
           phone: string | null
           store_settings: Json | null
@@ -1150,15 +1156,21 @@ export type Database = {
         }
         Insert: {
           application_id?: string | null
+          bank_name?: string | null
           business_name: string
           business_name_en?: string | null
+          commission_rate?: number | null
           created_at?: string
           description?: string | null
           email: string
+          freelance_certificate_url?: string | null
+          iban?: string | null
           id?: string
           is_active?: boolean
+          is_payment_verified?: boolean | null
           is_verified?: boolean
           logo_url?: string | null
+          national_address?: string | null
           neighborhood_id?: string | null
           phone?: string | null
           store_settings?: Json | null
@@ -1168,15 +1180,21 @@ export type Database = {
         }
         Update: {
           application_id?: string | null
+          bank_name?: string | null
           business_name?: string
           business_name_en?: string | null
+          commission_rate?: number | null
           created_at?: string
           description?: string | null
           email?: string
+          freelance_certificate_url?: string | null
+          iban?: string | null
           id?: string
           is_active?: boolean
+          is_payment_verified?: boolean | null
           is_verified?: boolean
           logo_url?: string | null
+          national_address?: string | null
           neighborhood_id?: string | null
           phone?: string | null
           store_settings?: Json | null

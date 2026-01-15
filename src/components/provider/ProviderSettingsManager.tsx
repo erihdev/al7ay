@@ -1,14 +1,22 @@
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
 import { 
   Store, 
   Upload,
   Loader2,
-  Save
+  Save,
+  FileText,
+  Building2,
+  MapPin,
+  CheckCircle,
+  AlertCircle,
+  CreditCard,
+  Percent
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -21,8 +29,11 @@ interface ProviderSettingsManagerProps {
 
 const ProviderSettingsManager = ({ provider, onUpdate }: ProviderSettingsManagerProps) => {
   const [isLoading, setIsLoading] = useState(false);
+  const [isPaymentLoading, setIsPaymentLoading] = useState(false);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [certificateFile, setCertificateFile] = useState<File | null>(null);
+  const [certificatePreview, setCertificatePreview] = useState<string | null>(null);
   
   const [formData, setFormData] = useState({
     business_name: '',
@@ -30,6 +41,12 @@ const ProviderSettingsManager = ({ provider, onUpdate }: ProviderSettingsManager
     description: '',
     phone: '',
     email: ''
+  });
+
+  const [paymentData, setPaymentData] = useState({
+    bank_name: '',
+    iban: '',
+    national_address: ''
   });
 
   useEffect(() => {
@@ -41,8 +58,16 @@ const ProviderSettingsManager = ({ provider, onUpdate }: ProviderSettingsManager
         phone: provider.phone || '',
         email: provider.email || ''
       });
+      setPaymentData({
+        bank_name: provider.bank_name || '',
+        iban: provider.iban || '',
+        national_address: provider.national_address || ''
+      });
       if (provider.logo_url) {
         setLogoPreview(provider.logo_url);
+      }
+      if (provider.freelance_certificate_url) {
+        setCertificatePreview(provider.freelance_certificate_url);
       }
     }
   }, [provider]);
@@ -59,16 +84,26 @@ const ProviderSettingsManager = ({ provider, onUpdate }: ProviderSettingsManager
     }
   };
 
-  const uploadLogo = async (): Promise<string | null> => {
-    if (!logoFile) return provider.logo_url;
+  const handleCertificateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setCertificateFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setCertificatePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
-    const fileExt = logoFile.name.split('.').pop();
-    const fileName = `${provider.id}-logo.${fileExt}`;
-    const filePath = `provider-logos/${fileName}`;
+  const uploadFile = async (file: File, folder: string, prefix: string): Promise<string> => {
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${provider.id}-${prefix}-${Date.now()}.${fileExt}`;
+    const filePath = `${folder}/${fileName}`;
 
     const { error: uploadError } = await supabase.storage
       .from('product-images')
-      .upload(filePath, logoFile, { upsert: true });
+      .upload(filePath, file, { upsert: true });
 
     if (uploadError) {
       console.error('Upload error:', uploadError);
@@ -89,9 +124,8 @@ const ProviderSettingsManager = ({ provider, onUpdate }: ProviderSettingsManager
     try {
       let logoUrl = provider.logo_url;
       
-      // Upload logo first if there's a new file
       if (logoFile) {
-        logoUrl = await uploadLogo();
+        logoUrl = await uploadFile(logoFile, 'provider-logos', 'logo');
       }
 
       const updatedData = {
@@ -103,7 +137,6 @@ const ProviderSettingsManager = ({ provider, onUpdate }: ProviderSettingsManager
         logo_url: logoUrl
       };
 
-      // Update parent immediately for instant feedback (optimistic update)
       if (onUpdate) {
         onUpdate({
           ...provider,
@@ -111,7 +144,6 @@ const ProviderSettingsManager = ({ provider, onUpdate }: ProviderSettingsManager
         });
       }
 
-      // Then save to database
       const { error } = await supabase
         .from('service_providers')
         .update(updatedData)
@@ -119,11 +151,10 @@ const ProviderSettingsManager = ({ provider, onUpdate }: ProviderSettingsManager
 
       if (error) throw error;
 
-      toast.success('تم حفظ الإعدادات بنجاح');
+      toast.success('تم حفظ معلومات المتجر بنجاح');
     } catch (error) {
       console.error('Error saving settings:', error);
       toast.error('حدث خطأ أثناء حفظ الإعدادات');
-      // Revert optimistic update on error
       if (onUpdate) {
         onUpdate(provider);
       }
@@ -132,8 +163,61 @@ const ProviderSettingsManager = ({ provider, onUpdate }: ProviderSettingsManager
     }
   };
 
+  const handlePaymentSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsPaymentLoading(true);
+
+    try {
+      let certificateUrl = provider.freelance_certificate_url;
+      
+      if (certificateFile) {
+        certificateUrl = await uploadFile(certificateFile, 'provider-certificates', 'certificate');
+      }
+
+      // Validate IBAN format (Saudi IBAN: SA + 22 digits)
+      const ibanClean = paymentData.iban.replace(/\s/g, '').toUpperCase();
+      if (ibanClean && !ibanClean.match(/^SA\d{22}$/)) {
+        toast.error('صيغة الآيبان غير صحيحة. يجب أن يبدأ بـ SA متبوعاً بـ 22 رقم');
+        setIsPaymentLoading(false);
+        return;
+      }
+
+      const updatedData = {
+        bank_name: paymentData.bank_name || null,
+        iban: ibanClean || null,
+        national_address: paymentData.national_address || null,
+        freelance_certificate_url: certificateUrl
+      };
+
+      if (onUpdate) {
+        onUpdate({
+          ...provider,
+          ...updatedData
+        });
+      }
+
+      const { error } = await supabase
+        .from('service_providers')
+        .update(updatedData)
+        .eq('id', provider.id);
+
+      if (error) throw error;
+
+      toast.success('تم حفظ بيانات الدفع بنجاح');
+    } catch (error) {
+      console.error('Error saving payment info:', error);
+      toast.error('حدث خطأ أثناء حفظ بيانات الدفع');
+      if (onUpdate) {
+        onUpdate(provider);
+      }
+    } finally {
+      setIsPaymentLoading(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
+      {/* Store Information Card */}
       <Card>
         <CardHeader>
           <CardTitle className="font-arabic flex items-center gap-2">
@@ -241,8 +325,183 @@ const ProviderSettingsManager = ({ provider, onUpdate }: ProviderSettingsManager
               ) : (
                 <Save className="h-4 w-4 ml-2" />
               )}
-              حفظ الإعدادات
+              حفظ معلومات المتجر
             </Button>
+          </form>
+        </CardContent>
+      </Card>
+
+      {/* Payment & Verification Card */}
+      <Card className="border-primary/20">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="font-arabic flex items-center gap-2">
+                <CreditCard className="h-5 w-5 text-primary" />
+                بيانات الدفع والتوثيق
+              </CardTitle>
+              <CardDescription className="font-arabic mt-1">
+                مطلوبة لربط متجرك بنظام الدفع الإلكتروني
+              </CardDescription>
+            </div>
+            {provider.is_payment_verified ? (
+              <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 gap-1">
+                <CheckCircle className="h-3 w-3" />
+                تم التوثيق
+              </Badge>
+            ) : (
+              <Badge variant="outline" className="text-amber-600 border-amber-300 gap-1">
+                <AlertCircle className="h-3 w-3" />
+                غير موثق
+              </Badge>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handlePaymentSubmit} className="space-y-6">
+            {/* Commission Rate Display */}
+            <div className="bg-muted/50 rounded-lg p-4 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Percent className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <p className="font-medium font-arabic">نسبة المنصة من الطلبات</p>
+                  <p className="text-sm text-muted-foreground font-arabic">يتم خصمها تلقائياً من كل طلب</p>
+                </div>
+              </div>
+              <span className="text-2xl font-bold text-primary">{provider.commission_rate}%</span>
+            </div>
+
+            {/* Freelance Certificate Upload */}
+            <div className="space-y-3">
+              <Label className="font-arabic flex items-center gap-2">
+                <FileText className="h-4 w-4" />
+                شهادة العمل الحر *
+              </Label>
+              <div className="border-2 border-dashed rounded-lg p-4 text-center">
+                {certificatePreview ? (
+                  <div className="space-y-3">
+                    <div className="relative inline-block">
+                      {certificatePreview.includes('data:image') || certificatePreview.includes('.jpg') || certificatePreview.includes('.png') || certificatePreview.includes('.jpeg') ? (
+                        <img 
+                          src={certificatePreview} 
+                          alt="شهادة العمل الحر" 
+                          className="max-h-40 rounded-lg mx-auto"
+                        />
+                      ) : (
+                        <div className="flex items-center gap-2 bg-muted rounded-lg p-3">
+                          <FileText className="h-8 w-8 text-primary" />
+                          <span className="font-arabic text-sm">تم رفع الشهادة</span>
+                        </div>
+                      )}
+                    </div>
+                    <input
+                      type="file"
+                      id="certificate-upload"
+                      accept="image/*,.pdf"
+                      onChange={handleCertificateChange}
+                      className="hidden"
+                    />
+                    <label htmlFor="certificate-upload">
+                      <Button type="button" variant="outline" size="sm" asChild>
+                        <span className="cursor-pointer font-arabic">
+                          <Upload className="h-4 w-4 ml-2" />
+                          تغيير الشهادة
+                        </span>
+                      </Button>
+                    </label>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <div className="w-16 h-16 rounded-full bg-muted mx-auto flex items-center justify-center">
+                      <FileText className="h-8 w-8 text-muted-foreground" />
+                    </div>
+                    <p className="text-sm text-muted-foreground font-arabic">
+                      ارفق صورة شهادة العمل الحر الصادرة من منصة العمل الحر
+                    </p>
+                    <input
+                      type="file"
+                      id="certificate-upload"
+                      accept="image/*,.pdf"
+                      onChange={handleCertificateChange}
+                      className="hidden"
+                    />
+                    <label htmlFor="certificate-upload">
+                      <Button type="button" variant="outline" asChild>
+                        <span className="cursor-pointer font-arabic">
+                          <Upload className="h-4 w-4 ml-2" />
+                          رفع الشهادة
+                        </span>
+                      </Button>
+                    </label>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Bank Information */}
+            <div className="space-y-4">
+              <Label className="font-arabic flex items-center gap-2">
+                <Building2 className="h-4 w-4" />
+                معلومات الحساب البنكي
+              </Label>
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="font-arabic text-sm text-muted-foreground">اسم البنك *</Label>
+                  <Input
+                    value={paymentData.bank_name}
+                    onChange={(e) => setPaymentData({ ...paymentData, bank_name: e.target.value })}
+                    placeholder="مثال: البنك الأهلي"
+                    className="font-arabic"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="font-arabic text-sm text-muted-foreground">رقم الآيبان (IBAN) *</Label>
+                  <Input
+                    value={paymentData.iban}
+                    onChange={(e) => setPaymentData({ ...paymentData, iban: e.target.value })}
+                    placeholder="SA0000000000000000000000"
+                    dir="ltr"
+                    className="font-mono"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* National Address */}
+            <div className="space-y-2">
+              <Label className="font-arabic flex items-center gap-2">
+                <MapPin className="h-4 w-4" />
+                العنوان الوطني *
+              </Label>
+              <Textarea
+                value={paymentData.national_address}
+                onChange={(e) => setPaymentData({ ...paymentData, national_address: e.target.value })}
+                placeholder="أدخل العنوان الوطني الكامل (الرمز البريدي، المدينة، الحي، رقم المبنى)"
+                className="font-arabic"
+                rows={2}
+              />
+            </div>
+
+            <Button 
+              type="submit" 
+              className="w-full font-arabic bg-gradient-to-l from-primary to-primary/80"
+              disabled={isPaymentLoading}
+            >
+              {isPaymentLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin ml-2" />
+              ) : (
+                <Save className="h-4 w-4 ml-2" />
+              )}
+              حفظ بيانات الدفع
+            </Button>
+
+            {!provider.is_payment_verified && (
+              <p className="text-xs text-center text-muted-foreground font-arabic">
+                بعد إكمال البيانات، سيتم مراجعتها من قبل إدارة المنصة وتفعيل حسابك للدفع الإلكتروني
+              </p>
+            )}
           </form>
         </CardContent>
       </Card>
