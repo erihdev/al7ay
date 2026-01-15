@@ -78,6 +78,25 @@ const MyStoreOrders = () => {
   const navigate = useNavigate();
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
   const [showMapForOrder, setShowMapForOrder] = useState<string | null>(null);
+  const [defaultStoreLocation, setDefaultStoreLocation] = useState<{ lat: number; lng: number } | null>(null);
+
+  // Fetch default store settings for fallback location
+  useEffect(() => {
+    const fetchStoreSettings = async () => {
+      const { data } = await supabase
+        .from('store_settings')
+        .select('store_location_lat, store_location_lng')
+        .single();
+      
+      if (data) {
+        setDefaultStoreLocation({
+          lat: data.store_location_lat,
+          lng: data.store_location_lng
+        });
+      }
+    };
+    fetchStoreSettings();
+  }, []);
 
   // Set up realtime subscription for order updates
   useEffect(() => {
@@ -313,16 +332,15 @@ const MyStoreOrders = () => {
                             {/* Auto-show Navigation Map for all active pickup orders */}
                             {order.order_type === 'pickup' && 
                              ['pending', 'preparing', 'ready'].includes(order.status) && 
-                             order.service_providers?.active_neighborhoods?.lat &&
-                             order.service_providers?.active_neighborhoods?.lng && (
+                             (order.service_providers?.active_neighborhoods?.lat || defaultStoreLocation) && (
                               <div className="mt-3" onClick={(e) => e.stopPropagation()}>
                                 <StoreNavigationMap
                                   storeLocation={{
-                                    lat: order.service_providers.active_neighborhoods.lat,
-                                    lng: order.service_providers.active_neighborhoods.lng
+                                    lat: order.service_providers?.active_neighborhoods?.lat || defaultStoreLocation?.lat || 0,
+                                    lng: order.service_providers?.active_neighborhoods?.lng || defaultStoreLocation?.lng || 0
                                   }}
-                                  storeName={order.service_providers.business_name}
-                                  storePhone={order.service_providers.phone}
+                                  storeName={order.service_providers?.business_name || 'المتجر'}
+                                  storePhone={order.service_providers?.phone}
                                 />
                               </div>
                             )}
@@ -367,8 +385,7 @@ const MyStoreOrders = () => {
 
                                     {/* Navigation Map for Pickup Orders */}
                                     {order.order_type === 'pickup' && 
-                                     order.service_providers?.active_neighborhoods?.lat && 
-                                     order.service_providers?.active_neighborhoods?.lng && (
+                                     (order.service_providers?.active_neighborhoods?.lat || defaultStoreLocation) && (
                                       <div className="space-y-2">
                                         <Button 
                                           variant="default" 
@@ -394,11 +411,11 @@ const MyStoreOrders = () => {
                                             >
                                               <StoreNavigationMap
                                                 storeLocation={{
-                                                  lat: order.service_providers.active_neighborhoods.lat,
-                                                  lng: order.service_providers.active_neighborhoods.lng
+                                                  lat: order.service_providers?.active_neighborhoods?.lat || defaultStoreLocation?.lat || 0,
+                                                  lng: order.service_providers?.active_neighborhoods?.lng || defaultStoreLocation?.lng || 0
                                                 }}
-                                                storeName={order.service_providers.business_name}
-                                                storePhone={order.service_providers.phone}
+                                                storeName={order.service_providers?.business_name || 'المتجر'}
+                                                storePhone={order.service_providers?.phone}
                                               />
                                             </motion.div>
                                           )}
