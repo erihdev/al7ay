@@ -15,6 +15,7 @@ import ProviderReviewsList from '@/components/reviews/ProviderReviewsList';
 import ProviderRatingBadge from '@/components/reviews/ProviderRatingBadge';
 import { useProviderRatingSummary } from '@/hooks/useProviderReviews';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLocation } from '@/contexts/LocationContext';
 import { 
   ArrowRight, 
   Store, 
@@ -31,12 +32,16 @@ import {
   IceCream,
   Cake,
   X,
-  Search
+  Search,
+  AlertTriangle,
+  Globe,
+  Navigation
 } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
 } from '@/components/ui/dialog';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -59,11 +64,13 @@ const ProviderStoreContent = () => {
   const { providerId } = useParams<{ providerId: string }>();
   const { addItem, totalItems } = useProviderCart();
   const { user } = useAuth();
+  const { userLocation } = useLocation();
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [activeCategory, setActiveCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [showReviews, setShowReviews] = useState(false);
+  const [showCoverageAlert, setShowCoverageAlert] = useState(false);
   const categoryScrollRef = useRef<HTMLDivElement>(null);
   const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
   
@@ -80,7 +87,7 @@ const ProviderStoreContent = () => {
         .from('service_providers')
         .select(`
           *,
-          active_neighborhoods (name, city)
+          active_neighborhoods (name, city, lat, lng)
         `)
         .eq('id', providerId)
         .eq('is_active', true)
@@ -112,7 +119,87 @@ const ProviderStoreContent = () => {
     enabled: !!providerId,
   });
 
-  // Filter products by search
+  // Fetch alternative providers (for coverage alert)
+  const { data: alternativeProviders } = useQuery({
+    queryKey: ['alternative-providers', provider?.active_neighborhoods?.city],
+    queryFn: async () => {
+      if (!provider?.active_neighborhoods?.city || !userLocation) return [];
+      
+      const { data, error } = await supabase
+        .from('service_providers')
+        .select(`
+          id,
+          business_name,
+          logo_url,
+          is_verified,
+          delivery_scope,
+          active_neighborhoods (name, city, lat, lng)
+        `)
+        .eq('is_active', true)
+        .neq('id', providerId);
+      
+      if (error) throw error;
+      
+      // Filter providers that serve user's location
+      return (data || []).filter(p => {
+        if (!p.active_neighborhoods || !userLocation) return false;
+        
+        const distance = calculateDistance(
+          userLocation.lat,
+          userLocation.lng,
+          p.active_neighborhoods.lat,
+          p.active_neighborhoods.lng
+        );
+        
+        const deliveryScope = p.delivery_scope || 'neighborhood';
+        if (deliveryScope === 'neighborhood') {
+          return distance <= 2000;
+        } else {
+          return p.active_neighborhoods.city === provider?.active_neighborhoods?.city && distance <= 30000;
+        }
+      }).slice(0, 3);
+    },
+    enabled: !!provider && !!userLocation && showCoverageAlert,
+  });
+
+  // Calculate distance helper function
+  function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+    const R = 6371e3;
+    const φ1 = (lat1 * Math.PI) / 180;
+    const φ2 = (lat2 * Math.PI) / 180;
+    const Δφ = ((lat2 - lat1) * Math.PI) / 180;
+    const Δλ = ((lon2 - lon1) * Math.PI) / 180;
+    const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+              Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  }
+
+  // Check if provider serves user's location
+  const isOutsideCoverage = React.useMemo(() => {
+    if (!provider || !userLocation || !provider.active_neighborhoods) return false;
+    
+    const distance = calculateDistance(
+      userLocation.lat,
+      userLocation.lng,
+      provider.active_neighborhoods.lat,
+      provider.active_neighborhoods.lng
+    );
+    
+    const deliveryScope = provider.delivery_scope || 'neighborhood';
+    if (deliveryScope === 'neighborhood') {
+      return distance > 2000;
+    } else {
+      return distance > 30000;
+    }
+  }, [provider, userLocation]);
+
+  // Show coverage alert when user location is detected and they're outside coverage
+  useEffect(() => {
+    if (isOutsideCoverage && userLocation) {
+      setShowCoverageAlert(true);
+    }
+  }, [isOutsideCoverage, userLocation]);
   const filteredProducts = products?.filter(p => {
     if (!searchQuery.trim()) return true;
     const query = searchQuery.toLowerCase();
@@ -286,6 +373,91 @@ const ProviderStoreContent = () => {
 
   return (
     <div className="min-h-screen bg-background" style={{ fontFamily }} dir="rtl">
+      {/* Coverage Alert */}
+      {showCoverageAlert && isOutsideCoverage && (
+        <Dialog open={showCoverageAlert} onOpenChange={setShowCoverageAlert}>
+          <DialogContent className="max-w-md font-arabic" dir="rtl">
+            <div className="space-y-4">
+              <div className="flex items-center gap-3 text-amber-600">
+                <div className="p-2 bg-amber-100 dark:bg-amber-900/30 rounded-full">
+                  <AlertTriangle className="h-6 w-6" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-lg">خارج نطاق التغطية</h3>
+                  <p className="text-sm text-muted-foreground">هذا المتجر لا يخدم منطقتك حالياً</p>
+                </div>
+              </div>
+              
+              <Alert className="border-amber-500/50 bg-amber-50 dark:bg-amber-950/20">
+                <AlertDescription className="font-arabic text-amber-700 dark:text-amber-300 text-sm">
+                  {provider.delivery_scope === 'city' ? (
+                    <>المتجر يخدم مدينة {provider.active_neighborhoods?.city} فقط</>
+                  ) : (
+                    <>المتجر يخدم حي {provider.active_neighborhoods?.name} فقط</>
+                  )}
+                </AlertDescription>
+              </Alert>
+
+              {alternativeProviders && alternativeProviders.length > 0 && (
+                <div className="space-y-3">
+                  <h4 className="font-medium text-sm flex items-center gap-2">
+                    <Globe className="h-4 w-4 text-primary" />
+                    متاجر تخدم منطقتك
+                  </h4>
+                  <div className="space-y-2">
+                    {alternativeProviders.map(alt => (
+                      <Link 
+                        key={alt.id} 
+                        to={`/store/${alt.id}`}
+                        onClick={() => setShowCoverageAlert(false)}
+                        className="flex items-center gap-3 p-3 rounded-lg border hover:bg-muted transition-colors"
+                      >
+                        <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center overflow-hidden">
+                          {alt.logo_url ? (
+                            <img src={alt.logo_url} alt={alt.business_name} className="w-full h-full object-cover" />
+                          ) : (
+                            <Store className="h-5 w-5 text-muted-foreground" />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-sm truncate flex items-center gap-1">
+                            {alt.business_name}
+                            {alt.is_verified && (
+                              <Star className="h-3 w-3 fill-amber-500 text-amber-500" />
+                            )}
+                          </p>
+                          <p className="text-xs text-muted-foreground truncate">
+                            {alt.active_neighborhoods?.name}، {alt.active_neighborhoods?.city}
+                          </p>
+                        </div>
+                        <Badge variant="secondary" className="text-xs">
+                          {alt.delivery_scope === 'city' ? 'كل المدينة' : 'الحي'}
+                        </Badge>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="flex gap-2 pt-2">
+                <Button 
+                  variant="outline" 
+                  className="flex-1" 
+                  onClick={() => setShowCoverageAlert(false)}
+                >
+                  تصفح على أي حال
+                </Button>
+                <Link to="/" className="flex-1">
+                  <Button className="w-full">
+                    العودة للرئيسية
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
       {/* Fixed Header */}
       <header 
         className="fixed top-0 left-0 right-0 z-50 overflow-hidden"
