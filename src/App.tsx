@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -10,31 +10,40 @@ import { LocationProvider } from "@/contexts/LocationContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
 import { UpdateNotification } from "@/components/notifications/UpdateNotification";
-import Landing from "./pages/Landing";
-import Index from "./pages/Index";
-import ProviderStore from "./pages/ProviderStore";
-import Cart from "./pages/Cart";
-import Orders from "./pages/Orders";
-import Profile from "./pages/Profile";
-import Admin from "./pages/Admin";
-import AdminLogin from "./pages/AdminLogin";
-import AdminForgotPassword from "./pages/AdminForgotPassword";
-import ProductDetails from "./pages/ProductDetails";
-import LoyaltyTiers from "./pages/LoyaltyTiers";
-import PaymentResult from "./pages/PaymentResult";
-import ProviderLogin from "./pages/ProviderLogin";
-import ProviderDashboard from "./pages/ProviderDashboard";
-import NotFound from "./pages/NotFound";
-import Install from "./pages/Install";
-import Changelog from "./pages/Changelog";
-import ProviderRegister from "./pages/ProviderRegister";
-import Favorites from "./pages/Favorites";
-import Terms from "./pages/Terms";
-import Privacy from "./pages/Privacy";
-import FAQ from "./pages/FAQ";
-import Contact from "./pages/Contact";
+
+// Lazy load all pages for better performance
+const Landing = lazy(() => import("./pages/Landing"));
+const Index = lazy(() => import("./pages/Index"));
+const ProviderStore = lazy(() => import("./pages/ProviderStore"));
+const Cart = lazy(() => import("./pages/Cart"));
+const Orders = lazy(() => import("./pages/Orders"));
+const Profile = lazy(() => import("./pages/Profile"));
+const Admin = lazy(() => import("./pages/Admin"));
+const AdminLogin = lazy(() => import("./pages/AdminLogin"));
+const AdminForgotPassword = lazy(() => import("./pages/AdminForgotPassword"));
+const ProductDetails = lazy(() => import("./pages/ProductDetails"));
+const LoyaltyTiers = lazy(() => import("./pages/LoyaltyTiers"));
+const PaymentResult = lazy(() => import("./pages/PaymentResult"));
+const ProviderLogin = lazy(() => import("./pages/ProviderLogin"));
+const ProviderDashboard = lazy(() => import("./pages/ProviderDashboard"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+const Install = lazy(() => import("./pages/Install"));
+const Changelog = lazy(() => import("./pages/Changelog"));
+const ProviderRegister = lazy(() => import("./pages/ProviderRegister"));
+const Favorites = lazy(() => import("./pages/Favorites"));
+const Terms = lazy(() => import("./pages/Terms"));
+const Privacy = lazy(() => import("./pages/Privacy"));
+const FAQ = lazy(() => import("./pages/FAQ"));
+const Contact = lazy(() => import("./pages/Contact"));
 
 const queryClient = new QueryClient();
+
+// Page loading fallback - minimal spinner
+const PageLoader = () => (
+  <div className="min-h-screen flex items-center justify-center bg-background">
+    <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+  </div>
+);
 
 const App = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -60,31 +69,33 @@ const App = () => {
                 <Toaster />
                 <Sonner />
                 <BrowserRouter>
-                  <Routes>
-                    <Route path="/" element={<Landing />} />
-                    <Route path="/app" element={<Index />} />
-                    <Route path="/product/:productId" element={<ProductDetails />} />
-                    <Route path="/cart" element={<Cart />} />
-                    <Route path="/orders" element={<Orders />} />
-                    <Route path="/profile" element={<Profile />} />
-                    <Route path="/loyalty" element={<LoyaltyTiers />} />
-                    <Route path="/favorites" element={<Favorites />} />
-                    <Route path="/admin" element={<Admin />} />
-                    <Route path="/admin-login" element={<AdminLogin />} />
-                    <Route path="/admin-forgot-password" element={<AdminForgotPassword />} />
-                    <Route path="/payment-result" element={<PaymentResult />} />
-                    <Route path="/provider-login" element={<ProviderLogin />} />
-                    <Route path="/provider-register" element={<ProviderRegister />} />
-                    <Route path="/provider-dashboard" element={<ProviderDashboard />} />
-                    <Route path="/store/:providerId" element={<ProviderStore />} />
-                    <Route path="/install" element={<Install />} />
-                    <Route path="/changelog" element={<Changelog />} />
-                    <Route path="/terms" element={<Terms />} />
-                    <Route path="/privacy" element={<Privacy />} />
-                    <Route path="/faq" element={<FAQ />} />
-                    <Route path="/contact" element={<Contact />} />
-                    <Route path="*" element={<NotFound />} />
-                  </Routes>
+                  <Suspense fallback={<PageLoader />}>
+                    <Routes>
+                      <Route path="/" element={<Landing />} />
+                      <Route path="/app" element={<Index />} />
+                      <Route path="/product/:productId" element={<ProductDetails />} />
+                      <Route path="/cart" element={<Cart />} />
+                      <Route path="/orders" element={<Orders />} />
+                      <Route path="/profile" element={<Profile />} />
+                      <Route path="/loyalty" element={<LoyaltyTiers />} />
+                      <Route path="/favorites" element={<Favorites />} />
+                      <Route path="/admin" element={<Admin />} />
+                      <Route path="/admin-login" element={<AdminLogin />} />
+                      <Route path="/admin-forgot-password" element={<AdminForgotPassword />} />
+                      <Route path="/payment-result" element={<PaymentResult />} />
+                      <Route path="/provider-login" element={<ProviderLogin />} />
+                      <Route path="/provider-register" element={<ProviderRegister />} />
+                      <Route path="/provider-dashboard" element={<ProviderDashboard />} />
+                      <Route path="/store/:providerId" element={<ProviderStore />} />
+                      <Route path="/install" element={<Install />} />
+                      <Route path="/changelog" element={<Changelog />} />
+                      <Route path="/terms" element={<Terms />} />
+                      <Route path="/privacy" element={<Privacy />} />
+                      <Route path="/faq" element={<FAQ />} />
+                      <Route path="/contact" element={<Contact />} />
+                      <Route path="*" element={<NotFound />} />
+                    </Routes>
+                  </Suspense>
                 </BrowserRouter>
               </TooltipProvider>
             </LocationProvider>
