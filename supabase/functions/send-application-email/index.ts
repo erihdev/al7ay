@@ -10,7 +10,7 @@ const corsHeaders = {
 };
 
 interface ApplicationEmailRequest {
-  type?: 'applicant_notification' | 'admin_notification' | 'neighborhood_suggestion' | 'neighborhood_approved';
+  type?: 'applicant_notification' | 'admin_notification' | 'neighborhood_suggestion' | 'neighborhood_approved' | 'neighborhood_rejected';
   email: string;
   fullName: string;
   businessName?: string;
@@ -90,6 +90,65 @@ const handler = async (req: Request): Promise<Response> => {
               </div>
             </div>
             <div class="footer">
+              <p>فريق منصة الحي</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `;
+    } else if (type === 'neighborhood_rejected') {
+      // Neighborhood rejection notification to user
+      toEmail = email;
+      subject = `تحديث بخصوص اقتراحك لإضافة حي ${neighborhoodName}`;
+      htmlContent = `
+        <!DOCTYPE html>
+        <html dir="rtl" lang="ar">
+        <head>
+          <meta charset="utf-8">
+          <style>
+            body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f5f5f5; margin: 0; padding: 20px; }
+            .container { max-width: 600px; margin: 0 auto; background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+            .header { background: linear-gradient(135deg, #6B7280, #4B5563); color: white; padding: 40px 30px; text-align: center; }
+            .header h1 { margin: 0; font-size: 24px; }
+            .content { padding: 30px; }
+            .info-box { background: #FEF3C7; border: 1px solid #FCD34D; border-radius: 12px; padding: 20px; margin: 20px 0; }
+            .neighborhood-box { background: #f9fafb; border-radius: 12px; padding: 20px; margin: 20px 0; text-align: center; }
+            .cta-button { display: inline-block; background: #1B4332; color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: bold; margin-top: 20px; }
+            .footer { background: #f9fafb; padding: 20px; text-align: center; color: #6b7280; font-size: 14px; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>تحديث بخصوص اقتراحك</h1>
+            </div>
+            <div class="content">
+              <p>مرحباً <strong>${fullName}</strong>،</p>
+              <p>شكراً لاهتمامك بالمساهمة في توسيع نطاق خدمة منصة الحي.</p>
+              
+              <div class="neighborhood-box">
+                <p style="margin: 0; color: #6b7280;">الحي المقترح</p>
+                <p style="font-size: 20px; font-weight: bold; margin: 8px 0;">📍 ${neighborhoodName}</p>
+                <p style="color: #6b7280; margin: 0;">${city}</p>
+              </div>
+
+              <p>بعد مراجعة اقتراحك، نأسف لإبلاغك بأنه لم يتم قبول الحي المقترح في الوقت الحالي.</p>
+
+              ${notes ? `
+                <div class="info-box">
+                  <strong>سبب الرفض:</strong><br>
+                  ${notes}
+                </div>
+              ` : ''}
+
+              <p>يمكنك دائماً اقتراح أحياء جديدة أخرى في المستقبل.</p>
+
+              <div style="text-align: center;">
+                <a href="https://al7ay.lovable.app" class="cta-button">زيارة المنصة</a>
+              </div>
+            </div>
+            <div class="footer">
+              <p>نتمنى لك التوفيق!</p>
               <p>فريق منصة الحي</p>
             </div>
           </div>
