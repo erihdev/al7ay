@@ -46,6 +46,8 @@ import NeighborhoodsManager from '@/components/admin/NeighborhoodsManager';
 import { SuggestedNeighborhoodsManager } from '@/components/admin/SuggestedNeighborhoodsManager';
 import RegisteredProvidersManager from '@/components/admin/RegisteredProvidersManager';
 import { VersionManager } from '@/components/admin/VersionManager';
+import { SubscriptionPlansManager } from '@/components/admin/SubscriptionPlansManager';
+import { ProviderSubscriptionsManager } from '@/components/admin/ProviderSubscriptionsManager';
 import { InteractiveBackground } from '@/components/ui/InteractiveBackground';
 import { useUpdateDeliveryLocation } from '@/hooks/useOrderTracking';
 import { useOrderNotifications } from '@/hooks/useOrderNotifications';
@@ -315,6 +317,10 @@ const Admin = () => {
             <TabsTrigger value="suggested-neighborhoods" className="font-arabic">
               <MapPin className="h-4 w-4 ml-2" />
               اقتراحات الأحياء
+            </TabsTrigger>
+            <TabsTrigger value="subscriptions" className="font-arabic">
+              <CreditCard className="h-4 w-4 ml-2" />
+              الاشتراكات
             </TabsTrigger>
             <TabsTrigger value="versions" className="font-arabic">
               <Rocket className="h-4 w-4 ml-2" />
@@ -644,6 +650,12 @@ const Admin = () => {
           {/* Suggested Neighborhoods Tab */}
           <TabsContent value="suggested-neighborhoods">
             <SuggestedNeighborhoodsManager />
+          </TabsContent>
+
+          {/* Subscriptions Tab */}
+          <TabsContent value="subscriptions" className="space-y-6">
+            <SubscriptionPlansManager />
+            <ProviderSubscriptionsManager />
           </TabsContent>
 
           {/* Versions Tab */}

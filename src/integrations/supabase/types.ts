@@ -916,6 +916,70 @@ export type Database = {
           },
         ]
       }
+      provider_subscriptions: {
+        Row: {
+          auto_renew: boolean
+          created_at: string
+          ends_at: string
+          id: string
+          is_trial: boolean
+          payment_id: string | null
+          plan_id: string
+          provider_id: string
+          starts_at: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          auto_renew?: boolean
+          created_at?: string
+          ends_at: string
+          id?: string
+          is_trial?: boolean
+          payment_id?: string | null
+          plan_id: string
+          provider_id: string
+          starts_at?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          auto_renew?: boolean
+          created_at?: string
+          ends_at?: string
+          id?: string
+          is_trial?: boolean
+          payment_id?: string | null
+          plan_id?: string
+          provider_id?: string
+          starts_at?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "provider_subscriptions_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "provider_subscriptions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "subscription_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "provider_subscriptions_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "service_providers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       push_subscriptions: {
         Row: {
           auth: string
@@ -1039,6 +1103,7 @@ export type Database = {
           neighborhood_id: string | null
           phone: string | null
           store_settings: Json | null
+          subscription_status: string | null
           updated_at: string
           user_id: string
         }
@@ -1056,6 +1121,7 @@ export type Database = {
           neighborhood_id?: string | null
           phone?: string | null
           store_settings?: Json | null
+          subscription_status?: string | null
           updated_at?: string
           user_id: string
         }
@@ -1073,6 +1139,7 @@ export type Database = {
           neighborhood_id?: string | null
           phone?: string | null
           store_settings?: Json | null
+          subscription_status?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -1178,6 +1245,54 @@ export type Database = {
           store_location_lat?: number
           store_location_lng?: number
           store_name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      subscription_plans: {
+        Row: {
+          created_at: string
+          description_ar: string | null
+          description_en: string | null
+          duration_days: number
+          features: Json | null
+          id: string
+          is_active: boolean
+          is_trial: boolean
+          name_ar: string
+          name_en: string | null
+          price: number
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description_ar?: string | null
+          description_en?: string | null
+          duration_days: number
+          features?: Json | null
+          id?: string
+          is_active?: boolean
+          is_trial?: boolean
+          name_ar: string
+          name_en?: string | null
+          price?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description_ar?: string | null
+          description_en?: string | null
+          duration_days?: number
+          features?: Json | null
+          id?: string
+          is_active?: boolean
+          is_trial?: boolean
+          name_ar?: string
+          name_en?: string | null
+          price?: number
+          sort_order?: number
           updated_at?: string
         }
         Relationships: []

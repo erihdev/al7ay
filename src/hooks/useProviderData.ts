@@ -15,10 +15,11 @@ export interface ServiceProvider {
   neighborhood_id: string | null;
   is_active: boolean;
   is_verified: boolean;
+  subscription_status: string | null;
   store_settings: {
     primary_color: string;
     accent_color: string;
-  };
+  } | null;
   created_at: string;
   updated_at: string;
 }
