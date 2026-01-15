@@ -691,6 +691,11 @@ export type Database = {
           referral_code: string | null
           updated_at: string
           user_id: string
+          vehicle_brand: string | null
+          vehicle_color: string | null
+          vehicle_model: string | null
+          vehicle_plate: string | null
+          vehicle_year: string | null
         }
         Insert: {
           created_at?: string
@@ -700,6 +705,11 @@ export type Database = {
           referral_code?: string | null
           updated_at?: string
           user_id: string
+          vehicle_brand?: string | null
+          vehicle_color?: string | null
+          vehicle_model?: string | null
+          vehicle_plate?: string | null
+          vehicle_year?: string | null
         }
         Update: {
           created_at?: string
@@ -709,6 +719,11 @@ export type Database = {
           referral_code?: string | null
           updated_at?: string
           user_id?: string
+          vehicle_brand?: string | null
+          vehicle_color?: string | null
+          vehicle_model?: string | null
+          vehicle_plate?: string | null
+          vehicle_year?: string | null
         }
         Relationships: []
       }

@@ -6,12 +6,13 @@ import { AuthForm } from '@/components/auth/AuthForm';
 import { NotificationSettings } from '@/components/notifications/NotificationSettings';
 import { LocalNotificationSettings } from '@/components/notifications/LocalNotificationSettings';
 import { ReferralCard } from '@/components/referral/ReferralCard';
+import { VehicleInfo } from '@/components/profile/VehicleInfo';
 import { LoyaltyTierBadge, tierConfigs } from '@/components/loyalty/LoyaltyTierBadge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Progress } from '@/components/ui/progress';
-import { LogOut, Star, User, History, Settings, ChevronLeft, Download, Crown, Gift, Bell, Sparkles } from 'lucide-react';
+import { LogOut, Star, User, History, Settings, ChevronLeft, Download, Crown, Gift, Bell, Sparkles, Car } from 'lucide-react';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { Link } from 'react-router-dom';
@@ -228,6 +229,11 @@ const Profile = () => {
                   </Card>
                 </Link>
               )}
+            </motion.div>
+
+            {/* Vehicle Info */}
+            <motion.div variants={fadeInUp}>
+              <VehicleInfo />
             </motion.div>
 
             {/* Referral Card */}
