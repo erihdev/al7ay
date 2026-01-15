@@ -1,6 +1,8 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { useLoyaltyPoints, usePointsHistory } from '@/hooks/useOrders';
 import { useLoyaltyTier } from '@/hooks/useLoyaltyTier';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { AuthForm } from '@/components/auth/AuthForm';
 import { NotificationSettings } from '@/components/notifications/NotificationSettings';
@@ -25,6 +27,21 @@ const Profile = () => {
   const { data: loyaltyPoints, isLoading: pointsLoading } = useLoyaltyPoints();
   const { data: loyaltyTier } = useLoyaltyTier();
   const { data: pointsHistory, isLoading: historyLoading } = usePointsHistory();
+  
+  // Fetch profile data for avatar
+  const { data: profileData } = useQuery({
+    queryKey: ['profile-avatar', user?.id],
+    queryFn: async () => {
+      if (!user) return null;
+      const { data } = await supabase
+        .from('profiles')
+        .select('avatar_url, full_name')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      return data;
+    },
+    enabled: !!user,
+  });
 
   if (authLoading) {
     return (
@@ -94,8 +111,16 @@ const Profile = () => {
                 transition={{ type: "spring", delay: 0.1 }}
               >
                 <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${tierColor} p-0.5 shadow-lg`}>
-                  <div className="w-full h-full rounded-[14px] bg-background flex items-center justify-center">
-                    <User className="h-6 w-6 text-primary" />
+                  <div className="w-full h-full rounded-[14px] bg-background flex items-center justify-center overflow-hidden">
+                    {profileData?.avatar_url ? (
+                      <img 
+                        src={profileData.avatar_url} 
+                        alt="صورة شخصية"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <User className="h-6 w-6 text-primary" />
+                    )}
                   </div>
                 </div>
                 {loyaltyTier && (
@@ -117,7 +142,7 @@ const Profile = () => {
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.2 }}
                 >
-                  مرحباً 👋
+                  مرحباً {profileData?.full_name ? profileData.full_name.split(' ')[0] : ''} 👋
                 </motion.h1>
                 <motion.p 
                   className="text-xs text-muted-foreground"

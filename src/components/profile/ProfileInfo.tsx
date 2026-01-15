@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { User, Mail, Phone, Edit2, Save, X, Calendar, Shield } from 'lucide-react';
+import { User, Mail, Phone, Edit2, Save, X, Calendar, Shield, Camera, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import { format } from 'date-fns';
@@ -29,17 +29,21 @@ const profileSchema = z.object({
 interface ProfileData {
   full_name: string | null;
   phone: string | null;
+  avatar_url: string | null;
 }
 
 export function ProfileInfo() {
   const { user } = useAuth();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [errors, setErrors] = useState<{ full_name?: string; phone?: string }>({});
   const [profileData, setProfileData] = useState<ProfileData>({
     full_name: null,
     phone: null,
+    avatar_url: null,
   });
 
   useEffect(() => {
@@ -55,7 +59,7 @@ export function ProfileInfo() {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('full_name, phone')
+        .select('full_name, phone, avatar_url')
         .eq('user_id', user.id)
         .maybeSingle();
 
@@ -67,6 +71,7 @@ export function ProfileInfo() {
         setProfileData({
           full_name: data.full_name,
           phone: data.phone,
+          avatar_url: data.avatar_url,
         });
       }
     } catch (error) {
@@ -97,6 +102,75 @@ export function ProfileInfo() {
         setErrors(fieldErrors);
       }
       return false;
+    }
+  };
+
+  const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !user) return;
+
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error('نوع الملف غير مدعوم. يرجى رفع صورة (JPG, PNG, WebP, GIF)');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      toast.error('حجم الصورة كبير جداً. الحد الأقصى 5 ميجابايت');
+      return;
+    }
+
+    setIsUploadingAvatar(true);
+    try {
+      // Create unique file name
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}/avatar-${Date.now()}.${fileExt}`;
+
+      // Delete old avatar if exists
+      if (profileData.avatar_url) {
+        const oldPath = profileData.avatar_url.split('/avatars/')[1];
+        if (oldPath) {
+          await supabase.storage.from('avatars').remove([oldPath]);
+        }
+      }
+
+      // Upload new avatar
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(fileName, file, { 
+          cacheControl: '3600',
+          upsert: true 
+        });
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(fileName);
+
+      // Update profile with new avatar URL
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ avatar_url: publicUrl })
+        .eq('user_id', user.id);
+
+      if (updateError) throw updateError;
+
+      setProfileData(prev => ({ ...prev, avatar_url: publicUrl }));
+      toast.success('تم تحديث الصورة الشخصية بنجاح');
+    } catch (error) {
+      console.error('Error uploading avatar:', error);
+      toast.error('حدث خطأ في رفع الصورة');
+    } finally {
+      setIsUploadingAvatar(false);
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     }
   };
 
@@ -158,7 +232,7 @@ export function ProfileInfo() {
     <Card className="overflow-hidden border-0 shadow-lg">
       <CardContent className="p-0">
         {/* Header with gradient */}
-        <div className="relative h-20 bg-gradient-to-l from-primary via-primary/90 to-primary/70">
+        <div className="relative h-24 bg-gradient-to-l from-primary via-primary/90 to-primary/70">
           <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxwYXRoIGQ9Ik0zNiAxOGMtOS45NDEgMC0xOCA4LjA1OS0xOCAxOHM4LjA1OSAxOCAxOCAxOCAxOC04LjA1OSAxOC0xOC04LjA1OS0xOC0xOC0xOHoiIHN0cm9rZT0icmdiYSgyNTUsMjU1LDI1NSwwLjEpIiBzdHJva2Utd2lkdGg9IjIiLz48L2c+PC9zdmc+')] opacity-30" />
           
           {/* Edit button */}
@@ -183,18 +257,54 @@ export function ProfileInfo() {
             )}
           </AnimatePresence>
 
-          {/* Avatar */}
-          <div className="absolute -bottom-10 right-4">
-            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-white to-gray-100 p-1 shadow-xl">
-              <div className="w-full h-full rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center">
-                <User className="h-8 w-8 text-primary" />
+          {/* Avatar with upload capability */}
+          <div className="absolute -bottom-12 right-4">
+            <div className="relative group">
+              <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-white to-gray-100 p-1 shadow-xl">
+                <div className="w-full h-full rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center overflow-hidden">
+                  {profileData.avatar_url ? (
+                    <img 
+                      src={profileData.avatar_url} 
+                      alt="صورة شخصية"
+                      className="w-full h-full object-cover rounded-xl"
+                    />
+                  ) : (
+                    <User className="h-10 w-10 text-primary" />
+                  )}
+                </div>
               </div>
+              
+              {/* Upload overlay */}
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploadingAvatar}
+                className="absolute inset-0 rounded-2xl bg-black/0 group-hover:bg-black/40 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100 cursor-pointer"
+              >
+                {isUploadingAvatar ? (
+                  <Loader2 className="h-6 w-6 text-white animate-spin" />
+                ) : (
+                  <Camera className="h-6 w-6 text-white" />
+                )}
+              </button>
+              
+              {/* Camera badge */}
+              <div className="absolute -bottom-1 -left-1 w-8 h-8 rounded-full bg-primary flex items-center justify-center shadow-lg border-2 border-background">
+                <Camera className="h-4 w-4 text-primary-foreground" />
+              </div>
+              
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                onChange={handleAvatarUpload}
+                className="hidden"
+              />
             </div>
           </div>
         </div>
 
         {/* Content */}
-        <div className="pt-14 pb-5 px-4">
+        <div className="pt-16 pb-5 px-4">
           <AnimatePresence mode="wait">
             {isEditing ? (
               <motion.div
