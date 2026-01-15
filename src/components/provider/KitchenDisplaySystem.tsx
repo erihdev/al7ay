@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -20,7 +20,9 @@ import {
   Maximize2,
   Minimize2,
   Volume2,
-  VolumeX
+  VolumeX,
+  Printer,
+  AlertTriangle
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { format, formatDistanceToNow } from 'date-fns';
@@ -179,11 +181,144 @@ const KitchenDisplaySystem = ({ providerId }: KitchenDisplaySystemProps) => {
     enabled: orderIds.length > 0,
   });
 
+  // Track alerted orders to avoid duplicate alerts
+  const alertedOrdersRef = useRef<Set<string>>(new Set());
+  const DELAY_THRESHOLD_MINUTES = 15;
+
   // Update time every minute for elapsed time display
   useEffect(() => {
     const interval = setInterval(() => setCurrentTime(new Date()), 60000);
     return () => clearInterval(interval);
   }, []);
+
+  // Auto alert for delayed orders
+  useEffect(() => {
+    if (!soundEnabled || !orders) return;
+
+    const checkDelayedOrders = () => {
+      const now = new Date();
+      orders.forEach(order => {
+        // Only check pending or preparing orders
+        if (order.status !== 'pending' && order.status !== 'preparing') return;
+        
+        const elapsed = (now.getTime() - new Date(order.created_at).getTime()) / 1000 / 60;
+        
+        // If order exceeds threshold and hasn't been alerted yet
+        if (elapsed > DELAY_THRESHOLD_MINUTES && !alertedOrdersRef.current.has(order.id)) {
+          alertedOrdersRef.current.add(order.id);
+          playNotificationSound('urgent');
+          toast.warning(`⚠️ تنبيه تأخير!`, {
+            description: `الطلب #${order.id.slice(-4)} متأخر منذ ${Math.round(elapsed)} دقيقة`,
+            duration: 15000,
+          });
+        }
+      });
+    };
+
+    // Check immediately and then every minute
+    checkDelayedOrders();
+    const interval = setInterval(checkDelayedOrders, 60000);
+    return () => clearInterval(interval);
+  }, [orders, soundEnabled, playNotificationSound]);
+
+  // Print order ticket
+  const printOrderTicket = useCallback((order: ProviderOrder) => {
+    const items = orderItems?.[order.id] || [];
+    const printWindow = window.open('', '_blank', 'width=400,height=600');
+    if (!printWindow) {
+      toast.error('يرجى السماح بالنوافذ المنبثقة للطباعة');
+      return;
+    }
+
+    const orderDate = format(new Date(order.created_at), 'yyyy/MM/dd - HH:mm', { locale: ar });
+    const orderTypeLabel = order.order_type === 'delivery' ? 'توصيل' : 'استلام';
+
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html dir="rtl" lang="ar">
+      <head>
+        <meta charset="UTF-8">
+        <title>تذكرة الطلب #${order.id.slice(-4)}</title>
+        <style>
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+          body { 
+            font-family: 'Tajawal', 'Arial', sans-serif; 
+            padding: 20px; 
+            max-width: 300px; 
+            margin: 0 auto;
+            font-size: 14px;
+          }
+          .header { text-align: center; border-bottom: 2px dashed #333; padding-bottom: 15px; margin-bottom: 15px; }
+          .header h1 { font-size: 24px; margin-bottom: 5px; }
+          .header .order-num { font-size: 32px; font-weight: bold; }
+          .header .date { color: #666; font-size: 12px; }
+          .section { margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px dashed #ccc; }
+          .section-title { font-weight: bold; margin-bottom: 8px; font-size: 16px; }
+          .customer-info p { margin-bottom: 4px; }
+          .items { width: 100%; }
+          .item { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px dotted #eee; }
+          .item-name { flex: 1; }
+          .item-qty { width: 30px; text-align: center; font-weight: bold; }
+          .item-price { width: 60px; text-align: left; }
+          .item-options { font-size: 11px; color: #666; margin-top: 2px; }
+          .total { display: flex; justify-content: space-between; font-size: 20px; font-weight: bold; padding-top: 10px; }
+          .badge { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 12px; }
+          .badge-delivery { background: #E9D5FF; color: #7C3AED; }
+          .badge-pickup { background: #DBEAFE; color: #2563EB; }
+          .notes { background: #FEF3C7; padding: 10px; border-radius: 8px; margin-top: 10px; }
+          .footer { text-align: center; margin-top: 20px; font-size: 12px; color: #999; }
+          @media print { body { padding: 0; } }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>🍕 تذكرة طلب</h1>
+          <div class="order-num">#${order.id.slice(-4)}</div>
+          <div class="date">${orderDate}</div>
+          <span class="badge ${order.order_type === 'delivery' ? 'badge-delivery' : 'badge-pickup'}">${orderTypeLabel}</span>
+        </div>
+        
+        <div class="section customer-info">
+          <div class="section-title">👤 معلومات العميل</div>
+          <p><strong>${order.customer_name}</strong></p>
+          <p>📞 ${order.customer_phone}</p>
+          ${order.delivery_address ? `<p>📍 ${order.delivery_address}</p>` : ''}
+        </div>
+        
+        <div class="section">
+          <div class="section-title">🛒 المنتجات</div>
+          <div class="items">
+            ${items.map(item => `
+              <div class="item">
+                <span class="item-qty">${item.quantity}x</span>
+                <span class="item-name">
+                  ${item.product_name}
+                  ${item.selected_options?.length ? `<div class="item-options">${item.selected_options.map(o => `${o.optionName}: ${o.valueName}`).join(' | ')}</div>` : ''}
+                </span>
+                <span class="item-price">${item.total_price} ر.س</span>
+              </div>
+            `).join('')}
+          </div>
+          <div class="total">
+            <span>المجموع</span>
+            <span>${order.total_amount} ر.س</span>
+          </div>
+        </div>
+        
+        ${order.notes ? `<div class="notes">📝 <strong>ملاحظات:</strong> ${order.notes}</div>` : ''}
+        
+        <div class="footer">
+          <p>شكراً لكم ❤️</p>
+        </div>
+        
+        <script>
+          window.onload = function() { window.print(); }
+        </script>
+      </body>
+      </html>
+    `);
+    printWindow.document.close();
+  }, [orderItems]);
 
   const handleStatusChange = async (order: ProviderOrder, newStatus: string) => {
     try {
@@ -378,32 +513,40 @@ const KitchenDisplaySystem = ({ providerId }: KitchenDisplaySystemProps) => {
           )}
 
           {/* Action Buttons */}
-          {order.status !== 'completed' && order.status !== 'cancelled' && (
-            <div className="flex gap-2 pt-2">
-              {nextStatus && (
-                <Button
-                  size="lg"
-                  onClick={() => handleStatusChange(order, nextStatus)}
-                  disabled={updateOrderMutation.isPending}
-                  className={`flex-1 font-bold text-base bg-gradient-to-l ${statusConfig[nextStatus]?.gradient || 'from-primary to-primary/80'} hover:opacity-90 transition-opacity`}
-                >
-                  <ArrowRight className="h-5 w-5 ml-2" />
-                  {statusConfig[nextStatus]?.label || nextStatus}
-                </Button>
-              )}
-              {order.status === 'pending' && (
-                <Button
-                  size="lg"
-                  variant="outline"
-                  onClick={() => handleStatusChange(order, 'cancelled')}
-                  disabled={updateOrderMutation.isPending}
-                  className="text-red-600 border-red-300 hover:bg-red-50"
-                >
-                  <XCircle className="h-5 w-5" />
-                </Button>
-              )}
-            </div>
-          )}
+          <div className="flex gap-2 pt-2">
+            {/* Print Button */}
+            <Button
+              size="lg"
+              variant="outline"
+              onClick={() => printOrderTicket(order)}
+              className="gap-1"
+            >
+              <Printer className="h-5 w-5" />
+            </Button>
+            
+            {order.status !== 'completed' && order.status !== 'cancelled' && nextStatus && (
+              <Button
+                size="lg"
+                onClick={() => handleStatusChange(order, nextStatus)}
+                disabled={updateOrderMutation.isPending}
+                className={`flex-1 font-bold text-base bg-gradient-to-l ${statusConfig[nextStatus]?.gradient || 'from-primary to-primary/80'} hover:opacity-90 transition-opacity`}
+              >
+                <ArrowRight className="h-5 w-5 ml-2" />
+                {statusConfig[nextStatus]?.label || nextStatus}
+              </Button>
+            )}
+            {order.status === 'pending' && (
+              <Button
+                size="lg"
+                variant="outline"
+                onClick={() => handleStatusChange(order, 'cancelled')}
+                disabled={updateOrderMutation.isPending}
+                className="text-red-600 border-red-300 hover:bg-red-50"
+              >
+                <XCircle className="h-5 w-5" />
+              </Button>
+            )}
+          </div>
         </div>
 
         {/* Urgency Flame */}
