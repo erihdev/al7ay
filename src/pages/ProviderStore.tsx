@@ -149,7 +149,10 @@ const ProviderStoreContent = () => {
     accent_color?: string;
     background_color?: string;
     text_color?: string;
-    header_style?: 'solid' | 'gradient' | 'transparent';
+    header_style?: 'solid' | 'gradient' | 'transparent' | 'image';
+    header_image_url?: string;
+    header_overlay_opacity?: number;
+    header_blur?: boolean;
     font_family?: string;
     border_radius?: string;
     button_style?: string;
@@ -159,10 +162,19 @@ const ProviderStoreContent = () => {
   const secondaryColor = storeTheme.secondary_color || '#2D6A4F';
   const accentColor = storeTheme.accent_color || '#D4AF37';
   const headerStyle = storeTheme.header_style || 'solid';
+  const headerImageUrl = storeTheme.header_image_url || '';
+  const headerOverlayOpacity = storeTheme.header_overlay_opacity ?? 50;
+  const headerBlur = storeTheme.header_blur || false;
   const fontFamily = storeTheme.font_family || 'Tajawal';
+  
+  // Check if header has image background
+  const hasImageHeader = headerStyle === 'image' && headerImageUrl;
   
   // Get header background based on style
   const getHeaderBackground = () => {
+    if (hasImageHeader) {
+      return 'transparent'; // We'll use the image as background
+    }
     switch (headerStyle) {
       case 'gradient':
         return `linear-gradient(135deg, ${primaryColor}, ${secondaryColor})`;
@@ -276,11 +288,39 @@ const ProviderStoreContent = () => {
     <div className="min-h-screen bg-background" style={{ fontFamily }} dir="rtl">
       {/* Fixed Header */}
       <header 
-        className="fixed top-0 left-0 right-0 z-50"
+        className="fixed top-0 left-0 right-0 z-50 overflow-hidden"
         style={{ background: getHeaderBackground() }}
       >
+        {/* Background Image with Effects */}
+        {hasImageHeader && (
+          <div className="absolute inset-0">
+            <img 
+              src={headerImageUrl}
+              alt=""
+              className={cn(
+                "w-full h-full object-cover",
+                headerBlur && "blur-sm scale-105"
+              )}
+            />
+            {/* Overlay */}
+            <div 
+              className="absolute inset-0"
+              style={{ 
+                backgroundColor: primaryColor,
+                opacity: headerOverlayOpacity / 100
+              }}
+            />
+            {/* Gradient fade at bottom */}
+            <div 
+              className="absolute bottom-0 left-0 right-0 h-8"
+              style={{
+                background: `linear-gradient(to top, ${primaryColor}40, transparent)`
+              }}
+            />
+          </div>
+        )}
         {/* Top Bar */}
-        <div className="px-4 py-3 flex items-center justify-between">
+        <div className="relative z-10 px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             {/* Logo */}
             <div 
@@ -340,7 +380,7 @@ const ProviderStoreContent = () => {
         </div>
 
         {/* Search Bar */}
-        <div className="px-4 pb-3">
+        <div className="relative z-10 px-4 pb-3">
           <div className="relative">
             <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
@@ -366,7 +406,7 @@ const ProviderStoreContent = () => {
         {/* Category Tabs */}
         <div 
           ref={categoryScrollRef}
-          className="flex gap-2 px-4 pb-3 overflow-x-auto hide-scrollbar"
+          className="relative z-10 flex gap-2 px-4 pb-3 overflow-x-auto hide-scrollbar"
         >
           {categories.map((cat) => {
             const Icon = cat.icon;

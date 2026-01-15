@@ -12,7 +12,11 @@ import {
   Type,
   Square,
   Circle,
-  Sparkles
+  Sparkles,
+  Upload,
+  Image,
+  X,
+  Trash2
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -24,7 +28,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-
+import { Slider } from '@/components/ui/slider';
+import { Switch } from '@/components/ui/switch';
 interface StoreThemeCustomizerProps {
   provider: ServiceProvider;
   onUpdate?: (provider: ServiceProvider) => void;
@@ -37,6 +42,9 @@ const defaultTheme: StoreTheme = {
   background_color: '#FFFFFF',
   text_color: '#1A1A1A',
   header_style: 'solid',
+  header_image_url: '',
+  header_overlay_opacity: 50,
+  header_blur: false,
   font_family: 'Tajawal',
   border_radius: 'medium',
   button_style: 'rounded'
@@ -106,6 +114,7 @@ const presetThemes = [
 
 const StoreThemeCustomizer = ({ provider, onUpdate }: StoreThemeCustomizerProps) => {
   const [isLoading, setIsLoading] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const [theme, setTheme] = useState<StoreTheme>(defaultTheme);
   const [showPreview, setShowPreview] = useState(false);
 
@@ -118,8 +127,64 @@ const StoreThemeCustomizer = ({ provider, onUpdate }: StoreThemeCustomizerProps)
     }
   }, [provider]);
 
-  const handleColorChange = (key: keyof StoreTheme, value: string) => {
+  const handleColorChange = (key: keyof StoreTheme, value: string | number | boolean) => {
     setTheme(prev => ({ ...prev, [key]: value }));
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error('يرجى اختيار ملف صورة صالح');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('حجم الصورة يجب أن يكون أقل من 5 ميجابايت');
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${provider.id}-header-${Date.now()}.${fileExt}`;
+      const filePath = `provider-headers/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('product-images')
+        .upload(filePath, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('product-images')
+        .getPublicUrl(filePath);
+
+      setTheme(prev => ({ 
+        ...prev, 
+        header_image_url: publicUrl,
+        header_style: 'image' 
+      }));
+      
+      toast.success('تم رفع صورة الخلفية بنجاح');
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      toast.error('حدث خطأ أثناء رفع الصورة');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const removeHeaderImage = () => {
+    setTheme(prev => ({ 
+      ...prev, 
+      header_image_url: '',
+      header_style: 'solid'
+    }));
+    toast.info('تم إزالة صورة الخلفية');
   };
 
   const applyPreset = (preset: typeof presetThemes[0]) => {
@@ -351,7 +416,7 @@ const StoreThemeCustomizer = ({ provider, onUpdate }: StoreThemeCustomizerProps)
               <Label className="font-arabic">نمط الهيدر</Label>
               <Select
                 value={theme.header_style}
-                onValueChange={(value: 'solid' | 'gradient' | 'transparent') => 
+                onValueChange={(value: 'solid' | 'gradient' | 'transparent' | 'image') => 
                   handleColorChange('header_style', value)
                 }
               >
@@ -362,10 +427,112 @@ const StoreThemeCustomizer = ({ provider, onUpdate }: StoreThemeCustomizerProps)
                   <SelectItem value="solid" className="font-arabic">لون موحد</SelectItem>
                   <SelectItem value="gradient" className="font-arabic">تدرج لوني</SelectItem>
                   <SelectItem value="transparent" className="font-arabic">شفاف</SelectItem>
+                  <SelectItem value="image" className="font-arabic">صورة خلفية</SelectItem>
                 </SelectContent>
               </Select>
             </div>
+          </div>
 
+          {/* Header Image Upload */}
+          {theme.header_style === 'image' && (
+            <div className="space-y-4 p-4 bg-muted/50 rounded-lg border">
+              <Label className="font-arabic font-medium flex items-center gap-2">
+                <Image className="h-4 w-4" />
+                صورة خلفية الهيدر
+              </Label>
+              
+              {theme.header_image_url ? (
+                <div className="space-y-4">
+                  <div className="relative rounded-lg overflow-hidden aspect-[3/1]">
+                    <img 
+                      src={theme.header_image_url} 
+                      alt="Header background" 
+                      className="w-full h-full object-cover"
+                    />
+                    <div 
+                      className="absolute inset-0"
+                      style={{ 
+                        backgroundColor: theme.primary_color,
+                        opacity: (theme.header_overlay_opacity || 50) / 100
+                      }}
+                    />
+                    {theme.header_blur && (
+                      <div className="absolute inset-0 backdrop-blur-sm" />
+                    )}
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="icon"
+                      className="absolute top-2 left-2 h-8 w-8"
+                      onClick={removeHeaderImage}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+
+                  {/* Overlay Controls */}
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div className="space-y-3">
+                      <Label className="font-arabic text-sm">
+                        شفافية التراكب: {theme.header_overlay_opacity || 50}%
+                      </Label>
+                      <Slider
+                        value={[theme.header_overlay_opacity || 50]}
+                        onValueChange={([value]) => handleColorChange('header_overlay_opacity', value)}
+                        max={100}
+                        min={0}
+                        step={5}
+                        className="w-full"
+                      />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <Label className="font-arabic text-sm">تأثير الضبابية</Label>
+                      <Switch
+                        checked={theme.header_blur || false}
+                        onCheckedChange={(checked) => handleColorChange('header_blur', checked)}
+                      />
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <div className="border-2 border-dashed border-muted-foreground/30 rounded-lg p-8 text-center">
+                    <Image className="h-12 w-12 text-muted-foreground/50 mx-auto mb-3" />
+                    <p className="text-sm text-muted-foreground font-arabic mb-3">
+                      ارفع صورة لخلفية الهيدر (حجم أقصى 5 ميجابايت)
+                    </p>
+                    <input
+                      type="file"
+                      id="header-image-upload"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      className="hidden"
+                    />
+                    <label htmlFor="header-image-upload">
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        asChild
+                        disabled={isUploading}
+                      >
+                        <span className="cursor-pointer font-arabic">
+                          {isUploading ? (
+                            <Loader2 className="h-4 w-4 ml-2 animate-spin" />
+                          ) : (
+                            <Upload className="h-4 w-4 ml-2" />
+                          )}
+                          {isUploading ? 'جاري الرفع...' : 'رفع صورة'}
+                        </span>
+                      </Button>
+                    </label>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* More Style Options */}
+          <div className="grid md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label className="font-arabic flex items-center gap-2">
                 <Square className="h-4 w-4" />
