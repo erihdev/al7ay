@@ -28,8 +28,9 @@ serve(async (req) => {
       throw new Error("Origin and destination are required");
     }
 
-    // Call Mapbox Directions API
-    const directionsUrl = `https://api.mapbox.com/directions/v5/mapbox/driving/${origin.lng},${origin.lat};${destination.lng},${destination.lat}?access_token=${mapboxToken}&geometries=geojson&overview=full`;
+    // Call Mapbox Directions API with traffic data
+    // Using driving-traffic profile for real-time traffic-aware routing
+    const directionsUrl = `https://api.mapbox.com/directions/v5/mapbox/driving-traffic/${origin.lng},${origin.lat};${destination.lng},${destination.lat}?access_token=${mapboxToken}&geometries=geojson&overview=full&annotations=duration,congestion,speed`;
 
     const response = await fetch(directionsUrl);
     const data = await response.json();
@@ -46,22 +47,60 @@ serve(async (req) => {
           distanceText: formatDistance(distance),
           durationText: formatDuration(duration * 60),
           geometry: null,
-          source: 'fallback'
+          source: 'fallback',
+          trafficAware: false,
+          congestionLevel: null
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
     const route = data.routes[0];
+    
+    // Analyze congestion data from annotations
+    let congestionLevel = 'unknown';
+    let congestionSummary = { low: 0, moderate: 0, heavy: 0, severe: 0 };
+    
+    if (route.legs && route.legs[0] && route.legs[0].annotation && route.legs[0].annotation.congestion) {
+      const congestionData = route.legs[0].annotation.congestion;
+      congestionData.forEach((level: string) => {
+        if (level === 'low' || level === 'unknown') congestionSummary.low++;
+        else if (level === 'moderate') congestionSummary.moderate++;
+        else if (level === 'heavy') congestionSummary.heavy++;
+        else if (level === 'severe') congestionSummary.severe++;
+      });
+      
+      const total = congestionData.length;
+      const severePercentage = (congestionSummary.severe / total) * 100;
+      const heavyPercentage = (congestionSummary.heavy / total) * 100;
+      const moderatePercentage = (congestionSummary.moderate / total) * 100;
+      
+      if (severePercentage > 20) congestionLevel = 'severe';
+      else if (heavyPercentage > 30) congestionLevel = 'heavy';
+      else if (moderatePercentage > 40) congestionLevel = 'moderate';
+      else congestionLevel = 'low';
+    }
+
+    // Calculate average speed from annotations if available
+    let averageSpeed = null;
+    if (route.legs && route.legs[0] && route.legs[0].annotation && route.legs[0].annotation.speed) {
+      const speeds = route.legs[0].annotation.speed;
+      averageSpeed = speeds.reduce((a: number, b: number) => a + b, 0) / speeds.length;
+      averageSpeed = Math.round(averageSpeed * 3.6); // Convert m/s to km/h
+    }
 
     return new Response(
       JSON.stringify({
         distance: route.distance, // meters
-        duration: route.duration, // seconds
+        duration: route.duration, // seconds (traffic-aware)
         distanceText: formatDistance(route.distance),
         durationText: formatDuration(route.duration),
         geometry: route.geometry,
-        source: 'mapbox'
+        source: 'mapbox',
+        trafficAware: true,
+        congestionLevel: congestionLevel,
+        congestionSummary: congestionSummary,
+        averageSpeed: averageSpeed
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
