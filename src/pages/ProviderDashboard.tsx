@@ -1,24 +1,16 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
-import { useQuery } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
-import { useProviderProfile, useProviderProducts, useProviderOrders } from '@/hooks/useProviderData';
-import { useAutoFixProviderRole } from '@/hooks/useAutoFixProviderRole';
 import { useProviderOrderNotifications } from '@/hooks/useProviderOrderNotifications';
 import ProviderProductsManager from '@/components/provider/ProviderProductsManager';
 import ProviderOrdersManager from '@/components/provider/ProviderOrdersManager';
 import ProviderSettingsManager from '@/components/provider/ProviderSettingsManager';
 import ProviderStats from '@/components/provider/ProviderStats';
 import { 
-  Store, 
   Package, 
   ShoppingBag, 
   TrendingUp, 
@@ -30,89 +22,169 @@ import {
   AlertCircle,
   Volume2,
   VolumeX,
-  BarChart3
+  BarChart3,
+  RefreshCw
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { AnimatedLogo } from '@/components/ui/AnimatedLogo';
 
+interface Provider {
+  id: string;
+  business_name: string;
+  logo_url: string | null;
+}
+
+interface ProviderOrder {
+  id: string;
+  status: string;
+  total_amount: number;
+  created_at: string;
+}
+
+interface ProviderProduct {
+  id: string;
+  is_available: boolean;
+  is_featured: boolean;
+}
+
 const ProviderDashboard = () => {
-  const { user, loading: authLoading, signOut } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('overview');
   const [soundEnabled, setSoundEnabled] = useState(true);
-  const [loadingTimeout, setLoadingTimeout] = useState(false);
-
-  // Check if user has service_provider role and auto-fix if needed
-  const { hasRole: hasProviderRole, hasProfile, isLoading: roleLoading, checkComplete } = useAutoFixProviderRole();
-
-  const { data: provider, isLoading: providerLoading, error: providerError } = useProviderProfile();
-  const { data: products } = useProviderProducts(provider?.id);
-  const { data: orders } = useProviderOrders(provider?.id);
+  
+  // Simplified state management
+  const [isLoading, setIsLoading] = useState(true);
+  const [provider, setProvider] = useState<Provider | null>(null);
+  const [products, setProducts] = useState<ProviderProduct[]>([]);
+  const [orders, setOrders] = useState<ProviderOrder[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
   // Enable real-time order notifications
   useProviderOrderNotifications(provider?.id, soundEnabled);
 
-  // Timeout to prevent infinite loading
+  // Single effect to handle all initialization
   useEffect(() => {
-    const timeout = setTimeout(() => {
-      setLoadingTimeout(true);
-    }, 8000); // 8 seconds max loading time
-
-    return () => clearTimeout(timeout);
-  }, []);
-
-  useEffect(() => {
-    // Only redirect after all checks are complete
-    if (!authLoading && checkComplete) {
-      if (!user) {
-        navigate('/provider-login', { replace: true });
-      } else if (!hasProviderRole && !hasProfile) {
-        // Only redirect if user has neither role nor profile
-        toast.error('ليس لديك صلاحية الوصول لهذه الصفحة');
+    let isMounted = true;
+    
+    const initializeDashboard = async () => {
+      try {
+        console.log('ProviderDashboard: Starting initialization...');
+        
+        // Step 1: Get current session directly from Supabase
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError) {
+          console.error('Session error:', sessionError);
+          throw new Error('فشل في التحقق من الجلسة');
+        }
+        
+        if (!session?.user) {
+          console.log('No session found, redirecting to login');
+          if (isMounted) {
+            navigate('/provider-login', { replace: true });
+          }
+          return;
+        }
+        
+        console.log('ProviderDashboard: User found:', session.user.id);
+        
+        // Step 2: Get provider profile
+        const { data: providerData, error: providerError } = await supabase
+          .from('service_providers')
+          .select('id, business_name, logo_url')
+          .eq('user_id', session.user.id)
+          .maybeSingle();
+        
+        if (providerError) {
+          console.error('Provider error:', providerError);
+          throw new Error('فشل في تحميل بيانات المتجر');
+        }
+        
+        if (!providerData) {
+          console.log('No provider profile found');
+          if (isMounted) {
+            setProvider(null);
+            setIsLoading(false);
+          }
+          return;
+        }
+        
+        console.log('ProviderDashboard: Provider found:', providerData.id);
+        
+        // Step 3: Load products and orders in parallel
+        const [productsResult, ordersResult] = await Promise.all([
+          supabase
+            .from('provider_products')
+            .select('id, is_available, is_featured')
+            .eq('provider_id', providerData.id),
+          supabase
+            .from('provider_orders')
+            .select('id, status, total_amount, created_at')
+            .eq('provider_id', providerData.id)
+            .order('created_at', { ascending: false })
+        ]);
+        
+        if (isMounted) {
+          setProvider(providerData);
+          setProducts(productsResult.data || []);
+          setOrders(ordersResult.data || []);
+          setIsLoading(false);
+          setError(null);
+          console.log('ProviderDashboard: Initialization complete');
+        }
+        
+      } catch (err: any) {
+        console.error('Dashboard initialization error:', err);
+        if (isMounted) {
+          setError(err.message || 'حدث خطأ غير متوقع');
+          setIsLoading(false);
+        }
+      }
+    };
+    
+    initializeDashboard();
+    
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log('Auth state changed:', event);
+      if (event === 'SIGNED_OUT') {
         navigate('/provider-login', { replace: true });
       }
-    }
-  }, [user, authLoading, checkComplete, hasProviderRole, hasProfile, navigate]);
+    });
+    
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
+  }, [navigate]);
 
   const handleLogout = async () => {
-    await signOut();
+    await supabase.auth.signOut();
     toast.success('تم تسجيل الخروج بنجاح');
-    navigate('/provider-login');
+    navigate('/provider-login', { replace: true });
   };
 
   const handleRetry = () => {
+    setIsLoading(true);
+    setError(null);
     window.location.reload();
   };
 
-  // Show loading state with visible content
-  if ((authLoading || roleLoading || providerLoading) && !loadingTimeout) {
+  // Loading state
+  if (isLoading) {
     return (
-      <div className="min-h-screen bg-background p-4" dir="rtl">
-        <div className="container mx-auto max-w-6xl space-y-6">
-          {/* Header skeleton */}
-          <div className="h-16 rounded-lg bg-muted animate-pulse flex items-center justify-center">
-            <span className="text-muted-foreground">جاري تحميل لوحة التحكم...</span>
-          </div>
-          {/* Cards skeleton */}
-          <div className="grid md:grid-cols-4 gap-4">
-            {[1, 2, 3, 4].map(i => (
-              <div key={i} className="h-32 rounded-lg bg-muted animate-pulse" />
-            ))}
-          </div>
-          {/* Main content skeleton */}
-          <div className="h-96 rounded-lg bg-muted animate-pulse flex items-center justify-center">
-            <div className="text-center">
-              <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-              <span className="text-muted-foreground text-sm">جاري التحميل...</span>
-            </div>
-          </div>
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4" dir="rtl">
+        <div className="text-center space-y-4">
+          <AnimatedLogo size="lg" showText={false} />
+          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="text-muted-foreground font-arabic">جاري تحميل لوحة التحكم...</p>
         </div>
       </div>
     );
   }
 
-  // Show error state if loading timed out or there's an error
-  if (loadingTimeout && !provider && !providerError) {
+  // Error state
+  if (error) {
     return (
       <div className="min-h-screen bg-background font-arabic flex flex-col" dir="rtl">
         <header className="sticky top-0 z-50 bg-background/95 backdrop-blur border-b">
@@ -131,13 +203,12 @@ const ProviderDashboard = () => {
         <main className="flex-1 flex items-center justify-center p-4">
           <Card className="max-w-md w-full">
             <CardContent className="p-8 text-center">
-              <AlertCircle className="h-16 w-16 text-yellow-500 mx-auto mb-4" />
-              <h2 className="text-xl font-bold mb-2">تأخر في التحميل</h2>
-              <p className="text-muted-foreground mb-4">
-                يبدو أن هناك تأخر في تحميل البيانات. يرجى المحاولة مرة أخرى.
-              </p>
+              <AlertCircle className="h-16 w-16 text-destructive mx-auto mb-4" />
+              <h2 className="text-xl font-bold mb-2">حدث خطأ</h2>
+              <p className="text-muted-foreground mb-4">{error}</p>
               <div className="flex gap-2 justify-center">
                 <Button onClick={handleRetry} className="font-arabic">
+                  <RefreshCw className="h-4 w-4 ml-2" />
                   إعادة المحاولة
                 </Button>
                 <Button variant="outline" onClick={handleLogout} className="font-arabic">
@@ -151,7 +222,7 @@ const ProviderDashboard = () => {
     );
   }
 
-  // If no provider profile exists, show setup message
+  // No provider profile state
   if (!provider) {
     return (
       <div className="min-h-screen bg-background font-arabic flex flex-col" dir="rtl">
@@ -186,13 +257,13 @@ const ProviderDashboard = () => {
     );
   }
 
-  const todayOrders = orders?.filter(o => {
+  const todayOrders = orders.filter(o => {
     const today = new Date().toDateString();
     return new Date(o.created_at).toDateString() === today;
-  }) || [];
+  });
 
-  const pendingOrders = orders?.filter(o => o.status === 'pending').length || 0;
-  const preparingOrders = orders?.filter(o => o.status === 'preparing').length || 0;
+  const pendingOrders = orders.filter(o => o.status === 'pending').length;
+  const preparingOrders = orders.filter(o => o.status === 'preparing').length;
   const completedToday = todayOrders.filter(o => o.status === 'completed').length;
   const todayRevenue = todayOrders
     .filter(o => o.status === 'completed')
@@ -341,18 +412,18 @@ const ProviderDashboard = () => {
                   <div className="space-y-3">
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">إجمالي المنتجات</span>
-                      <span className="font-bold">{products?.length || 0}</span>
+                      <span className="font-bold">{products.length}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">منتجات متاحة</span>
                       <span className="font-bold text-green-600">
-                        {products?.filter(p => p.is_available).length || 0}
+                        {products.filter(p => p.is_available).length}
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">منتجات مميزة</span>
                       <span className="font-bold text-yellow-600">
-                        {products?.filter(p => p.is_featured).length || 0}
+                        {products.filter(p => p.is_featured).length}
                       </span>
                     </div>
                   </div>
@@ -375,7 +446,7 @@ const ProviderDashboard = () => {
                   <div className="space-y-3">
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">إجمالي الطلبات</span>
-                      <span className="font-bold">{orders?.length || 0}</span>
+                      <span className="font-bold">{orders.length}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">طلبات جديدة</span>
@@ -401,8 +472,8 @@ const ProviderDashboard = () => {
           {/* Stats Tab */}
           <TabsContent value="stats">
             <ProviderStats 
-              orders={orders || []} 
-              products={products || []} 
+              orders={orders as any} 
+              products={products as any} 
             />
           </TabsContent>
 
@@ -418,7 +489,7 @@ const ProviderDashboard = () => {
 
           {/* Settings Tab */}
           <TabsContent value="settings">
-            <ProviderSettingsManager provider={provider} />
+            <ProviderSettingsManager provider={provider as any} />
           </TabsContent>
         </Tabs>
       </main>
