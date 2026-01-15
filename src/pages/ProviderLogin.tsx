@@ -106,25 +106,24 @@ const ProviderLogin = () => {
         throw new Error('فشل تسجيل الدخول');
       }
 
-      // Step 2: Navigate with a small delay to ensure session is set
+      // Step 2: Force navigation using window.location for better mobile support
       toast.success('تم تسجيل الدخول بنجاح');
-      setTimeout(() => {
-        navigate('/provider-dashboard');
-      }, 100);
+      
+      // Use window.location for more reliable navigation on mobile
+      window.location.href = '/provider-dashboard';
+      return;
       
     } catch (error: any) {
       console.error('Login error:', error);
       
       // Handle aborted requests - check if actually logged in
-      if (error.name === 'AbortError' || error.message?.includes('aborted') || error.message?.includes('The operation was aborted')) {
+      if (error.name === 'AbortError' || error.message?.includes('aborted') || error.message?.includes('The operation was aborted') || error.message?.includes('Failed to fetch')) {
         // Wait a moment then check session
-        await new Promise(resolve => setTimeout(resolve, 500));
+        await new Promise(resolve => setTimeout(resolve, 800));
         const { data: session } = await supabase.auth.getSession();
         if (session?.session) {
           toast.success('تم تسجيل الدخول بنجاح');
-          setTimeout(() => {
-            navigate('/provider-dashboard');
-          }, 100);
+          window.location.href = '/provider-dashboard';
           return;
         }
         toast.error('انتهت مهلة الاتصال. يرجى المحاولة مرة أخرى');
