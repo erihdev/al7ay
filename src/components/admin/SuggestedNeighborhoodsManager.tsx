@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -25,8 +25,12 @@ import {
   User,
   Building,
   Mail,
-  ExternalLink
+  ExternalLink,
+  Map
 } from 'lucide-react';
+import mapboxgl from 'mapbox-gl';
+import 'mapbox-gl/dist/mapbox-gl.css';
+import { useMapboxToken } from '@/hooks/useMapboxToken';
 
 interface SuggestedNeighborhood {
   id: string;
@@ -41,6 +45,144 @@ interface SuggestedNeighborhood {
   status: string;
   admin_notes: string | null;
   created_at: string;
+}
+
+// Map component for displaying suggestions
+function SuggestionsMap({ 
+  suggestions, 
+  onSelectSuggestion 
+}: { 
+  suggestions: SuggestedNeighborhood[];
+  onSelectSuggestion: (s: SuggestedNeighborhood) => void;
+}) {
+  const mapContainer = useRef<HTMLDivElement>(null);
+  const map = useRef<mapboxgl.Map | null>(null);
+  const markersRef = useRef<mapboxgl.Marker[]>([]);
+  const { data: mapboxToken, isLoading: tokenLoading } = useMapboxToken();
+  const [showMap, setShowMap] = useState(false);
+
+  useEffect(() => {
+    if (!showMap || !mapboxToken || !mapContainer.current || map.current) return;
+
+    mapboxgl.accessToken = mapboxToken;
+    
+    const suggestionsWithCoords = suggestions.filter(s => s.lat && s.lng);
+    const center: [number, number] = suggestionsWithCoords.length > 0 
+      ? [suggestionsWithCoords[0].lng!, suggestionsWithCoords[0].lat!]
+      : [46.6753, 24.7136]; // Riyadh default
+
+    map.current = new mapboxgl.Map({
+      container: mapContainer.current,
+      style: 'mapbox://styles/mapbox/streets-v12',
+      center,
+      zoom: 10,
+    });
+
+    map.current.addControl(new mapboxgl.NavigationControl(), 'top-left');
+
+    return () => {
+      markersRef.current.forEach(marker => marker.remove());
+      markersRef.current = [];
+      map.current?.remove();
+      map.current = null;
+    };
+  }, [showMap, mapboxToken]);
+
+  useEffect(() => {
+    if (!map.current || !showMap) return;
+
+    // Clear existing markers
+    markersRef.current.forEach(marker => marker.remove());
+    markersRef.current = [];
+
+    // Add markers for each suggestion with coordinates
+    suggestions.forEach((suggestion) => {
+      if (!suggestion.lat || !suggestion.lng) return;
+
+      const el = document.createElement('div');
+      el.className = 'suggestion-marker';
+      el.innerHTML = `
+        <div style="
+          background: linear-gradient(135deg, #7C3AED, #5B21B6);
+          color: white;
+          padding: 8px 12px;
+          border-radius: 20px;
+          font-size: 12px;
+          font-weight: bold;
+          box-shadow: 0 4px 12px rgba(124, 58, 237, 0.4);
+          cursor: pointer;
+          white-space: nowrap;
+          display: flex;
+          align-items: center;
+          gap: 4px;
+        ">
+          <span style="font-size: 14px;">📍</span>
+          ${suggestion.name}
+        </div>
+      `;
+
+      el.addEventListener('click', () => {
+        onSelectSuggestion(suggestion);
+      });
+
+      const marker = new mapboxgl.Marker({ element: el })
+        .setLngLat([suggestion.lng, suggestion.lat])
+        .addTo(map.current!);
+
+      markersRef.current.push(marker);
+    });
+
+    // Fit bounds to show all markers
+    const suggestionsWithCoords = suggestions.filter(s => s.lat && s.lng);
+    if (suggestionsWithCoords.length > 1) {
+      const bounds = new mapboxgl.LngLatBounds();
+      suggestionsWithCoords.forEach(s => {
+        bounds.extend([s.lng!, s.lat!]);
+      });
+      map.current.fitBounds(bounds, { padding: 50 });
+    }
+  }, [suggestions, showMap, onSelectSuggestion]);
+
+  const suggestionsWithCoords = suggestions.filter(s => s.lat && s.lng);
+
+  if (suggestionsWithCoords.length === 0) {
+    return null;
+  }
+
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Map className="h-5 w-5" />
+            خريطة الأحياء المقترحة
+          </CardTitle>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowMap(!showMap)}
+          >
+            {showMap ? 'إخفاء الخريطة' : 'عرض الخريطة'}
+          </Button>
+        </div>
+      </CardHeader>
+      {showMap && (
+        <CardContent>
+          {tokenLoading ? (
+            <Skeleton className="h-80 w-full rounded-lg" />
+          ) : (
+            <div 
+              ref={mapContainer} 
+              className="h-80 w-full rounded-lg overflow-hidden"
+            />
+          )}
+          <p className="text-xs text-muted-foreground mt-2 text-center">
+            اضغط على أي موقع لمراجعة الاقتراح
+          </p>
+        </CardContent>
+      )}
+    </Card>
+  );
 }
 
 export function SuggestedNeighborhoodsManager() {
@@ -92,11 +234,27 @@ export function SuggestedNeighborhoodsManager() {
         .eq('id', suggestion.id);
 
       if (updateError) throw updateError;
+
+      // Send email notification to user
+      try {
+        await supabase.functions.invoke('send-application-email', {
+          body: {
+            type: 'neighborhood_approved',
+            email: suggestion.suggested_by_email,
+            fullName: suggestion.suggested_by_name,
+            neighborhoodName: suggestion.name,
+            city: suggestion.city,
+            notes: adminNotes,
+          },
+        });
+      } catch (emailError) {
+        console.error('Error sending approval email:', emailError);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['suggested-neighborhoods'] });
       queryClient.invalidateQueries({ queryKey: ['neighborhoods'] });
-      toast.success('تم قبول الحي وإضافته للقائمة');
+      toast.success('تم قبول الحي وإضافته للقائمة وإرسال إشعار للمستخدم');
       setShowApproveDialog(false);
       setSelectedSuggestion(null);
       setAdminNotes('');
@@ -207,6 +365,12 @@ export function SuggestedNeighborhoodsManager() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Interactive Map */}
+      <SuggestionsMap suggestions={pendingSuggestions} onSelectSuggestion={(s) => {
+        setSelectedSuggestion(s);
+        setShowApproveDialog(true);
+      }} />
 
       {/* Pending Suggestions */}
       {pendingSuggestions.length > 0 && (
