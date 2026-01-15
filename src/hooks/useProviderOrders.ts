@@ -35,6 +35,8 @@ export interface ProviderOrder {
     logo_url: string | null;
     phone: string | null;
     neighborhood_id: string | null;
+    store_lat: number | null;
+    store_lng: number | null;
     active_neighborhoods?: {
       lat: number;
       lng: number;
@@ -62,6 +64,8 @@ export function useMyProviderOrders() {
             logo_url,
             phone,
             neighborhood_id,
+            store_lat,
+            store_lng,
             active_neighborhoods (
               lat,
               lng
@@ -165,6 +169,8 @@ export function useProviderOrderRealtime(orderId: string | undefined, onUpdate?:
             logo_url,
             phone,
             neighborhood_id,
+            store_lat,
+            store_lng,
             active_neighborhoods (
               lat,
               lng

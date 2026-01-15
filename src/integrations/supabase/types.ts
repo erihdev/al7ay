@@ -1345,6 +1345,8 @@ export type Database = {
           payout_frequency: string | null
           pending_payout: number | null
           phone: string | null
+          store_lat: number | null
+          store_lng: number | null
           store_settings: Json | null
           store_theme: Json | null
           subscription_status: string | null
@@ -1380,6 +1382,8 @@ export type Database = {
           payout_frequency?: string | null
           pending_payout?: number | null
           phone?: string | null
+          store_lat?: number | null
+          store_lng?: number | null
           store_settings?: Json | null
           store_theme?: Json | null
           subscription_status?: string | null
@@ -1415,6 +1419,8 @@ export type Database = {
           payout_frequency?: string | null
           pending_payout?: number | null
           phone?: string | null
+          store_lat?: number | null
+          store_lng?: number | null
           store_settings?: Json | null
           store_theme?: Json | null
           subscription_status?: string | null
