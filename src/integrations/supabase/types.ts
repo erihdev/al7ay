@@ -1197,6 +1197,9 @@ export type Database = {
           commission_rate: number | null
           created_at: string
           description: string | null
+          edfapay_credentials_verified: boolean | null
+          edfapay_merchant_id_encrypted: string | null
+          edfapay_verified_at: string | null
           email: string
           freelance_certificate_url: string | null
           gateway_account_id: string | null
@@ -1227,6 +1230,9 @@ export type Database = {
           commission_rate?: number | null
           created_at?: string
           description?: string | null
+          edfapay_credentials_verified?: boolean | null
+          edfapay_merchant_id_encrypted?: string | null
+          edfapay_verified_at?: string | null
           email: string
           freelance_certificate_url?: string | null
           gateway_account_id?: string | null
@@ -1257,6 +1263,9 @@ export type Database = {
           commission_rate?: number | null
           created_at?: string
           description?: string | null
+          edfapay_credentials_verified?: boolean | null
+          edfapay_merchant_id_encrypted?: string | null
+          edfapay_verified_at?: string | null
           email?: string
           freelance_certificate_url?: string | null
           gateway_account_id?: string | null

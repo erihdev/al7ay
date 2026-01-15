@@ -499,29 +499,43 @@ const ProviderSettingsManager = ({ provider, onUpdate }: ProviderSettingsManager
                       setTestResult(null);
                       
                       try {
-                        // Simulate API test - in production, this would call an edge function
-                        // that actually verifies with EdfaPay API
-                        await new Promise(resolve => setTimeout(resolve, 2000));
+                        const response = await fetch(
+                          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/verify-edfapay-credentials`,
+                          {
+                            method: 'POST',
+                            headers: {
+                              'Content-Type': 'application/json',
+                              'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`
+                            },
+                            body: JSON.stringify({
+                              providerId: provider.id,
+                              merchantId: paymentData.merchant_id,
+                              secretKey: paymentData.secret_key,
+                              providerEmail: provider.email,
+                              providerName: provider.business_name
+                            })
+                          }
+                        );
                         
-                        // For demo, we'll simulate a successful response if the format looks valid
-                        const isValidFormat = paymentData.merchant_id.length >= 5 && paymentData.secret_key.length >= 10;
+                        const result = await response.json();
                         
-                        if (isValidFormat) {
+                        if (result.success) {
                           setTestResult({
                             success: true,
-                            message: 'تم التحقق من بيانات الربط بنجاح!',
-                            merchantName: provider.business_name,
+                            message: result.message || 'تم التحقق من بيانات الربط وحفظها بنجاح!',
+                            merchantName: result.merchantName || provider.business_name,
                             status: 'active'
                           });
-                          toast.success('تم التحقق من الربط بنجاح!');
+                          toast.success('تم التحقق والحفظ بنجاح! تم إرسال إشعار لبريدك الإلكتروني');
                         } else {
                           setTestResult({
                             success: false,
-                            message: 'بيانات الربط غير صحيحة. تأكد من Merchant ID و Secret Key'
+                            message: result.message || 'بيانات الربط غير صحيحة. تأكد من Merchant ID و Secret Key'
                           });
                           toast.error('فشل التحقق من بيانات الربط');
                         }
                       } catch (error) {
+                        console.error('Error verifying EdfaPay:', error);
                         setTestResult({
                           success: false,
                           message: 'حدث خطأ أثناء الاتصال بـ EdfaPay'
@@ -536,12 +550,12 @@ const ProviderSettingsManager = ({ provider, onUpdate }: ProviderSettingsManager
                     {isTesting ? (
                       <>
                         <Loader2 className="h-4 w-4 animate-spin ml-2" />
-                        جاري اختبار الاتصال...
+                        جاري اختبار الاتصال والتحقق...
                       </>
                     ) : (
                       <>
                         <Zap className="h-4 w-4 ml-2" />
-                        اختبار الربط مع EdfaPay
+                        اختبار وحفظ بيانات EdfaPay
                       </>
                     )}
                   </Button>
