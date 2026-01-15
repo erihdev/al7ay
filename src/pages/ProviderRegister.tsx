@@ -154,16 +154,121 @@ const ProviderRegister = () => {
         
         console.log('Fetched plans:', data, error);
         
-        if (!error && data) {
+        if (error) {
+          console.error('Error fetching plans:', error);
+          toast.error('حدث خطأ في تحميل الخطط');
+          // Set default plans if fetch fails
+          setPlans([
+            {
+              id: 'default-trial',
+              name_ar: 'تجربة مجانية',
+              name_en: 'Free Trial',
+              description_ar: 'جرّب المنصة مجاناً لمدة 7 أيام',
+              duration_days: 7,
+              price: 0,
+              is_trial: true,
+              features: ['إدارة المنتجات', 'استقبال الطلبات', 'لوحة إحصائيات']
+            },
+            {
+              id: 'default-monthly',
+              name_ar: 'اشتراك شهري',
+              name_en: 'Monthly',
+              description_ar: 'اشتراك شهري مع جميع المميزات',
+              duration_days: 30,
+              price: 99,
+              is_trial: false,
+              features: ['جميع المميزات', 'إدارة غير محدودة', 'دعم فني']
+            },
+            {
+              id: 'default-yearly',
+              name_ar: 'اشتراك سنوي',
+              name_en: 'Yearly',
+              description_ar: 'اشتراك سنوي بخصم 20%',
+              duration_days: 365,
+              price: 950,
+              is_trial: false,
+              features: ['جميع المميزات', 'خصم 20%', 'أولوية في الدعم']
+            }
+          ]);
+        } else if (data && data.length > 0) {
           setPlans(data.map(plan => ({
             ...plan,
             features: Array.isArray(plan.features) 
               ? (plan.features as unknown as string[]) 
               : []
           })));
+        } else {
+          // No plans in database, use defaults
+          console.log('No plans found in database, using defaults');
+          setPlans([
+            {
+              id: 'default-trial',
+              name_ar: 'تجربة مجانية',
+              name_en: 'Free Trial',
+              description_ar: 'جرّب المنصة مجاناً لمدة 7 أيام',
+              duration_days: 7,
+              price: 0,
+              is_trial: true,
+              features: ['إدارة المنتجات', 'استقبال الطلبات', 'لوحة إحصائيات']
+            },
+            {
+              id: 'default-monthly',
+              name_ar: 'اشتراك شهري',
+              name_en: 'Monthly',
+              description_ar: 'اشتراك شهري مع جميع المميزات',
+              duration_days: 30,
+              price: 99,
+              is_trial: false,
+              features: ['جميع المميزات', 'إدارة غير محدودة', 'دعم فني']
+            },
+            {
+              id: 'default-yearly',
+              name_ar: 'اشتراك سنوي',
+              name_en: 'Yearly',
+              description_ar: 'اشتراك سنوي بخصم 20%',
+              duration_days: 365,
+              price: 950,
+              is_trial: false,
+              features: ['جميع المميزات', 'خصم 20%', 'أولوية في الدعم']
+            }
+          ]);
         }
       } catch (err) {
         console.error('Error fetching plans:', err);
+        toast.error('حدث خطأ في تحميل الخطط');
+        // Set default plans on error
+        setPlans([
+          {
+            id: 'default-trial',
+            name_ar: 'تجربة مجانية',
+            name_en: 'Free Trial',
+            description_ar: 'جرّب المنصة مجاناً لمدة 7 أيام',
+            duration_days: 7,
+            price: 0,
+            is_trial: true,
+            features: ['إدارة المنتجات', 'استقبال الطلبات', 'لوحة إحصائيات']
+          },
+          {
+            id: 'default-monthly',
+            name_ar: 'اشتراك شهري',
+            name_en: 'Monthly',
+            description_ar: 'اشتراك شهري مع جميع المميزات',
+            duration_days: 30,
+            price: 99,
+            is_trial: false,
+            features: ['جميع المميزات', 'إدارة غير محدودة', 'دعم فني']
+          },
+          {
+            id: 'default-yearly',
+            name_ar: 'اشتراك سنوي',
+            name_en: 'Yearly',
+            description_ar: 'اشتراك سنوي بخصم 20%',
+            duration_days: 365,
+            price: 950,
+            is_trial: false,
+            features: ['جميع المميزات', 'خصم 20%', 'أولوية في الدعم']
+          }
+        ]);
       } finally {
         setIsLoadingPlans(false);
       }
