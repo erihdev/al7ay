@@ -32,7 +32,8 @@ import {
   FileText,
   LogOut,
   Users,
-  Rocket
+  Rocket,
+  Shield
 } from 'lucide-react';
 import { CouponManager } from '@/components/admin/CouponManager';
 import { SalesReports } from '@/components/admin/SalesReports';
@@ -53,6 +54,7 @@ import { ProviderCommissionsManager } from '@/components/admin/ProviderCommissio
 import { ProviderPayoutsManager } from '@/components/admin/ProviderPayoutsManager';
 import { EdfaPayVerificationManager } from '@/components/admin/EdfaPayVerificationManager';
 import { EdfaPayReports } from '@/components/admin/EdfaPayReports';
+import { LoginAttemptsManager } from '@/components/admin/LoginAttemptsManager';
 import { InteractiveBackground } from '@/components/ui/InteractiveBackground';
 import { useUpdateDeliveryLocation } from '@/hooks/useOrderTracking';
 import { useOrderNotifications } from '@/hooks/useOrderNotifications';
@@ -380,11 +382,20 @@ const Admin = () => {
               <Rocket className="h-4 w-4 ml-2" />
               الإصدارات
             </TabsTrigger>
+            <TabsTrigger value="login-attempts" className="font-arabic">
+              <Shield className="h-4 w-4 ml-2" />
+              سجل الدخول
+            </TabsTrigger>
             <TabsTrigger value="settings" className="font-arabic">
               <Settings className="h-4 w-4 ml-2" />
               الإعدادات
             </TabsTrigger>
           </TabsList>
+
+          {/* Login Attempts Tab */}
+          <TabsContent value="login-attempts">
+            <LoginAttemptsManager />
+          </TabsContent>
 
           {/* Orders Tab */}
           <TabsContent value="orders" className="space-y-4">

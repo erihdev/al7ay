@@ -36,6 +36,20 @@ const ProviderLogin = () => {
     return () => subscription.unsubscribe();
   }, [navigate]);
 
+  const logLoginAttempt = async (success: boolean, errorMessage?: string) => {
+    try {
+      await supabase.from('login_attempts').insert({
+        email: email.trim(),
+        attempt_type: success ? 'success' : 'failed_login',
+        success,
+        error_message: errorMessage,
+        user_agent: navigator.userAgent,
+      });
+    } catch (error) {
+      console.error('Error logging attempt:', error);
+    }
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -53,6 +67,7 @@ const ProviderLogin = () => {
       });
 
       if (error) {
+        await logLoginAttempt(false, error.message);
         setIsLoading(false);
         if (error.message?.includes('Invalid login credentials')) {
           toast.error('البريد الإلكتروني أو كلمة المرور غير صحيحة');
@@ -64,6 +79,7 @@ const ProviderLogin = () => {
 
       // Login successful - redirect to dashboard
       // The dashboard will handle provider verification
+      await logLoginAttempt(true);
       toast.success('تم تسجيل الدخول بنجاح');
       navigate('/provider-dashboard', { replace: true });
     } catch (err) {
