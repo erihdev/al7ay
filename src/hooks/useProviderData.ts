@@ -8,7 +8,10 @@ export interface StoreTheme {
   accent_color: string;
   background_color: string;
   text_color: string;
-  header_style: 'solid' | 'gradient' | 'transparent';
+  header_style: 'solid' | 'gradient' | 'transparent' | 'image';
+  header_image_url?: string;
+  header_overlay_opacity?: number;
+  header_blur?: boolean;
   font_family: string;
   border_radius: 'none' | 'small' | 'medium' | 'large' | 'full';
   button_style: 'square' | 'rounded' | 'pill';
