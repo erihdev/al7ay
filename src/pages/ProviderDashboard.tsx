@@ -59,22 +59,13 @@ const ProviderDashboard = () => {
 
   useProviderOrderNotifications(provider?.id, soundEnabled);
 
-  // Simple and direct data loading
-  const loadData = async () => {
+  // Load provider data
+  const loadProviderData = async (userId: string) => {
     try {
-      // Get current session
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session?.user) {
-        navigate('/provider-login', { replace: true });
-        return;
-      }
-
-      // Get provider
       const { data: providerData, error: providerError } = await supabase
         .from('service_providers')
         .select('id, business_name, logo_url')
-        .eq('user_id', session.user.id)
+        .eq('user_id', userId)
         .maybeSingle();
 
       if (providerError) {
@@ -89,7 +80,6 @@ const ProviderDashboard = () => {
         return;
       }
 
-      // Get products and orders
       const [productsRes, ordersRes] = await Promise.all([
         supabase.from('provider_products').select('id, is_available, is_featured').eq('provider_id', providerData.id),
         supabase.from('provider_orders').select('id, status, total_amount, created_at').eq('provider_id', providerData.id).order('created_at', { ascending: false })
@@ -107,17 +97,41 @@ const ProviderDashboard = () => {
   };
 
   useEffect(() => {
-    // Load data on mount
-    loadData();
-
-    // Listen for sign out
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+    let mounted = true;
+    let loaded = false;
+    
+    // IMPORTANT: Set up auth listener FIRST, before getSession
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!mounted) return;
+      
       if (event === 'SIGNED_OUT') {
         navigate('/provider-login', { replace: true });
+        return;
+      }
+      
+      // Load data when we get a valid session
+      if (session?.user && !loaded) {
+        loaded = true;
+        loadProviderData(session.user.id);
       }
     });
 
-    return () => subscription.unsubscribe();
+    // THEN check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!mounted) return;
+      
+      if (!session?.user) {
+        navigate('/provider-login', { replace: true });
+      } else if (!loaded) {
+        loaded = true;
+        loadProviderData(session.user.id);
+      }
+    });
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, [navigate]);
 
   const loadDashboard = async () => {
