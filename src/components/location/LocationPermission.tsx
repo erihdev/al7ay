@@ -6,7 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 
 export function LocationPermission() {
   const { locationPermission, requestLocation, storeName } = useLocation();
-  const [showInstructions, setShowInstructions] = useState(false);
+  const [showInstructions, setShowInstructions] = useState(true);
   const [isRetrying, setIsRetrying] = useState(false);
 
   const handleRetry = async () => {
