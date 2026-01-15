@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
+import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Header } from '@/components/layout/Header';
 import { BottomNav } from '@/components/layout/BottomNav';
@@ -78,6 +79,7 @@ function calculateDistance(
 }
 
 const Index = () => {
+  const { user, loading } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCity, setSelectedCity] = useState<string>('all');
   const [selectedNeighborhood, setSelectedNeighborhood] = useState<string>('all');
@@ -85,6 +87,11 @@ const Index = () => {
   
   // Enable order status notifications for logged-in customers
   useOrderStatusNotifications();
+
+  // Redirect to profile page for login/register if not authenticated
+  if (!loading && !user) {
+    return <Navigate to="/profile" replace />;
+  }
 
   // Fetch all active service providers with their neighborhoods
   const { data: providers, isLoading } = useQuery({
