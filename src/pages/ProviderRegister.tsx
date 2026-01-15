@@ -415,46 +415,109 @@ const ProviderRegister = () => {
                   <motion.div
                     key={plan.id}
                     initial={{ opacity: 0, y: 30, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    animate={{ 
+                      opacity: 1, 
+                      y: 0, 
+                      scale: 1,
+                      ...((!plan.is_trial && index === 1) && {
+                        boxShadow: [
+                          "0 0 0 0 hsl(var(--primary) / 0)",
+                          "0 0 0 8px hsl(var(--primary) / 0.15)",
+                          "0 0 0 0 hsl(var(--primary) / 0)"
+                        ]
+                      })
+                    }}
                     transition={{ 
                       delay: index * 0.15, 
                       duration: 0.5,
                       type: "spring",
-                      stiffness: 100
+                      stiffness: 100,
+                      boxShadow: {
+                        repeat: Infinity,
+                        duration: 2,
+                        ease: "easeInOut"
+                      }
                     }}
-                >
+                    whileHover={{ 
+                      scale: 1.05, 
+                      y: -8,
+                      transition: { duration: 0.3, type: "spring", stiffness: 300 }
+                    }}
+                    whileTap={{ scale: 0.98 }}
+                    className="relative"
+                  >
+                    {/* Pulse ring for popular plan */}
+                    {!plan.is_trial && index === 1 && (
+                      <motion.div
+                        className="absolute -inset-1 rounded-xl bg-primary/20 -z-10"
+                        animate={{
+                          scale: [1, 1.02, 1],
+                          opacity: [0.5, 0.8, 0.5]
+                        }}
+                        transition={{
+                          duration: 2,
+                          repeat: Infinity,
+                          ease: "easeInOut"
+                        }}
+                      />
+                    )}
+                    
                   <Card 
-                    className={`cursor-pointer transition-all hover:shadow-xl hover:scale-105 h-full ${
-                      plan.is_trial ? 'border-green-500 ring-2 ring-green-500/20 relative overflow-hidden' : 
-                      index === 1 ? 'border-primary ring-2 ring-primary/20 relative overflow-hidden' : ''
+                    className={`cursor-pointer transition-all duration-300 h-full ${
+                      plan.is_trial ? 'border-green-500 ring-2 ring-green-500/20 relative overflow-hidden hover:ring-green-500/40 hover:shadow-green-500/20 hover:shadow-xl' : 
+                      index === 1 ? 'border-primary ring-2 ring-primary/20 relative overflow-hidden hover:ring-primary/40 hover:shadow-primary/20 hover:shadow-xl' : 
+                      'hover:border-primary/50 hover:shadow-lg'
                     }`}
                     onClick={() => handleSelectPlan(plan)}
                   >
                     {plan.is_trial && (
-                      <div className="absolute top-0 left-0 right-0 bg-gradient-to-r from-green-500 to-emerald-500 text-white text-xs font-bold py-1.5 text-center">
+                      <motion.div 
+                        className="absolute top-0 left-0 right-0 bg-gradient-to-r from-green-500 to-emerald-500 text-white text-xs font-bold py-1.5 text-center"
+                        animate={{ backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"] }}
+                        transition={{ duration: 3, repeat: Infinity }}
+                        style={{ backgroundSize: "200% 200%" }}
+                      >
                         ✨ ابدأ مجاناً
-                      </div>
+                      </motion.div>
                     )}
                     {!plan.is_trial && index === 1 && (
-                      <div className="absolute top-0 left-0 right-0 bg-gradient-to-r from-primary to-primary/80 text-primary-foreground text-xs font-bold py-1.5 text-center">
+                      <motion.div 
+                        className="absolute top-0 left-0 right-0 bg-gradient-to-r from-primary via-primary/80 to-primary text-primary-foreground text-xs font-bold py-1.5 text-center"
+                        animate={{ backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"] }}
+                        transition={{ duration: 3, repeat: Infinity }}
+                        style={{ backgroundSize: "200% 200%" }}
+                      >
                         🔥 الأكثر شعبية
-                      </div>
+                      </motion.div>
                     )}
                     <CardContent className={`p-6 ${(plan.is_trial || index === 1) ? 'pt-10' : ''}`}>
-                      <div className="flex items-center gap-2 mb-2">
+                      <motion.div 
+                        className="flex items-center gap-2 mb-2"
+                        whileHover={{ x: 3 }}
+                        transition={{ type: "spring", stiffness: 300 }}
+                      >
                         {plan.is_trial ? (
-                          <Gift className="h-6 w-6 text-green-500" />
+                          <motion.div
+                            animate={{ rotate: [0, 10, -10, 0] }}
+                            transition={{ duration: 2, repeat: Infinity }}
+                          >
+                            <Gift className="h-6 w-6 text-green-500" />
+                          </motion.div>
                         ) : (
                           <CreditCard className="h-6 w-6 text-primary" />
                         )}
                         <h3 className="text-xl font-bold">{plan.name_ar}</h3>
-                      </div>
+                      </motion.div>
                       
                       <p className="text-sm text-muted-foreground mb-4 min-h-[40px]">
                         {plan.description_ar}
                       </p>
 
-                      <div className="flex items-baseline gap-1 mb-6">
+                      <motion.div 
+                        className="flex items-baseline gap-1 mb-6"
+                        whileHover={{ scale: 1.05 }}
+                        transition={{ type: "spring", stiffness: 300 }}
+                      >
                         <span className="text-4xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
                           {plan.price === 0 ? 'مجاني' : plan.price}
                         </span>
@@ -464,7 +527,7 @@ const ProviderRegister = () => {
                             <span className="text-muted-foreground text-sm">/ {plan.duration_days === 30 ? 'شهر' : plan.duration_days === 365 ? 'سنة' : `${plan.duration_days} يوم`}</span>
                           </>
                         )}
-                      </div>
+                      </motion.div>
 
                       <ul className="space-y-3 mb-6">
                         {plan.features.map((feature, i) => (
@@ -474,23 +537,37 @@ const ProviderRegister = () => {
                             initial={{ opacity: 0, x: -10 }}
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ delay: 0.2 + i * 0.05 }}
+                            whileHover={{ x: 5, transition: { duration: 0.2 } }}
                           >
-                            <div className="h-5 w-5 rounded-full bg-green-500/10 flex items-center justify-center shrink-0">
+                            <motion.div 
+                              className="h-5 w-5 rounded-full bg-green-500/10 flex items-center justify-center shrink-0"
+                              whileHover={{ scale: 1.2, backgroundColor: "hsl(var(--primary) / 0.2)" }}
+                            >
                               <Check className="h-3 w-3 text-green-500" />
-                            </div>
+                            </motion.div>
                             <span>{feature}</span>
                           </motion.li>
                         ))}
                       </ul>
 
-                      <Button 
-                        className="w-full" 
-                        variant={plan.is_trial || index === 1 ? 'default' : 'outline'}
-                        size="lg"
+                      <motion.div
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
                       >
-                        {plan.is_trial ? 'ابدأ مجاناً' : 'اختر الخطة'}
-                        <ArrowRight className="h-4 w-4 mr-2" />
-                      </Button>
+                        <Button 
+                          className="w-full" 
+                          variant={plan.is_trial || index === 1 ? 'default' : 'outline'}
+                          size="lg"
+                        >
+                          {plan.is_trial ? 'ابدأ مجاناً' : 'اختر الخطة'}
+                          <motion.span
+                            animate={{ x: [0, 3, 0] }}
+                            transition={{ duration: 1.5, repeat: Infinity }}
+                          >
+                            <ArrowRight className="h-4 w-4 mr-2" />
+                          </motion.span>
+                        </Button>
+                      </motion.div>
                     </CardContent>
                   </Card>
                 </motion.div>
