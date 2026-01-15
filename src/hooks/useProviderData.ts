@@ -2,6 +2,18 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
+export interface StoreTheme {
+  primary_color: string;
+  secondary_color: string;
+  accent_color: string;
+  background_color: string;
+  text_color: string;
+  header_style: 'solid' | 'gradient' | 'transparent';
+  font_family: string;
+  border_radius: 'none' | 'small' | 'medium' | 'large' | 'full';
+  button_style: 'square' | 'rounded' | 'pill';
+}
+
 export interface ServiceProvider {
   id: string;
   user_id: string;
@@ -20,6 +32,7 @@ export interface ServiceProvider {
     primary_color: string;
     accent_color: string;
   } | null;
+  store_theme: StoreTheme | null;
   freelance_certificate_url: string | null;
   bank_name: string | null;
   iban: string | null;
@@ -87,7 +100,8 @@ export function useProviderProfile() {
       if (error) throw error;
       return data ? {
         ...data,
-        store_settings: data.store_settings as ServiceProvider['store_settings']
+        store_settings: data.store_settings as ServiceProvider['store_settings'],
+        store_theme: data.store_theme as unknown as ServiceProvider['store_theme']
       } as ServiceProvider : null;
     },
     enabled: !!user,
@@ -211,14 +225,15 @@ export function useUpdateProviderProfile() {
   
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<ServiceProvider> }) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { error } = await supabase
         .from('service_providers')
-        .update(data)
+        .update(data as any)
         .eq('id', id);
       
       if (error) throw error;
     },
-    onSuccess: (_, variables) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['provider-profile'] });
     },
   });

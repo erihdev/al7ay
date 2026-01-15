@@ -142,10 +142,36 @@ const ProviderStoreContent = () => {
     }))
   ];
 
-  // Get store settings with defaults
-  const storeSettings = provider?.store_settings as { primary_color?: string; accent_color?: string } || {};
-  const primaryColor = storeSettings.primary_color || '#1B4332';
-  const accentColor = storeSettings.accent_color || '#D4AF37';
+  // Get store theme with defaults
+  const storeTheme = provider?.store_theme as {
+    primary_color?: string;
+    secondary_color?: string;
+    accent_color?: string;
+    background_color?: string;
+    text_color?: string;
+    header_style?: 'solid' | 'gradient' | 'transparent';
+    font_family?: string;
+    border_radius?: string;
+    button_style?: string;
+  } || {};
+  
+  const primaryColor = storeTheme.primary_color || '#1B4332';
+  const secondaryColor = storeTheme.secondary_color || '#2D6A4F';
+  const accentColor = storeTheme.accent_color || '#D4AF37';
+  const headerStyle = storeTheme.header_style || 'solid';
+  const fontFamily = storeTheme.font_family || 'Tajawal';
+  
+  // Get header background based on style
+  const getHeaderBackground = () => {
+    switch (headerStyle) {
+      case 'gradient':
+        return `linear-gradient(135deg, ${primaryColor}, ${secondaryColor})`;
+      case 'transparent':
+        return 'transparent';
+      default:
+        return primaryColor;
+    }
+  };
 
   function getCategoryLabel(category: string) {
     const labels: Record<string, string> = {
@@ -247,11 +273,11 @@ const ProviderStoreContent = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background font-arabic" dir="rtl">
+    <div className="min-h-screen bg-background" style={{ fontFamily }} dir="rtl">
       {/* Fixed Header */}
       <header 
         className="fixed top-0 left-0 right-0 z-50"
-        style={{ backgroundColor: primaryColor }}
+        style={{ background: getHeaderBackground() }}
       >
         {/* Top Bar */}
         <div className="px-4 py-3 flex items-center justify-between">

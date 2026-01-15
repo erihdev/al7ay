@@ -1218,6 +1218,7 @@ export type Database = {
           pending_payout: number | null
           phone: string | null
           store_settings: Json | null
+          store_theme: Json | null
           subscription_status: string | null
           updated_at: string
           user_id: string
@@ -1251,6 +1252,7 @@ export type Database = {
           pending_payout?: number | null
           phone?: string | null
           store_settings?: Json | null
+          store_theme?: Json | null
           subscription_status?: string | null
           updated_at?: string
           user_id: string
@@ -1284,6 +1286,7 @@ export type Database = {
           pending_payout?: number | null
           phone?: string | null
           store_settings?: Json | null
+          store_theme?: Json | null
           subscription_status?: string | null
           updated_at?: string
           user_id?: string

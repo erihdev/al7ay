@@ -9,6 +9,7 @@ import { useProviderOrderNotifications } from '@/hooks/useProviderOrderNotificat
 import ProviderProductsManager from '@/components/provider/ProviderProductsManager';
 import KitchenDisplaySystem from '@/components/provider/KitchenDisplaySystem';
 import ProviderSettingsManager from '@/components/provider/ProviderSettingsManager';
+import StoreThemeCustomizer from '@/components/provider/StoreThemeCustomizer';
 import ProviderStats from '@/components/provider/ProviderStats';
 import { 
   ShoppingBag, 
@@ -26,7 +27,8 @@ import {
   Loader2,
   ChefHat,
   DollarSign,
-  Store
+  Store,
+  Palette
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { AnimatedLogo } from '@/components/ui/AnimatedLogo';
@@ -50,6 +52,17 @@ interface Provider {
   store_settings: {
     primary_color: string;
     accent_color: string;
+  } | null;
+  store_theme: {
+    primary_color: string;
+    secondary_color: string;
+    accent_color: string;
+    background_color: string;
+    text_color: string;
+    header_style: 'solid' | 'gradient' | 'transparent';
+    font_family: string;
+    border_radius: 'none' | 'small' | 'medium' | 'large' | 'full';
+    button_style: 'square' | 'rounded' | 'pill';
   } | null;
   freelance_certificate_url: string | null;
   bank_name: string | null;
@@ -457,6 +470,13 @@ const ProviderDashboard = () => {
                 <span className="hidden sm:inline">المنتجات</span>
               </TabsTrigger>
               <TabsTrigger 
+                value="theme" 
+                className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-lg py-3 gap-2 transition-all"
+              >
+                <Palette className="h-4 w-4" />
+                <span className="hidden sm:inline">الهوية</span>
+              </TabsTrigger>
+              <TabsTrigger 
                 value="settings" 
                 className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-lg py-3 gap-2 transition-all"
               >
@@ -602,10 +622,17 @@ const ProviderDashboard = () => {
             <ProviderProductsManager providerId={provider.id} />
           </TabsContent>
 
+          <TabsContent value="theme">
+            <StoreThemeCustomizer 
+              provider={provider as any}
+              onUpdate={(updatedProvider) => setProvider(updatedProvider as Provider)}
+            />
+          </TabsContent>
+
           <TabsContent value="settings">
             <ProviderSettingsManager 
-              provider={provider} 
-              onUpdate={(updatedProvider) => setProvider(updatedProvider)}
+              provider={provider as any} 
+              onUpdate={(updatedProvider) => setProvider(updatedProvider as Provider)}
             />
           </TabsContent>
         </Tabs>
