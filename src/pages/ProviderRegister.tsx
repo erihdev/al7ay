@@ -451,7 +451,7 @@ const ProviderRegister = () => {
             ) : (
               /* Plans Cards with Stagger Animation */
               <motion.div 
-                className="grid md:grid-cols-3 gap-6"
+                className="grid md:grid-cols-3 gap-3"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.3 }}
@@ -459,7 +459,7 @@ const ProviderRegister = () => {
                 {plans.map((plan, index) => (
                   <motion.div
                     key={plan.id}
-                    initial={{ opacity: 0, y: 30, scale: 0.95 }}
+                    initial={{ opacity: 0, y: 20, scale: 0.95 }}
                     animate={{ 
                       opacity: 1, 
                       y: 0, 
@@ -467,14 +467,14 @@ const ProviderRegister = () => {
                       ...((!plan.is_trial && index === 1) && {
                         boxShadow: [
                           "0 0 0 0 hsl(var(--primary) / 0)",
-                          "0 0 0 8px hsl(var(--primary) / 0.15)",
+                          "0 0 0 4px hsl(var(--primary) / 0.15)",
                           "0 0 0 0 hsl(var(--primary) / 0)"
                         ]
                       })
                     }}
                     transition={{ 
-                      delay: index * 0.15, 
-                      duration: 0.5,
+                      delay: index * 0.1, 
+                      duration: 0.4,
                       type: "spring",
                       stiffness: 100,
                       boxShadow: {
@@ -484,9 +484,9 @@ const ProviderRegister = () => {
                       }
                     }}
                     whileHover={{ 
-                      scale: 1.05, 
-                      y: -8,
-                      transition: { duration: 0.3, type: "spring", stiffness: 300 }
+                      scale: 1.03, 
+                      y: -4,
+                      transition: { duration: 0.2, type: "spring", stiffness: 300 }
                     }}
                     whileTap={{ scale: 0.98 }}
                     className="relative"
@@ -494,10 +494,10 @@ const ProviderRegister = () => {
                     {/* Pulse ring for popular plan */}
                     {!plan.is_trial && index === 1 && (
                       <motion.div
-                        className="absolute -inset-1 rounded-xl bg-primary/20 -z-10"
+                        className="absolute -inset-0.5 rounded-lg bg-primary/20 -z-10"
                         animate={{
-                          scale: [1, 1.02, 1],
-                          opacity: [0.5, 0.8, 0.5]
+                          scale: [1, 1.01, 1],
+                          opacity: [0.4, 0.6, 0.4]
                         }}
                         transition={{
                           duration: 2,
@@ -509,15 +509,15 @@ const ProviderRegister = () => {
                     
                   <Card 
                     className={`cursor-pointer transition-all duration-300 h-full ${
-                      plan.is_trial ? 'border-green-500 ring-2 ring-green-500/20 relative overflow-hidden hover:ring-green-500/40 hover:shadow-green-500/20 hover:shadow-xl' : 
-                      index === 1 ? 'border-primary ring-2 ring-primary/20 relative overflow-hidden hover:ring-primary/40 hover:shadow-primary/20 hover:shadow-xl' : 
-                      'hover:border-primary/50 hover:shadow-lg'
-                    } ${comparePlans.find(p => p.id === plan.id) ? 'ring-2 ring-amber-500' : ''}`}
+                      plan.is_trial ? 'border-green-500 ring-1 ring-green-500/20 relative overflow-hidden hover:ring-green-500/40 hover:shadow-md' : 
+                      index === 1 ? 'border-primary ring-1 ring-primary/20 relative overflow-hidden hover:ring-primary/40 hover:shadow-md' : 
+                      'hover:border-primary/50 hover:shadow-md'
+                    } ${comparePlans.find(p => p.id === plan.id) ? 'ring-1 ring-amber-500' : ''}`}
                     onClick={() => handlePlanSelectWithSound(plan)}
                   >
                     {plan.is_trial && (
                       <motion.div 
-                        className="absolute top-0 left-0 right-0 bg-gradient-to-r from-green-500 to-emerald-500 text-white text-xs font-bold py-1.5 text-center"
+                        className="absolute top-0 left-0 right-0 bg-gradient-to-r from-green-500 to-emerald-500 text-white text-[10px] font-bold py-1 text-center"
                         animate={{ backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"] }}
                         transition={{ duration: 3, repeat: Infinity }}
                         style={{ backgroundSize: "200% 200%" }}
@@ -527,7 +527,7 @@ const ProviderRegister = () => {
                     )}
                     {!plan.is_trial && index === 1 && (
                       <motion.div 
-                        className="absolute top-0 left-0 right-0 bg-gradient-to-r from-primary via-primary/80 to-primary text-primary-foreground text-xs font-bold py-1.5 text-center"
+                        className="absolute top-0 left-0 right-0 bg-gradient-to-r from-primary via-primary/80 to-primary text-primary-foreground text-[10px] font-bold py-1 text-center"
                         animate={{ backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"] }}
                         transition={{ duration: 3, repeat: Infinity }}
                         style={{ backgroundSize: "200% 200%" }}
@@ -535,10 +535,10 @@ const ProviderRegister = () => {
                         🔥 الأكثر شعبية
                       </motion.div>
                     )}
-                    <CardContent className={`p-6 ${(plan.is_trial || index === 1) ? 'pt-10' : ''}`}>
+                    <CardContent className={`p-3 ${(plan.is_trial || index === 1) ? 'pt-7' : ''}`}>
                       <motion.div 
-                        className="flex items-center gap-2 mb-2"
-                        whileHover={{ x: 3 }}
+                        className="flex items-center gap-1.5 mb-1"
+                        whileHover={{ x: 2 }}
                         transition={{ type: "spring", stiffness: 300 }}
                       >
                         {plan.is_trial ? (
@@ -546,35 +546,35 @@ const ProviderRegister = () => {
                             animate={{ rotate: [0, 10, -10, 0] }}
                             transition={{ duration: 2, repeat: Infinity }}
                           >
-                            <Gift className="h-6 w-6 text-green-500" />
+                            <Gift className="h-4 w-4 text-green-500" />
                           </motion.div>
                         ) : (
-                          <CreditCard className="h-6 w-6 text-primary" />
+                          <CreditCard className="h-4 w-4 text-primary" />
                         )}
-                        <h3 className="text-xl font-bold">{plan.name_ar}</h3>
+                        <h3 className="text-sm font-bold">{plan.name_ar}</h3>
                       </motion.div>
                       
-                      <p className="text-sm text-muted-foreground mb-4 min-h-[40px]">
+                      <p className="text-xs text-muted-foreground mb-2 min-h-[28px] line-clamp-2">
                         {plan.description_ar}
                       </p>
 
                       <motion.div 
-                        className="flex items-baseline gap-1 mb-6"
-                        whileHover={{ scale: 1.05 }}
+                        className="flex items-baseline gap-0.5 mb-3"
+                        whileHover={{ scale: 1.02 }}
                         transition={{ type: "spring", stiffness: 300 }}
                       >
-                        <span className="text-4xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+                        <span className="text-xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
                           {plan.price === 0 ? 'مجاني' : plan.price}
                         </span>
                         {plan.price > 0 && (
                           <>
-                            <span className="text-lg text-muted-foreground">ر.س</span>
-                            <span className="text-muted-foreground text-sm">/ {plan.duration_days === 30 ? 'شهر' : plan.duration_days === 365 ? 'سنة' : `${plan.duration_days} يوم`}</span>
+                            <span className="text-xs text-muted-foreground">ر.س</span>
+                            <span className="text-muted-foreground text-[10px]">/ {plan.duration_days === 30 ? 'شهر' : plan.duration_days === 365 ? 'سنة' : `${plan.duration_days} يوم`}</span>
                           </>
                         )}
                       </motion.div>
 
-                      <ul className="space-y-3 mb-6">
+                      <ul className="space-y-1.5 mb-3">
                         {plan.features.map((feature, i) => {
                           // Find matching tooltip
                           const tooltipText = Object.entries(featureTooltips).find(
@@ -586,30 +586,36 @@ const ProviderRegister = () => {
                               <Tooltip>
                                 <TooltipTrigger asChild>
                                   <motion.li 
-                                    className="flex items-center gap-2 text-sm cursor-help group"
-                                    initial={{ opacity: 0, x: -10 }}
+                                    className="flex items-center gap-1.5 text-xs cursor-help group"
+                                    initial={{ opacity: 0, x: -5 }}
                                     animate={{ opacity: 1, x: 0 }}
-                                    transition={{ delay: 0.2 + i * 0.05 }}
-                                    whileHover={{ x: 5, transition: { duration: 0.2 } }}
+                                    transition={{ delay: 0.15 + i * 0.03 }}
+                                    whileHover={{ x: 3, transition: { duration: 0.2 } }}
                                   >
                                     <motion.div 
-                                      className="h-5 w-5 rounded-full bg-green-500/10 flex items-center justify-center shrink-0"
-                                      whileHover={{ scale: 1.2, backgroundColor: "hsl(var(--primary) / 0.2)" }}
+                                      className="h-3.5 w-3.5 rounded-full bg-green-500/10 flex items-center justify-center shrink-0"
+                                      whileHover={{ scale: 1.1, backgroundColor: "hsl(var(--primary) / 0.2)" }}
                                     >
-                                      <Check className="h-3 w-3 text-green-500" />
+                                      <Check className="h-2 w-2 text-green-500" />
                                     </motion.div>
-                                    <span className="flex-1">{feature}</span>
+                                    <span className="flex-1 line-clamp-1">{feature}</span>
                                     {tooltipText && (
-                                      <Info className="h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                                      <Info className="h-2.5 w-2.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
                                     )}
                                   </motion.li>
                                 </TooltipTrigger>
                                 {tooltipText && (
                                   <TooltipContent 
                                     side="top" 
-                                    className="max-w-[250px] text-center bg-popover/95 backdrop-blur-sm"
+                                    className="max-w-[200px] text-center bg-popover/95 backdrop-blur-sm"
                                   >
-                                    <p className="text-xs">{tooltipText}</p>
+                                    <motion.div
+                                      initial={{ opacity: 0, y: 5, scale: 0.95 }}
+                                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                                      transition={{ duration: 0.2 }}
+                                    >
+                                      <p className="text-[10px]">{tooltipText}</p>
+                                    </motion.div>
                                   </TooltipContent>
                                 )}
                               </Tooltip>
@@ -619,20 +625,20 @@ const ProviderRegister = () => {
                       </ul>
 
                       <motion.div
-                        whileHover={{ scale: 1.02 }}
+                        whileHover={{ scale: 1.01 }}
                         whileTap={{ scale: 0.98 }}
                       >
                         <Button 
-                          className="w-full" 
+                          className="w-full text-xs h-8" 
                           variant={plan.is_trial || index === 1 ? 'default' : 'outline'}
-                          size="lg"
+                          size="sm"
                         >
                           {plan.is_trial ? 'ابدأ مجاناً' : 'اختر الخطة'}
                           <motion.span
-                            animate={{ x: [0, 3, 0] }}
+                            animate={{ x: [0, 2, 0] }}
                             transition={{ duration: 1.5, repeat: Infinity }}
                           >
-                            <ArrowRight className="h-4 w-4 mr-2" />
+                            <ArrowRight className="h-3 w-3 mr-1" />
                           </motion.span>
                         </Button>
                       </motion.div>
@@ -641,13 +647,13 @@ const ProviderRegister = () => {
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="w-full mt-2 text-xs"
+                        className="w-full mt-1 text-[10px] h-6"
                         onClick={(e) => {
                           e.stopPropagation();
                           toggleCompare(plan);
                         }}
                       >
-                        <ArrowLeftRight className="h-3 w-3 ml-1" />
+                        <ArrowLeftRight className="h-2.5 w-2.5 ml-1" />
                         {comparePlans.find(p => p.id === plan.id) ? 'إزالة من المقارنة' : 'أضف للمقارنة'}
                       </Button>
                     </CardContent>
