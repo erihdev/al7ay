@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { Loader2, Mail, Lock, User, ArrowLeft, ArrowRight, KeyRound } from 'lucide-react';
+import { Loader2, Mail, Lock, User, ArrowLeft, ArrowRight, KeyRound, Phone, Car, Camera, Palette } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -18,22 +18,101 @@ interface AuthFormProps {
 
 export function AuthForm({ redirectTo = '/app' }: AuthFormProps) {
   const [mode, setMode] = useState<AuthMode>('login');
+  const [step, setStep] = useState(1); // 1: basic info, 2: vehicle info
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [vehicleBrand, setVehicleBrand] = useState('');
+  const [vehicleModel, setVehicleModel] = useState('');
+  const [vehicleColor, setVehicleColor] = useState('');
+  const [vehiclePlate, setVehiclePlate] = useState('');
+  const [vehicleYear, setVehicleYear] = useState('');
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const { signIn, signUp } = useAuth();
   const navigate = useNavigate();
 
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setAvatarFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setAvatarPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const uploadAvatar = async (userId: string): Promise<string | null> => {
+    if (!avatarFile) return null;
+    
+    const fileExt = avatarFile.name.split('.').pop();
+    const fileName = `${userId}/avatar.${fileExt}`;
+    
+    const { error } = await supabase.storage
+      .from('product-images')
+      .upload(fileName, avatarFile, { upsert: true });
+    
+    if (error) {
+      console.error('Avatar upload error:', error);
+      return null;
+    }
+    
+    const { data: { publicUrl } } = supabase.storage
+      .from('product-images')
+      .getPublicUrl(fileName);
+    
+    return publicUrl;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (mode === 'signup' && step === 1) {
+      // Move to step 2 for vehicle info
+      setStep(2);
+      return;
+    }
+    
     setIsLoading(true);
 
     try {
       if (mode === 'signup') {
         const { error } = await signUp(email, password, fullName);
         if (error) throw error;
+        
+        // Wait a bit for the user to be created
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Get the current user
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (user) {
+          // Upload avatar if provided
+          const avatarUrl = await uploadAvatar(user.id);
+          
+          // Update profile with additional info
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .update({
+              phone,
+              vehicle_brand: vehicleBrand,
+              vehicle_model: vehicleModel,
+              vehicle_color: vehicleColor,
+              vehicle_plate: vehiclePlate,
+              vehicle_year: vehicleYear,
+            })
+            .eq('user_id', user.id);
+          
+          if (profileError) {
+            console.error('Profile update error:', profileError);
+          }
+        }
+        
         toast.success('تم إنشاء الحساب بنجاح!');
         navigate(redirectTo);
       } else if (mode === 'login') {
@@ -92,9 +171,9 @@ export function AuthForm({ redirectTo = '/app' }: AuthFormProps) {
       case 'signup':
         return {
           gradient: 'from-green-500 to-emerald-400',
-          icon: <User className="h-8 w-8" />,
-          title: 'انضم إلينا',
-          subtitle: 'أنشئ حسابك واستمتع بالمميزات',
+          icon: step === 1 ? <User className="h-8 w-8" /> : <Car className="h-8 w-8" />,
+          title: step === 1 ? 'انضم إلينا' : 'معلومات السيارة',
+          subtitle: step === 1 ? 'أنشئ حسابك واستمتع بالمميزات' : 'أضف معلومات سيارتك للتوصيل',
         };
       case 'forgot-password':
         return {
@@ -115,6 +194,14 @@ export function AuthForm({ redirectTo = '/app' }: AuthFormProps) {
 
   const headerConfig = getHeaderConfig();
 
+  const goBack = () => {
+    if (mode === 'signup' && step === 2) {
+      setStep(1);
+    } else {
+      setMode('login');
+    }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -125,7 +212,7 @@ export function AuthForm({ redirectTo = '/app' }: AuthFormProps) {
         {/* Header with gradient */}
         <div className={`bg-gradient-to-r ${headerConfig.gradient} p-6 text-white`}>
           <motion.div
-            key={mode}
+            key={`${mode}-${step}`}
             initial={{ opacity: 0, x: mode === 'login' ? -20 : 20 }}
             animate={{ opacity: 1, x: 0 }}
             className="text-center"
@@ -135,6 +222,14 @@ export function AuthForm({ redirectTo = '/app' }: AuthFormProps) {
             </div>
             <h2 className="text-2xl font-bold">{headerConfig.title}</h2>
             <p className="text-white/80 text-sm mt-1">{headerConfig.subtitle}</p>
+            
+            {/* Step indicator for signup */}
+            {mode === 'signup' && (
+              <div className="flex items-center justify-center gap-2 mt-4">
+                <div className={`w-8 h-2 rounded-full ${step >= 1 ? 'bg-white' : 'bg-white/30'}`} />
+                <div className={`w-8 h-2 rounded-full ${step >= 2 ? 'bg-white' : 'bg-white/30'}`} />
+              </div>
+            )}
           </motion.div>
         </div>
 
@@ -188,6 +283,148 @@ export function AuthForm({ redirectTo = '/app' }: AuthFormProps) {
                     <ArrowRight className="h-4 w-4" />
                     العودة لتسجيل الدخول
                   </button>
+                </form>
+              </motion.div>
+            ) : mode === 'signup' && step === 2 ? (
+              <motion.div
+                key="signup-step2"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+              >
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  {/* Avatar Upload */}
+                  <div className="flex justify-center mb-4">
+                    <label htmlFor="avatar" className="cursor-pointer">
+                      <div className="relative">
+                        <div className="w-24 h-24 rounded-full bg-muted flex items-center justify-center overflow-hidden border-2 border-dashed border-primary/30 hover:border-primary transition-colors">
+                          {avatarPreview ? (
+                            <img src={avatarPreview} alt="Avatar" className="w-full h-full object-cover" />
+                          ) : (
+                            <Camera className="h-8 w-8 text-muted-foreground" />
+                          )}
+                        </div>
+                        <div className="absolute -bottom-1 -right-1 w-8 h-8 bg-primary rounded-full flex items-center justify-center">
+                          <Camera className="h-4 w-4 text-primary-foreground" />
+                        </div>
+                      </div>
+                      <input
+                        id="avatar"
+                        type="file"
+                        accept="image/*"
+                        onChange={handleAvatarChange}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
+                  <p className="text-center text-sm text-muted-foreground -mt-2 mb-4">اضغط لإضافة صورتك</p>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <Label htmlFor="vehicleBrand" className="font-arabic flex items-center gap-2 text-sm">
+                        <Car className="h-4 w-4 text-muted-foreground" />
+                        ماركة السيارة
+                      </Label>
+                      <Input
+                        id="vehicleBrand"
+                        type="text"
+                        value={vehicleBrand}
+                        onChange={(e) => setVehicleBrand(e.target.value)}
+                        placeholder="تويوتا"
+                        className="font-arabic text-right rounded-xl h-11"
+                        dir="rtl"
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="vehicleModel" className="font-arabic flex items-center gap-2 text-sm">
+                        الموديل
+                      </Label>
+                      <Input
+                        id="vehicleModel"
+                        type="text"
+                        value={vehicleModel}
+                        onChange={(e) => setVehicleModel(e.target.value)}
+                        placeholder="كامري"
+                        className="font-arabic text-right rounded-xl h-11"
+                        dir="rtl"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <Label htmlFor="vehicleColor" className="font-arabic flex items-center gap-2 text-sm">
+                        <Palette className="h-4 w-4 text-muted-foreground" />
+                        اللون
+                      </Label>
+                      <Input
+                        id="vehicleColor"
+                        type="text"
+                        value={vehicleColor}
+                        onChange={(e) => setVehicleColor(e.target.value)}
+                        placeholder="أبيض"
+                        className="font-arabic text-right rounded-xl h-11"
+                        dir="rtl"
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="vehicleYear" className="font-arabic flex items-center gap-2 text-sm">
+                        السنة
+                      </Label>
+                      <Input
+                        id="vehicleYear"
+                        type="text"
+                        value={vehicleYear}
+                        onChange={(e) => setVehicleYear(e.target.value)}
+                        placeholder="2024"
+                        className="rounded-xl h-11"
+                        dir="ltr"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="vehiclePlate" className="font-arabic flex items-center gap-2">
+                      رقم اللوحة
+                    </Label>
+                    <Input
+                      id="vehiclePlate"
+                      type="text"
+                      value={vehiclePlate}
+                      onChange={(e) => setVehiclePlate(e.target.value)}
+                      placeholder="أ ب ج 1234"
+                      className="font-arabic text-center rounded-xl h-12 text-lg"
+                      dir="rtl"
+                    />
+                  </div>
+
+                  <div className="flex gap-3 mt-6">
+                    <Button 
+                      type="button"
+                      variant="outline"
+                      className="flex-1 font-arabic h-12 rounded-xl"
+                      onClick={goBack}
+                    >
+                      <ArrowRight className="h-4 w-4 ml-2" />
+                      رجوع
+                    </Button>
+                    <Button 
+                      type="submit" 
+                      className="flex-1 font-arabic h-12 text-base rounded-xl gap-2 shadow-lg bg-gradient-to-r from-green-500 to-emerald-400 hover:from-green-600 hover:to-emerald-500" 
+                      disabled={isLoading}
+                    >
+                      {isLoading ? (
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                      ) : (
+                        <>
+                          إنشاء حساب
+                          <ArrowLeft className="h-4 w-4" />
+                        </>
+                      )}
+                    </Button>
+                  </div>
                 </form>
               </motion.div>
             ) : (
@@ -247,22 +484,41 @@ export function AuthForm({ redirectTo = '/app' }: AuthFormProps) {
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: 'auto' }}
                       exit={{ opacity: 0, height: 0 }}
-                      className="space-y-2"
+                      className="space-y-4"
                     >
-                      <Label htmlFor="fullName" className="font-arabic flex items-center gap-2">
-                        <User className="h-4 w-4 text-muted-foreground" />
-                        الاسم الكامل
-                      </Label>
-                      <Input
-                        id="fullName"
-                        type="text"
-                        value={fullName}
-                        onChange={(e) => setFullName(e.target.value)}
-                        placeholder="أدخل اسمك"
-                        required
-                        className="font-arabic text-right rounded-xl h-12"
-                        dir="rtl"
-                      />
+                      <div className="space-y-2">
+                        <Label htmlFor="fullName" className="font-arabic flex items-center gap-2">
+                          <User className="h-4 w-4 text-muted-foreground" />
+                          الاسم الكامل
+                        </Label>
+                        <Input
+                          id="fullName"
+                          type="text"
+                          value={fullName}
+                          onChange={(e) => setFullName(e.target.value)}
+                          placeholder="أدخل اسمك"
+                          required
+                          className="font-arabic text-right rounded-xl h-12"
+                          dir="rtl"
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="phone" className="font-arabic flex items-center gap-2">
+                          <Phone className="h-4 w-4 text-muted-foreground" />
+                          رقم الجوال
+                        </Label>
+                        <Input
+                          id="phone"
+                          type="tel"
+                          value={phone}
+                          onChange={(e) => setPhone(e.target.value)}
+                          placeholder="05xxxxxxxx"
+                          required
+                          className="rounded-xl h-12"
+                          dir="ltr"
+                        />
+                      </div>
                     </motion.div>
                   )}
 
@@ -321,7 +577,7 @@ export function AuthForm({ redirectTo = '/app' }: AuthFormProps) {
                       <Loader2 className="h-5 w-5 animate-spin" />
                     ) : (
                       <>
-                        {mode === 'login' ? 'تسجيل الدخول' : 'إنشاء حساب'}
+                        {mode === 'login' ? 'تسجيل الدخول' : 'التالي'}
                         <ArrowLeft className="h-4 w-4" />
                       </>
                     )}
@@ -331,7 +587,10 @@ export function AuthForm({ redirectTo = '/app' }: AuthFormProps) {
                 <div className="mt-6 text-center">
                   <button
                     type="button"
-                    onClick={() => setMode(mode === 'login' ? 'signup' : 'login')}
+                    onClick={() => {
+                      setMode(mode === 'login' ? 'signup' : 'login');
+                      setStep(1);
+                    }}
                     className="text-sm text-primary hover:underline font-arabic font-semibold transition-colors"
                   >
                     {mode === 'login'
