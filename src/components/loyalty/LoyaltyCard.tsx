@@ -11,29 +11,9 @@ export function LoyaltyCard() {
   const { user } = useAuth();
   const { data: loyaltyData, isLoading } = useLoyaltyTier();
 
+  // Don't show anything if user is not logged in - let them browse first
   if (!user) {
-    return (
-      <Card className="bg-gradient-to-br from-gold/20 to-gold-light/10 border-gold/30">
-        <CardContent className="p-4">
-          <div className="flex items-center gap-3">
-            <div className="h-12 w-12 bg-gold/20 rounded-full flex items-center justify-center">
-              <Star className="h-6 w-6 text-gold" />
-            </div>
-            <div className="flex-1">
-              <h3 className="font-bold font-arabic text-foreground">برنامج الولاء</h3>
-              <p className="text-sm text-muted-foreground font-arabic">
-                سجل دخولك لتجمع النقاط!
-              </p>
-            </div>
-            <Link to="/profile">
-              <Button variant="outline" size="sm" className="font-arabic">
-                تسجيل الدخول
-              </Button>
-            </Link>
-          </div>
-        </CardContent>
-      </Card>
-    );
+    return null;
   }
 
   if (isLoading) {
