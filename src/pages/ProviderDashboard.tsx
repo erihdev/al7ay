@@ -57,6 +57,12 @@ interface Provider {
   national_address: string | null;
   is_payment_verified: boolean;
   commission_rate: number;
+  payment_method: 'direct_gateway' | 'platform_managed';
+  gateway_account_id: string | null;
+  gateway_approval_url: string | null;
+  payout_frequency: 'weekly' | 'monthly';
+  last_payout_date: string | null;
+  pending_payout: number;
   created_at: string;
   updated_at: string;
 }
