@@ -10,6 +10,7 @@ import { BottomNav } from '@/components/layout/BottomNav';
 import { AuthForm } from '@/components/auth/AuthForm';
 import { StoreNavigationMap } from '@/components/store/StoreNavigationMap';
 import { ProviderOrderTrackingMap } from '@/components/store/ProviderOrderTrackingMap';
+import { PullUpStyleOrderCard } from '@/components/store/PullUpStyleOrderCard';
 import { 
   Package, 
   Clock, 
@@ -233,221 +234,25 @@ const MyStoreOrders = () => {
                   الطلبات النشطة ({activeOrders.length})
                 </h2>
                 
-                <AnimatePresence>
-                  {activeOrders.map((order, index) => {
-                    const status = statusConfig[order.status] || statusConfig.pending;
-                    const StatusIcon = status.icon;
-                    const currentStep = getStatusIndex(order.status);
-                    const isExpanded = expandedOrder === order.id;
+                <div className="space-y-4">
+                  {activeOrders.map((order) => {
+                    const storeLocation = order.service_providers?.active_neighborhoods?.lat 
+                      ? {
+                          lat: order.service_providers.active_neighborhoods.lat,
+                          lng: order.service_providers.active_neighborhoods.lng || 0
+                        }
+                      : defaultStoreLocation || { lat: 24.7136, lng: 46.6753 };
                     
                     return (
-                      <motion.div
+                      <PullUpStyleOrderCard
                         key={order.id}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: index * 0.1 }}
-                      >
-                        <Card 
-                          className="overflow-hidden cursor-pointer hover:shadow-lg transition-shadow"
-                          onClick={() => setExpandedOrder(isExpanded ? null : order.id)}
-                        >
-                          <CardContent className="p-4 space-y-4">
-                            {/* Provider Info */}
-                            <div className="flex items-center gap-3">
-                              {order.service_providers?.logo_url ? (
-                                <img 
-                                  src={order.service_providers.logo_url} 
-                                  alt={order.service_providers.business_name}
-                                  className="w-12 h-12 rounded-xl object-cover"
-                                />
-                              ) : (
-                                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                                  <StoreIcon className="h-6 w-6 text-primary" />
-                                </div>
-                              )}
-                              <div className="flex-1">
-                                <h3 className="font-semibold">{order.service_providers?.business_name || 'متجر'}</h3>
-                                <p className="text-xs text-muted-foreground">
-                                  {format(new Date(order.created_at), 'dd MMM yyyy - HH:mm', { locale: ar })}
-                                </p>
-                              </div>
-                              <Badge className={`${status.bgColor} ${status.color} border-0`}>
-                                <StatusIcon className="h-3 w-3 ml-1" />
-                                {status.label}
-                              </Badge>
-                            </div>
-
-                            {/* Progress Steps */}
-                            <div className="flex items-center justify-between px-2">
-                              {statusSteps.slice(0, order.order_type === 'pickup' ? 3 : 4).map((step, i) => {
-                                const stepStatus = statusConfig[step];
-                                const StepIcon = stepStatus.icon;
-                                const isActive = i <= currentStep;
-                                const isCurrent = i === currentStep;
-                                
-                                return (
-                                  <div key={step} className="flex items-center">
-                                    <motion.div
-                                      initial={false}
-                                      animate={{ 
-                                        scale: isCurrent ? 1.2 : 1,
-                                        backgroundColor: isActive ? 'hsl(var(--primary))' : 'hsl(var(--muted))'
-                                      }}
-                                      className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                                        isActive ? 'text-primary-foreground' : 'text-muted-foreground'
-                                      }`}
-                                    >
-                                      <StepIcon className="h-4 w-4" />
-                                    </motion.div>
-                                    {i < (order.order_type === 'pickup' ? 2 : 3) && (
-                                      <div className={`w-8 h-1 mx-1 rounded ${
-                                        i < currentStep ? 'bg-primary' : 'bg-muted'
-                                      }`} />
-                                    )}
-                                  </div>
-                                );
-                              })}
-                            </div>
-
-                            {/* Order Summary */}
-                            <div className="flex justify-between items-center text-sm">
-                              <span className="text-muted-foreground">
-                                {order.provider_order_items?.length || 0} منتجات
-                              </span>
-                              <span className="font-bold text-primary">
-                                {order.total_amount} ر.س
-                              </span>
-                            </div>
-
-                            {/* Auto-show Delivery Tracking Map for out_for_delivery orders */}
-                            {order.order_type === 'delivery' && 
-                             order.status === 'out_for_delivery' && 
-                             order.delivery_lat && 
-                             order.delivery_lng && (
-                              <div className="mt-3" onClick={(e) => e.stopPropagation()}>
-                                <ProviderOrderTrackingMap orderId={order.id} />
-                              </div>
-                            )}
-
-                            {/* Auto-show Navigation Map for all active pickup orders */}
-                            {order.order_type === 'pickup' && 
-                             ['pending', 'preparing', 'ready'].includes(order.status) && 
-                             (order.service_providers?.active_neighborhoods?.lat || defaultStoreLocation) && (
-                              <div className="mt-3" onClick={(e) => e.stopPropagation()}>
-                                <StoreNavigationMap
-                                  storeLocation={{
-                                    lat: order.service_providers?.active_neighborhoods?.lat || defaultStoreLocation?.lat || 0,
-                                    lng: order.service_providers?.active_neighborhoods?.lng || defaultStoreLocation?.lng || 0
-                                  }}
-                                  storeName={order.service_providers?.business_name || 'المتجر'}
-                                  storePhone={order.service_providers?.phone}
-                                />
-                              </div>
-                            )}
-
-                            {/* Expanded Details */}
-                            <AnimatePresence>
-                              {isExpanded && (
-                                <motion.div
-                                  initial={{ height: 0, opacity: 0 }}
-                                  animate={{ height: 'auto', opacity: 1 }}
-                                  exit={{ height: 0, opacity: 0 }}
-                                  className="overflow-hidden"
-                                >
-                                  <div className="pt-4 border-t space-y-3">
-                                    {/* Order Items */}
-                                    <div className="space-y-2">
-                                      <h4 className="text-sm font-medium">المنتجات:</h4>
-                                      {order.provider_order_items?.map(item => (
-                                        <div key={item.id} className="flex justify-between text-sm text-muted-foreground">
-                                          <span>{item.product_name} × {item.quantity}</span>
-                                          <span>{item.total_price} ر.س</span>
-                                        </div>
-                                      ))}
-                                    </div>
-
-                                    {/* Delivery Info */}
-                                    <div className="flex items-center gap-2 text-sm">
-                                      {order.order_type === 'delivery' ? (
-                                        <>
-                                          <MapPin className="h-4 w-4 text-muted-foreground" />
-                                          <span className="text-muted-foreground">
-                                            {order.delivery_address || 'توصيل'}
-                                          </span>
-                                        </>
-                                      ) : (
-                                        <>
-                                          <StoreIcon className="h-4 w-4 text-muted-foreground" />
-                                          <span className="text-muted-foreground">استلام من المتجر</span>
-                                        </>
-                                      )}
-                                    </div>
-
-                                    {/* Navigation Map for Pickup Orders */}
-                                    {order.order_type === 'pickup' && 
-                                     (order.service_providers?.active_neighborhoods?.lat || defaultStoreLocation) && (
-                                      <div className="space-y-2">
-                                        <Button 
-                                          variant="default" 
-                                          size="sm" 
-                                          className="w-full gap-2"
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            setShowMapForOrder(showMapForOrder === order.id ? null : order.id);
-                                          }}
-                                        >
-                                          <Navigation2 className="h-4 w-4" />
-                                          {showMapForOrder === order.id ? 'إخفاء الخريطة' : 'عرض خريطة الوصول للمتجر'}
-                                        </Button>
-                                        
-                                        <AnimatePresence>
-                                          {showMapForOrder === order.id && (
-                                            <motion.div
-                                              initial={{ height: 0, opacity: 0 }}
-                                              animate={{ height: 'auto', opacity: 1 }}
-                                              exit={{ height: 0, opacity: 0 }}
-                                              className="overflow-hidden"
-                                              onClick={(e) => e.stopPropagation()}
-                                            >
-                                              <StoreNavigationMap
-                                                storeLocation={{
-                                                  lat: order.service_providers?.active_neighborhoods?.lat || defaultStoreLocation?.lat || 0,
-                                                  lng: order.service_providers?.active_neighborhoods?.lng || defaultStoreLocation?.lng || 0
-                                                }}
-                                                storeName={order.service_providers?.business_name || 'المتجر'}
-                                                storePhone={order.service_providers?.phone}
-                                              />
-                                            </motion.div>
-                                          )}
-                                        </AnimatePresence>
-                                      </div>
-                                    )}
-
-                                    {/* Contact Provider */}
-                                    {order.service_providers?.phone && (
-                                      <Button 
-                                        variant="outline" 
-                                        size="sm" 
-                                        className="w-full"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          window.location.href = `tel:${order.service_providers?.phone}`;
-                                        }}
-                                      >
-                                        <Phone className="h-4 w-4 ml-2" />
-                                        اتصل بالمتجر
-                                      </Button>
-                                    )}
-                                  </div>
-                                </motion.div>
-                              )}
-                            </AnimatePresence>
-                          </CardContent>
-                        </Card>
-                      </motion.div>
+                        order={order}
+                        storeLocation={storeLocation}
+                        onDetailsClick={() => setExpandedOrder(expandedOrder === order.id ? null : order.id)}
+                      />
                     );
                   })}
-                </AnimatePresence>
+                </div>
               </div>
             )}
 
