@@ -310,10 +310,10 @@ const MyStoreOrders = () => {
                               </div>
                             )}
 
-                            {/* Auto-show Navigation Map for pickup orders when ready */}
+                            {/* Auto-show Navigation Map for all active pickup orders */}
                             {order.order_type === 'pickup' && 
-                             order.status === 'ready' && 
-                             order.service_providers?.active_neighborhoods?.lat && 
+                             ['pending', 'preparing', 'ready'].includes(order.status) && 
+                             order.service_providers?.active_neighborhoods?.lat &&
                              order.service_providers?.active_neighborhoods?.lng && (
                               <div className="mt-3" onClick={(e) => e.stopPropagation()}>
                                 <StoreNavigationMap
