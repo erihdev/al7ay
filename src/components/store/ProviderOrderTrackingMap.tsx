@@ -1,14 +1,15 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { useMapboxToken } from '@/hooks/useMapboxToken';
 import { useProviderOrderTracking } from '@/hooks/useProviderOrderTracking';
-import { Loader2, Navigation, RotateCw } from 'lucide-react';
+import { Loader2, Navigation, RotateCw, Volume2, VolumeX } from 'lucide-react';
 import { formatRouteForMap } from '@/hooks/useDeliveryETA';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
 import { Badge } from '@/components/ui/badge';
+import { useDriverProximityAlert } from '@/hooks/useDriverProximityAlert';
 
 interface ProviderOrderTrackingMapProps {
   orderId: string;
@@ -24,7 +25,39 @@ export function ProviderOrderTrackingMap({ orderId }: ProviderOrderTrackingMapPr
   
   const [isLoadingRoute, setIsLoadingRoute] = useState(false);
   const [routeInfo, setRouteInfo] = useState<{ distance: string; duration: string } | null>(null);
+  const [soundEnabled, setSoundEnabled] = useState(true);
 
+  // Calculate distance between driver and delivery location
+  const distanceToDestination = useMemo(() => {
+    if (!tracking || !order?.delivery_lat || !order?.delivery_lng) return 0;
+    
+    const R = 6371000; // Earth's radius in meters
+    const lat1 = tracking.current_lat * Math.PI / 180;
+    const lat2 = order.delivery_lat * Math.PI / 180;
+    const deltaLat = (order.delivery_lat - tracking.current_lat) * Math.PI / 180;
+    const deltaLng = (order.delivery_lng - tracking.current_lng) * Math.PI / 180;
+    
+    const a = Math.sin(deltaLat/2) * Math.sin(deltaLat/2) +
+              Math.cos(lat1) * Math.cos(lat2) *
+              Math.sin(deltaLng/2) * Math.sin(deltaLng/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    
+    return R * c;
+  }, [tracking, order?.delivery_lat, order?.delivery_lng]);
+
+  // Use proximity alert hook
+  const { toggleSound } = useDriverProximityAlert({
+    isNearby: distanceToDestination < 500,
+    distanceMeters: distanceToDestination,
+    enabled: soundEnabled && isOutForDelivery && !!tracking,
+  });
+
+  // Sync sound toggle
+  const handleSoundToggle = () => {
+    const newValue = !soundEnabled;
+    setSoundEnabled(newValue);
+    toggleSound(newValue);
+  };
   // Fetch expected route from store to destination
   const fetchExpectedRoute = async () => {
     if (!map.current || !storeLocation || !order?.delivery_lat || !order?.delivery_lng) return;
@@ -334,11 +367,33 @@ export function ProviderOrderTrackingMap({ orderId }: ProviderOrderTrackingMapPr
         <div className="relative">
           <div ref={mapContainer} className="h-64 w-full" />
           
-          {/* Live tracking badge */}
+          {/* Live tracking badge and sound toggle */}
           {tracking && (
-            <div className="absolute top-2 right-2 bg-primary text-primary-foreground px-3 py-1 rounded-full text-xs font-arabic flex items-center gap-1 shadow-lg">
-              <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-              تتبع مباشر
+            <div className="absolute top-2 right-2 flex items-center gap-2">
+              <div className="bg-primary text-primary-foreground px-3 py-1 rounded-full text-xs font-arabic flex items-center gap-1 shadow-lg">
+                <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+                تتبع مباشر
+              </div>
+              <Button
+                variant="secondary"
+                size="icon"
+                className="h-7 w-7 rounded-full shadow-lg"
+                onClick={handleSoundToggle}
+                title={soundEnabled ? 'إيقاف التنبيهات الصوتية' : 'تفعيل التنبيهات الصوتية'}
+              >
+                {soundEnabled ? (
+                  <Volume2 className="h-4 w-4 text-primary" />
+                ) : (
+                  <VolumeX className="h-4 w-4 text-muted-foreground" />
+                )}
+              </Button>
+            </div>
+          )}
+
+          {/* Distance indicator when driver is close */}
+          {tracking && distanceToDestination > 0 && distanceToDestination < 1000 && (
+            <div className="absolute top-12 right-2 bg-orange-500 text-white px-2 py-1 rounded text-xs font-arabic shadow-lg">
+              السائق على بعد {distanceToDestination < 1000 ? `${Math.round(distanceToDestination)} م` : `${(distanceToDestination/1000).toFixed(1)} كم`}
             </div>
           )}
 
