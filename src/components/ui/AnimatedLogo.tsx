@@ -213,34 +213,18 @@ export const AnimatedLogo = ({
         <motion.div className="flex flex-col">
           <motion.span 
             className={cn(
-              "font-bold text-primary leading-none",
+              "font-bold text-primary leading-none font-arabic",
               textSizeClasses[size],
               textClassName
             )}
+            style={{ fontFamily: 'Tajawal, sans-serif' }}
             animate={{
               x: isHovered ? 3 : 0,
               scale: isClicked ? [1, 1.1, 1] : 1,
             }}
             transition={{ duration: 0.2, ease: "easeOut" }}
           >
-            <motion.span className="inline-block">
-              {"الحي".split('').map((char, index) => (
-                <motion.span
-                  key={index}
-                  className="inline-block"
-                  animate={{
-                    y: isHovered ? [0, -3, 0] : 0,
-                    color: isClicked ? ['hsl(var(--primary))', 'hsl(var(--accent))', 'hsl(var(--primary))'] : 'hsl(var(--primary))',
-                  }}
-                  transition={{
-                    y: { duration: 0.3, delay: index * 0.05, ease: "easeOut" },
-                    color: { duration: 0.3 },
-                  }}
-                >
-                  {char}
-                </motion.span>
-              ))}
-            </motion.span>
+            الحي
           </motion.span>
           
           {/* Animated Underline */}
