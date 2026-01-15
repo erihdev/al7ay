@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,9 +13,43 @@ import { AnimatedLogo } from '@/components/ui/AnimatedLogo';
 const ProviderLogin = () => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
+  const [isCheckingSession, setIsCheckingSession] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showForgotPassword, setShowForgotPassword] = useState(false);
+
+  // Check if already logged in
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        // Check if user is a provider
+        const { data: provider } = await supabase
+          .from('service_providers')
+          .select('id')
+          .eq('user_id', session.user.id)
+          .maybeSingle();
+        
+        if (provider) {
+          navigate('/provider-dashboard', { replace: true });
+          return;
+        }
+      }
+      setIsCheckingSession(false);
+    };
+
+    checkSession();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' && session?.user) {
+        // Navigate after sign in
+        navigate('/provider-dashboard', { replace: true });
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,33 +61,23 @@ const ProviderLogin = () => {
 
     setIsLoading(true);
 
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
-        password,
-      });
+    const { error } = await supabase.auth.signInWithPassword({
+      email: email.trim(),
+      password,
+    });
 
-      if (error) {
-        if (error.message?.includes('Invalid login credentials')) {
-          toast.error('البريد الإلكتروني أو كلمة المرور غير صحيحة');
-        } else {
-          toast.error(error.message || 'حدث خطأ أثناء تسجيل الدخول');
-        }
-        setIsLoading(false);
-        return;
-      }
-
-      if (data.session) {
-        toast.success('تم تسجيل الدخول بنجاح');
-        // Use setTimeout to ensure session is stored before navigation
-        setTimeout(() => {
-          navigate('/provider-dashboard', { replace: true });
-        }, 100);
-      }
-    } catch (err) {
-      toast.error('حدث خطأ غير متوقع');
+    if (error) {
       setIsLoading(false);
+      if (error.message?.includes('Invalid login credentials')) {
+        toast.error('البريد الإلكتروني أو كلمة المرور غير صحيحة');
+      } else {
+        toast.error(error.message || 'حدث خطأ أثناء تسجيل الدخول');
+      }
+      return;
     }
+
+    // Success - onAuthStateChange will handle navigation
+    toast.success('تم تسجيل الدخول بنجاح');
   };
 
   const handleForgotPassword = async (e: React.FormEvent) => {
@@ -80,6 +104,18 @@ const ProviderLogin = () => {
     toast.success('تم إرسال رابط استعادة كلمة المرور إلى بريدك الإلكتروني');
     setShowForgotPassword(false);
   };
+
+  // Show loading while checking session
+  if (isCheckingSession) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
+          <p className="text-muted-foreground">جاري التحقق...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5 font-arabic flex flex-col" dir="rtl">
