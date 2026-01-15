@@ -62,13 +62,15 @@ const ProviderDashboard = () => {
   // Enable real-time order notifications
   useProviderOrderNotifications(provider?.id, soundEnabled);
 
-  // Single effect to handle all initialization
+  // Single effect to handle all initialization with retry logic
   useEffect(() => {
     let isMounted = true;
+    let retryCount = 0;
+    const maxRetries = 3;
     
-    const initializeDashboard = async () => {
+    const initializeDashboard = async (): Promise<void> => {
       try {
-        console.log('ProviderDashboard: Starting initialization...');
+        console.log('ProviderDashboard: Starting initialization... (attempt ' + (retryCount + 1) + ')');
         
         // Step 1: Get current session directly from Supabase
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
@@ -81,7 +83,7 @@ const ProviderDashboard = () => {
         if (!session?.user) {
           console.log('No session found, redirecting to login');
           if (isMounted) {
-            navigate('/provider-login', { replace: true });
+            window.location.href = '/provider-login';
           }
           return;
         }
@@ -135,6 +137,21 @@ const ProviderDashboard = () => {
         
       } catch (err: any) {
         console.error('Dashboard initialization error:', err);
+        
+        // Check if it's an abort error and we can retry
+        const isAbortError = err.message?.includes('aborted') || 
+                            err.message?.includes('The operation was aborted') ||
+                            err.name === 'AbortError' ||
+                            err.message?.includes('Failed to fetch');
+        
+        if (isAbortError && retryCount < maxRetries && isMounted) {
+          retryCount++;
+          console.log(`Retrying... attempt ${retryCount + 1}`);
+          // Wait before retrying (exponential backoff)
+          await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
+          return initializeDashboard();
+        }
+        
         if (isMounted) {
           setError(err.message || 'حدث خطأ غير متوقع');
           setIsLoading(false);
@@ -148,7 +165,7 @@ const ProviderDashboard = () => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       console.log('Auth state changed:', event);
       if (event === 'SIGNED_OUT') {
-        navigate('/provider-login', { replace: true });
+        window.location.href = '/provider-login';
       }
     });
     
