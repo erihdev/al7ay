@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -29,9 +30,25 @@ import {
   Sparkles,
   Loader2,
   X,
-  ArrowLeftRight
+  ArrowLeftRight,
+  Info
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+
+// Feature tooltips mapping
+const featureTooltips: Record<string, string> = {
+  'لوحة تحكم كاملة': 'تحكم بجميع جوانب متجرك من مكان واحد - الطلبات، المنتجات، والإحصائيات',
+  'إشعارات الطلبات': 'احصل على تنبيهات فورية عند وصول طلبات جديدة عبر الموقع والجوال',
+  'متجر خاص': 'صفحة متجر مخصصة لعرض منتجاتك بشعارك وهويتك التجارية',
+  'تقارير متقدمة': 'تحليلات مفصلة للمبيعات، الأداء، وسلوك العملاء',
+  'دعم أولوي': 'خط دعم مباشر مع أولوية في الرد وحل المشكلات',
+  'تخصيص الشعار': 'ارفع شعار نشاطك التجاري ليظهر في متجرك',
+  'منتجات محدودة': 'عدد المنتجات المسموح إضافتها في الخطة',
+  'منتجات غير محدودة': 'أضف عدد لا نهائي من المنتجات لمتجرك',
+  '10 منتجات': 'يمكنك إضافة حتى 10 منتجات في هذه الخطة',
+  '50 منتج': 'يمكنك إضافة حتى 50 منتج في هذه الخطة',
+  'منتجات لا محدودة': 'أضف أي عدد من المنتجات بدون قيود',
+};
 
 interface SubscriptionPlan {
   id: string;
@@ -558,24 +575,47 @@ const ProviderRegister = () => {
                       </motion.div>
 
                       <ul className="space-y-3 mb-6">
-                        {plan.features.map((feature, i) => (
-                          <motion.li 
-                            key={i} 
-                            className="flex items-center gap-2 text-sm"
-                            initial={{ opacity: 0, x: -10 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: 0.2 + i * 0.05 }}
-                            whileHover={{ x: 5, transition: { duration: 0.2 } }}
-                          >
-                            <motion.div 
-                              className="h-5 w-5 rounded-full bg-green-500/10 flex items-center justify-center shrink-0"
-                              whileHover={{ scale: 1.2, backgroundColor: "hsl(var(--primary) / 0.2)" }}
-                            >
-                              <Check className="h-3 w-3 text-green-500" />
-                            </motion.div>
-                            <span>{feature}</span>
-                          </motion.li>
-                        ))}
+                        {plan.features.map((feature, i) => {
+                          // Find matching tooltip
+                          const tooltipText = Object.entries(featureTooltips).find(
+                            ([key]) => feature.includes(key)
+                          )?.[1];
+                          
+                          return (
+                            <TooltipProvider key={i} delayDuration={200}>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <motion.li 
+                                    className="flex items-center gap-2 text-sm cursor-help group"
+                                    initial={{ opacity: 0, x: -10 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    transition={{ delay: 0.2 + i * 0.05 }}
+                                    whileHover={{ x: 5, transition: { duration: 0.2 } }}
+                                  >
+                                    <motion.div 
+                                      className="h-5 w-5 rounded-full bg-green-500/10 flex items-center justify-center shrink-0"
+                                      whileHover={{ scale: 1.2, backgroundColor: "hsl(var(--primary) / 0.2)" }}
+                                    >
+                                      <Check className="h-3 w-3 text-green-500" />
+                                    </motion.div>
+                                    <span className="flex-1">{feature}</span>
+                                    {tooltipText && (
+                                      <Info className="h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                                    )}
+                                  </motion.li>
+                                </TooltipTrigger>
+                                {tooltipText && (
+                                  <TooltipContent 
+                                    side="top" 
+                                    className="max-w-[250px] text-center bg-popover/95 backdrop-blur-sm"
+                                  >
+                                    <p className="text-xs">{tooltipText}</p>
+                                  </TooltipContent>
+                                )}
+                              </Tooltip>
+                            </TooltipProvider>
+                          );
+                        })}
                       </ul>
 
                       <motion.div
