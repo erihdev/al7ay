@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,7 +10,6 @@ import ProviderOrdersManager from '@/components/provider/ProviderOrdersManager';
 import ProviderSettingsManager from '@/components/provider/ProviderSettingsManager';
 import ProviderStats from '@/components/provider/ProviderStats';
 import { 
-  Package, 
   ShoppingBag, 
   TrendingUp, 
   LogOut,
@@ -23,7 +21,8 @@ import {
   Volume2,
   VolumeX,
   BarChart3,
-  RefreshCw
+  RefreshCw,
+  Loader2
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { AnimatedLogo } from '@/components/ui/AnimatedLogo';
@@ -47,282 +46,156 @@ interface ProviderProduct {
   is_featured: boolean;
 }
 
+type LoadingState = 'loading' | 'no-session' | 'no-provider' | 'ready' | 'error';
+
 const ProviderDashboard = () => {
-  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('overview');
   const [soundEnabled, setSoundEnabled] = useState(true);
   
-  // Simplified state management
-  const [isLoading, setIsLoading] = useState(true);
+  const [state, setState] = useState<LoadingState>('loading');
   const [provider, setProvider] = useState<Provider | null>(null);
   const [products, setProducts] = useState<ProviderProduct[]>([]);
   const [orders, setOrders] = useState<ProviderOrder[]>([]);
-  const [error, setError] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState('');
 
-  // Enable real-time order notifications
   useProviderOrderNotifications(provider?.id, soundEnabled);
 
-  // Single effect to handle all initialization with timeout and retry
   useEffect(() => {
-    let isMounted = true;
-    let timeoutId: NodeJS.Timeout;
-    
-    const initializeDashboard = async () => {
-      // Set a hard timeout - if nothing happens in 10 seconds, show error
-      timeoutId = setTimeout(() => {
-        if (isMounted && isLoading) {
-          console.log('Hard timeout reached');
-          setError('انتهت مهلة الاتصال. يرجى التحقق من اتصال الإنترنت والمحاولة مرة أخرى.');
-          setIsLoading(false);
-        }
-      }, 10000);
-      
+    let cancelled = false;
+
+    const load = async () => {
       try {
-        console.log('ProviderDashboard: Starting initialization...');
-        
-        // Step 1: Get current session with timeout
-        const sessionPromise = supabase.auth.getSession();
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('timeout')), 5000)
-        );
-        
-        let session;
-        try {
-          const result = await Promise.race([sessionPromise, timeoutPromise]) as any;
-          session = result?.data?.session;
-        } catch (e: any) {
-          if (e.message === 'timeout') {
-            throw new Error('انتهت مهلة الاتصال بالخادم');
-          }
-          throw e;
-        }
+        // 1. Check session
+        const { data: { session } } = await supabase.auth.getSession();
         
         if (!session?.user) {
-          console.log('No session found, redirecting to login');
-          clearTimeout(timeoutId);
-          if (isMounted) {
-            window.location.href = '/provider-login';
-          }
+          if (!cancelled) setState('no-session');
           return;
         }
-        
-        console.log('ProviderDashboard: User found:', session.user.id);
-        
-        // Step 2: Get provider profile with timeout
-        const providerPromise = supabase
+
+        // 2. Get provider
+        const { data: providerData, error: providerError } = await supabase
           .from('service_providers')
           .select('id, business_name, logo_url')
           .eq('user_id', session.user.id)
           .maybeSingle();
-          
-        const providerTimeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('timeout')), 5000)
-        );
-        
-        let providerData;
-        try {
-          const result = await Promise.race([providerPromise, providerTimeoutPromise]) as any;
-          if (result.error) throw result.error;
-          providerData = result.data;
-        } catch (e: any) {
-          if (e.message === 'timeout') {
-            throw new Error('انتهت مهلة تحميل بيانات المتجر');
-          }
-          throw e;
-        }
+
+        if (providerError) throw providerError;
         
         if (!providerData) {
-          console.log('No provider profile found');
-          clearTimeout(timeoutId);
-          if (isMounted) {
-            setProvider(null);
-            setIsLoading(false);
-          }
+          if (!cancelled) setState('no-provider');
           return;
         }
-        
-        console.log('ProviderDashboard: Provider found:', providerData.id);
-        
-        // Step 3: Load products and orders (non-blocking, use empty arrays if fails)
-        let productsData: ProviderProduct[] = [];
-        let ordersData: ProviderOrder[] = [];
-        
-        try {
-          const [productsResult, ordersResult] = await Promise.race([
-            Promise.all([
-              supabase
-                .from('provider_products')
-                .select('id, is_available, is_featured')
-                .eq('provider_id', providerData.id),
-              supabase
-                .from('provider_orders')
-                .select('id, status, total_amount, created_at')
-                .eq('provider_id', providerData.id)
-                .order('created_at', { ascending: false })
-            ]),
-            new Promise<any>((_, reject) => setTimeout(() => reject(new Error('timeout')), 5000))
-          ]) as any;
-          
-          productsData = productsResult.data || [];
-          ordersData = ordersResult.data || [];
-        } catch (e) {
-          console.log('Products/orders fetch failed, using empty arrays');
-        }
-        
-        clearTimeout(timeoutId);
-        
-        if (isMounted) {
+
+        // 3. Get products and orders (don't fail if these fail)
+        const [productsRes, ordersRes] = await Promise.all([
+          supabase.from('provider_products').select('id, is_available, is_featured').eq('provider_id', providerData.id),
+          supabase.from('provider_orders').select('id, status, total_amount, created_at').eq('provider_id', providerData.id).order('created_at', { ascending: false })
+        ]);
+
+        if (!cancelled) {
           setProvider(providerData);
-          setProducts(productsData);
-          setOrders(ordersData);
-          setIsLoading(false);
-          setError(null);
-          console.log('ProviderDashboard: Initialization complete');
+          setProducts(productsRes.data || []);
+          setOrders(ordersRes.data || []);
+          setState('ready');
         }
-        
       } catch (err: any) {
-        console.error('Dashboard initialization error:', err);
-        clearTimeout(timeoutId);
-        
-        if (isMounted) {
-          // Make error message user-friendly
-          let errorMessage = err.message || 'حدث خطأ غير متوقع';
-          if (err.message?.includes('aborted') || err.message?.includes('Failed to fetch')) {
-            errorMessage = 'فشل الاتصال بالخادم. يرجى التحقق من اتصال الإنترنت.';
-          }
-          setError(errorMessage);
-          setIsLoading(false);
+        console.error('Dashboard error:', err);
+        if (!cancelled) {
+          setErrorMessage(err.message || 'حدث خطأ');
+          setState('error');
         }
       }
     };
-    
-    initializeDashboard();
-    
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log('Auth state changed:', event);
+
+    load();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === 'SIGNED_OUT') {
         window.location.href = '/provider-login';
       }
     });
-    
+
     return () => {
-      isMounted = false;
-      clearTimeout(timeoutId);
+      cancelled = true;
       subscription.unsubscribe();
     };
   }, []);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    toast.success('تم تسجيل الخروج بنجاح');
-    navigate('/provider-login', { replace: true });
+    toast.success('تم تسجيل الخروج');
+    window.location.href = '/provider-login';
   };
 
-  const handleRetry = () => {
-    setIsLoading(true);
-    setError(null);
-    window.location.reload();
-  };
-
-  // Loading state
-  if (isLoading) {
+  // Loading
+  if (state === 'loading') {
     return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4" dir="rtl">
-        <div className="text-center space-y-4">
-          <AnimatedLogo size="lg" showText={false} />
-          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
-          <p className="text-muted-foreground font-arabic">جاري تحميل لوحة التحكم...</p>
+      <div className="min-h-screen bg-background flex items-center justify-center" dir="rtl">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary mb-2" />
+          <p className="text-muted-foreground">جاري التحميل...</p>
         </div>
       </div>
     );
   }
 
-  // Error state
-  if (error) {
+  // No session - redirect
+  if (state === 'no-session') {
+    window.location.href = '/provider-login';
+    return null;
+  }
+
+  // Error
+  if (state === 'error') {
     return (
-      <div className="min-h-screen bg-background font-arabic flex flex-col" dir="rtl">
-        <header className="sticky top-0 z-50 bg-background/95 backdrop-blur border-b">
-          <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-            <AnimatedLogo size="md" showText={true} />
-            <div className="flex items-center gap-2">
-              <ThemeToggle />
-              <Button variant="ghost" size="sm" onClick={handleLogout} className="font-arabic">
-                <LogOut className="h-4 w-4 ml-2" />
+      <div className="min-h-screen bg-background flex items-center justify-center p-4" dir="rtl">
+        <Card className="max-w-md w-full">
+          <CardContent className="p-8 text-center">
+            <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
+            <h2 className="text-xl font-bold mb-2">حدث خطأ</h2>
+            <p className="text-muted-foreground mb-4">{errorMessage}</p>
+            <div className="flex gap-2 justify-center">
+              <Button onClick={() => window.location.reload()}>
+                <RefreshCw className="h-4 w-4 ml-2" />
+                إعادة المحاولة
+              </Button>
+              <Button variant="outline" onClick={handleLogout}>
                 تسجيل الخروج
               </Button>
             </div>
-          </div>
-        </header>
-
-        <main className="flex-1 flex items-center justify-center p-4">
-          <Card className="max-w-md w-full">
-            <CardContent className="p-8 text-center">
-              <AlertCircle className="h-16 w-16 text-destructive mx-auto mb-4" />
-              <h2 className="text-xl font-bold mb-2">حدث خطأ</h2>
-              <p className="text-muted-foreground mb-4">{error}</p>
-              <div className="flex gap-2 justify-center">
-                <Button onClick={handleRetry} className="font-arabic">
-                  <RefreshCw className="h-4 w-4 ml-2" />
-                  إعادة المحاولة
-                </Button>
-                <Button variant="outline" onClick={handleLogout} className="font-arabic">
-                  تسجيل الخروج
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </main>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
-  // No provider profile state
-  if (!provider) {
+  // No provider profile
+  if (state === 'no-provider') {
     return (
-      <div className="min-h-screen bg-background font-arabic flex flex-col" dir="rtl">
-        <header className="sticky top-0 z-50 bg-background/95 backdrop-blur border-b">
-          <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-            <AnimatedLogo size="md" showText={true} />
-            <div className="flex items-center gap-2">
-              <ThemeToggle />
-              <Button variant="ghost" size="sm" onClick={handleLogout} className="font-arabic">
-                <LogOut className="h-4 w-4 ml-2" />
-                تسجيل الخروج
-              </Button>
-            </div>
-          </div>
-        </header>
-
-        <main className="flex-1 flex items-center justify-center p-4">
-          <Card className="max-w-md w-full">
-            <CardContent className="p-8 text-center">
-              <AlertCircle className="h-16 w-16 text-yellow-500 mx-auto mb-4" />
-              <h2 className="text-xl font-bold mb-2">حسابك قيد الإعداد</h2>
-              <p className="text-muted-foreground mb-4">
-                يقوم فريقنا بتجهيز متجرك. سيتم إعلامك عند اكتمال الإعداد.
-              </p>
-              <Button variant="outline" onClick={handleLogout} className="font-arabic">
-                تسجيل الخروج
-              </Button>
-            </CardContent>
-          </Card>
-        </main>
+      <div className="min-h-screen bg-background flex items-center justify-center p-4" dir="rtl">
+        <Card className="max-w-md w-full">
+          <CardContent className="p-8 text-center">
+            <AlertCircle className="h-12 w-12 text-yellow-500 mx-auto mb-4" />
+            <h2 className="text-xl font-bold mb-2">حسابك قيد الإعداد</h2>
+            <p className="text-muted-foreground mb-4">يقوم فريقنا بتجهيز متجرك.</p>
+            <Button variant="outline" onClick={handleLogout}>
+              تسجيل الخروج
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
-  const todayOrders = orders.filter(o => {
-    const today = new Date().toDateString();
-    return new Date(o.created_at).toDateString() === today;
-  });
+  // Ready - show dashboard
+  if (!provider) return null;
 
+  const todayOrders = orders.filter(o => new Date(o.created_at).toDateString() === new Date().toDateString());
   const pendingOrders = orders.filter(o => o.status === 'pending').length;
   const preparingOrders = orders.filter(o => o.status === 'preparing').length;
   const completedToday = todayOrders.filter(o => o.status === 'completed').length;
-  const todayRevenue = todayOrders
-    .filter(o => o.status === 'completed')
-    .reduce((sum, o) => sum + o.total_amount, 0);
+  const todayRevenue = todayOrders.filter(o => o.status === 'completed').reduce((sum, o) => sum + o.total_amount, 0);
 
   return (
     <div className="min-h-screen bg-background font-arabic" dir="rtl">
@@ -341,23 +214,11 @@ const ProviderDashboard = () => {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {/* Sound Toggle */}
-            <div className="flex items-center gap-2 px-2">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setSoundEnabled(!soundEnabled)}
-                title={soundEnabled ? 'إيقاف صوت الإشعارات' : 'تفعيل صوت الإشعارات'}
-              >
-                {soundEnabled ? (
-                  <Volume2 className="h-4 w-4" />
-                ) : (
-                  <VolumeX className="h-4 w-4 text-muted-foreground" />
-                )}
-              </Button>
-            </div>
+            <Button variant="ghost" size="icon" onClick={() => setSoundEnabled(!soundEnabled)} title={soundEnabled ? 'إيقاف الصوت' : 'تفعيل الصوت'}>
+              {soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4 text-muted-foreground" />}
+            </Button>
             <ThemeToggle />
-            <Button variant="ghost" size="sm" onClick={handleLogout} className="font-arabic">
+            <Button variant="ghost" size="sm" onClick={handleLogout}>
               <LogOut className="h-4 w-4 ml-2" />
               خروج
             </Button>
@@ -368,36 +229,17 @@ const ProviderDashboard = () => {
       <main className="container mx-auto px-4 py-6 max-w-6xl">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid grid-cols-5 mb-6">
-            <TabsTrigger value="overview" className="font-arabic">
-              <TrendingUp className="h-4 w-4 ml-2" />
-              نظرة عامة
+            <TabsTrigger value="overview"><TrendingUp className="h-4 w-4 ml-2" />نظرة عامة</TabsTrigger>
+            <TabsTrigger value="stats"><BarChart3 className="h-4 w-4 ml-2" />الإحصائيات</TabsTrigger>
+            <TabsTrigger value="orders">
+              <ShoppingBag className="h-4 w-4 ml-2" />الطلبات
+              {pendingOrders > 0 && <span className="mr-2 bg-red-500 text-white text-xs rounded-full px-2">{pendingOrders}</span>}
             </TabsTrigger>
-            <TabsTrigger value="stats" className="font-arabic">
-              <BarChart3 className="h-4 w-4 ml-2" />
-              الإحصائيات
-            </TabsTrigger>
-            <TabsTrigger value="orders" className="font-arabic">
-              <ShoppingBag className="h-4 w-4 ml-2" />
-              الطلبات
-              {pendingOrders > 0 && (
-                <span className="mr-2 bg-red-500 text-white text-xs rounded-full px-2">
-                  {pendingOrders}
-                </span>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="products" className="font-arabic">
-              <Coffee className="h-4 w-4 ml-2" />
-              المنتجات
-            </TabsTrigger>
-            <TabsTrigger value="settings" className="font-arabic">
-              <Settings className="h-4 w-4 ml-2" />
-              الإعدادات
-            </TabsTrigger>
+            <TabsTrigger value="products"><Coffee className="h-4 w-4 ml-2" />المنتجات</TabsTrigger>
+            <TabsTrigger value="settings"><Settings className="h-4 w-4 ml-2" />الإعدادات</TabsTrigger>
           </TabsList>
 
-          {/* Overview Tab */}
           <TabsContent value="overview" className="space-y-6">
-            {/* Stats Cards */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <Card>
                 <CardContent className="p-4">
@@ -456,93 +298,45 @@ const ProviderDashboard = () => {
               </Card>
             </div>
 
-            {/* Quick Stats */}
             <div className="grid md:grid-cols-2 gap-6">
               <Card>
                 <CardContent className="p-6">
-                  <h3 className="font-bold mb-4 flex items-center gap-2">
-                    <Coffee className="h-5 w-5" />
-                    المنتجات
-                  </h3>
+                  <h3 className="font-bold mb-4 flex items-center gap-2"><Coffee className="h-5 w-5" />المنتجات</h3>
                   <div className="space-y-3">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">إجمالي المنتجات</span>
-                      <span className="font-bold">{products.length}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">منتجات متاحة</span>
-                      <span className="font-bold text-green-600">
-                        {products.filter(p => p.is_available).length}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">منتجات مميزة</span>
-                      <span className="font-bold text-yellow-600">
-                        {products.filter(p => p.is_featured).length}
-                      </span>
-                    </div>
+                    <div className="flex justify-between"><span className="text-muted-foreground">إجمالي المنتجات</span><span className="font-bold">{products.length}</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground">منتجات متاحة</span><span className="font-bold text-green-600">{products.filter(p => p.is_available).length}</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground">منتجات مميزة</span><span className="font-bold text-yellow-600">{products.filter(p => p.is_featured).length}</span></div>
                   </div>
-                  <Button 
-                    variant="outline" 
-                    className="w-full mt-4 font-arabic"
-                    onClick={() => setActiveTab('products')}
-                  >
-                    إدارة المنتجات
-                  </Button>
+                  <Button variant="outline" className="w-full mt-4" onClick={() => setActiveTab('products')}>إدارة المنتجات</Button>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardContent className="p-6">
-                  <h3 className="font-bold mb-4 flex items-center gap-2">
-                    <ShoppingBag className="h-5 w-5" />
-                    الطلبات
-                  </h3>
+                  <h3 className="font-bold mb-4 flex items-center gap-2"><ShoppingBag className="h-5 w-5" />الطلبات</h3>
                   <div className="space-y-3">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">إجمالي الطلبات</span>
-                      <span className="font-bold">{orders.length}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">طلبات جديدة</span>
-                      <span className="font-bold text-yellow-600">{pendingOrders}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">قيد التحضير</span>
-                      <span className="font-bold text-blue-600">{preparingOrders}</span>
-                    </div>
+                    <div className="flex justify-between"><span className="text-muted-foreground">إجمالي الطلبات</span><span className="font-bold">{orders.length}</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground">طلبات جديدة</span><span className="font-bold text-yellow-600">{pendingOrders}</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground">قيد التحضير</span><span className="font-bold text-blue-600">{preparingOrders}</span></div>
                   </div>
-                  <Button 
-                    variant="outline" 
-                    className="w-full mt-4 font-arabic"
-                    onClick={() => setActiveTab('orders')}
-                  >
-                    عرض الطلبات
-                  </Button>
+                  <Button variant="outline" className="w-full mt-4" onClick={() => setActiveTab('orders')}>عرض الطلبات</Button>
                 </CardContent>
               </Card>
             </div>
           </TabsContent>
 
-          {/* Stats Tab */}
           <TabsContent value="stats">
-            <ProviderStats 
-              orders={orders as any} 
-              products={products as any} 
-            />
+            <ProviderStats orders={orders as any} products={products as any} />
           </TabsContent>
 
-          {/* Orders Tab */}
           <TabsContent value="orders">
             <ProviderOrdersManager providerId={provider.id} />
           </TabsContent>
 
-          {/* Products Tab */}
           <TabsContent value="products">
             <ProviderProductsManager providerId={provider.id} />
           </TabsContent>
 
-          {/* Settings Tab */}
           <TabsContent value="settings">
             <ProviderSettingsManager provider={provider as any} />
           </TabsContent>

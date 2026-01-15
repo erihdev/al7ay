@@ -442,9 +442,12 @@ const ProviderRegister = () => {
           });
       }
 
-      // Always redirect to login after successful registration
-      toast.success('تم إنشاء حسابك بنجاح! يرجى تسجيل الدخول للمتابعة');
-      navigate('/provider-login');
+      // 6. Sign in the user automatically (signUp already creates a session if auto-confirm is enabled)
+      // Just redirect to dashboard - the session should already be active
+      toast.success('تم إنشاء حسابك بنجاح! جاري تحويلك للوحة التحكم...');
+      
+      // Use window.location for reliable redirect
+      window.location.href = '/provider-dashboard';
     } catch (error: any) {
       console.error('Registration error:', error);
       toast.error(error.message || 'حدث خطأ أثناء التسجيل');
