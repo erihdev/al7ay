@@ -59,102 +59,65 @@ const ProviderDashboard = () => {
 
   useProviderOrderNotifications(provider?.id, soundEnabled);
 
-  useEffect(() => {
-    let isMounted = true;
-    let dataLoaded = false;
-    
-    console.log('ProviderDashboard mounted');
-    
-    const loadProviderData = async (userId: string) => {
-      if (dataLoaded) return;
-      dataLoaded = true;
-      
-      console.log('Loading provider data for user:', userId);
-      try {
-        const { data: providerData, error: providerError } = await supabase
-          .from('service_providers')
-          .select('id, business_name, logo_url')
-          .eq('user_id', userId)
-          .maybeSingle();
-
-        console.log('Provider result:', providerData, providerError);
-        
-        if (!isMounted) return;
-
-        if (providerError) {
-          console.error('Provider error:', providerError);
-          setError(providerError.message);
-          setLoading(false);
-          return;
-        }
-
-        if (!providerData) {
-          console.log('No provider found for this user');
-          setError('لم يتم العثور على حساب مقدم خدمة. يرجى التواصل مع الإدارة.');
-          setLoading(false);
-          return;
-        }
-
-        const [productsRes, ordersRes] = await Promise.all([
-          supabase.from('provider_products').select('id, is_available, is_featured').eq('provider_id', providerData.id),
-          supabase.from('provider_orders').select('id, status, total_amount, created_at').eq('provider_id', providerData.id).order('created_at', { ascending: false })
-        ]);
-
-        console.log('Products:', productsRes.data?.length, 'Orders:', ordersRes.data?.length);
-        
-        if (!isMounted) return;
-
-        setProvider(providerData);
-        setProducts(productsRes.data || []);
-        setOrders(ordersRes.data || []);
-        setLoading(false);
-        console.log('Dashboard loaded successfully');
-      } catch (err) {
-        console.error('Dashboard load error:', err);
-        if (isMounted) {
-          setError('حدث خطأ أثناء تحميل البيانات');
-          setLoading(false);
-        }
-      }
-    };
-
-    // Check for existing session immediately
-    const checkSession = async () => {
-      console.log('Checking existing session...');
+  // Simple and direct data loading
+  const loadData = async () => {
+    try {
+      // Get current session
       const { data: { session } } = await supabase.auth.getSession();
-      console.log('Session check result:', session?.user?.id);
       
-      if (!isMounted) return;
-      
-      if (session?.user) {
-        loadProviderData(session.user.id);
-      } else {
-        console.log('No session found, redirecting to login');
-        navigate('/provider-login', { replace: true });
-      }
-    };
-
-    // Set up auth listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log('Auth state changed:', event, session?.user?.id);
-      
-      if (event === 'SIGNED_OUT') {
+      if (!session?.user) {
         navigate('/provider-login', { replace: true });
         return;
       }
-      
-      if (session?.user && !dataLoaded) {
-        loadProviderData(session.user.id);
+
+      // Get provider
+      const { data: providerData, error: providerError } = await supabase
+        .from('service_providers')
+        .select('id, business_name, logo_url')
+        .eq('user_id', session.user.id)
+        .maybeSingle();
+
+      if (providerError) {
+        setError(providerError.message);
+        setLoading(false);
+        return;
+      }
+
+      if (!providerData) {
+        setError('لم يتم العثور على حساب مقدم خدمة');
+        setLoading(false);
+        return;
+      }
+
+      // Get products and orders
+      const [productsRes, ordersRes] = await Promise.all([
+        supabase.from('provider_products').select('id, is_available, is_featured').eq('provider_id', providerData.id),
+        supabase.from('provider_orders').select('id, status, total_amount, created_at').eq('provider_id', providerData.id).order('created_at', { ascending: false })
+      ]);
+
+      setProvider(providerData);
+      setProducts(productsRes.data || []);
+      setOrders(ordersRes.data || []);
+      setLoading(false);
+    } catch (err) {
+      console.error('Load error:', err);
+      setError('حدث خطأ أثناء تحميل البيانات');
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    // Load data on mount
+    loadData();
+
+    // Listen for sign out
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_OUT') {
+        navigate('/provider-login', { replace: true });
       }
     });
 
-    // Start session check
-    checkSession();
-
-    return () => {
-      isMounted = false;
-      subscription.unsubscribe();
-    };
+    return () => subscription.unsubscribe();
   }, [navigate]);
 
   const loadDashboard = async () => {
