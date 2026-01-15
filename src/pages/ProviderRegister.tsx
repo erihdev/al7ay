@@ -1276,41 +1276,105 @@ const ProviderRegister = () => {
           </motion.div>
         )}
 
-        {/* Step 3: Payment (if applicable) */}
+        {/* Step 3: Payment / Success */}
         {step === 'payment' && selectedPlan && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className="max-w-md mx-auto text-center"
           >
-            <Card>
-              <CardContent className="p-8">
-                <CreditCard className="h-16 w-16 text-primary mx-auto mb-4" />
-                <h2 className="text-2xl font-bold mb-2">إتمام الدفع</h2>
-                <p className="text-muted-foreground mb-6">
-                  سيتم توجيهك لإتمام الدفع عبر بوابة الدفع الآمنة
-                </p>
-                <div className="p-4 bg-muted rounded-lg mb-6">
-                  <div className="flex justify-between mb-2">
-                    <span>الخطة:</span>
-                    <span className="font-bold">{selectedPlan.name_ar}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>المبلغ:</span>
-                    <span className="font-bold text-lg">{selectedPlan.price} ر.س</span>
-                  </div>
-                </div>
-                <Button className="w-full" size="lg">
-                  <CreditCard className="h-4 w-4 ml-2" />
-                  الدفع الآن
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  className="w-full mt-2"
-                  onClick={() => navigate('/provider-dashboard')}
+            <Card className="overflow-hidden">
+              {/* Success Header */}
+              <div className="bg-gradient-to-r from-green-500 to-emerald-400 p-8 text-white">
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ type: "spring", stiffness: 200, delay: 0.2 }}
+                  className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4"
                 >
-                  الدفع لاحقاً (ابدأ بالتجربة المجانية)
-                </Button>
+                  <Check className="h-10 w-10" />
+                </motion.div>
+                <motion.h2 
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 }}
+                  className="text-2xl font-bold mb-2"
+                >
+                  تم التسجيل بنجاح! 🎉
+                </motion.h2>
+                <motion.p 
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.4 }}
+                  className="text-white/90"
+                >
+                  مرحباً بك في منصة الحي
+                </motion.p>
+              </div>
+
+              <CardContent className="p-6 space-y-4">
+                <motion.div 
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.5 }}
+                  className="p-4 bg-muted rounded-lg"
+                >
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
+                      <Store className="h-5 w-5 text-primary" />
+                    </div>
+                    <div className="text-right">
+                      <p className="font-bold">{formData.businessName}</p>
+                      <p className="text-sm text-muted-foreground">{formData.email}</p>
+                    </div>
+                  </div>
+                  <div className="flex justify-between text-sm border-t pt-3">
+                    <span className="text-muted-foreground">الخطة:</span>
+                    <span className="font-medium">{selectedPlan.name_ar}</span>
+                  </div>
+                  {selectedPlan.is_trial && (
+                    <div className="flex justify-between text-sm mt-1">
+                      <span className="text-muted-foreground">الفترة:</span>
+                      <Badge variant="secondary" className="text-xs">
+                        <Gift className="h-3 w-3 ml-1" />
+                        {selectedPlan.duration_days} يوم مجاناً
+                      </Badge>
+                    </div>
+                  )}
+                </motion.div>
+
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.6 }}
+                  className="space-y-3"
+                >
+                  <Button 
+                    className="w-full font-arabic" 
+                    size="lg"
+                    onClick={() => navigate('/provider-login')}
+                  >
+                    تسجيل الدخول الآن
+                    <ArrowRight className="h-4 w-4 mr-2 rotate-180" />
+                  </Button>
+                  
+                  <Button 
+                    variant="outline"
+                    className="w-full font-arabic" 
+                    onClick={() => navigate('/provider-dashboard')}
+                  >
+                    الذهاب للوحة التحكم مباشرة
+                  </Button>
+                </motion.div>
+
+                <motion.p 
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.7 }}
+                  className="text-xs text-muted-foreground text-center pt-2"
+                >
+                  يمكنك الآن إضافة منتجاتك وبدء استقبال الطلبات
+                </motion.p>
               </CardContent>
             </Card>
           </motion.div>
