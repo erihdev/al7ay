@@ -399,12 +399,18 @@ const ProviderRegister = () => {
       if (providerError) throw providerError;
 
       // 3. Add service_provider role
-      await supabase
+      const { error: roleError } = await supabase
         .from('user_roles')
         .insert({
           user_id: authData.user.id,
           role: 'service_provider'
         });
+
+      if (roleError) {
+        console.error('Error adding role:', roleError);
+        // Don't throw - we still want to continue even if role insert fails
+        // The provider profile is already created
+      }
 
       // 4. Create subscription
       const endsAt = new Date();
