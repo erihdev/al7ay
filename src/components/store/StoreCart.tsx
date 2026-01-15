@@ -33,10 +33,12 @@ import {
   ArrowRight,
   Package,
   Clock,
-  Sparkles
+  Sparkles,
+  ExternalLink
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 
 interface StoreCartProps {
   primaryColor?: string;
@@ -50,6 +52,7 @@ interface OrderResult {
 }
 
 const StoreCart = ({ primaryColor = '#1B4332' }: StoreCartProps) => {
+  const navigate = useNavigate();
   const { items, providerId, providerName, totalItems, totalPrice, updateQuantity, removeItem, clearCart } = useProviderCart();
   const { user } = useAuth();
   
@@ -578,11 +581,22 @@ const StoreCart = ({ primaryColor = '#1B4332' }: StoreCartProps) => {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.8 }}
-        className="mt-auto pt-6 w-full"
+        className="mt-auto pt-6 w-full space-y-3"
       >
         <Button
-          className="w-full h-12 rounded-xl"
-          variant="outline"
+          className="w-full h-12 rounded-xl shadow-lg"
+          style={{ backgroundColor: primaryColor }}
+          onClick={() => {
+            handleNewOrder();
+            navigate('/my-store-orders');
+          }}
+        >
+          <ExternalLink className="h-4 w-4 ml-2" />
+          تتبع الطلب
+        </Button>
+        <Button
+          className="w-full h-10 rounded-xl"
+          variant="ghost"
           onClick={handleNewOrder}
         >
           إغلاق
