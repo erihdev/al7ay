@@ -57,20 +57,7 @@ const Landing = () => {
         <header className="sticky top-0 z-50 bg-background/95 backdrop-blur border-b">
           <div className="container mx-auto px-4 py-3 flex items-center justify-between">
             <AnimatedLogo size="md" showText={true} />
-            <div className="flex items-center gap-2">
-              <ThemeToggle />
-              <Link to="/provider-login">
-                <Button variant="ghost" size="sm" className="font-arabic text-xs hidden sm:inline-flex">
-                  مقدم خدمة
-                </Button>
-              </Link>
-              <Link to="/profile">
-                <Button size="sm" className="font-arabic text-xs">
-                  دخول
-                  <ArrowLeft className="h-3 w-3 mr-1" />
-                </Button>
-              </Link>
-            </div>
+            <ThemeToggle />
           </div>
         </header>
 
