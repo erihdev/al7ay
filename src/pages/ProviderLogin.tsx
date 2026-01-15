@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -11,52 +11,32 @@ import { ArrowRight, Store, Mail, Lock, Loader2, LogIn, KeyRound } from 'lucide-
 import { AnimatedLogo } from '@/components/ui/AnimatedLogo';
 
 const ProviderLogin = () => {
-  const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
-  const [isInitializing, setIsInitializing] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showForgotPassword, setShowForgotPassword] = useState(false);
 
+  // Check for existing session on mount and redirect if provider
   useEffect(() => {
-    let isMounted = true;
-    
-    const checkExistingSession = async () => {
+    const checkSession = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
-        
-        if (session?.user && isMounted) {
+        if (session?.user) {
           const { data: provider } = await supabase
             .from('service_providers')
             .select('id')
             .eq('user_id', session.user.id)
             .maybeSingle();
           
-          if (provider && isMounted) {
+          if (provider) {
             window.location.href = '/provider-dashboard';
-            return;
           }
         }
       } catch (error) {
-        console.error('Session check error:', error);
-      }
-      
-      if (isMounted) {
-        setIsInitializing(false);
+        // Silently fail - just show login form
       }
     };
-
-    // Set timeout to prevent infinite loading
-    const timeoutId = setTimeout(() => {
-      if (isMounted) setIsInitializing(false);
-    }, 3000);
-
-    checkExistingSession();
-
-    return () => {
-      isMounted = false;
-      clearTimeout(timeoutId);
-    };
+    checkSession();
   }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -143,17 +123,6 @@ const ProviderLogin = () => {
     }
   };
 
-  // Loading state while checking session
-  if (isInitializing) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center" dir="rtl">
-        <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
-          <p className="text-muted-foreground">جاري التحميل...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5 font-arabic flex flex-col" dir="rtl">
