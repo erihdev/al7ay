@@ -26,14 +26,19 @@ import {
   CheckCircle2,
   MessageCircle,
   Headphones,
-  Globe
+  Globe,
+  Play,
+  Volume2,
+  VolumeX
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { AnimatedLogo } from '@/components/ui/AnimatedLogo';
+import { AnimatedSlogan } from '@/components/ui/AnimatedSlogan';
 import { InteractiveBackground } from '@/components/ui/InteractiveBackground';
 import { PageTransition } from '@/components/ui/PageTransition';
 import { motion } from 'framer-motion';
+import { useState, useRef } from 'react';
 
 const CustomerLanding = () => {
   const stats = [
@@ -286,6 +291,70 @@ const CustomerLanding = () => {
                 </div>
               </motion.div>
             </div>
+          </div>
+        </section>
+
+        {/* Animated Slogan Section */}
+        <section className="py-16 bg-gradient-to-br from-primary/5 via-background to-accent/5">
+          <div className="container mx-auto px-4">
+            <AnimatedSlogan size="lg" showLogo={true} />
+          </div>
+        </section>
+
+        {/* Promotional Video Section */}
+        <section className="py-16 bg-muted/30">
+          <div className="container mx-auto px-4">
+            <motion.div 
+              className="text-center mb-8"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+            >
+              <Badge variant="secondary" className="mb-4">
+                <Play className="h-4 w-4 ml-2" />
+                شاهد المزيد
+              </Badge>
+              <h2 className="text-3xl md:text-4xl font-bold mb-4">اكتشف تجربة الحي</h2>
+              <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+                شاهد كيف نوصل لك أشهى المأكولات والمشروبات من جيرانك في حيّك
+              </p>
+            </motion.div>
+            
+            <motion.div 
+              className="max-w-4xl mx-auto"
+              initial={{ opacity: 0, scale: 0.95 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+            >
+              <div className="relative rounded-3xl overflow-hidden shadow-2xl border border-primary/20">
+                <video 
+                  className="w-full aspect-video object-cover"
+                  autoPlay 
+                  muted 
+                  loop 
+                  playsInline
+                  controls
+                  poster={heroCustomerImage}
+                >
+                  <source src={promoDeliveryVideo} type="video/mp4" />
+                  متصفحك لا يدعم تشغيل الفيديو
+                </video>
+                
+                {/* Video overlay gradient */}
+                <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-background/20 to-transparent" />
+              </div>
+              
+              {/* Video caption */}
+              <motion.p 
+                className="text-center text-muted-foreground mt-4 text-sm"
+                initial={{ opacity: 0 }}
+                whileInView={{ opacity: 1 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.3 }}
+              >
+                🎬 تجربة توصيل سريعة وموثوقة من قلب الحي
+              </motion.p>
+            </motion.div>
           </div>
         </section>
 

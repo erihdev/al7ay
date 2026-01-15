@@ -4,6 +4,7 @@ import { ShoppingBag, Store, ArrowLeft, Sparkles } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { AnimatedLogo } from '@/components/ui/AnimatedLogo';
+import { AnimatedSlogan } from '@/components/ui/AnimatedSlogan';
 import { InteractiveBackground } from '@/components/ui/InteractiveBackground';
 import { PageTransition } from '@/components/ui/PageTransition';
 import { Badge } from '@/components/ui/badge';
@@ -56,26 +57,14 @@ const Welcome = () => {
         {/* Main Content */}
         <main className="flex-1 flex items-center justify-center px-4 py-8">
           <div className="w-full max-w-4xl">
-            {/* Title */}
+            {/* Title with Animated Slogan */}
             <motion.div 
               className="text-center mb-10"
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
             >
-              <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
-                className="inline-block mb-4"
-              >
-                <div className="w-16 h-16 bg-gradient-to-br from-primary to-accent rounded-2xl flex items-center justify-center mx-auto shadow-lg">
-                  <Sparkles className="h-8 w-8 text-white" />
-                </div>
-              </motion.div>
-              <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-3">
-                أهلاً بك في <span className="text-primary">منصة الحي</span>
-              </h1>
+              <AnimatedSlogan size="md" showLogo={true} className="mb-6" />
               <p className="text-lg text-muted-foreground">
                 كيف يمكننا مساعدتك اليوم؟
               </p>
