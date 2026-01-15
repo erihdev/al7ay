@@ -29,6 +29,8 @@ import Install from "./pages/Install";
 import Changelog from "./pages/Changelog";
 import ProviderRegister from "./pages/ProviderRegister";
 import Favorites from "./pages/Favorites";
+import Terms from "./pages/Terms";
+import Privacy from "./pages/Privacy";
 
 const queryClient = new QueryClient();
 
@@ -75,6 +77,8 @@ const App = () => {
                     <Route path="/store/:providerId" element={<ProviderStore />} />
                     <Route path="/install" element={<Install />} />
                     <Route path="/changelog" element={<Changelog />} />
+                    <Route path="/terms" element={<Terms />} />
+                    <Route path="/privacy" element={<Privacy />} />
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                 </BrowserRouter>

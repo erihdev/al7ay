@@ -320,6 +320,14 @@ const Landing = () => {
                     تسجيل مقدم خدمة
                   </Link>
                 </div>
+                <div className="flex items-center gap-4 text-sm">
+                  <Link to="/terms" className="text-muted-foreground hover:text-primary transition-colors">
+                    شروط الاستخدام
+                  </Link>
+                  <Link to="/privacy" className="text-muted-foreground hover:text-primary transition-colors">
+                    سياسة الخصوصية
+                  </Link>
+                </div>
                 <p className="text-muted-foreground text-sm">
                   © 2025 منصة الحي. جميع الحقوق محفوظة.
                 </p>
