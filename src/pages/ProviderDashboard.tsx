@@ -61,11 +61,16 @@ const ProviderDashboard = () => {
 
   useEffect(() => {
     let isMounted = true;
+    let dataLoaded = false;
+    
+    console.log('ProviderDashboard mounted');
     
     const loadProviderData = async (userId: string) => {
+      if (dataLoaded) return;
+      dataLoaded = true;
+      
       console.log('Loading provider data for user:', userId);
       try {
-        // Get provider data
         const { data: providerData, error: providerError } = await supabase
           .from('service_providers')
           .select('id, business_name, logo_url')
@@ -90,8 +95,6 @@ const ProviderDashboard = () => {
           return;
         }
 
-        // Get products and orders
-        console.log('Fetching products and orders for provider:', providerData.id);
         const [productsRes, ordersRes] = await Promise.all([
           supabase.from('provider_products').select('id, is_available, is_featured').eq('provider_id', providerData.id),
           supabase.from('provider_orders').select('id, status, total_amount, created_at').eq('provider_id', providerData.id).order('created_at', { ascending: false })
@@ -115,21 +118,38 @@ const ProviderDashboard = () => {
       }
     };
 
-    // Listen for auth state changes - this is the reliable way to get session
+    // Check for existing session immediately
+    const checkSession = async () => {
+      console.log('Checking existing session...');
+      const { data: { session } } = await supabase.auth.getSession();
+      console.log('Session check result:', session?.user?.id);
+      
+      if (!isMounted) return;
+      
+      if (session?.user) {
+        loadProviderData(session.user.id);
+      } else {
+        console.log('No session found, redirecting to login');
+        navigate('/provider-login', { replace: true });
+      }
+    };
+
+    // Set up auth listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       console.log('Auth state changed:', event, session?.user?.id);
       
-      if (event === 'SIGNED_OUT' || !session?.user) {
-        if (isMounted && event === 'SIGNED_OUT') {
-          navigate('/provider-login', { replace: true });
-        }
+      if (event === 'SIGNED_OUT') {
+        navigate('/provider-login', { replace: true });
         return;
       }
       
-      if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION' || event === 'TOKEN_REFRESHED') && session?.user) {
+      if (session?.user && !dataLoaded) {
         loadProviderData(session.user.id);
       }
     });
+
+    // Start session check
+    checkSession();
 
     return () => {
       isMounted = false;
