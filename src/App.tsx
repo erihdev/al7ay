@@ -26,6 +26,7 @@ import ProviderLogin from "./pages/ProviderLogin";
 import ProviderDashboard from "./pages/ProviderDashboard";
 import NotFound from "./pages/NotFound";
 import Install from "./pages/Install";
+import Changelog from "./pages/Changelog";
 
 const queryClient = new QueryClient();
 
@@ -69,6 +70,7 @@ const App = () => {
                     <Route path="/provider-dashboard" element={<ProviderDashboard />} />
                     <Route path="/store/:providerId" element={<ProviderStore />} />
                     <Route path="/install" element={<Install />} />
+                    <Route path="/changelog" element={<Changelog />} />
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                 </BrowserRouter>

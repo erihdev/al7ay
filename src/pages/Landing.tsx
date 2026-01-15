@@ -665,13 +665,21 @@ const Landing = () => {
         <div className="container mx-auto px-4">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <AnimatedLogo size="sm" showText={true} textClassName="!text-lg" />
-            <div className="text-center md:text-right">
+            <div className="flex flex-col items-center md:items-end gap-2">
+              <div className="flex items-center gap-4 text-sm">
+                <Link to="/install" className="text-muted-foreground hover:text-primary transition-colors">
+                  تثبيت التطبيق
+                </Link>
+                <Link to="/changelog" className="text-muted-foreground hover:text-primary transition-colors">
+                  سجل التحديثات
+                </Link>
+              </div>
               <p className="text-muted-foreground text-sm">
-                © 2024 منصة الحي. جميع الحقوق محفوظة.
+                © 2025 منصة الحي. جميع الحقوق محفوظة.
               </p>
-              <p className="text-xs text-muted-foreground/60 mt-1">
+              <Link to="/changelog" className="text-xs text-muted-foreground/60 hover:text-primary transition-colors">
                 الإصدار 1.1.0
-              </p>
+              </Link>
             </div>
           </div>
         </div>
