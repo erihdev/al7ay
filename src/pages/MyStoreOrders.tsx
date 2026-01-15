@@ -236,12 +236,14 @@ const MyStoreOrders = () => {
                 
                 <div className="space-y-4">
                   {activeOrders.map((order) => {
-                    const storeLocation = order.service_providers?.active_neighborhoods?.lat 
-                      ? {
-                          lat: order.service_providers.active_neighborhoods.lat,
-                          lng: order.service_providers.active_neighborhoods.lng || 0
-                        }
-                      : defaultStoreLocation || { lat: 24.7136, lng: 46.6753 };
+                    // Priority: 1) store_lat/lng 2) active_neighborhoods 3) defaultStoreLocation
+                    const provider = order.service_providers;
+                    const storeLocation = 
+                      (provider?.store_lat && provider?.store_lng)
+                        ? { lat: provider.store_lat, lng: provider.store_lng }
+                        : (provider?.active_neighborhoods?.lat)
+                          ? { lat: provider.active_neighborhoods.lat, lng: provider.active_neighborhoods.lng || 0 }
+                          : defaultStoreLocation || { lat: 24.7136, lng: 46.6753 };
                     
                     return (
                       <PullUpStyleOrderCard

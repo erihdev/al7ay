@@ -28,6 +28,7 @@ import {
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { ServiceProvider } from '@/hooks/useProviderData';
+import { StoreLocationPicker } from './StoreLocationPicker';
 
 interface ProviderSettingsManagerProps {
   provider: ServiceProvider;
@@ -57,7 +58,9 @@ const ProviderSettingsManager = ({ provider, onUpdate }: ProviderSettingsManager
     description: '',
     phone: '',
     email: '',
-    delivery_scope: 'neighborhood' as 'neighborhood' | 'city'
+    delivery_scope: 'neighborhood' as 'neighborhood' | 'city',
+    store_lat: null as number | null,
+    store_lng: null as number | null
   });
 
   const [paymentData, setPaymentData] = useState({
@@ -78,7 +81,9 @@ const ProviderSettingsManager = ({ provider, onUpdate }: ProviderSettingsManager
         description: provider.description || '',
         phone: provider.phone || '',
         email: provider.email || '',
-        delivery_scope: provider.delivery_scope || 'neighborhood'
+        delivery_scope: provider.delivery_scope || 'neighborhood',
+        store_lat: provider.store_lat || null,
+        store_lng: provider.store_lng || null
       });
       setPaymentData({
         bank_name: provider.bank_name || '',
@@ -161,7 +166,9 @@ const ProviderSettingsManager = ({ provider, onUpdate }: ProviderSettingsManager
         phone: formData.phone || null,
         email: formData.email,
         logo_url: logoUrl,
-        delivery_scope: formData.delivery_scope
+        delivery_scope: formData.delivery_scope,
+        store_lat: formData.store_lat,
+        store_lng: formData.store_lng
       };
 
       if (onUpdate) {
@@ -407,6 +414,12 @@ const ProviderSettingsManager = ({ provider, onUpdate }: ProviderSettingsManager
                 </div>
               </div>
             </div>
+
+            {/* Store Location Picker */}
+            <StoreLocationPicker 
+              location={formData.store_lat && formData.store_lng ? { lat: formData.store_lat, lng: formData.store_lng } : null}
+              onLocationChange={(location) => setFormData({ ...formData, store_lat: location.lat, store_lng: location.lng })}
+            />
 
             <Button
               type="submit" 
