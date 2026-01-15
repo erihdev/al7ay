@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { AuthForm } from '@/components/auth/AuthForm';
+import { StoreNavigationMap } from '@/components/store/StoreNavigationMap';
 import { 
   Package, 
   Clock, 
@@ -20,7 +21,8 @@ import {
   XCircle,
   ArrowRight,
   Loader2,
-  ShoppingBag
+  ShoppingBag,
+  Navigation2
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
@@ -74,6 +76,7 @@ const MyStoreOrders = () => {
   const { data: orders, isLoading, refetch } = useMyProviderOrders();
   const navigate = useNavigate();
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
+  const [showMapForOrder, setShowMapForOrder] = useState<string | null>(null);
 
   // Set up realtime subscription for order updates
   useEffect(() => {
@@ -333,6 +336,47 @@ const MyStoreOrders = () => {
                                         </>
                                       )}
                                     </div>
+
+                                    {/* Navigation Map for Pickup Orders */}
+                                    {order.order_type === 'pickup' && 
+                                     order.service_providers?.active_neighborhoods?.lat && 
+                                     order.service_providers?.active_neighborhoods?.lng && (
+                                      <div className="space-y-2">
+                                        <Button 
+                                          variant="default" 
+                                          size="sm" 
+                                          className="w-full gap-2"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setShowMapForOrder(showMapForOrder === order.id ? null : order.id);
+                                          }}
+                                        >
+                                          <Navigation2 className="h-4 w-4" />
+                                          {showMapForOrder === order.id ? 'إخفاء الخريطة' : 'عرض خريطة الوصول للمتجر'}
+                                        </Button>
+                                        
+                                        <AnimatePresence>
+                                          {showMapForOrder === order.id && (
+                                            <motion.div
+                                              initial={{ height: 0, opacity: 0 }}
+                                              animate={{ height: 'auto', opacity: 1 }}
+                                              exit={{ height: 0, opacity: 0 }}
+                                              className="overflow-hidden"
+                                              onClick={(e) => e.stopPropagation()}
+                                            >
+                                              <StoreNavigationMap
+                                                storeLocation={{
+                                                  lat: order.service_providers.active_neighborhoods.lat,
+                                                  lng: order.service_providers.active_neighborhoods.lng
+                                                }}
+                                                storeName={order.service_providers.business_name}
+                                                storePhone={order.service_providers.phone}
+                                              />
+                                            </motion.div>
+                                          )}
+                                        </AnimatePresence>
+                                      </div>
+                                    )}
 
                                     {/* Contact Provider */}
                                     {order.service_providers?.phone && (

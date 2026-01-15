@@ -34,6 +34,11 @@ export interface ProviderOrder {
     business_name: string;
     logo_url: string | null;
     phone: string | null;
+    neighborhood_id: string | null;
+    active_neighborhoods?: {
+      lat: number;
+      lng: number;
+    } | null;
   };
 }
 
@@ -55,7 +60,12 @@ export function useMyProviderOrders() {
             id,
             business_name,
             logo_url,
-            phone
+            phone,
+            neighborhood_id,
+            active_neighborhoods (
+              lat,
+              lng
+            )
           )
         `)
         .eq('customer_id', user.id)
@@ -153,7 +163,12 @@ export function useProviderOrderRealtime(orderId: string | undefined, onUpdate?:
             id,
             business_name,
             logo_url,
-            phone
+            phone,
+            neighborhood_id,
+            active_neighborhoods (
+              lat,
+              lng
+            )
           )
         `)
         .eq('id', orderId)
