@@ -112,6 +112,15 @@ export function useUpdateProviderOrder() {
   
   return useMutation({
     mutationFn: async ({ orderId, status }: { orderId: string; status: string }) => {
+      // First get the order to find customer_id
+      const { data: orderData, error: fetchError } = await supabase
+        .from('provider_orders')
+        .select('customer_id')
+        .eq('id', orderId)
+        .maybeSingle();
+      
+      if (fetchError) throw fetchError;
+
       const { data, error } = await supabase
         .from('provider_orders')
         .update({ status, updated_at: new Date().toISOString() })
@@ -120,6 +129,24 @@ export function useUpdateProviderOrder() {
         .single();
       
       if (error) throw error;
+
+      // Send push notification to customer if they have an account
+      if (orderData?.customer_id) {
+        try {
+          await supabase.functions.invoke('send-notification', {
+            body: {
+              type: 'order_status',
+              orderId: orderId,
+              status: status,
+              customerId: orderData.customer_id
+            }
+          });
+        } catch (notifError) {
+          console.error('Failed to send customer notification:', notifError);
+          // Don't fail the status update if notification fails
+        }
+      }
+
       return data;
     },
     onSuccess: (data) => {
