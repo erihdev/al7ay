@@ -1,14 +1,21 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback } from 'react';
 
-type Theme = 'light' | 'dark' | 'system';
+type Theme = 'light' | 'dark' | 'system' | 'auto';
 
 interface ThemeContextType {
   theme: Theme;
   actualTheme: 'light' | 'dark';
   setTheme: (theme: Theme) => void;
+  isAutoMode: boolean;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
+
+// Helper to determine if it's daytime (6 AM - 6 PM)
+const isDaytime = (): boolean => {
+  const hour = new Date().getHours();
+  return hour >= 6 && hour < 18;
+};
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setThemeState] = useState<Theme>(() => {
@@ -21,20 +28,21 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   const [actualTheme, setActualTheme] = useState<'light' | 'dark'>('light');
 
+  const resolveTheme = useCallback((): 'light' | 'dark' => {
+    if (theme === 'auto') {
+      // Auto mode: light during day (6 AM - 6 PM), dark at night
+      return isDaytime() ? 'light' : 'dark';
+    } else if (theme === 'system') {
+      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+    return theme;
+  }, [theme]);
+
   useEffect(() => {
     const root = window.document.documentElement;
     
     const updateTheme = () => {
-      let resolvedTheme: 'light' | 'dark';
-      
-      if (theme === 'system') {
-        resolvedTheme = window.matchMedia('(prefers-color-scheme: dark)').matches
-          ? 'dark'
-          : 'light';
-      } else {
-        resolvedTheme = theme;
-      }
-      
+      const resolvedTheme = resolveTheme();
       root.classList.remove('light', 'dark');
       root.classList.add(resolvedTheme);
       setActualTheme(resolvedTheme);
@@ -44,15 +52,29 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
     // Listen for system theme changes
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    const handleChange = () => {
+    const handleSystemChange = () => {
       if (theme === 'system') {
         updateTheme();
       }
     };
 
-    mediaQuery.addEventListener('change', handleChange);
-    return () => mediaQuery.removeEventListener('change', handleChange);
-  }, [theme]);
+    mediaQuery.addEventListener('change', handleSystemChange);
+
+    // For auto mode, check every minute for time-based changes
+    let autoInterval: NodeJS.Timeout | null = null;
+    if (theme === 'auto') {
+      autoInterval = setInterval(() => {
+        updateTheme();
+      }, 60000); // Check every minute
+    }
+
+    return () => {
+      mediaQuery.removeEventListener('change', handleSystemChange);
+      if (autoInterval) {
+        clearInterval(autoInterval);
+      }
+    };
+  }, [theme, resolveTheme]);
 
   const setTheme = (newTheme: Theme) => {
     localStorage.setItem('theme', newTheme);
@@ -60,7 +82,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <ThemeContext.Provider value={{ theme, actualTheme, setTheme }}>
+    <ThemeContext.Provider value={{ theme, actualTheme, setTheme, isAutoMode: theme === 'auto' }}>
       {children}
     </ThemeContext.Provider>
   );

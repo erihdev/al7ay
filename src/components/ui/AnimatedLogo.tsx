@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion, useAnimation } from 'framer-motion';
 import logo from '@/assets/logo.png';
 import { cn } from '@/lib/utils';
+import { useClickSound } from '@/hooks/useClickSound';
 
 interface AnimatedLogoProps {
   size?: 'sm' | 'md' | 'lg' | 'xl';
@@ -9,6 +10,7 @@ interface AnimatedLogoProps {
   className?: string;
   textClassName?: string;
   onClick?: () => void;
+  enableSound?: boolean;
 }
 
 const sizeClasses = {
@@ -30,15 +32,22 @@ export const AnimatedLogo = ({
   showText = true,
   className,
   textClassName,
-  onClick
+  onClick,
+  enableSound = true
 }: AnimatedLogoProps) => {
   const [isHovered, setIsHovered] = useState(false);
   const [isClicked, setIsClicked] = useState(false);
   const controls = useAnimation();
   const sparkleControls = useAnimation();
+  const { playClickSound } = useClickSound();
 
   const handleClick = async () => {
     setIsClicked(true);
+    
+    // Play click sound
+    if (enableSound) {
+      playClickSound();
+    }
     
     // Trigger click animation sequence
     await controls.start({
