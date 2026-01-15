@@ -109,12 +109,61 @@ const ProviderDashboard = () => {
     let mounted = true;
     let dataLoaded = false;
     
+    const loadWithSession = async (userId: string) => {
+      if (dataLoaded || !mounted) return;
+      dataLoaded = true;
+      await loadProviderData(userId);
+    };
+    
+    const tryRestoreSession = async () => {
+      console.log('Trying to restore session from storage...');
+      const storedSession = localStorage.getItem('sb-hmnpraslunhnuigeetoe-auth-token');
+      
+      if (!storedSession) {
+        console.log('No stored session found');
+        navigate('/provider-login', { replace: true });
+        return;
+      }
+      
+      try {
+        const parsed = JSON.parse(storedSession);
+        console.log('Parsed session:', { hasAccessToken: !!parsed?.access_token, userId: parsed?.user?.id });
+        
+        if (parsed?.access_token && parsed?.refresh_token) {
+          // Set the session in Supabase client
+          const { data, error } = await supabase.auth.setSession({
+            access_token: parsed.access_token,
+            refresh_token: parsed.refresh_token
+          });
+          
+          console.log('setSession result:', { hasSession: !!data?.session, error });
+          
+          if (data?.session?.user && mounted) {
+            await loadWithSession(data.session.user.id);
+            return;
+          }
+        }
+        
+        // Fallback: try user id directly (less reliable)
+        if (parsed?.user?.id && mounted) {
+          await loadWithSession(parsed.user.id);
+          return;
+        }
+      } catch (e) {
+        console.error('Failed to restore session:', e);
+      }
+      
+      if (mounted) {
+        navigate('/provider-login', { replace: true });
+      }
+    };
+
     const checkSession = async () => {
       console.log('Checking session...');
       
       // Add timeout to prevent hanging
       const timeoutPromise = new Promise<null>((_, reject) => 
-        setTimeout(() => reject(new Error('Session check timeout')), 5000)
+        setTimeout(() => reject(new Error('Session check timeout')), 3000)
       );
       
       try {
@@ -125,45 +174,21 @@ const ProviderDashboard = () => {
         
         if (!result || !mounted) return;
         
-        const { data: { session }, error } = result as any;
+        const { data: { session } } = result as any;
         
-        console.log('Session result:', { 
-          hasSession: !!session, 
-          userId: session?.user?.id,
-          error 
-        });
+        console.log('Session result:', { hasSession: !!session, userId: session?.user?.id });
         
-        if (!session?.user) {
-          console.log('No session, redirecting to login');
-          navigate('/provider-login', { replace: true });
-          return;
-        }
-        
-        if (!dataLoaded) {
-          dataLoaded = true;
-          await loadProviderData(session.user.id);
+        if (session?.user) {
+          await loadWithSession(session.user.id);
+        } else {
+          // No session from getSession, try restore
+          await tryRestoreSession();
         }
       } catch (err: any) {
         console.error('Session check error:', err?.message || err);
         if (mounted) {
-          // If timeout, try to get session from storage directly
-          if (err?.message === 'Session check timeout') {
-            console.log('Timeout - trying direct storage check');
-            const storedSession = localStorage.getItem('sb-hmnpraslunhnuigeetoe-auth-token');
-            if (storedSession) {
-              try {
-                const parsed = JSON.parse(storedSession);
-                if (parsed?.user?.id && !dataLoaded) {
-                  dataLoaded = true;
-                  await loadProviderData(parsed.user.id);
-                  return;
-                }
-              } catch (e) {
-                console.error('Failed to parse stored session:', e);
-              }
-            }
-          }
-          navigate('/provider-login', { replace: true });
+          // Try to restore session from storage
+          await tryRestoreSession();
         }
       }
     };
@@ -182,9 +207,8 @@ const ProviderDashboard = () => {
         return;
       }
       
-      if (event === 'SIGNED_IN' && session?.user && !dataLoaded) {
-        dataLoaded = true;
-        loadProviderData(session.user.id);
+      if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session?.user) {
+        loadWithSession(session.user.id);
       }
     });
 
