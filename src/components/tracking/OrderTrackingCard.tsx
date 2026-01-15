@@ -1,14 +1,18 @@
 import { useOrderTracking } from '@/hooks/useOrderTracking';
-import { useDeliveryETA } from '@/hooks/useDeliveryETA';
+import { useAccurateETA } from '@/hooks/useAccurateETA';
+import { useDriverProximityAlert } from '@/hooks/useDriverProximityAlert';
 import { useLocation } from '@/contexts/LocationContext';
 import { OrderTrackingMap } from './OrderTrackingMap';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Progress } from '@/components/ui/progress';
-import { MapPin, Navigation, Clock, Truck, CheckCircle, Package, Timer, Route } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { MapPin, Navigation, Clock, Truck, CheckCircle, Package, Timer, Route, Volume2, VolumeX, Zap } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ar } from 'date-fns/locale';
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface OrderTrackingCardProps {
   orderId: string;
@@ -25,16 +29,28 @@ const statusSteps = [
 export function OrderTrackingCard({ orderId }: OrderTrackingCardProps) {
   const { order, tracking, routeHistory, isLoading, isDelivery, isOutForDelivery } = useOrderTracking(orderId);
   const { storeLocation } = useLocation();
+  const [soundEnabled, setSoundEnabled] = useState(true);
 
-  // Calculate ETA
-  const eta = useDeliveryETA(
+  // Calculate accurate ETA using Mapbox Directions
+  const { eta, isLoading: isLoadingEta } = useAccurateETA(
     tracking ? { lat: tracking.current_lat, lng: tracking.current_lng } : null,
     order?.delivery_lat && order?.delivery_lng 
       ? { lat: order.delivery_lat, lng: order.delivery_lng }
       : null,
-    storeLocation,
-    tracking?.speed
+    storeLocation
   );
+
+  // Driver proximity alerts
+  const { toggleSound } = useDriverProximityAlert({
+    isNearby: eta?.isNearby || false,
+    distanceMeters: eta?.distanceMeters || 0,
+    enabled: isOutForDelivery && soundEnabled,
+  });
+
+  const handleSoundToggle = (enabled: boolean) => {
+    setSoundEnabled(enabled);
+    toggleSound(enabled);
+  };
 
   if (isLoading) {
     return (
@@ -69,19 +85,69 @@ export function OrderTrackingCard({ orderId }: OrderTrackingCardProps) {
         )}
 
         <div className="p-4">
+          {/* Sound Toggle */}
+          {isOutForDelivery && (
+            <div className="mb-3 flex items-center justify-between p-2 bg-muted/50 rounded-lg">
+              <div className="flex items-center gap-2">
+                {soundEnabled ? (
+                  <Volume2 className="h-4 w-4 text-primary" />
+                ) : (
+                  <VolumeX className="h-4 w-4 text-muted-foreground" />
+                )}
+                <span className="text-sm">إشعارات اقتراب السائق</span>
+              </div>
+              <Switch
+                checked={soundEnabled}
+                onCheckedChange={handleSoundToggle}
+              />
+            </div>
+          )}
+
           {/* ETA Section */}
           {isOutForDelivery && eta && (
-            <div className="mb-4 p-3 bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg border border-primary/20">
+            <motion.div 
+              className="mb-4 p-3 bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg border border-primary/20"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+            >
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
                   <Timer className="h-5 w-5 text-primary" />
                   <span className="font-semibold text-primary">الوقت المتوقع للوصول</span>
+                  {eta.source === 'mapbox' && (
+                    <Badge variant="outline" className="text-[10px] px-1 py-0 h-4">
+                      <Zap className="h-2 w-2 mr-0.5" />
+                      دقيق
+                    </Badge>
+                  )}
                 </div>
                 <Badge variant="secondary" className="text-lg font-bold">
                   {eta.etaText}
                 </Badge>
               </div>
               
+              {/* Nearby Alert */}
+              <AnimatePresence>
+                {eta.isNearby && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="mb-2 p-2 bg-green-500/20 border border-green-500/30 rounded-md"
+                  >
+                    <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
+                      <motion.span
+                        animate={{ scale: [1, 1.2, 1] }}
+                        transition={{ repeat: Infinity, duration: 1 }}
+                      >
+                        🚗
+                      </motion.span>
+                      <span className="text-sm font-medium">السائق قريب جداً!</span>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground">المسافة المتبقية</span>
@@ -96,7 +162,7 @@ export function OrderTrackingCard({ orderId }: OrderTrackingCardProps) {
                   <Progress value={eta.progress} className="h-2" />
                 </div>
               </div>
-            </div>
+            </motion.div>
           )}
 
           {/* Progress Steps */}
