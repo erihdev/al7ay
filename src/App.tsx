@@ -40,10 +40,10 @@ const App = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Simulate initial app loading
+    // Quick loading - just wait for fonts and initial render
     const timer = setTimeout(() => {
       setIsLoading(false);
-    }, 2000);
+    }, 800);
 
     return () => clearTimeout(timer);
   }, []);
