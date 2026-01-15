@@ -21,14 +21,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    // Set up auth state listener FIRST
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+    let mounted = true;
+    
+    // Get initial session first
+    const initializeAuth = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (!mounted) return;
+        
         setSession(session);
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          // Check if user is admin
           const { data: roles } = await supabase
             .from('user_roles')
             .select('role')
@@ -36,7 +41,47 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             .eq('role', 'admin')
             .maybeSingle();
           
-          setIsAdmin(!!roles);
+          if (mounted) {
+            setIsAdmin(!!roles);
+          }
+        }
+        
+        if (mounted) {
+          setLoading(false);
+        }
+      } catch (error) {
+        console.error('Error initializing auth:', error);
+        if (mounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    initializeAuth();
+
+    // Set up auth state listener for changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (!mounted) return;
+        
+        setSession(session);
+        setUser(session?.user ?? null);
+        
+        if (session?.user) {
+          // Check if user is admin - use setTimeout to avoid Supabase deadlock
+          setTimeout(async () => {
+            if (!mounted) return;
+            const { data: roles } = await supabase
+              .from('user_roles')
+              .select('role')
+              .eq('user_id', session.user.id)
+              .eq('role', 'admin')
+              .maybeSingle();
+            
+            if (mounted) {
+              setIsAdmin(!!roles);
+            }
+          }, 0);
         } else {
           setIsAdmin(false);
         }
@@ -45,27 +90,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     );
 
-    // THEN get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', session.user.id)
-          .eq('role', 'admin')
-          .maybeSingle()
-          .then(({ data: roles }) => {
-            setIsAdmin(!!roles);
-          });
-      }
-      
-      setLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signUp = async (email: string, password: string, fullName: string) => {
