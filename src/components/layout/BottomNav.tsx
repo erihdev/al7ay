@@ -1,11 +1,13 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Coffee, ShoppingBag, ClipboardList, User } from 'lucide-react';
+import { Coffee, ShoppingBag, ClipboardList, User, Heart } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
+import { useFavorites } from '@/hooks/useFavorites';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 
 const navItems = [
   { path: '/app', icon: Coffee, label: 'القائمة' },
+  { path: '/favorites', icon: Heart, label: 'المفضلة' },
   { path: '/cart', icon: ShoppingBag, label: 'السلة' },
   { path: '/orders', icon: ClipboardList, label: 'طلباتي' },
   { path: '/profile', icon: User, label: 'حسابي' },
@@ -14,6 +16,8 @@ const navItems = [
 export function BottomNav() {
   const location = useLocation();
   const { totalItems } = useCart();
+  const { data: favorites } = useFavorites();
+  const favoritesCount = favorites?.length || 0;
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-md border-t border-border safe-area-inset-bottom">
@@ -21,6 +25,7 @@ export function BottomNav() {
         {navItems.map(({ path, icon: Icon, label }) => {
           const isActive = location.pathname === path;
           const isCart = path === '/cart';
+          const isFavorites = path === '/favorites';
 
           return (
             <Link
@@ -55,6 +60,15 @@ export function BottomNav() {
                     className="absolute -top-2 -right-2 bg-accent text-accent-foreground text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center shadow-lg"
                   >
                     {totalItems}
+                  </motion.span>
+                )}
+                {isFavorites && favoritesCount > 0 && (
+                  <motion.span 
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center shadow-lg"
+                  >
+                    {favoritesCount}
                   </motion.span>
                 )}
               </motion.div>

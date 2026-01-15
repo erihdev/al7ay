@@ -28,6 +28,7 @@ import NotFound from "./pages/NotFound";
 import Install from "./pages/Install";
 import Changelog from "./pages/Changelog";
 import ProviderRegister from "./pages/ProviderRegister";
+import Favorites from "./pages/Favorites";
 
 const queryClient = new QueryClient();
 
@@ -63,6 +64,7 @@ const App = () => {
                     <Route path="/orders" element={<Orders />} />
                     <Route path="/profile" element={<Profile />} />
                     <Route path="/loyalty" element={<LoyaltyTiers />} />
+                    <Route path="/favorites" element={<Favorites />} />
                     <Route path="/admin" element={<Admin />} />
                     <Route path="/admin-login" element={<AdminLogin />} />
                     <Route path="/admin-forgot-password" element={<AdminForgotPassword />} />
