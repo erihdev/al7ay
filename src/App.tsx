@@ -11,9 +11,11 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
 import { UpdateNotification } from "@/components/notifications/UpdateNotification";
 
-// Lazy load all pages for better performance
-const Landing = lazy(() => import("./pages/Landing"));
-const Index = lazy(() => import("./pages/Index"));
+// Import main pages directly for instant load
+import Landing from "./pages/Landing";
+import Index from "./pages/Index";
+
+// Lazy load secondary pages for better performance
 const ProviderStore = lazy(() => import("./pages/ProviderStore"));
 const Cart = lazy(() => import("./pages/Cart"));
 const Orders = lazy(() => import("./pages/Orders"));
