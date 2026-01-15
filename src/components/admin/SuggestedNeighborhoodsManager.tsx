@@ -185,6 +185,119 @@ function SuggestionsMap({
   );
 }
 
+// Location editor map for approve dialog
+function LocationEditorMap({ 
+  initialLat, 
+  initialLng, 
+  onLocationChange 
+}: { 
+  initialLat: number | null;
+  initialLng: number | null;
+  onLocationChange: (lat: number, lng: number) => void;
+}) {
+  const mapContainer = useRef<HTMLDivElement>(null);
+  const map = useRef<mapboxgl.Map | null>(null);
+  const marker = useRef<mapboxgl.Marker | null>(null);
+  const { data: mapboxToken, isLoading } = useMapboxToken();
+  const [showMap, setShowMap] = useState(false);
+  const [currentLocation, setCurrentLocation] = useState({
+    lat: initialLat || 24.7136,
+    lng: initialLng || 46.6753
+  });
+
+  useEffect(() => {
+    if (!showMap || !mapboxToken || !mapContainer.current || map.current) return;
+
+    mapboxgl.accessToken = mapboxToken;
+    
+    map.current = new mapboxgl.Map({
+      container: mapContainer.current,
+      style: 'mapbox://styles/mapbox/streets-v12',
+      center: [currentLocation.lng, currentLocation.lat],
+      zoom: 14,
+    });
+
+    map.current.addControl(new mapboxgl.NavigationControl(), 'top-left');
+
+    // Add draggable marker
+    marker.current = new mapboxgl.Marker({ 
+      draggable: true,
+      color: '#7C3AED'
+    })
+      .setLngLat([currentLocation.lng, currentLocation.lat])
+      .addTo(map.current);
+
+    marker.current.on('dragend', () => {
+      const lngLat = marker.current?.getLngLat();
+      if (lngLat) {
+        setCurrentLocation({ lat: lngLat.lat, lng: lngLat.lng });
+        onLocationChange(lngLat.lat, lngLat.lng);
+      }
+    });
+
+    // Click on map to move marker
+    map.current.on('click', (e) => {
+      marker.current?.setLngLat(e.lngLat);
+      setCurrentLocation({ lat: e.lngLat.lat, lng: e.lngLat.lng });
+      onLocationChange(e.lngLat.lat, e.lngLat.lng);
+    });
+
+    return () => {
+      marker.current?.remove();
+      map.current?.remove();
+      map.current = null;
+    };
+  }, [showMap, mapboxToken]);
+
+  if (!initialLat && !initialLng) {
+    return (
+      <div className="text-sm text-muted-foreground bg-yellow-50 dark:bg-yellow-950/20 p-3 rounded-lg">
+        ⚠️ لا يوجد موقع محدد لهذا الاقتراح
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <Label className="flex items-center gap-2">
+          <MapPin className="h-4 w-4" />
+          تعديل موقع الحي
+        </Label>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => setShowMap(!showMap)}
+        >
+          {showMap ? 'إخفاء الخريطة' : 'عرض الخريطة'}
+        </Button>
+      </div>
+      
+      {showMap && (
+        <>
+          {isLoading ? (
+            <Skeleton className="h-48 w-full rounded-lg" />
+          ) : (
+            <div 
+              ref={mapContainer} 
+              className="h-48 w-full rounded-lg overflow-hidden border"
+            />
+          )}
+          <p className="text-xs text-muted-foreground">
+            📍 اضغط على الخريطة أو اسحب العلامة لتعديل الموقع
+          </p>
+          <div className="flex gap-2 text-xs text-muted-foreground bg-muted p-2 rounded">
+            <span>خط العرض: {currentLocation.lat.toFixed(6)}</span>
+            <span>|</span>
+            <span>خط الطول: {currentLocation.lng.toFixed(6)}</span>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 export function SuggestedNeighborhoodsManager() {
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
@@ -193,6 +306,7 @@ export function SuggestedNeighborhoodsManager() {
   const [showRejectDialog, setShowRejectDialog] = useState(false);
   const [adminNotes, setAdminNotes] = useState('');
   const [providerCount, setProviderCount] = useState(0);
+  const [editedLocation, setEditedLocation] = useState<{ lat: number; lng: number } | null>(null);
 
   const { data: suggestions, isLoading } = useQuery({
     queryKey: ['suggested-neighborhoods'],
@@ -209,27 +323,33 @@ export function SuggestedNeighborhoodsManager() {
 
   const approveMutation = useMutation({
     mutationFn: async (suggestion: SuggestedNeighborhood) => {
+      // Use edited location if available, otherwise use original
+      const finalLat = editedLocation?.lat ?? suggestion.lat ?? 0;
+      const finalLng = editedLocation?.lng ?? suggestion.lng ?? 0;
+
       // Add to active_neighborhoods
       const { error: insertError } = await supabase
         .from('active_neighborhoods')
         .insert({
           name: suggestion.name,
           city: suggestion.city,
-          lat: suggestion.lat || 0,
-          lng: suggestion.lng || 0,
+          lat: finalLat,
+          lng: finalLng,
           provider_count: providerCount,
           is_active: true,
         });
 
       if (insertError) throw insertError;
 
-      // Update suggestion status
+      // Update suggestion status and location if edited
       const { error: updateError } = await supabase
         .from('suggested_neighborhoods')
         .update({
           status: 'approved',
           admin_notes: adminNotes,
           reviewed_at: new Date().toISOString(),
+          lat: finalLat,
+          lng: finalLng,
         })
         .eq('id', suggestion.id);
 
@@ -259,6 +379,7 @@ export function SuggestedNeighborhoodsManager() {
       setSelectedSuggestion(null);
       setAdminNotes('');
       setProviderCount(0);
+      setEditedLocation(null);
     },
     onError: (error) => {
       console.error('Error approving suggestion:', error);
@@ -278,10 +399,26 @@ export function SuggestedNeighborhoodsManager() {
         .eq('id', suggestion.id);
 
       if (error) throw error;
+
+      // Send rejection email notification to user
+      try {
+        await supabase.functions.invoke('send-application-email', {
+          body: {
+            type: 'neighborhood_rejected',
+            email: suggestion.suggested_by_email,
+            fullName: suggestion.suggested_by_name,
+            neighborhoodName: suggestion.name,
+            city: suggestion.city,
+            notes: adminNotes,
+          },
+        });
+      } catch (emailError) {
+        console.error('Error sending rejection email:', emailError);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['suggested-neighborhoods'] });
-      toast.success('تم رفض الاقتراح');
+      toast.success('تم رفض الاقتراح وإرسال إشعار للمستخدم');
       setShowRejectDialog(false);
       setSelectedSuggestion(null);
       setAdminNotes('');
@@ -497,8 +634,11 @@ export function SuggestedNeighborhoodsManager() {
       )}
 
       {/* Approve Dialog */}
-      <Dialog open={showApproveDialog} onOpenChange={setShowApproveDialog}>
-        <DialogContent className="font-arabic" dir="rtl">
+      <Dialog open={showApproveDialog} onOpenChange={(open) => {
+        setShowApproveDialog(open);
+        if (!open) setEditedLocation(null);
+      }}>
+        <DialogContent className="font-arabic max-w-2xl max-h-[90vh] overflow-y-auto" dir="rtl">
           <DialogHeader>
             <DialogTitle>قبول اقتراح الحي</DialogTitle>
           </DialogHeader>
@@ -508,6 +648,15 @@ export function SuggestedNeighborhoodsManager() {
               <p className="font-bold">{selectedSuggestion?.name}</p>
               <p className="text-muted-foreground">{selectedSuggestion?.city}</p>
             </div>
+
+            {/* Location Editor Map */}
+            {selectedSuggestion && (
+              <LocationEditorMap
+                initialLat={selectedSuggestion.lat}
+                initialLng={selectedSuggestion.lng}
+                onLocationChange={(lat, lng) => setEditedLocation({ lat, lng })}
+              />
+            )}
 
             <div className="space-y-2">
               <Label>عدد مقدمي الخدمات الأولي</Label>
