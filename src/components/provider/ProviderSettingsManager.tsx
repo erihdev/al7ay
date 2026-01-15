@@ -17,9 +17,10 @@ import { ServiceProvider, useUpdateProviderProfile } from '@/hooks/useProviderDa
 
 interface ProviderSettingsManagerProps {
   provider: ServiceProvider;
+  onUpdate?: (provider: ServiceProvider) => void;
 }
 
-const ProviderSettingsManager = ({ provider }: ProviderSettingsManagerProps) => {
+const ProviderSettingsManager = ({ provider, onUpdate }: ProviderSettingsManagerProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
@@ -106,6 +107,19 @@ const ProviderSettingsManager = ({ provider }: ProviderSettingsManagerProps) => 
           logo_url: logoUrl
         }
       });
+
+      // Update parent component with new data
+      if (onUpdate) {
+        onUpdate({
+          ...provider,
+          business_name: formData.business_name,
+          business_name_en: formData.business_name_en || null,
+          description: formData.description || null,
+          phone: formData.phone || null,
+          email: formData.email,
+          logo_url: logoUrl
+        });
+      }
 
       toast.success('تم حفظ الإعدادات بنجاح');
     } catch (error) {
