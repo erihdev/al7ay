@@ -33,6 +33,7 @@ const NotFound = lazy(() => import("./pages/NotFound"));
 const Install = lazy(() => import("./pages/Install"));
 const Changelog = lazy(() => import("./pages/Changelog"));
 const ProviderRegister = lazy(() => import("./pages/ProviderRegister"));
+const EdfaPayGuide = lazy(() => import("./pages/EdfaPayGuide"));
 const Favorites = lazy(() => import("./pages/Favorites"));
 const Terms = lazy(() => import("./pages/Terms"));
 const Privacy = lazy(() => import("./pages/Privacy"));
@@ -88,6 +89,7 @@ const App = () => {
                       <Route path="/payment-result" element={<PaymentResult />} />
                       <Route path="/provider-login" element={<ProviderLogin />} />
                       <Route path="/provider-register" element={<ProviderRegister />} />
+                      <Route path="/edfapay-guide" element={<EdfaPayGuide />} />
                       <Route path="/provider-dashboard" element={<ProviderDashboard />} />
                       <Route path="/store/:providerId" element={<ProviderStore />} />
                       <Route path="/install" element={<Install />} />
