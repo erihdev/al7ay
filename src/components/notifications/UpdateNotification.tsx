@@ -15,7 +15,7 @@ export function UpdateNotification() {
         initial={{ opacity: 0, y: -50, scale: 0.9 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, y: -50, scale: 0.9 }}
-        className="fixed top-4 left-4 right-4 z-50 max-w-md mx-auto"
+        className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] w-[calc(100%-2rem)] max-w-md"
       >
         <Card className="border-primary/50 bg-gradient-to-r from-primary/10 via-background to-accent/10 shadow-lg">
           <CardContent className="p-4">
