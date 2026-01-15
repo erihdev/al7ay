@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { useProviderOrderNotifications } from '@/hooks/useProviderOrderNotifications';
 import ProviderProductsManager from '@/components/provider/ProviderProductsManager';
-import ProviderOrdersManager from '@/components/provider/ProviderOrdersManager';
+import KitchenDisplaySystem from '@/components/provider/KitchenDisplaySystem';
 import ProviderSettingsManager from '@/components/provider/ProviderSettingsManager';
 import ProviderStats from '@/components/provider/ProviderStats';
 import { 
@@ -23,10 +23,15 @@ import {
   VolumeX,
   BarChart3,
   RefreshCw,
-  Loader2
+  Loader2,
+  ChefHat,
+  DollarSign,
+  Store
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { AnimatedLogo } from '@/components/ui/AnimatedLogo';
+import { Badge } from '@/components/ui/badge';
+import { motion } from 'framer-motion';
 
 interface Provider {
   id: string;
@@ -54,7 +59,7 @@ const ProviderDashboard = () => {
   const [provider, setProvider] = useState<Provider | null>(null);
   const [products, setProducts] = useState<ProviderProduct[]>([]);
   const [orders, setOrders] = useState<ProviderOrder[]>([]);
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState('kitchen');
   const [soundEnabled, setSoundEnabled] = useState(true);
 
   useProviderOrderNotifications(provider?.id, soundEnabled);
@@ -221,11 +226,18 @@ const ProviderDashboard = () => {
   // Loading state
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center" dir="rtl">
-        <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary mb-2" />
-          <p className="text-muted-foreground">جاري التحميل...</p>
-        </div>
+      <div className="min-h-screen bg-gradient-to-bl from-primary/5 via-background to-background flex items-center justify-center" dir="rtl">
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="text-center"
+        >
+          <div className="w-20 h-20 rounded-2xl bg-gradient-to-bl from-primary to-primary/80 flex items-center justify-center mx-auto mb-4 shadow-lg">
+            <ChefHat className="h-10 w-10 text-white animate-pulse" />
+          </div>
+          <Loader2 className="h-6 w-6 animate-spin mx-auto text-primary mb-2" />
+          <p className="text-muted-foreground font-medium">جاري تحميل لوحة التحكم...</p>
+        </motion.div>
       </div>
     );
   }
@@ -233,23 +245,31 @@ const ProviderDashboard = () => {
   // Error state
   if (error) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4" dir="rtl">
-        <Card className="max-w-md w-full">
-          <CardContent className="p-8 text-center">
-            <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
-            <h2 className="text-xl font-bold mb-2">حدث خطأ</h2>
-            <p className="text-muted-foreground mb-4">{error}</p>
-            <div className="flex gap-2 justify-center">
-              <Button onClick={loadDashboard}>
-                <RefreshCw className="h-4 w-4 ml-2" />
-                إعادة المحاولة
-              </Button>
-              <Button variant="outline" onClick={handleLogout}>
-                تسجيل الخروج
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+      <div className="min-h-screen bg-gradient-to-bl from-red-50 via-background to-background flex items-center justify-center p-4" dir="rtl">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <Card className="max-w-md w-full border-red-200 shadow-xl">
+            <CardContent className="p-8 text-center">
+              <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
+                <AlertCircle className="h-8 w-8 text-red-600" />
+              </div>
+              <h2 className="text-xl font-bold mb-2">حدث خطأ</h2>
+              <p className="text-muted-foreground mb-6">{error}</p>
+              <div className="flex gap-3 justify-center">
+                <Button onClick={loadDashboard} className="gap-2">
+                  <RefreshCw className="h-4 w-4" />
+                  إعادة المحاولة
+                </Button>
+                <Button variant="outline" onClick={handleLogout} className="gap-2">
+                  <LogOut className="h-4 w-4" />
+                  تسجيل الخروج
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
       </div>
     );
   }
@@ -257,13 +277,16 @@ const ProviderDashboard = () => {
   // No provider
   if (!provider) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4" dir="rtl">
-        <Card className="max-w-md w-full">
+      <div className="min-h-screen bg-gradient-to-bl from-amber-50 via-background to-background flex items-center justify-center p-4" dir="rtl">
+        <Card className="max-w-md w-full border-amber-200 shadow-xl">
           <CardContent className="p-8 text-center">
-            <AlertCircle className="h-12 w-12 text-yellow-500 mx-auto mb-4" />
-            <h2 className="text-xl font-bold mb-2">لم يتم العثور على حسابك</h2>
-            <p className="text-muted-foreground mb-4">يرجى التواصل مع الإدارة</p>
-            <Button variant="outline" onClick={handleLogout}>
+            <div className="w-16 h-16 rounded-full bg-amber-100 flex items-center justify-center mx-auto mb-4">
+              <Store className="h-8 w-8 text-amber-600" />
+            </div>
+            <h2 className="text-xl font-bold mb-2">لم يتم العثور على متجرك</h2>
+            <p className="text-muted-foreground mb-6">يرجى التواصل مع الإدارة لتفعيل حسابك</p>
+            <Button variant="outline" onClick={handleLogout} className="gap-2">
+              <LogOut className="h-4 w-4" />
               تسجيل الخروج
             </Button>
           </CardContent>
@@ -272,7 +295,7 @@ const ProviderDashboard = () => {
     );
   }
 
-  // Dashboard
+  // Dashboard calculations
   const todayOrders = orders.filter(o => new Date(o.created_at).toDateString() === new Date().toDateString());
   const pendingOrders = orders.filter(o => o.status === 'pending').length;
   const preparingOrders = orders.filter(o => o.status === 'preparing').length;
@@ -280,128 +303,234 @@ const ProviderDashboard = () => {
   const todayRevenue = todayOrders.filter(o => o.status === 'completed').reduce((sum, o) => sum + o.total_amount, 0);
 
   return (
-    <div className="min-h-screen bg-background font-arabic" dir="rtl">
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-background/95 backdrop-blur border-b">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            {provider.logo_url ? (
-              <img src={provider.logo_url} alt={provider.business_name} className="h-10 w-10 rounded-xl object-cover" />
-            ) : (
-              <AnimatedLogo size="md" showText={false} />
-            )}
-            <div>
-              <span className="text-xl font-bold text-primary">{provider.business_name}</span>
-              <p className="text-xs text-muted-foreground">لوحة التحكم</p>
+    <div className="min-h-screen bg-gradient-to-bl from-primary/5 via-background to-background font-arabic" dir="rtl">
+      {/* Modern Header */}
+      <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b shadow-sm">
+        <div className="container mx-auto px-4 py-3">
+          <div className="flex items-center justify-between">
+            {/* Brand */}
+            <div className="flex items-center gap-3">
+              <div className="relative">
+                {provider.logo_url ? (
+                  <img 
+                    src={provider.logo_url} 
+                    alt={provider.business_name} 
+                    className="h-12 w-12 rounded-xl object-cover ring-2 ring-primary/20 shadow-md" 
+                  />
+                ) : (
+                  <div className="h-12 w-12 rounded-xl bg-gradient-to-bl from-primary to-primary/80 flex items-center justify-center shadow-md">
+                    <Store className="h-6 w-6 text-white" />
+                  </div>
+                )}
+                {/* Online indicator */}
+                <div className="absolute -bottom-1 -left-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white shadow" />
+              </div>
+              <div>
+                <h1 className="text-xl font-bold text-foreground">{provider.business_name}</h1>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
+                    <span className="w-1.5 h-1.5 rounded-full bg-green-500 ml-1" />
+                    متصل
+                  </Badge>
+                </div>
+              </div>
             </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" onClick={() => setSoundEnabled(!soundEnabled)}>
-              {soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4 text-muted-foreground" />}
-            </Button>
-            <ThemeToggle />
-            <Button variant="ghost" size="sm" onClick={handleLogout}>
-              <LogOut className="h-4 w-4 ml-2" />
-              خروج
-            </Button>
+
+            {/* Quick Stats - Hidden on mobile */}
+            <div className="hidden md:flex items-center gap-6">
+              <div className="text-center">
+                <p className="text-2xl font-bold text-foreground">{todayOrders.length}</p>
+                <p className="text-xs text-muted-foreground">طلبات اليوم</p>
+              </div>
+              <div className="h-8 w-px bg-border" />
+              <div className="text-center">
+                <p className="text-2xl font-bold text-primary">{todayRevenue} <span className="text-sm">ر.س</span></p>
+                <p className="text-xs text-muted-foreground">إيرادات اليوم</p>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex items-center gap-2">
+              <Button 
+                variant={soundEnabled ? "default" : "outline"} 
+                size="icon" 
+                onClick={() => setSoundEnabled(!soundEnabled)}
+                className={soundEnabled ? "bg-primary/10 text-primary hover:bg-primary/20" : ""}
+              >
+                {soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
+              </Button>
+              <ThemeToggle />
+              <Button variant="ghost" size="sm" onClick={handleLogout} className="text-muted-foreground hover:text-foreground gap-2">
+                <LogOut className="h-4 w-4" />
+                <span className="hidden sm:inline">خروج</span>
+              </Button>
+            </div>
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-6 max-w-6xl">
+      <main className="container mx-auto px-4 py-6 max-w-7xl">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid grid-cols-5 mb-6">
-            <TabsTrigger value="overview"><TrendingUp className="h-4 w-4 ml-2" />نظرة عامة</TabsTrigger>
-            <TabsTrigger value="stats"><BarChart3 className="h-4 w-4 ml-2" />الإحصائيات</TabsTrigger>
-            <TabsTrigger value="orders">
-              <ShoppingBag className="h-4 w-4 ml-2" />الطلبات
-              {pendingOrders > 0 && <span className="mr-2 bg-red-500 text-white text-xs rounded-full px-2">{pendingOrders}</span>}
-            </TabsTrigger>
-            <TabsTrigger value="products"><Coffee className="h-4 w-4 ml-2" />المنتجات</TabsTrigger>
-            <TabsTrigger value="settings"><Settings className="h-4 w-4 ml-2" />الإعدادات</TabsTrigger>
-          </TabsList>
+          {/* Modern Tab Navigation */}
+          <div className="mb-6">
+            <TabsList className="w-full h-auto p-1.5 bg-muted/50 rounded-2xl grid grid-cols-5 gap-1">
+              <TabsTrigger 
+                value="kitchen" 
+                className="rounded-xl data-[state=active]:bg-gradient-to-l data-[state=active]:from-amber-500 data-[state=active]:to-orange-500 data-[state=active]:text-white data-[state=active]:shadow-lg py-3 gap-2 transition-all"
+              >
+                <ChefHat className="h-4 w-4" />
+                <span className="hidden sm:inline">المطبخ</span>
+                {pendingOrders > 0 && (
+                  <Badge className="bg-red-500 text-white text-xs h-5 w-5 p-0 flex items-center justify-center animate-pulse">
+                    {pendingOrders}
+                  </Badge>
+                )}
+              </TabsTrigger>
+              <TabsTrigger 
+                value="overview" 
+                className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-lg py-3 gap-2 transition-all"
+              >
+                <TrendingUp className="h-4 w-4" />
+                <span className="hidden sm:inline">نظرة عامة</span>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="stats" 
+                className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-lg py-3 gap-2 transition-all"
+              >
+                <BarChart3 className="h-4 w-4" />
+                <span className="hidden sm:inline">الإحصائيات</span>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="products" 
+                className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-lg py-3 gap-2 transition-all"
+              >
+                <Coffee className="h-4 w-4" />
+                <span className="hidden sm:inline">المنتجات</span>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="settings" 
+                className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-lg py-3 gap-2 transition-all"
+              >
+                <Settings className="h-4 w-4" />
+                <span className="hidden sm:inline">الإعدادات</span>
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
+          {/* Kitchen Display System - Main Screen */}
+          <TabsContent value="kitchen" className="mt-0">
+            <KitchenDisplaySystem providerId={provider.id} />
+          </TabsContent>
+
+          {/* Overview Tab */}
           <TabsContent value="overview" className="space-y-6">
+            {/* Stats Cards */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
-                      <ShoppingBag className="h-5 w-5 text-blue-600" />
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0 }}>
+                <Card className="border-0 shadow-lg bg-gradient-to-bl from-blue-500 to-cyan-500 text-white overflow-hidden">
+                  <CardContent className="p-5 relative">
+                    <div className="relative z-10">
+                      <p className="text-blue-100 text-sm font-medium">طلبات اليوم</p>
+                      <p className="text-4xl font-bold mt-1">{todayOrders.length}</p>
                     </div>
-                    <div>
-                      <p className="text-2xl font-bold">{todayOrders.length}</p>
-                      <p className="text-xs text-muted-foreground">طلبات اليوم</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+                    <ShoppingBag className="absolute -left-2 -bottom-2 h-16 w-16 text-white/20" />
+                  </CardContent>
+                </Card>
+              </motion.div>
               
-              <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg flex items-center justify-center">
-                      <Clock className="h-5 w-5 text-yellow-600" />
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+                <Card className="border-0 shadow-lg bg-gradient-to-bl from-amber-500 to-orange-500 text-white overflow-hidden">
+                  <CardContent className="p-5 relative">
+                    <div className="relative z-10">
+                      <p className="text-amber-100 text-sm font-medium">قيد التنفيذ</p>
+                      <p className="text-4xl font-bold mt-1">{pendingOrders + preparingOrders}</p>
                     </div>
-                    <div>
-                      <p className="text-2xl font-bold">{pendingOrders + preparingOrders}</p>
-                      <p className="text-xs text-muted-foreground">قيد التنفيذ</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+                    <Clock className="absolute -left-2 -bottom-2 h-16 w-16 text-white/20" />
+                  </CardContent>
+                </Card>
+              </motion.div>
               
-              <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
-                      <CheckCircle className="h-5 w-5 text-green-600" />
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+                <Card className="border-0 shadow-lg bg-gradient-to-bl from-emerald-500 to-green-500 text-white overflow-hidden">
+                  <CardContent className="p-5 relative">
+                    <div className="relative z-10">
+                      <p className="text-emerald-100 text-sm font-medium">مكتملة اليوم</p>
+                      <p className="text-4xl font-bold mt-1">{completedToday}</p>
                     </div>
-                    <div>
-                      <p className="text-2xl font-bold">{completedToday}</p>
-                      <p className="text-xs text-muted-foreground">مكتملة اليوم</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+                    <CheckCircle className="absolute -left-2 -bottom-2 h-16 w-16 text-white/20" />
+                  </CardContent>
+                </Card>
+              </motion.div>
               
-              <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-                      <TrendingUp className="h-5 w-5 text-primary" />
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+                <Card className="border-0 shadow-lg bg-gradient-to-bl from-primary to-primary/80 text-white overflow-hidden">
+                  <CardContent className="p-5 relative">
+                    <div className="relative z-10">
+                      <p className="text-primary-foreground/80 text-sm font-medium">إيرادات اليوم</p>
+                      <p className="text-3xl font-bold mt-1">{todayRevenue} <span className="text-lg">ر.س</span></p>
                     </div>
-                    <div>
-                      <p className="text-2xl font-bold">{todayRevenue} ر.س</p>
-                      <p className="text-xs text-muted-foreground">إيرادات اليوم</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+                    <DollarSign className="absolute -left-2 -bottom-2 h-16 w-16 text-white/20" />
+                  </CardContent>
+                </Card>
+              </motion.div>
             </div>
 
+            {/* Quick Actions */}
             <div className="grid md:grid-cols-2 gap-6">
-              <Card>
+              <Card className="border shadow-lg hover:shadow-xl transition-shadow">
                 <CardContent className="p-6">
-                  <h3 className="font-bold mb-4 flex items-center gap-2"><Coffee className="h-5 w-5" />المنتجات</h3>
-                  <div className="space-y-3">
-                    <div className="flex justify-between"><span className="text-muted-foreground">إجمالي المنتجات</span><span className="font-bold">{products.length}</span></div>
-                    <div className="flex justify-between"><span className="text-muted-foreground">منتجات متاحة</span><span className="font-bold text-green-600">{products.filter(p => p.is_available).length}</span></div>
-                    <div className="flex justify-between"><span className="text-muted-foreground">منتجات مميزة</span><span className="font-bold text-yellow-600">{products.filter(p => p.is_featured).length}</span></div>
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+                      <Coffee className="h-6 w-6 text-primary" />
+                    </div>
+                    <h3 className="font-bold text-lg">المنتجات</h3>
                   </div>
-                  <Button variant="outline" className="w-full mt-4" onClick={() => setActiveTab('products')}>إدارة المنتجات</Button>
+                  <div className="space-y-3 mb-4">
+                    <div className="flex justify-between items-center p-3 rounded-xl bg-muted/50">
+                      <span className="text-muted-foreground">إجمالي المنتجات</span>
+                      <span className="font-bold text-lg">{products.length}</span>
+                    </div>
+                    <div className="flex justify-between items-center p-3 rounded-xl bg-green-50 dark:bg-green-950/30">
+                      <span className="text-green-700 dark:text-green-400">منتجات متاحة</span>
+                      <span className="font-bold text-lg text-green-700">{products.filter(p => p.is_available).length}</span>
+                    </div>
+                    <div className="flex justify-between items-center p-3 rounded-xl bg-amber-50 dark:bg-amber-950/30">
+                      <span className="text-amber-700 dark:text-amber-400">منتجات مميزة</span>
+                      <span className="font-bold text-lg text-amber-700">{products.filter(p => p.is_featured).length}</span>
+                    </div>
+                  </div>
+                  <Button className="w-full" variant="outline" onClick={() => setActiveTab('products')}>
+                    إدارة المنتجات
+                  </Button>
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card className="border shadow-lg hover:shadow-xl transition-shadow">
                 <CardContent className="p-6">
-                  <h3 className="font-bold mb-4 flex items-center gap-2"><ShoppingBag className="h-5 w-5" />الطلبات</h3>
-                  <div className="space-y-3">
-                    <div className="flex justify-between"><span className="text-muted-foreground">إجمالي الطلبات</span><span className="font-bold">{orders.length}</span></div>
-                    <div className="flex justify-between"><span className="text-muted-foreground">طلبات جديدة</span><span className="font-bold text-yellow-600">{pendingOrders}</span></div>
-                    <div className="flex justify-between"><span className="text-muted-foreground">قيد التحضير</span><span className="font-bold text-blue-600">{preparingOrders}</span></div>
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-12 h-12 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                      <ShoppingBag className="h-6 w-6 text-blue-600" />
+                    </div>
+                    <h3 className="font-bold text-lg">الطلبات</h3>
                   </div>
-                  <Button variant="outline" className="w-full mt-4" onClick={() => setActiveTab('orders')}>عرض الطلبات</Button>
+                  <div className="space-y-3 mb-4">
+                    <div className="flex justify-between items-center p-3 rounded-xl bg-muted/50">
+                      <span className="text-muted-foreground">إجمالي الطلبات</span>
+                      <span className="font-bold text-lg">{orders.length}</span>
+                    </div>
+                    <div className="flex justify-between items-center p-3 rounded-xl bg-amber-50 dark:bg-amber-950/30">
+                      <span className="text-amber-700 dark:text-amber-400">طلبات جديدة</span>
+                      <span className="font-bold text-lg text-amber-700">{pendingOrders}</span>
+                    </div>
+                    <div className="flex justify-between items-center p-3 rounded-xl bg-blue-50 dark:bg-blue-950/30">
+                      <span className="text-blue-700 dark:text-blue-400">قيد التحضير</span>
+                      <span className="font-bold text-lg text-blue-700">{preparingOrders}</span>
+                    </div>
+                  </div>
+                  <Button className="w-full bg-gradient-to-l from-amber-500 to-orange-500 hover:opacity-90" onClick={() => setActiveTab('kitchen')}>
+                    <ChefHat className="h-4 w-4 ml-2" />
+                    فتح شاشة المطبخ
+                  </Button>
                 </CardContent>
               </Card>
             </div>
@@ -409,10 +538,6 @@ const ProviderDashboard = () => {
 
           <TabsContent value="stats">
             <ProviderStats orders={orders as any} products={products as any} />
-          </TabsContent>
-
-          <TabsContent value="orders">
-            <ProviderOrdersManager providerId={provider.id} />
           </TabsContent>
 
           <TabsContent value="products">
