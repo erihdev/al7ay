@@ -1,34 +1,26 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { ArrowRight, Store, Mail, Lock, User, Loader2 } from 'lucide-react';
+import { ArrowRight, Store, Mail, Lock, Loader2, UserPlus, LogIn } from 'lucide-react';
 import { AnimatedLogo } from '@/components/ui/AnimatedLogo';
 
 const ProviderLogin = () => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
-  
-  // Login form state
-  const [loginEmail, setLoginEmail] = useState('');
-  const [loginPassword, setLoginPassword] = useState('');
-  
-  // Register form state
-  const [registerEmail, setRegisterEmail] = useState('');
-  const [registerPassword, setRegisterPassword] = useState('');
-  const [registerFullName, setRegisterFullName] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!loginEmail || !loginPassword) {
+    if (!email || !password) {
       toast.error('يرجى ملء جميع الحقول');
       return;
     }
@@ -37,8 +29,8 @@ const ProviderLogin = () => {
 
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
-        email: loginEmail,
-        password: loginPassword,
+        email,
+        password,
       });
 
       if (error) throw error;
@@ -79,108 +71,13 @@ const ProviderLogin = () => {
     }
   };
 
-  const handleRegister = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!registerEmail || !registerPassword || !registerFullName || !confirmPassword) {
-      toast.error('يرجى ملء جميع الحقول');
-      return;
-    }
-
-    if (registerPassword !== confirmPassword) {
-      toast.error('كلمات المرور غير متطابقة');
-      return;
-    }
-
-    if (registerPassword.length < 6) {
-      toast.error('يجب أن تكون كلمة المرور 6 أحرف على الأقل');
-      return;
-    }
-
-    setIsLoading(true);
-
-    try {
-      // Check if this email has an approved application
-      const { data: application, error: appError } = await supabase
-        .from('service_provider_applications')
-        .select('*')
-        .eq('email', registerEmail)
-        .eq('status', 'approved')
-        .maybeSingle();
-
-      if (appError) throw appError;
-
-      if (!application) {
-        toast.error('لم يتم العثور على طلب مقبول بهذا البريد الإلكتروني. يرجى التأكد من قبول طلبك أولاً.');
-        setIsLoading(false);
-        return;
-      }
-
-      // Sign up the user
-      const { data, error } = await supabase.auth.signUp({
-        email: registerEmail,
-        password: registerPassword,
-        options: {
-          emailRedirectTo: window.location.origin + '/provider-login',
-          data: {
-            full_name: registerFullName,
-          },
-        },
-      });
-
-      if (error) throw error;
-
-      if (data.user) {
-        // Add service_provider role
-        const { error: roleError } = await supabase
-          .from('user_roles')
-          .insert({
-            user_id: data.user.id,
-            role: 'service_provider'
-          });
-
-        if (roleError) {
-          console.error('Error adding role:', roleError);
-        }
-
-        // Create provider profile from application data
-        const { error: providerError } = await supabase
-          .from('service_providers')
-          .insert({
-            user_id: data.user.id,
-            application_id: application.id,
-            business_name: application.business_name,
-            email: application.email,
-            phone: application.phone,
-            is_active: true,
-            is_verified: false
-          });
-
-        if (providerError) {
-          console.error('Error creating provider profile:', providerError);
-        }
-      }
-
-      toast.success('تم إنشاء الحساب بنجاح! يمكنك الآن تسجيل الدخول.');
-      
-      // Reset form
-      setRegisterEmail('');
-      setRegisterPassword('');
-      setRegisterFullName('');
-      setConfirmPassword('');
-      
-    } catch (error: any) {
-      console.error('Registration error:', error);
-      toast.error(error.message || 'حدث خطأ أثناء إنشاء الحساب');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   return (
-    <div className="min-h-screen bg-background font-arabic flex flex-col" dir="rtl">
+    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5 font-arabic flex flex-col" dir="rtl">
+      {/* Background Pattern */}
+      <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSA2MCAwIEwgMCAwIDAgNjAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzAwMDAwMDA4IiBzdHJva2Utd2lkdGg9IjEiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjZ3JpZCkiLz48L3N2Zz4=')] opacity-50" />
+
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-background/95 backdrop-blur border-b">
+      <header className="relative z-10 sticky top-0 bg-background/95 backdrop-blur border-b">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <Link to="/">
             <AnimatedLogo size="md" showText={true} />
@@ -198,168 +95,110 @@ const ProviderLogin = () => {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 flex items-center justify-center p-4">
-        <Card className="w-full max-w-md">
-          <CardHeader className="text-center">
-            <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Store className="h-8 w-8 text-primary" />
-            </div>
-            <CardTitle className="text-2xl font-arabic">بوابة مقدمي الخدمات</CardTitle>
-            <CardDescription className="font-arabic">
-              سجّل دخولك أو أنشئ حسابك الجديد
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Tabs defaultValue="login" className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="login" className="font-arabic">تسجيل الدخول</TabsTrigger>
-                <TabsTrigger value="register" className="font-arabic">حساب جديد</TabsTrigger>
-              </TabsList>
-
-              {/* Login Tab */}
-              <TabsContent value="login">
-                <form onSubmit={handleLogin} className="space-y-4 mt-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="login-email" className="font-arabic">البريد الإلكتروني</Label>
-                    <div className="relative">
-                      <Mail className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="login-email"
-                        type="email"
-                        value={loginEmail}
-                        onChange={(e) => setLoginEmail(e.target.value)}
-                        placeholder="example@email.com"
-                        className="pr-10"
-                        dir="ltr"
-                      />
-                    </div>
+      <main className="relative z-10 flex-1 flex items-center justify-center p-4">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="w-full max-w-md"
+        >
+          <Card className="shadow-xl border-0 bg-card/80 backdrop-blur-sm">
+            <CardHeader className="text-center pb-2">
+              <motion.div 
+                className="w-20 h-20 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg border border-primary/20"
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: "spring", stiffness: 200, damping: 15 }}
+              >
+                <Store className="h-10 w-10 text-primary" />
+              </motion.div>
+              <CardTitle className="text-2xl font-arabic">بوابة مقدمي الخدمات</CardTitle>
+              <CardDescription className="font-arabic">
+                سجّل دخولك للوصول إلى لوحة التحكم
+              </CardDescription>
+            </CardHeader>
+            
+            <CardContent className="space-y-6">
+              {/* Login Form */}
+              <form onSubmit={handleLogin} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="email" className="font-arabic">البريد الإلكتروني</Label>
+                  <div className="relative">
+                    <Mail className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="email"
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="example@email.com"
+                      className="pr-10"
+                      dir="ltr"
+                    />
                   </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="login-password" className="font-arabic">كلمة المرور</Label>
-                    <div className="relative">
-                      <Lock className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="login-password"
-                        type="password"
-                        value={loginPassword}
-                        onChange={(e) => setLoginPassword(e.target.value)}
-                        placeholder="••••••••"
-                        className="pr-10"
-                      />
-                    </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="password" className="font-arabic">كلمة المرور</Label>
+                  <div className="relative">
+                    <Lock className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="password"
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="••••••••"
+                      className="pr-10"
+                    />
                   </div>
+                </div>
 
-                  <Button type="submit" className="w-full font-arabic" disabled={isLoading}>
-                    {isLoading ? (
-                      <>
-                        <Loader2 className="h-4 w-4 ml-2 animate-spin" />
-                        جاري تسجيل الدخول...
-                      </>
-                    ) : (
-                      'تسجيل الدخول'
-                    )}
+                <Button type="submit" className="w-full font-arabic h-11" disabled={isLoading}>
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 ml-2 animate-spin" />
+                      جاري تسجيل الدخول...
+                    </>
+                  ) : (
+                    <>
+                      <LogIn className="h-4 w-4 ml-2" />
+                      تسجيل الدخول
+                    </>
+                  )}
+                </Button>
+              </form>
+
+              {/* Divider */}
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-card px-2 text-muted-foreground font-arabic">
+                    أو
+                  </span>
+                </div>
+              </div>
+
+              {/* Apply Button */}
+              <div className="space-y-3">
+                <Link to="/#provider-form" className="block">
+                  <Button variant="outline" className="w-full font-arabic h-11 gap-2">
+                    <UserPlus className="h-4 w-4" />
+                    قدّم طلب انضمام
                   </Button>
-                </form>
-              </TabsContent>
-
-              {/* Register Tab */}
-              <TabsContent value="register">
-                <form onSubmit={handleRegister} className="space-y-4 mt-4">
-                  <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3 text-sm">
-                    <p className="text-amber-800 dark:text-amber-200 font-arabic">
-                      ⚠️ يجب أن يكون طلب انضمامك مقبولاً مسبقاً لتتمكن من إنشاء حساب
-                    </p>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="register-name" className="font-arabic">الاسم الكامل</Label>
-                    <div className="relative">
-                      <User className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="register-name"
-                        value={registerFullName}
-                        onChange={(e) => setRegisterFullName(e.target.value)}
-                        placeholder="أدخل اسمك الكامل"
-                        className="pr-10 font-arabic"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="register-email" className="font-arabic">البريد الإلكتروني</Label>
-                    <div className="relative">
-                      <Mail className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="register-email"
-                        type="email"
-                        value={registerEmail}
-                        onChange={(e) => setRegisterEmail(e.target.value)}
-                        placeholder="نفس البريد في طلب الانضمام"
-                        className="pr-10"
-                        dir="ltr"
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="register-password" className="font-arabic">كلمة المرور</Label>
-                    <div className="relative">
-                      <Lock className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="register-password"
-                        type="password"
-                        value={registerPassword}
-                        onChange={(e) => setRegisterPassword(e.target.value)}
-                        placeholder="6 أحرف على الأقل"
-                        className="pr-10"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="confirm-password" className="font-arabic">تأكيد كلمة المرور</Label>
-                    <div className="relative">
-                      <Lock className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="confirm-password"
-                        type="password"
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                        placeholder="أعد إدخال كلمة المرور"
-                        className="pr-10"
-                      />
-                    </div>
-                  </div>
-
-                  <Button type="submit" className="w-full font-arabic" disabled={isLoading}>
-                    {isLoading ? (
-                      <>
-                        <Loader2 className="h-4 w-4 ml-2 animate-spin" />
-                        جاري إنشاء الحساب...
-                      </>
-                    ) : (
-                      'إنشاء الحساب'
-                    )}
-                  </Button>
-                </form>
-              </TabsContent>
-            </Tabs>
-
-            <div className="mt-6 text-center">
-              <p className="text-sm text-muted-foreground font-arabic">
-                ليس لديك طلب مقبول؟{' '}
-                <Link to="/#apply" className="text-primary hover:underline">
-                  قدّم طلب انضمام
                 </Link>
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+                
+                <p className="text-xs text-center text-muted-foreground font-arabic">
+                  إذا لم يكن لديك حساب، قدّم طلب انضمام وسيتم إنشاء حسابك بعد الموافقة
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
       </main>
 
       {/* Footer */}
-      <footer className="py-6 text-center text-sm text-muted-foreground">
+      <footer className="relative z-10 py-6 text-center text-sm text-muted-foreground">
         <p>© 2024 منصة الحي. جميع الحقوق محفوظة.</p>
       </footer>
     </div>
