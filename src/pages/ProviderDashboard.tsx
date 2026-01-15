@@ -61,68 +61,86 @@ const ProviderDashboard = () => {
 
   useEffect(() => {
     let isMounted = true;
+    let isCompleted = false;
     
     const init = async () => {
+      console.log('Starting dashboard init...');
       try {
         // Get session first
-        const { data: { session } } = await supabase.auth.getSession();
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        console.log('Session result:', session?.user?.id, sessionError);
         
-        if (!session?.user) {
-          if (isMounted) {
-            navigate('/provider-login', { replace: true });
-          }
+        if (!isMounted) return;
+        
+        if (sessionError || !session?.user) {
+          console.log('No session, redirecting to login');
+          navigate('/provider-login', { replace: true });
           return;
         }
 
         // Get provider data
+        console.log('Fetching provider for user:', session.user.id);
         const { data: providerData, error: providerError } = await supabase
           .from('service_providers')
           .select('id, business_name, logo_url')
           .eq('user_id', session.user.id)
           .maybeSingle();
 
+        console.log('Provider result:', providerData, providerError);
+        
         if (!isMounted) return;
 
         if (providerError) {
+          console.error('Provider error:', providerError);
           setError(providerError.message);
           setLoading(false);
+          isCompleted = true;
           return;
         }
 
         if (!providerData) {
+          console.log('No provider found');
           setError('لم يتم العثور على حساب مقدم خدمة');
           setLoading(false);
+          isCompleted = true;
           return;
         }
 
         // Get products and orders
+        console.log('Fetching products and orders for provider:', providerData.id);
         const [productsRes, ordersRes] = await Promise.all([
           supabase.from('provider_products').select('id, is_available, is_featured').eq('provider_id', providerData.id),
           supabase.from('provider_orders').select('id, status, total_amount, created_at').eq('provider_id', providerData.id).order('created_at', { ascending: false })
         ]);
 
+        console.log('Products:', productsRes.data?.length, 'Orders:', ordersRes.data?.length);
+        
         if (!isMounted) return;
 
         setProvider(providerData);
         setProducts(productsRes.data || []);
         setOrders(ordersRes.data || []);
         setLoading(false);
+        isCompleted = true;
+        console.log('Dashboard loaded successfully');
       } catch (err) {
         console.error('Dashboard load error:', err);
         if (isMounted) {
           setError('حدث خطأ أثناء تحميل البيانات');
           setLoading(false);
+          isCompleted = true;
         }
       }
     };
 
-    // Set timeout to prevent infinite loading
+    // Set timeout to prevent infinite loading - check isCompleted flag
     const timeoutId = setTimeout(() => {
-      if (isMounted && loading) {
+      if (isMounted && !isCompleted) {
+        console.log('Timeout triggered - data not loaded');
         setError('انتهت مهلة تحميل البيانات');
         setLoading(false);
       }
-    }, 10000);
+    }, 15000);
 
     init();
     
