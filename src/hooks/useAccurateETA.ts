@@ -16,6 +16,9 @@ interface ETAResult {
   geometry: GeoJSON.LineString | null;
   source: 'mapbox' | 'fallback';
   isNearby: boolean; // Within 500m
+  trafficAware: boolean;
+  congestionLevel: 'low' | 'moderate' | 'heavy' | 'severe' | 'unknown' | null;
+  averageSpeed: number | null; // km/h
 }
 
 export function useAccurateETA(
@@ -79,7 +82,10 @@ export function useAccurateETA(
         progress,
         geometry: data.geometry,
         source: data.source,
-        isNearby
+        isNearby,
+        trafficAware: data.trafficAware || false,
+        congestionLevel: data.congestionLevel || null,
+        averageSpeed: data.averageSpeed || null
       });
 
     } catch (error) {
@@ -98,7 +104,10 @@ export function useAccurateETA(
         progress: 0,
         geometry: null,
         source: 'fallback',
-        isNearby
+        isNearby,
+        trafficAware: false,
+        congestionLevel: null,
+        averageSpeed: null
       });
     } finally {
       setIsLoading(false);

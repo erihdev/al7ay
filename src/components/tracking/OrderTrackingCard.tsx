@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Progress } from '@/components/ui/progress';
 import { Switch } from '@/components/ui/switch';
-import { MapPin, Navigation, Clock, Truck, CheckCircle, Package, Timer, Route, Volume2, VolumeX, Zap } from 'lucide-react';
+import { MapPin, Navigation, Clock, Truck, CheckCircle, Package, Timer, Route, Volume2, VolumeX, Zap, Activity, Gauge } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { useState } from 'react';
@@ -114,7 +114,13 @@ export function OrderTrackingCard({ orderId }: OrderTrackingCardProps) {
                 <div className="flex items-center gap-2">
                   <Timer className="h-5 w-5 text-primary" />
                   <span className="font-semibold text-primary">الوقت المتوقع للوصول</span>
-                  {eta.source === 'mapbox' && (
+                  {eta.trafficAware && (
+                    <Badge variant="outline" className="text-[10px] px-1 py-0 h-4 bg-green-500/10 border-green-500/30 text-green-600">
+                      <Activity className="h-2 w-2 mr-0.5" />
+                      مرور حي
+                    </Badge>
+                  )}
+                  {eta.source === 'mapbox' && !eta.trafficAware && (
                     <Badge variant="outline" className="text-[10px] px-1 py-0 h-4">
                       <Zap className="h-2 w-2 mr-0.5" />
                       دقيق
@@ -125,6 +131,45 @@ export function OrderTrackingCard({ orderId }: OrderTrackingCardProps) {
                   {eta.etaText}
                 </Badge>
               </div>
+              
+              {/* Traffic Congestion Indicator */}
+              {eta.trafficAware && eta.congestionLevel && eta.congestionLevel !== 'unknown' && (
+                <div className="mb-2 p-2 rounded-md flex items-center justify-between" 
+                  style={{
+                    backgroundColor: 
+                      eta.congestionLevel === 'severe' ? 'rgba(220, 38, 38, 0.15)' :
+                      eta.congestionLevel === 'heavy' ? 'rgba(234, 88, 12, 0.15)' :
+                      eta.congestionLevel === 'moderate' ? 'rgba(202, 138, 4, 0.15)' :
+                      'rgba(34, 197, 94, 0.15)'
+                  }}
+                >
+                  <div className="flex items-center gap-2">
+                    <Activity className={`h-4 w-4 ${
+                      eta.congestionLevel === 'severe' ? 'text-red-500' :
+                      eta.congestionLevel === 'heavy' ? 'text-orange-500' :
+                      eta.congestionLevel === 'moderate' ? 'text-yellow-500' :
+                      'text-green-500'
+                    }`} />
+                    <span className={`text-sm font-medium ${
+                      eta.congestionLevel === 'severe' ? 'text-red-600 dark:text-red-400' :
+                      eta.congestionLevel === 'heavy' ? 'text-orange-600 dark:text-orange-400' :
+                      eta.congestionLevel === 'moderate' ? 'text-yellow-600 dark:text-yellow-400' :
+                      'text-green-600 dark:text-green-400'
+                    }`}>
+                      {eta.congestionLevel === 'severe' ? 'ازدحام شديد جداً' :
+                       eta.congestionLevel === 'heavy' ? 'ازدحام شديد' :
+                       eta.congestionLevel === 'moderate' ? 'ازدحام متوسط' :
+                       'حركة سلسة'}
+                    </span>
+                  </div>
+                  {eta.averageSpeed && (
+                    <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                      <Gauge className="h-3 w-3" />
+                      <span>{eta.averageSpeed} كم/س</span>
+                    </div>
+                  )}
+                </div>
+              )}
               
               {/* Nearby Alert */}
               <AnimatePresence>
