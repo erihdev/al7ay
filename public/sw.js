@@ -1,17 +1,29 @@
 /// <reference lib="webworker" />
 
-const CACHE_NAME = 'al-hayy-v1';
+const CACHE_NAME = 'al-hayy-v3';
 
-// Install event
+// Install event - skip waiting to activate immediately
 self.addEventListener('install', (event) => {
-  console.log('Service Worker installing.');
+  console.log('Service Worker installing - clearing old caches.');
   self.skipWaiting();
 });
 
-// Activate event
+// Activate event - clear ALL old caches
 self.addEventListener('activate', (event) => {
-  console.log('Service Worker activating.');
-  event.waitUntil(self.clients.claim());
+  console.log('Service Worker activating - clearing all caches.');
+  event.waitUntil(
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames.map((cacheName) => {
+          console.log('Deleting cache:', cacheName);
+          return caches.delete(cacheName);
+        })
+      );
+    }).then(() => {
+      console.log('All caches cleared.');
+      return self.clients.claim();
+    })
+  );
 });
 
 // Push event - handle incoming push notifications
