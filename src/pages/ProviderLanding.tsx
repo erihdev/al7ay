@@ -186,7 +186,7 @@ const ProviderLanding = () => {
                 <Sparkles className="h-3 w-3" />
                 v2.5.0
               </Badge>
-              <Link to="/">
+              <Link to="/for-customers">
                 <Button variant="ghost" className="font-arabic text-xs sm:text-sm">
                   أنا عميل
                 </Button>
