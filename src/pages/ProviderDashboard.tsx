@@ -99,37 +99,60 @@ const ProviderDashboard = () => {
   useEffect(() => {
     let mounted = true;
     let loaded = false;
+    let initialCheckDone = false;
     
-    // IMPORTANT: Set up auth listener FIRST, before getSession
+    // IMPORTANT: Set up auth listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log('Auth event:', event, 'Session:', !!session?.user);
+      
       if (!mounted) return;
+      
+      // Handle INITIAL_SESSION - this is the reliable first check
+      if (event === 'INITIAL_SESSION') {
+        initialCheckDone = true;
+        if (!session?.user) {
+          console.log('No session on INITIAL_SESSION, redirecting to login');
+          navigate('/provider-login', { replace: true });
+        } else if (!loaded) {
+          loaded = true;
+          console.log('Loading provider data for user:', session.user.id);
+          loadProviderData(session.user.id);
+        }
+        return;
+      }
       
       if (event === 'SIGNED_OUT') {
         navigate('/provider-login', { replace: true });
         return;
       }
       
-      // Load data when we get a valid session
-      if (session?.user && !loaded) {
+      if (event === 'SIGNED_IN' && session?.user && !loaded) {
         loaded = true;
         loadProviderData(session.user.id);
       }
     });
 
-    // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!mounted) return;
+    // Fallback: If INITIAL_SESSION doesn't fire within 3 seconds, check manually
+    const fallbackTimer = setTimeout(async () => {
+      if (!mounted || loaded || initialCheckDone) return;
+      
+      console.log('Fallback: checking session manually');
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!mounted || loaded) return;
       
       if (!session?.user) {
+        console.log('No session in fallback, redirecting');
         navigate('/provider-login', { replace: true });
-      } else if (!loaded) {
+      } else {
         loaded = true;
         loadProviderData(session.user.id);
       }
-    });
+    }, 3000);
 
     return () => {
       mounted = false;
+      clearTimeout(fallbackTimer);
       subscription.unsubscribe();
     };
   }, [navigate]);
