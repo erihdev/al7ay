@@ -10,6 +10,7 @@ import { LocationProvider } from "@/contexts/LocationContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
 import { UpdateNotification } from "@/components/notifications/UpdateNotification";
+import { UpdateBanner } from "@/components/notifications/UpdateBanner";
 import { AppFooter } from "@/components/layout/AppFooter";
 
 // Import main pages directly for instant load
@@ -69,7 +70,7 @@ const App = () => {
             <LocationProvider>
               <TooltipProvider>
                 <LoadingScreen isLoading={isLoading} />
-                <UpdateNotification />
+                <UpdateBanner />
                 <Toaster />
                 <Sonner />
                 <BrowserRouter>
