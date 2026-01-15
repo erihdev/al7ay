@@ -15,13 +15,24 @@ import {
   Timer,
   Flame,
   Bell,
-  ArrowRight
+  ArrowRight,
+  ShoppingBag
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { format, formatDistanceToNow } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { useProviderOrders, useUpdateProviderOrder, ProviderOrder } from '@/hooks/useProviderData';
 import { motion, AnimatePresence } from 'framer-motion';
+import { supabase } from '@/integrations/supabase/client';
+import { useQuery } from '@tanstack/react-query';
+
+interface OrderItem {
+  id: string;
+  product_name: string;
+  quantity: number;
+  unit_price: number;
+  total_price: number;
+}
 
 interface KitchenDisplaySystemProps {
   providerId: string;
@@ -92,6 +103,32 @@ const KitchenDisplaySystem = ({ providerId }: KitchenDisplaySystemProps) => {
   const updateOrderMutation = useUpdateProviderOrder();
   const [currentTime, setCurrentTime] = useState(new Date());
 
+  // Fetch order items for all orders
+  const orderIds = orders?.map(o => o.id) || [];
+  const { data: orderItems } = useQuery({
+    queryKey: ['provider-order-items', orderIds],
+    queryFn: async () => {
+      if (orderIds.length === 0) return {};
+      const { data, error } = await supabase
+        .from('provider_order_items')
+        .select('*')
+        .in('order_id', orderIds);
+      
+      if (error) throw error;
+      
+      // Group items by order_id
+      const grouped: Record<string, OrderItem[]> = {};
+      data?.forEach(item => {
+        if (!grouped[item.order_id]) {
+          grouped[item.order_id] = [];
+        }
+        grouped[item.order_id].push(item);
+      });
+      return grouped;
+    },
+    enabled: orderIds.length > 0,
+  });
+
   // Update time every minute for elapsed time display
   useEffect(() => {
     const interval = setInterval(() => setCurrentTime(new Date()), 60000);
@@ -147,6 +184,7 @@ const KitchenDisplaySystem = ({ providerId }: KitchenDisplaySystemProps) => {
     const StatusIcon = config.icon;
     const nextStatus = getNextStatus(order.status);
     const urgency = getUrgencyLevel(order.created_at);
+    const items = orderItems?.[order.id] || [];
 
     return (
       <motion.div
@@ -195,6 +233,34 @@ const KitchenDisplaySystem = ({ providerId }: KitchenDisplaySystemProps) => {
               <p className="text-xs text-muted-foreground">ر.س</p>
             </div>
           </div>
+
+          {/* Products List */}
+          {items.length > 0 && (
+            <div className="bg-white/70 dark:bg-gray-800/70 rounded-xl p-3 space-y-2">
+              <div className="flex items-center gap-2 text-sm font-bold text-foreground border-b border-border/50 pb-2">
+                <ShoppingBag className="h-4 w-4 text-primary" />
+                <span>المنتجات ({items.length})</span>
+              </div>
+              <div className="space-y-1.5 max-h-32 overflow-y-auto">
+                {items.map((item) => (
+                  <div 
+                    key={item.id} 
+                    className="flex items-center justify-between text-sm bg-muted/50 rounded-lg px-2 py-1.5"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold">
+                        {item.quantity}
+                      </span>
+                      <span className="font-medium text-foreground">{item.product_name}</span>
+                    </div>
+                    <span className="text-muted-foreground font-mono text-xs">
+                      {item.total_price} ر.س
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Order Type Badge */}
           <div className="flex items-center gap-2">
