@@ -310,6 +310,23 @@ const MyStoreOrders = () => {
                               </div>
                             )}
 
+                            {/* Auto-show Navigation Map for pickup orders when ready */}
+                            {order.order_type === 'pickup' && 
+                             order.status === 'ready' && 
+                             order.service_providers?.active_neighborhoods?.lat && 
+                             order.service_providers?.active_neighborhoods?.lng && (
+                              <div className="mt-3" onClick={(e) => e.stopPropagation()}>
+                                <StoreNavigationMap
+                                  storeLocation={{
+                                    lat: order.service_providers.active_neighborhoods.lat,
+                                    lng: order.service_providers.active_neighborhoods.lng
+                                  }}
+                                  storeName={order.service_providers.business_name}
+                                  storePhone={order.service_providers.phone}
+                                />
+                              </div>
+                            )}
+
                             {/* Expanded Details */}
                             <AnimatePresence>
                               {isExpanded && (
