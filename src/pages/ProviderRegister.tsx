@@ -358,37 +358,70 @@ const ProviderRegister = () => {
               <p className="text-muted-foreground">ابدأ مجاناً أو اختر خطة تناسب احتياجاتك</p>
             </div>
 
-            {/* Loading State */}
+            {/* Loading State with Shimmer Animation */}
             {isLoadingPlans ? (
-              <div className="grid md:grid-cols-3 gap-4">
+              <motion.div 
+                className="grid md:grid-cols-3 gap-4"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+              >
                 {[1, 2, 3].map((i) => (
-                  <Card key={i} className="p-4">
-                    <Skeleton className="h-5 w-3/4 mb-3" />
-                    <Skeleton className="h-3 w-full mb-1" />
-                    <Skeleton className="h-3 w-2/3 mb-4" />
-                    <Skeleton className="h-8 w-1/2 mb-4" />
-                    <div className="space-y-1.5">
-                      <Skeleton className="h-3 w-full" />
-                      <Skeleton className="h-3 w-5/6" />
-                    </div>
-                    <Skeleton className="h-8 w-full mt-4" />
-                  </Card>
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.1, duration: 0.4 }}
+                  >
+                    <Card className="p-4 overflow-hidden relative">
+                      <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+                      <Skeleton className="h-5 w-3/4 mb-3 animate-pulse" />
+                      <Skeleton className="h-3 w-full mb-1 animate-pulse" />
+                      <Skeleton className="h-3 w-2/3 mb-4 animate-pulse" />
+                      <Skeleton className="h-8 w-1/2 mb-4 animate-pulse" />
+                      <div className="space-y-1.5">
+                        <Skeleton className="h-3 w-full animate-pulse" />
+                        <Skeleton className="h-3 w-5/6 animate-pulse" />
+                      </div>
+                      <Skeleton className="h-8 w-full mt-4 animate-pulse" />
+                    </Card>
+                  </motion.div>
                 ))}
-              </div>
+              </motion.div>
             ) : plans.length === 0 ? (
-              <div className="text-center py-8">
-                <Loader2 className="h-6 w-6 animate-spin mx-auto mb-3 text-primary" />
+              <motion.div 
+                className="text-center py-8"
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.3 }}
+              >
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                >
+                  <Loader2 className="h-6 w-6 mx-auto mb-3 text-primary" />
+                </motion.div>
                 <p className="text-muted-foreground text-sm">جاري تحميل الخطط...</p>
-              </div>
+              </motion.div>
             ) : (
-              /* Plans Cards */
-              <div className="grid md:grid-cols-3 gap-6">
+              /* Plans Cards with Stagger Animation */
+              <motion.div 
+                className="grid md:grid-cols-3 gap-6"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.3 }}
+              >
                 {plans.map((plan, index) => (
                   <motion.div
                     key={plan.id}
-                    initial={{ opacity: 0, y: 30 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.1 }}
+                    initial={{ opacity: 0, y: 30, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    transition={{ 
+                      delay: index * 0.15, 
+                      duration: 0.5,
+                      type: "spring",
+                      stiffness: 100
+                    }}
                 >
                   <Card 
                     className={`cursor-pointer transition-all hover:shadow-xl hover:scale-105 h-full ${
@@ -462,7 +495,7 @@ const ProviderRegister = () => {
                   </Card>
                 </motion.div>
               ))}
-              </div>
+              </motion.div>
             )}
 
             {/* Features Comparison Table */}
