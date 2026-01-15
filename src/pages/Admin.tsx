@@ -48,6 +48,7 @@ import RegisteredProvidersManager from '@/components/admin/RegisteredProvidersMa
 import { VersionManager } from '@/components/admin/VersionManager';
 import { SubscriptionPlansManager } from '@/components/admin/SubscriptionPlansManager';
 import { ProviderSubscriptionsManager } from '@/components/admin/ProviderSubscriptionsManager';
+import { ProviderVerificationManager } from '@/components/admin/ProviderVerificationManager';
 import { InteractiveBackground } from '@/components/ui/InteractiveBackground';
 import { useUpdateDeliveryLocation } from '@/hooks/useOrderTracking';
 import { useOrderNotifications } from '@/hooks/useOrderNotifications';
@@ -273,7 +274,7 @@ const Admin = () => {
 
       <main className="container mx-auto px-4 py-6 relative z-10">
         <Tabs defaultValue="orders" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6 lg:grid-cols-13">
+          <TabsList className="grid w-full grid-cols-7 lg:grid-cols-15">
             <TabsTrigger value="orders" className="font-arabic">
               <Package className="h-4 w-4 ml-2" />
               الطلبات
@@ -309,6 +310,10 @@ const Admin = () => {
             <TabsTrigger value="registered-providers" className="font-arabic">
               <Users className="h-4 w-4 ml-2" />
               مقدمي الخدمات
+            </TabsTrigger>
+            <TabsTrigger value="provider-verification" className="font-arabic">
+              <FileText className="h-4 w-4 ml-2" />
+              التوثيق
             </TabsTrigger>
             <TabsTrigger value="neighborhoods" className="font-arabic">
               <MapPin className="h-4 w-4 ml-2" />
@@ -640,6 +645,11 @@ const Admin = () => {
           {/* Registered Providers Tab */}
           <TabsContent value="registered-providers">
             <RegisteredProvidersManager />
+          </TabsContent>
+
+          {/* Provider Verification Tab */}
+          <TabsContent value="provider-verification">
+            <ProviderVerificationManager />
           </TabsContent>
 
           {/* Neighborhoods Tab */}
