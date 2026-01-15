@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -47,6 +48,7 @@ interface ProviderProduct {
 }
 
 const ProviderDashboard = () => {
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [provider, setProvider] = useState<Provider | null>(null);
@@ -59,7 +61,16 @@ const ProviderDashboard = () => {
 
   useEffect(() => {
     loadDashboard();
-  }, []);
+    
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_OUT') {
+        navigate('/provider-login', { replace: true });
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [navigate]);
 
   const loadDashboard = async () => {
     setLoading(true);
@@ -69,7 +80,7 @@ const ProviderDashboard = () => {
     const { data: { session } } = await supabase.auth.getSession();
     
     if (!session?.user) {
-      window.location.href = '/provider-login';
+      navigate('/provider-login', { replace: true });
       return;
     }
 
@@ -107,7 +118,7 @@ const ProviderDashboard = () => {
   const handleLogout = async () => {
     await supabase.auth.signOut();
     toast.success('تم تسجيل الخروج');
-    window.location.href = '/provider-login';
+    navigate('/provider-login', { replace: true });
   };
 
   // Loading state
