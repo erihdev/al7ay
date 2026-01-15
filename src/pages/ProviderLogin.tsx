@@ -56,21 +56,25 @@ const ProviderLogin = () => {
         throw new Error('فشل تسجيل الدخول');
       }
 
-      // Step 2: Navigate directly - let the dashboard handle role checking
-      // This avoids the abort issue from multiple sequential queries
+      // Step 2: Navigate with a small delay to ensure session is set
       toast.success('تم تسجيل الدخول بنجاح');
-      navigate('/provider-dashboard');
+      setTimeout(() => {
+        navigate('/provider-dashboard');
+      }, 100);
       
     } catch (error: any) {
       console.error('Login error:', error);
       
-      // Handle specific error types
-      if (error.name === 'AbortError' || error.message?.includes('aborted')) {
-        // Try to check if user is already logged in
+      // Handle aborted requests - check if actually logged in
+      if (error.name === 'AbortError' || error.message?.includes('aborted') || error.message?.includes('The operation was aborted')) {
+        // Wait a moment then check session
+        await new Promise(resolve => setTimeout(resolve, 500));
         const { data: session } = await supabase.auth.getSession();
         if (session?.session) {
           toast.success('تم تسجيل الدخول بنجاح');
-          navigate('/provider-dashboard');
+          setTimeout(() => {
+            navigate('/provider-dashboard');
+          }, 100);
           return;
         }
         toast.error('انتهت مهلة الاتصال. يرجى المحاولة مرة أخرى');
