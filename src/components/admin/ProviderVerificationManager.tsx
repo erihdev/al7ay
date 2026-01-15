@@ -80,9 +80,31 @@ export function ProviderVerificationManager() {
     },
   });
 
+  // Send email notification
+  const sendEmailNotification = async (
+    type: 'verification_approved' | 'verification_rejected',
+    provider: ProviderVerification,
+    commission?: number
+  ) => {
+    try {
+      await supabase.functions.invoke('send-application-email', {
+        body: {
+          type,
+          email: provider.email,
+          fullName: provider.business_name,
+          businessName: provider.business_name,
+          notes: adminNotes || undefined,
+          commissionRate: commission,
+        },
+      });
+    } catch (error) {
+      console.error('Error sending verification email:', error);
+    }
+  };
+
   // Approve verification mutation
   const approveMutation = useMutation({
-    mutationFn: async ({ providerId, commission }: { providerId: string; commission: number }) => {
+    mutationFn: async ({ providerId, commission, provider }: { providerId: string; commission: number; provider: ProviderVerification }) => {
       const { error } = await supabase
         .from('service_providers')
         .update({
@@ -93,10 +115,13 @@ export function ProviderVerificationManager() {
         .eq('id', providerId);
 
       if (error) throw error;
+      
+      // Send approval email
+      await sendEmailNotification('verification_approved', provider, commission);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['provider-verifications'] });
-      toast.success('تم توثيق مقدم الخدمة بنجاح');
+      toast.success('تم توثيق مقدم الخدمة وإرسال إشعار بالبريد');
       setSelectedProvider(null);
       setAdminNotes('');
       setCommissionRate('');
@@ -108,7 +133,7 @@ export function ProviderVerificationManager() {
 
   // Reject verification mutation
   const rejectMutation = useMutation({
-    mutationFn: async (providerId: string) => {
+    mutationFn: async ({ providerId, provider }: { providerId: string; provider: ProviderVerification }) => {
       const { error } = await supabase
         .from('service_providers')
         .update({
@@ -118,10 +143,13 @@ export function ProviderVerificationManager() {
         .eq('id', providerId);
 
       if (error) throw error;
+      
+      // Send rejection email
+      await sendEmailNotification('verification_rejected', provider);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['provider-verifications'] });
-      toast.success('تم رفض طلب التوثيق');
+      toast.success('تم رفض طلب التوثيق وإرسال إشعار بالبريد');
       setSelectedProvider(null);
       setAdminNotes('');
     },
@@ -133,12 +161,12 @@ export function ProviderVerificationManager() {
   const handleApprove = () => {
     if (!selectedProvider) return;
     const commission = parseFloat(commissionRate) || selectedProvider.commission_rate || 10;
-    approveMutation.mutate({ providerId: selectedProvider.id, commission });
+    approveMutation.mutate({ providerId: selectedProvider.id, commission, provider: selectedProvider });
   };
 
   const handleReject = () => {
     if (!selectedProvider) return;
-    rejectMutation.mutate(selectedProvider.id);
+    rejectMutation.mutate({ providerId: selectedProvider.id, provider: selectedProvider });
   };
 
   // Check if provider has submitted verification documents

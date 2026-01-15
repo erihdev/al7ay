@@ -49,6 +49,7 @@ import { VersionManager } from '@/components/admin/VersionManager';
 import { SubscriptionPlansManager } from '@/components/admin/SubscriptionPlansManager';
 import { ProviderSubscriptionsManager } from '@/components/admin/ProviderSubscriptionsManager';
 import { ProviderVerificationManager } from '@/components/admin/ProviderVerificationManager';
+import { ProviderCommissionsManager } from '@/components/admin/ProviderCommissionsManager';
 import { InteractiveBackground } from '@/components/ui/InteractiveBackground';
 import { useUpdateDeliveryLocation } from '@/hooks/useOrderTracking';
 import { useOrderNotifications } from '@/hooks/useOrderNotifications';
@@ -326,6 +327,10 @@ const Admin = () => {
             <TabsTrigger value="subscriptions" className="font-arabic">
               <CreditCard className="h-4 w-4 ml-2" />
               الاشتراكات
+            </TabsTrigger>
+            <TabsTrigger value="commissions" className="font-arabic">
+              <CreditCard className="h-4 w-4 ml-2" />
+              العمولات
             </TabsTrigger>
             <TabsTrigger value="versions" className="font-arabic">
               <Rocket className="h-4 w-4 ml-2" />
@@ -666,6 +671,11 @@ const Admin = () => {
           <TabsContent value="subscriptions" className="space-y-6">
             <SubscriptionPlansManager />
             <ProviderSubscriptionsManager />
+          </TabsContent>
+
+          {/* Commissions Tab */}
+          <TabsContent value="commissions">
+            <ProviderCommissionsManager />
           </TabsContent>
 
           {/* Versions Tab */}
