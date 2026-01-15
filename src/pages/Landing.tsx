@@ -1,16 +1,24 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import heroCustomerImage from '@/assets/hero-customer.jpg';
+import heroProviderImage from '@/assets/hero-provider.jpg';
 import { 
   MapPin, 
-  Coffee, 
   Truck, 
   Star, 
   ArrowLeft,
   Store,
-  Smartphone,
   Shield,
-  Users,
+  Gift,
+  ShoppingBag,
+  Zap,
   Download,
+  Users,
+  Bell,
+  BarChart3,
+  CreditCard,
+  CheckCircle2,
   Lock
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -21,110 +29,45 @@ import { PageTransition } from '@/components/ui/PageTransition';
 import { motion } from 'framer-motion';
 
 const Landing = () => {
-  const features = [
-    {
-      icon: Store,
-      title: 'متجرك الخاص',
-      description: 'أنشئ متجرك الإلكتروني بسهولة وابدأ ببيع منتجاتك لجيرانك'
-    },
-    {
-      icon: MapPin,
-      title: 'خدمة الحي',
-      description: 'قدم خدماتك لسكان حيّك واستفد من قربك منهم'
-    },
-    {
-      icon: Truck,
-      title: 'توصيل سريع',
-      description: 'نظام توصيل متكامل مع تتبع مباشر للطلبات'
-    },
-    {
-      icon: Smartphone,
-      title: 'تطبيق سهل',
-      description: 'واجهة بسيطة وسهلة الاستخدام للعملاء والبائعين'
-    },
-    {
-      icon: Users,
-      title: 'نظام ولاء',
-      description: 'برنامج نقاط ومكافآت لزيادة ولاء عملائك'
-    },
-    {
-      icon: Shield,
-      title: 'دفع آمن',
-      description: 'خيارات دفع متعددة وآمنة لراحة عملائك'
-    }
+  const stats = [
+    { value: '+50K', label: 'عميل', icon: Users },
+    { value: '+1.2K', label: 'مقدم خدمة', icon: Store },
+    { value: '+100K', label: 'طلب/شهر', icon: ShoppingBag },
+    { value: '4.9', label: 'تقييم', icon: Star }
   ];
 
-  const howItWorks = [
-    {
-      step: 1,
-      title: 'سجّل حسابك',
-      description: 'أنشئ حسابك واختر خطة الاشتراك المناسبة لك'
-    },
-    {
-      step: 2,
-      title: 'أضف منتجاتك',
-      description: 'أضف منتجاتك وحدد أسعارك وخيارات التوصيل'
-    },
-    {
-      step: 3,
-      title: 'استقبل الطلبات',
-      description: 'تابع طلباتك وقم بتوصيلها لعملائك في الحي'
-    },
-    {
-      step: 4,
-      title: 'نمّي مشروعك',
-      description: 'استفد من التقارير والإحصائيات لتطوير عملك'
-    }
+  const customerFeatures = [
+    { icon: MapPin, title: 'قريب منك', desc: 'خدمات في حيّك' },
+    { icon: Truck, title: 'توصيل سريع', desc: '15-30 دقيقة' },
+    { icon: Gift, title: 'مكافآت', desc: 'نقاط مع كل طلب' },
   ];
 
-  const testimonials = [
-    {
-      name: 'أم محمد',
-      role: 'صاحبة مشروع منزلي',
-      content: 'منصة الحي غيّرت طريقة بيعي لمنتجاتي. الآن أصل لعملاء أكثر في حيّي!',
-      rating: 5
-    },
-    {
-      name: 'أبو عبدالله',
-      role: 'باريستا منزلي',
-      content: 'أفضل منصة للخدمات المحلية. سهلة الاستخدام ودعم فني ممتاز.',
-      rating: 5
-    },
-    {
-      name: 'سارة',
-      role: 'صاحبة حلويات منزلية',
-      content: 'زاد دخلي بشكل كبير بعد انضمامي للمنصة. أنصح بها بشدة!',
-      rating: 5
-    }
+  const providerFeatures = [
+    { icon: Store, title: 'متجرك', desc: 'تصميم احترافي' },
+    { icon: BarChart3, title: 'تقارير', desc: 'إحصائيات مبيعات' },
+    { icon: CreditCard, title: 'دفع', desc: 'مدى وفيزا' },
   ];
 
   return (
     <PageTransition>
       <div className="min-h-screen bg-background font-arabic relative overflow-hidden" dir="rtl">
-        <InteractiveBackground variant="waves" intensity="subtle" />
+        <InteractiveBackground variant="particles" intensity="subtle" />
         
         {/* Header */}
         <header className="sticky top-0 z-50 bg-background/95 backdrop-blur border-b">
-          <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-            <Link to="/">
-              <AnimatedLogo size="md" showText={true} />
-            </Link>
-            <div className="flex items-center gap-2 md:gap-4">
+          <div className="container mx-auto px-4 py-3 flex items-center justify-between">
+            <AnimatedLogo size="md" showText={true} />
+            <div className="flex items-center gap-2">
               <ThemeToggle />
-              <Link to="/install" className="hidden sm:block">
-                <Button variant="ghost" size="icon" className="text-primary">
-                  <Download className="h-5 w-5" />
-                </Button>
-              </Link>
               <Link to="/provider-login">
-                <Button variant="outline" className="font-arabic text-xs sm:text-sm">
-                  دخول مقدمي الخدمات
+                <Button variant="ghost" size="sm" className="font-arabic text-xs hidden sm:inline-flex">
+                  مقدم خدمة
                 </Button>
               </Link>
               <Link to="/profile">
-                <Button className="font-arabic text-xs sm:text-sm">
-                  دخول العملاء
-                  <ArrowLeft className="h-4 w-4 mr-2" />
+                <Button size="sm" className="font-arabic text-xs">
+                  دخول
+                  <ArrowLeft className="h-3 w-3 mr-1" />
                 </Button>
               </Link>
             </div>
@@ -132,215 +75,184 @@ const Landing = () => {
         </header>
 
         {/* Hero Section */}
-        <section className="relative py-20 overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-background to-accent/10" />
-          <div className="container mx-auto px-4 relative">
+        <section className="relative py-10 md:py-16">
+          <div className="container mx-auto px-4">
+            {/* Title */}
             <motion.div 
-              className="max-w-3xl mx-auto text-center"
-              initial={{ opacity: 0, y: 30 }}
+              className="text-center mb-8"
+              initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
             >
-              <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full text-sm mb-6">
-                <Coffee className="h-4 w-4" />
-                <span>منصة الخدمات المحلية الأولى</span>
-              </div>
-              <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight">
-                قدّم خدماتك لـ
-                <span className="text-primary"> جيرانك </span>
-                بسهولة
-              </h1>
-              <p className="text-xl text-muted-foreground mb-8 leading-relaxed">
-                منصة الحي تمكّنك من بيع منتجاتك وتقديم خدماتك لسكان حيّك. 
-                سواء كنت تصنع القهوة، الحلويات، أو أي منتج منزلي.
+              <motion.h1 
+                className="text-4xl md:text-6xl font-bold mb-3 bg-gradient-to-r from-primary via-primary to-accent bg-clip-text text-transparent"
+                initial={{ scale: 0.9 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: 0.2 }}
+              >
+                الحي يحيييك
+              </motion.h1>
+              <p className="text-lg text-muted-foreground">
+                منصة تربط مقدمي الخدمات المحلية بسكان الأحياء
               </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Button size="lg" className="text-lg px-8 font-arabic" asChild>
-                  <Link to="/provider-register">
-                    ابدأ الآن مجاناً
-                    <ArrowLeft className="h-5 w-5 mr-2" />
-                  </Link>
-                </Button>
-                <Button size="lg" variant="outline" className="text-lg px-8 font-arabic" asChild>
-                  <a href="#features">
-                    تعرّف على المنصة
-                  </a>
-                </Button>
-              </div>
             </motion.div>
-          </div>
-        </section>
 
-        {/* Features Section */}
-        <section id="features" className="py-20 bg-muted/30">
-          <div className="container mx-auto px-4">
-            <motion.div 
-              className="text-center mb-12"
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-            >
-              <h2 className="text-3xl font-bold mb-4">لماذا تختار منصة الحي؟</h2>
-              <p className="text-muted-foreground text-lg">كل ما تحتاجه لإدارة مشروعك المحلي</p>
-            </motion.div>
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {features.map((feature, index) => (
+            {/* Stats Row */}
+            <div className="flex justify-center gap-6 md:gap-12 mb-10">
+              {stats.map((stat, index) => (
                 <motion.div
                   key={index}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: index * 0.1 }}
-                >
-                  <Card className="h-full">
-                    <CardContent className="p-6">
-                      <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center mb-4">
-                        <feature.icon className="h-6 w-6 text-primary" />
-                      </div>
-                      <h3 className="text-xl font-bold mb-2">{feature.title}</h3>
-                      <p className="text-muted-foreground">{feature.description}</p>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* How It Works Section */}
-        <section className="py-20">
-          <div className="container mx-auto px-4">
-            <motion.div 
-              className="text-center mb-12"
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-            >
-              <h2 className="text-3xl font-bold mb-4">كيف تبدأ؟</h2>
-              <p className="text-muted-foreground text-lg">أربع خطوات بسيطة للانضمام</p>
-            </motion.div>
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-              {howItWorks.map((item, index) => (
-                <motion.div 
-                  key={item.step} 
                   className="text-center"
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: index * 0.1 }}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 + index * 0.1 }}
                 >
-                  <div className="w-16 h-16 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-4">
-                    {item.step}
+                  <div className="text-xl md:text-2xl font-bold text-primary">{stat.value}</div>
+                  <div className="text-xs text-muted-foreground">{stat.label}</div>
+                </motion.div>
+              ))}
+            </div>
+
+            {/* Two Cards */}
+            <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+              {/* Customer Card */}
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.4 }}
+              >
+                <Card className="overflow-hidden border-2 hover:border-primary/50 transition-all group h-full">
+                  <div className="relative h-40 overflow-hidden">
+                    <img 
+                      src={heroCustomerImage} 
+                      alt="اطلب من جيرانك" 
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
+                    <div className="absolute bottom-3 right-4 left-4">
+                      <Badge className="bg-primary/90 text-xs mb-1">
+                        <ShoppingBag className="h-3 w-3 ml-1" />
+                        للعملاء
+                      </Badge>
+                      <h3 className="text-xl font-bold text-white drop-shadow-lg">اطلب من جيرانك</h3>
+                    </div>
                   </div>
-                  <h3 className="text-xl font-bold mb-2">{item.title}</h3>
-                  <p className="text-muted-foreground">{item.description}</p>
-                </motion.div>
-              ))}
+                  <CardContent className="p-4">
+                    <div className="grid grid-cols-3 gap-2 mb-4">
+                      {customerFeatures.map((f, i) => (
+                        <div key={i} className="text-center p-2 rounded-lg bg-muted/50">
+                          <f.icon className="h-4 w-4 text-primary mx-auto mb-1" />
+                          <p className="text-[10px] font-medium leading-tight">{f.title}</p>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="flex gap-2">
+                      <Button className="flex-1 font-arabic text-sm" size="sm" asChild>
+                        <Link to="/app">
+                          ابدأ الطلب
+                          <ArrowLeft className="h-3 w-3 mr-1" />
+                        </Link>
+                      </Button>
+                      <Button variant="outline" size="icon" className="h-9 w-9" asChild>
+                        <Link to="/install">
+                          <Download className="h-4 w-4" />
+                        </Link>
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+
+              {/* Provider Card */}
+              <motion.div
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.5 }}
+              >
+                <Card className="overflow-hidden border-2 hover:border-accent/50 transition-all group h-full">
+                  <div className="relative h-40 overflow-hidden">
+                    <img 
+                      src={heroProviderImage} 
+                      alt="ابدأ مشروعك" 
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
+                    <div className="absolute bottom-3 right-4 left-4">
+                      <Badge className="bg-accent/90 text-xs mb-1">
+                        <Store className="h-3 w-3 ml-1" />
+                        لمقدمي الخدمات
+                      </Badge>
+                      <h3 className="text-xl font-bold text-white drop-shadow-lg">حوّل موهبتك لمشروع</h3>
+                    </div>
+                  </div>
+                  <CardContent className="p-4">
+                    <div className="grid grid-cols-3 gap-2 mb-4">
+                      {providerFeatures.map((f, i) => (
+                        <div key={i} className="text-center p-2 rounded-lg bg-muted/50">
+                          <f.icon className="h-4 w-4 text-accent mx-auto mb-1" />
+                          <p className="text-[10px] font-medium leading-tight">{f.title}</p>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="flex gap-2">
+                      <Button className="flex-1 font-arabic text-sm bg-accent hover:bg-accent/90" size="sm" asChild>
+                        <Link to="/provider-register">
+                          <Zap className="h-3 w-3 ml-1" />
+                          ابدأ مجاناً
+                        </Link>
+                      </Button>
+                      <Button variant="outline" size="icon" className="h-9 w-9" asChild>
+                        <Link to="/provider-login">
+                          <ArrowLeft className="h-4 w-4" />
+                        </Link>
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
             </div>
           </div>
         </section>
 
-        {/* Testimonials Section */}
-        <section className="py-20 bg-muted/30">
+        {/* Trust Badges */}
+        <section className="py-6 bg-muted/30">
           <div className="container mx-auto px-4">
-            <motion.div 
-              className="text-center mb-12"
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-            >
-              <h2 className="text-3xl font-bold mb-4">ماذا يقول عملاؤنا؟</h2>
-              <p className="text-muted-foreground text-lg">تجارب حقيقية من أصحاب الخدمات</p>
-            </motion.div>
-            <div className="grid md:grid-cols-3 gap-6">
-              {testimonials.map((testimonial, index) => (
-                <motion.div
-                  key={index}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: index * 0.1 }}
-                >
-                  <Card>
-                    <CardContent className="p-6">
-                      <div className="flex gap-1 mb-4">
-                        {[...Array(testimonial.rating)].map((_, i) => (
-                          <Star key={i} className="h-5 w-5 fill-yellow-400 text-yellow-400" />
-                        ))}
-                      </div>
-                      <p className="text-muted-foreground mb-4">"{testimonial.content}"</p>
-                      <div>
-                        <p className="font-bold">{testimonial.name}</p>
-                        <p className="text-sm text-muted-foreground">{testimonial.role}</p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              ))}
+            <div className="flex flex-wrap justify-center gap-4 md:gap-8 text-xs md:text-sm text-muted-foreground">
+              <div className="flex items-center gap-1.5">
+                <Shield className="h-4 w-4 text-green-500" />
+                <span>دفع آمن</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <Truck className="h-4 w-4 text-primary" />
+                <span>توصيل سريع</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <Bell className="h-4 w-4 text-accent" />
+                <span>إشعارات فورية</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <CheckCircle2 className="h-4 w-4 text-blue-500" />
+                <span>30 يوم مجاناً</span>
+              </div>
             </div>
-          </div>
-        </section>
-
-        {/* CTA Section */}
-        <section className="py-20">
-          <div className="container mx-auto px-4">
-            <motion.div 
-              className="max-w-2xl mx-auto text-center"
-              initial={{ opacity: 0, scale: 0.95 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true }}
-            >
-              <h2 className="text-3xl font-bold mb-4">جاهز للبدء؟</h2>
-              <p className="text-muted-foreground text-lg mb-8">
-                انضم الآن واحصل على 30 يوم تجربة مجانية!
-              </p>
-              <Button size="lg" className="text-lg px-8 font-arabic" asChild>
-                <Link to="/provider-register">
-                  سجّل الآن
-                  <ArrowLeft className="h-5 w-5 mr-2" />
-                </Link>
-              </Button>
-            </motion.div>
           </div>
         </section>
 
         {/* Footer */}
-        <footer className="bg-muted py-12">
-          <div className="container mx-auto px-4">
-            <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-              <AnimatedLogo size="sm" showText={true} textClassName="!text-lg" />
-              <div className="flex flex-col items-center md:items-end gap-2">
-                <div className="flex items-center gap-4 text-sm">
-                  <Link to="/install" className="text-muted-foreground hover:text-primary transition-colors">
-                    تثبيت التطبيق
-                  </Link>
-                  <Link to="/provider-register" className="text-muted-foreground hover:text-primary transition-colors">
-                    تسجيل مقدم خدمة
-                  </Link>
-                </div>
-                <div className="flex items-center gap-4 text-sm">
-                  <Link to="/terms" className="text-muted-foreground hover:text-primary transition-colors">
-                    شروط الاستخدام
-                  </Link>
-                  <Link to="/privacy" className="text-muted-foreground hover:text-primary transition-colors">
-                    سياسة الخصوصية
-                  </Link>
-                  <Link to="/faq" className="text-muted-foreground hover:text-primary transition-colors">
-                    الأسئلة الشائعة
-                  </Link>
-                  <Link to="/contact" className="text-muted-foreground hover:text-primary transition-colors">
-                    اتصل بنا
-                  </Link>
-                  <Link to="/admin-login" className="text-muted-foreground hover:text-primary transition-colors flex items-center gap-1">
-                    <Lock className="h-3 w-3" />
-                    لوحة التحكم
-                  </Link>
-                </div>
-                <p className="text-muted-foreground text-sm">
-                  © 2026 منصة الحي. جميع الحقوق محفوظة.
-                </p>
-              </div>
+        <footer className="py-6 border-t">
+          <div className="container mx-auto px-4 text-center">
+            <div className="flex flex-wrap items-center justify-center gap-3 text-xs text-muted-foreground mb-3">
+              <Link to="/terms" className="hover:text-primary transition-colors">الشروط</Link>
+              <Link to="/privacy" className="hover:text-primary transition-colors">الخصوصية</Link>
+              <Link to="/faq" className="hover:text-primary transition-colors">الأسئلة</Link>
+              <Link to="/contact" className="hover:text-primary transition-colors">اتصل بنا</Link>
+              <Link to="/admin-login" className="hover:text-primary transition-colors flex items-center gap-1">
+                <Lock className="h-3 w-3" />
+                الإدارة
+              </Link>
             </div>
+            <p className="text-[10px] text-muted-foreground">
+              © 2026 منصة الحي. جميع الحقوق محفوظة.
+            </p>
           </div>
         </footer>
       </div>
