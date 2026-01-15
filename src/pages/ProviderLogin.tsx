@@ -103,18 +103,53 @@ const ProviderLogin = () => {
     setIsLoading(true);
 
     try {
-      const { error } = await supabase.auth.signUp({
+      // First, verify the email exists in approved applications
+      const { data: approvedApplication, error: checkError } = await supabase
+        .from('service_provider_applications')
+        .select('id, full_name, business_name, neighborhood')
+        .eq('email', email.toLowerCase().trim())
+        .eq('status', 'approved')
+        .maybeSingle();
+
+      if (checkError) throw checkError;
+
+      if (!approvedApplication) {
+        toast.error('هذا البريد الإلكتروني غير مسجل في طلبات الانضمام المقبولة. يرجى التقديم أولاً أو استخدام نفس البريد الإلكتروني المستخدم في الطلب.');
+        setIsLoading(false);
+        return;
+      }
+
+      // Pre-fill the name from the application if empty
+      const nameToUse = fullName || approvedApplication.full_name;
+
+      const { data: signupData, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           emailRedirectTo: window.location.origin + '/provider-login',
           data: {
-            full_name: fullName,
+            full_name: nameToUse,
           },
         },
       });
 
       if (error) throw error;
+
+      // Send notification to admin about new provider registration
+      try {
+        await supabase.functions.invoke('send-application-email', {
+          body: {
+            type: 'provider_registered',
+            email: email,
+            fullName: nameToUse,
+            businessName: approvedApplication.business_name,
+            neighborhood: approvedApplication.neighborhood,
+          }
+        });
+      } catch (notifyError) {
+        console.error('Error sending admin notification:', notifyError);
+        // Don't block signup if notification fails
+      }
 
       toast.success('تم إنشاء الحساب بنجاح! يمكنك الآن تسجيل الدخول');
       setMode('login');
