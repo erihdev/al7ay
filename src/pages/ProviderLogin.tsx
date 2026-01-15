@@ -49,8 +49,7 @@ const ProviderLogin = () => {
           
           if (providerData && isMounted) {
             clearTimeout(timeout);
-            // Use direct location for reliable mobile redirect
-            window.location.href = '/provider-dashboard';
+            window.location.replace('/provider-dashboard');
             return;
           }
         }
@@ -110,8 +109,10 @@ const ProviderLogin = () => {
       // Step 2: Session is now active
       toast.success('تم تسجيل الدخول بنجاح');
       
-      // Use direct location change for guaranteed navigation on mobile
-      window.location.href = '/provider-dashboard';
+      // Use replace for guaranteed navigation on mobile - don't add to history
+      setTimeout(() => {
+        window.location.replace('/provider-dashboard');
+      }, 100);
       
     } catch (error: any) {
       console.error('Login error:', error);
