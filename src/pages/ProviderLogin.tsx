@@ -22,25 +22,31 @@ const ProviderLogin = () => {
     let isMounted = true;
     
     const initialize = async () => {
-      // Check current session
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (session?.user && isMounted) {
-        // Check if user is a provider
-        const { data: provider } = await supabase
-          .from('service_providers')
-          .select('id')
-          .eq('user_id', session.user.id)
-          .maybeSingle();
+      try {
+        // Check current session
+        const { data: { session } } = await supabase.auth.getSession();
         
-        if (provider && isMounted) {
-          navigate('/provider-dashboard', { replace: true });
-          return;
+        if (session?.user && isMounted) {
+          // Check if user is a provider
+          const { data: provider } = await supabase
+            .from('service_providers')
+            .select('id')
+            .eq('user_id', session.user.id)
+            .maybeSingle();
+          
+          if (provider && isMounted) {
+            navigate('/provider-dashboard', { replace: true });
+            // Still set initializing to false in case navigation fails
+            setIsInitializing(false);
+            return;
+          }
         }
-      }
-      
-      if (isMounted) {
-        setIsInitializing(false);
+      } catch (error) {
+        console.error('Error checking session:', error);
+      } finally {
+        if (isMounted) {
+          setIsInitializing(false);
+        }
       }
     };
 
