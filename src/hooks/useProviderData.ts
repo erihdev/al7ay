@@ -20,6 +20,12 @@ export interface ServiceProvider {
     primary_color: string;
     accent_color: string;
   } | null;
+  freelance_certificate_url: string | null;
+  bank_name: string | null;
+  iban: string | null;
+  national_address: string | null;
+  is_payment_verified: boolean;
+  commission_rate: number;
   created_at: string;
   updated_at: string;
 }
@@ -73,7 +79,10 @@ export function useProviderProfile() {
         .maybeSingle();
       
       if (error) throw error;
-      return data as ServiceProvider | null;
+      return data ? {
+        ...data,
+        store_settings: data.store_settings as ServiceProvider['store_settings']
+      } as ServiceProvider : null;
     },
     enabled: !!user,
   });
