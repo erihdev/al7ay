@@ -107,20 +107,31 @@ const ProviderDashboard = () => {
 
   useEffect(() => {
     let mounted = true;
+    let dataLoaded = false;
     
     const checkSession = async () => {
       console.log('Checking session...');
       
+      // Add timeout to prevent hanging
+      const timeoutPromise = new Promise<null>((_, reject) => 
+        setTimeout(() => reject(new Error('Session check timeout')), 5000)
+      );
+      
       try {
-        const { data: { session }, error } = await supabase.auth.getSession();
+        const result = await Promise.race([
+          supabase.auth.getSession(),
+          timeoutPromise
+        ]);
         
-        console.log('Session check result:', { 
+        if (!result || !mounted) return;
+        
+        const { data: { session }, error } = result as any;
+        
+        console.log('Session result:', { 
           hasSession: !!session, 
           userId: session?.user?.id,
           error 
         });
-        
-        if (!mounted) return;
         
         if (!session?.user) {
           console.log('No session, redirecting to login');
@@ -128,13 +139,31 @@ const ProviderDashboard = () => {
           return;
         }
         
-        // Load provider data
-        await loadProviderData(session.user.id);
-      } catch (err) {
-        console.error('Session check error:', err);
+        if (!dataLoaded) {
+          dataLoaded = true;
+          await loadProviderData(session.user.id);
+        }
+      } catch (err: any) {
+        console.error('Session check error:', err?.message || err);
         if (mounted) {
-          setError('حدث خطأ في التحقق من الجلسة');
-          setLoading(false);
+          // If timeout, try to get session from storage directly
+          if (err?.message === 'Session check timeout') {
+            console.log('Timeout - trying direct storage check');
+            const storedSession = localStorage.getItem('sb-hmnpraslunhnuigeetoe-auth-token');
+            if (storedSession) {
+              try {
+                const parsed = JSON.parse(storedSession);
+                if (parsed?.user?.id && !dataLoaded) {
+                  dataLoaded = true;
+                  await loadProviderData(parsed.user.id);
+                  return;
+                }
+              } catch (e) {
+                console.error('Failed to parse stored session:', e);
+              }
+            }
+          }
+          navigate('/provider-login', { replace: true });
         }
       }
     };
@@ -143,10 +172,19 @@ const ProviderDashboard = () => {
     checkSession();
     
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      console.log('Auth state changed:', event);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log('Auth state changed:', event, !!session?.user);
+      
+      if (!mounted) return;
+      
       if (event === 'SIGNED_OUT') {
         navigate('/provider-login', { replace: true });
+        return;
+      }
+      
+      if (event === 'SIGNED_IN' && session?.user && !dataLoaded) {
+        dataLoaded = true;
+        loadProviderData(session.user.id);
       }
     });
 
