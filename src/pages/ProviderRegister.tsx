@@ -730,13 +730,13 @@ const ProviderRegister = () => {
                       {/* Comparison Rows */}
                       <div className="space-y-3">
                         {[
-                          { label: '📦 عدد المنتجات', tooltip: 'عدد المنتجات المسموح إضافتها في خطتك', getValue: (idx: number) => idx === 0 ? '10' : idx === 1 ? '50' : 'غير محدود' },
-                          { label: '📊 لوحة التحكم', tooltip: 'تحكم بجميع جوانب متجرك من مكان واحد', getValue: () => '✓' },
-                          { label: '📱 إشعارات الطلبات', tooltip: 'تنبيهات فورية عند وصول طلبات جديدة', getValue: () => '✓' },
-                          { label: '🏪 متجر خاص', tooltip: 'صفحة متجر مخصصة بشعارك وهويتك', getValue: (idx: number) => idx === 0 ? '✗' : '✓' },
-                          { label: '📈 تقارير متقدمة', tooltip: 'تحليلات مفصلة للمبيعات والأداء', getValue: (idx: number) => idx < 2 ? '✗' : '✓' },
-                          { label: '🎨 تخصيص الشعار', tooltip: 'ارفع شعار نشاطك التجاري', getValue: (idx: number) => idx === 0 ? '✗' : '✓' },
-                          { label: '💬 دعم أولوي', tooltip: 'خط دعم مباشر مع أولوية في الرد', getValue: (idx: number) => idx < 2 ? '✗' : '✓' },
+                          { label: '📦 عدد المنتجات', tooltip: 'عدد المنتجات المسموح إضافتها في خطتك', getValue: (idx: number) => idx === 0 ? '10' : idx === 1 ? '50' : 'غير محدود', bestIdx: 2 },
+                          { label: '📊 لوحة التحكم', tooltip: 'تحكم بجميع جوانب متجرك من مكان واحد', getValue: () => '✓', bestIdx: -1 },
+                          { label: '📱 إشعارات الطلبات', tooltip: 'تنبيهات فورية عند وصول طلبات جديدة', getValue: () => '✓', bestIdx: -1 },
+                          { label: '🏪 متجر خاص', tooltip: 'صفحة متجر مخصصة بشعارك وهويتك', getValue: (idx: number) => idx === 0 ? '✗' : '✓', bestIdx: 1 },
+                          { label: '📈 تقارير متقدمة', tooltip: 'تحليلات مفصلة للمبيعات والأداء', getValue: (idx: number) => idx < 2 ? '✗' : '✓', bestIdx: 2 },
+                          { label: '🎨 تخصيص الشعار', tooltip: 'ارفع شعار نشاطك التجاري', getValue: (idx: number) => idx === 0 ? '✗' : '✓', bestIdx: 1 },
+                          { label: '💬 دعم أولوي', tooltip: 'خط دعم مباشر مع أولوية في الرد', getValue: (idx: number) => idx < 2 ? '✗' : '✓', bestIdx: 2 },
                         ].map((row, rowIdx) => (
                           <motion.div
                             key={rowIdx}
@@ -771,20 +771,50 @@ const ProviderRegister = () => {
                             {comparePlans.map((plan) => {
                               const planIndex = plans.findIndex(p => p.id === plan.id);
                               const value = row.getValue(planIndex);
+                              const isBest = row.bestIdx !== -1 && planIndex >= row.bestIdx;
                               return (
-                                <div key={plan.id} className="text-center">
+                                <div key={plan.id} className={`text-center relative ${isBest ? 'py-1' : ''}`}>
+                                  {isBest && (
+                                    <motion.div
+                                      className="absolute inset-0 bg-gradient-to-r from-primary/10 via-primary/20 to-primary/10 rounded-lg -z-10"
+                                      initial={{ opacity: 0, scale: 0.8 }}
+                                      animate={{ opacity: 1, scale: 1 }}
+                                      transition={{ delay: rowIdx * 0.05 + 0.2 }}
+                                    />
+                                  )}
                                   {value === '✓' ? (
                                     <motion.div
                                       initial={{ scale: 0 }}
                                       animate={{ scale: 1 }}
                                       transition={{ delay: rowIdx * 0.05 + 0.1 }}
+                                      className="flex items-center justify-center gap-1"
                                     >
-                                      <Check className="h-5 w-5 text-green-500 mx-auto" />
+                                      <Check className={`h-5 w-5 ${isBest ? 'text-primary' : 'text-green-500'} mx-auto`} />
+                                      {isBest && (
+                                        <motion.span
+                                          initial={{ opacity: 0, x: -5 }}
+                                          animate={{ opacity: 1, x: 0 }}
+                                          className="text-[10px] text-primary font-bold"
+                                        >
+                                          الأفضل
+                                        </motion.span>
+                                      )}
                                     </motion.div>
                                   ) : value === '✗' ? (
                                     <span className="text-muted-foreground">-</span>
                                   ) : (
-                                    <span className="font-bold text-primary">{value}</span>
+                                    <div className="flex items-center justify-center gap-1">
+                                      <span className={`font-bold ${isBest ? 'text-primary' : 'text-foreground'}`}>{value}</span>
+                                      {isBest && (
+                                        <motion.span
+                                          initial={{ opacity: 0, scale: 0 }}
+                                          animate={{ opacity: 1, scale: 1 }}
+                                          className="text-[10px] bg-primary text-primary-foreground px-1.5 py-0.5 rounded-full font-bold"
+                                        >
+                                          ⭐
+                                        </motion.span>
+                                      )}
+                                    </div>
                                   )}
                                 </div>
                               );
@@ -855,15 +885,15 @@ const ProviderRegister = () => {
                         <tbody>
                           {/* Common Features Comparison with Tooltips */}
                           {[
-                            { label: '📦 عدد المنتجات', tooltip: 'عدد المنتجات المسموح إضافتها في خطتك', getValue: (idx: number) => idx === 0 ? '10' : idx === 1 ? '50' : 'غير محدود', type: 'value' },
-                            { label: '📊 لوحة التحكم', tooltip: 'تحكم بجميع جوانب متجرك من مكان واحد - الطلبات، المنتجات، والإحصائيات', getValue: () => true, type: 'check' },
-                            { label: '📱 إشعارات الطلبات', tooltip: 'احصل على تنبيهات فورية عند وصول طلبات جديدة عبر الموقع والجوال', getValue: () => true, type: 'check' },
-                            { label: '🏪 متجر خاص', tooltip: 'صفحة متجر مخصصة لعرض منتجاتك بشعارك وهويتك التجارية', getValue: (idx: number) => idx > 0, type: 'check' },
-                            { label: '📈 تقارير متقدمة', tooltip: 'تحليلات مفصلة للمبيعات، الأداء، وسلوك العملاء', getValue: (idx: number) => idx >= 2, type: 'check' },
-                            { label: '🎨 تخصيص المتجر', tooltip: 'خصص ألوان وتصميم متجرك ليتناسب مع هويتك', getValue: (idx: number) => idx >= 2, type: 'check' },
-                            { label: '💬 دعم فني', tooltip: 'فريق دعم متخصص لمساعدتك في أي وقت', getValue: (idx: number) => idx === 0 ? 'أساسي' : idx === 1 ? 'بريد إلكتروني' : 'أولوية 24/7', type: 'value' },
-                            { label: '🏷️ كوبونات خصم', tooltip: 'أنشئ كوبونات خصم لعملائك لزيادة المبيعات', getValue: (idx: number) => idx > 0, type: 'check' },
-                            { label: '📍 عرض في الخريطة', tooltip: 'يظهر متجرك على خريطة المنطقة ليجدك العملاء بسهولة', getValue: () => true, type: 'check' },
+                            { label: '📦 عدد المنتجات', tooltip: 'عدد المنتجات المسموح إضافتها في خطتك', getValue: (idx: number) => idx === 0 ? '10' : idx === 1 ? '50' : 'غير محدود', type: 'value', bestIdx: 2 },
+                            { label: '📊 لوحة التحكم', tooltip: 'تحكم بجميع جوانب متجرك من مكان واحد - الطلبات، المنتجات، والإحصائيات', getValue: () => true, type: 'check', bestIdx: -1 },
+                            { label: '📱 إشعارات الطلبات', tooltip: 'احصل على تنبيهات فورية عند وصول طلبات جديدة عبر الموقع والجوال', getValue: () => true, type: 'check', bestIdx: -1 },
+                            { label: '🏪 متجر خاص', tooltip: 'صفحة متجر مخصصة لعرض منتجاتك بشعارك وهويتك التجارية', getValue: (idx: number) => idx > 0, type: 'check', bestIdx: 1 },
+                            { label: '📈 تقارير متقدمة', tooltip: 'تحليلات مفصلة للمبيعات، الأداء، وسلوك العملاء', getValue: (idx: number) => idx >= 2, type: 'check', bestIdx: 2 },
+                            { label: '🎨 تخصيص المتجر', tooltip: 'خصص ألوان وتصميم متجرك ليتناسب مع هويتك', getValue: (idx: number) => idx >= 2, type: 'check', bestIdx: 2 },
+                            { label: '💬 دعم فني', tooltip: 'فريق دعم متخصص لمساعدتك في أي وقت', getValue: (idx: number) => idx === 0 ? 'أساسي' : idx === 1 ? 'بريد إلكتروني' : 'أولوية 24/7', type: 'value', bestIdx: 2 },
+                            { label: '🏷️ كوبونات خصم', tooltip: 'أنشئ كوبونات خصم لعملائك لزيادة المبيعات', getValue: (idx: number) => idx > 0, type: 'check', bestIdx: 1 },
+                            { label: '📍 عرض في الخريطة', tooltip: 'يظهر متجرك على خريطة المنطقة ليجدك العملاء بسهولة', getValue: () => true, type: 'check', bestIdx: -1 },
                           ].map((row, rowIdx) => (
                             <tr key={rowIdx} className={`${rowIdx < 8 ? 'border-b' : ''} hover:bg-muted/20 transition-colors`}>
                               <td className="p-4 font-medium">
@@ -893,24 +923,48 @@ const ProviderRegister = () => {
                               </td>
                               {plans.map((plan, idx) => {
                                 const value = row.getValue(idx);
+                                const isBest = row.bestIdx !== -1 && idx === row.bestIdx;
                                 return (
-                                  <td key={plan.id} className="p-4 text-center">
+                                  <td key={plan.id} className={`p-4 text-center relative ${isBest ? 'bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5' : ''}`}>
                                     {row.type === 'check' ? (
                                       value ? (
                                         <motion.div
                                           initial={{ scale: 0 }}
                                           animate={{ scale: 1 }}
                                           transition={{ delay: rowIdx * 0.03 }}
+                                          className="flex items-center justify-center gap-1"
                                         >
-                                          <Check className="h-5 w-5 text-green-500 mx-auto" />
+                                          <Check className={`h-5 w-5 ${isBest ? 'text-primary' : 'text-green-500'}`} />
+                                          {isBest && (
+                                            <motion.span
+                                              initial={{ opacity: 0, scale: 0 }}
+                                              animate={{ opacity: 1, scale: 1 }}
+                                              transition={{ delay: rowIdx * 0.03 + 0.1 }}
+                                              className="text-[9px] bg-primary text-primary-foreground px-1 py-0.5 rounded font-bold"
+                                            >
+                                              الأفضل
+                                            </motion.span>
+                                          )}
                                         </motion.div>
                                       ) : (
                                         <span className="text-muted-foreground">-</span>
                                       )
                                     ) : (
-                                      <span className={typeof value === 'string' && value.includes('أولوية') ? 'text-primary font-bold' : 'font-bold text-primary'}>
-                                        {value}
-                                      </span>
+                                      <div className="flex items-center justify-center gap-1">
+                                        <span className={isBest ? 'text-primary font-bold' : 'font-bold text-foreground'}>
+                                          {value}
+                                        </span>
+                                        {isBest && (
+                                          <motion.span
+                                            initial={{ opacity: 0, scale: 0 }}
+                                            animate={{ opacity: 1, scale: 1 }}
+                                            transition={{ delay: rowIdx * 0.03 + 0.1 }}
+                                            className="text-xs"
+                                          >
+                                            ⭐
+                                          </motion.span>
+                                        )}
+                                      </div>
                                     )}
                                   </td>
                                 );
