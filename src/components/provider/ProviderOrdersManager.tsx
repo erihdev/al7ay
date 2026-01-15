@@ -11,7 +11,10 @@ import {
   Phone,
   MapPin,
   User,
-  Navigation2
+  Navigation2,
+  Bell,
+  BellOff,
+  Hand
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -19,6 +22,7 @@ import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { useProviderOrders, useUpdateProviderOrder, ProviderOrder } from '@/hooks/useProviderOrders';
 import { ProviderDeliveryTracker } from './ProviderDeliveryTracker';
+import { useProviderArrivalNotifications } from '@/hooks/useProviderArrivalNotifications';
 
 interface ProviderOrdersManagerProps {
   providerId: string;
@@ -39,6 +43,7 @@ const ProviderOrdersManager = ({ providerId }: ProviderOrdersManagerProps) => {
   const { data: orders, isLoading } = useProviderOrders(providerId);
   const updateOrderMutation = useUpdateProviderOrder();
   const [trackingOrderId, setTrackingOrderId] = useState<string | null>(null);
+  const { arrivals, soundEnabled, toggleSound, clearArrival } = useProviderArrivalNotifications(providerId);
 
   const handleStatusChange = async (order: ProviderOrder, newStatus: string) => {
     try {

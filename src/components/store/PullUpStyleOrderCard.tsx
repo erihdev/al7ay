@@ -3,6 +3,7 @@ import { useMapboxToken } from '@/hooks/useMapboxToken';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { toast } from 'sonner';
 import { 
   Clock, 
   ChefHat, 
@@ -13,7 +14,8 @@ import {
   Loader2,
   Navigation2,
   Hand,
-  Store
+  Store,
+  Bell
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import mapboxgl from 'mapbox-gl';
@@ -109,6 +111,42 @@ export function PullUpStyleOrderCard({
   const [isLocating, setIsLocating] = useState(true);
   const [heading, setHeading] = useState<number>(0);
   const [mapReady, setMapReady] = useState(false);
+  const [isNotifyingStore, setIsNotifyingStore] = useState(false);
+  const [hasNotifiedStore, setHasNotifiedStore] = useState(false);
+
+  // Notify store that customer has arrived
+  const notifyStoreArrival = useCallback(async () => {
+    if (!order.service_providers?.id || isNotifyingStore || hasNotifiedStore) return;
+
+    setIsNotifyingStore(true);
+    try {
+      // Call edge function to notify store
+      const { error } = await supabase.functions.invoke('send-notification', {
+        body: {
+          type: 'customer_arrived',
+          orderId: order.id,
+          providerId: order.service_providers.id,
+          customerName: 'العميل',
+          message: `العميل وصل لاستلام الطلب #${order.id.slice(-4).toUpperCase()} 🙋`
+        }
+      });
+
+      if (error) throw error;
+
+      setHasNotifiedStore(true);
+      toast.success('تم إبلاغ المتجر بوصولك!', {
+        description: 'سيتم تجهيز طلبك للتسليم الآن',
+        duration: 5000
+      });
+    } catch (error) {
+      console.error('Failed to notify store:', error);
+      toast.error('تعذر إبلاغ المتجر', {
+        description: 'حاول مرة أخرى أو اتصل بالمتجر مباشرة'
+      });
+    } finally {
+      setIsNotifyingStore(false);
+    }
+  }, [order.id, order.service_providers?.id, isNotifyingStore, hasNotifiedStore]);
 
   const status = statusConfig[order.status] || statusConfig.pending;
   const StatusIcon = status.icon;
@@ -421,15 +459,18 @@ export function PullUpStyleOrderCard({
         {/* "I'm here" button for ready orders */}
         {order.status === 'ready' && order.order_type === 'pickup' && (
           <Button 
-            className="w-full bg-green-600 hover:bg-green-700 text-white gap-2 shadow-lg"
-            onClick={() => {
-              if (order.service_providers?.phone) {
-                window.open(`tel:${order.service_providers.phone}`, '_self');
-              }
-            }}
+            className={`w-full gap-2 shadow-lg ${hasNotifiedStore ? 'bg-gray-500' : 'bg-green-600 hover:bg-green-700'} text-white`}
+            onClick={notifyStoreArrival}
+            disabled={isNotifyingStore || hasNotifiedStore}
           >
-            <Hand className="h-5 w-5" />
-            وصلت؟ أبلغ المتجر
+            {isNotifyingStore ? (
+              <Loader2 className="h-5 w-5 animate-spin" />
+            ) : hasNotifiedStore ? (
+              <CheckCircle2 className="h-5 w-5" />
+            ) : (
+              <Bell className="h-5 w-5" />
+            )}
+            {hasNotifiedStore ? 'تم إبلاغ المتجر' : 'وصلت؟ أبلغ المتجر'}
           </Button>
         )}
       </div>
