@@ -19,6 +19,7 @@ import {
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { motion } from 'framer-motion';
+import { FloatingParticles } from '@/components/ui/InteractiveBackground';
 
 interface AppVersion {
   id: string;
@@ -94,7 +95,8 @@ const Changelog = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-background font-arabic" dir="rtl">
+    <div className="min-h-screen bg-background font-arabic relative" dir="rtl">
+      <FloatingParticles count={10} />
       {/* Header */}
       <header className="sticky top-0 z-40 bg-card/95 backdrop-blur-sm border-b border-border safe-area-inset-top">
         <div className="container mx-auto px-4 py-3">

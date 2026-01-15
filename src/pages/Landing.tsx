@@ -25,6 +25,7 @@ import { Link } from 'react-router-dom';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import NeighborhoodsMap from '@/components/landing/NeighborhoodsMap';
 import { AnimatedLogo } from '@/components/ui/AnimatedLogo';
+import { InteractiveBackground } from '@/components/ui/InteractiveBackground';
 
 interface Neighborhood {
   id: string;
@@ -283,7 +284,8 @@ const Landing = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-background font-arabic" dir="rtl">
+    <div className="min-h-screen bg-background font-arabic relative overflow-hidden" dir="rtl">
+      <InteractiveBackground variant="waves" intensity="subtle" />
       {/* Header */}
       <header className="sticky top-0 z-50 bg-background/95 backdrop-blur border-b">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">

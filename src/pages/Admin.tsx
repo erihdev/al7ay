@@ -31,7 +31,8 @@ import {
   CreditCard,
   FileText,
   LogOut,
-  Users
+  Users,
+  Rocket
 } from 'lucide-react';
 import { CouponManager } from '@/components/admin/CouponManager';
 import { SalesReports } from '@/components/admin/SalesReports';
@@ -44,6 +45,8 @@ import ApplicationsManager from '@/components/admin/ApplicationsManager';
 import NeighborhoodsManager from '@/components/admin/NeighborhoodsManager';
 import { SuggestedNeighborhoodsManager } from '@/components/admin/SuggestedNeighborhoodsManager';
 import RegisteredProvidersManager from '@/components/admin/RegisteredProvidersManager';
+import { VersionManager } from '@/components/admin/VersionManager';
+import { InteractiveBackground } from '@/components/ui/InteractiveBackground';
 import { useUpdateDeliveryLocation } from '@/hooks/useOrderTracking';
 import { useOrderNotifications } from '@/hooks/useOrderNotifications';
 import { format } from 'date-fns';
@@ -222,8 +225,9 @@ const Admin = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background font-arabic" dir="rtl">
-      <header className="bg-card border-b border-border p-4">
+    <div className="min-h-screen bg-background font-arabic relative" dir="rtl">
+      <InteractiveBackground variant="geometric" intensity="subtle" />
+      <header className="bg-card/80 backdrop-blur-sm border-b border-border p-4 relative z-10">
         <div className="container mx-auto flex items-center justify-between">
           <h1 className="text-xl font-bold">لوحة التحكم</h1>
           <div className="flex items-center gap-3">
@@ -265,9 +269,9 @@ const Admin = () => {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-6">
+      <main className="container mx-auto px-4 py-6 relative z-10">
         <Tabs defaultValue="orders" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6 lg:grid-cols-12">
+          <TabsList className="grid w-full grid-cols-6 lg:grid-cols-13">
             <TabsTrigger value="orders" className="font-arabic">
               <Package className="h-4 w-4 ml-2" />
               الطلبات
@@ -311,6 +315,10 @@ const Admin = () => {
             <TabsTrigger value="suggested-neighborhoods" className="font-arabic">
               <MapPin className="h-4 w-4 ml-2" />
               اقتراحات الأحياء
+            </TabsTrigger>
+            <TabsTrigger value="versions" className="font-arabic">
+              <Rocket className="h-4 w-4 ml-2" />
+              الإصدارات
             </TabsTrigger>
             <TabsTrigger value="settings" className="font-arabic">
               <Settings className="h-4 w-4 ml-2" />
@@ -636,6 +644,11 @@ const Admin = () => {
           {/* Suggested Neighborhoods Tab */}
           <TabsContent value="suggested-neighborhoods">
             <SuggestedNeighborhoodsManager />
+          </TabsContent>
+
+          {/* Versions Tab */}
+          <TabsContent value="versions">
+            <VersionManager />
           </TabsContent>
         </Tabs>
       </main>
