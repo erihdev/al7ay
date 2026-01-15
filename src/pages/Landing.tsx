@@ -16,7 +16,8 @@ import {
   Store,
   Smartphone,
   Shield,
-  Send
+  Send,
+  Download
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -289,15 +290,20 @@ const Landing = () => {
           <Link to="/">
             <AnimatedLogo size="md" showText={true} />
           </Link>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 md:gap-4">
             <ThemeToggle />
+            <Link to="/install" className="hidden sm:block">
+              <Button variant="ghost" size="icon" className="text-primary">
+                <Download className="h-5 w-5" />
+              </Button>
+            </Link>
             <Link to="/provider-login">
-              <Button variant="outline" className="font-arabic">
+              <Button variant="outline" className="font-arabic text-xs sm:text-sm">
                 دخول مقدمي الخدمات
               </Button>
             </Link>
             <Link to="/app">
-              <Button className="font-arabic">
+              <Button className="font-arabic text-xs sm:text-sm">
                 دخول العملاء
                 <ArrowLeft className="h-4 w-4 mr-2" />
               </Button>

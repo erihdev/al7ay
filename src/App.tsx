@@ -25,6 +25,7 @@ import PaymentResult from "./pages/PaymentResult";
 import ProviderLogin from "./pages/ProviderLogin";
 import ProviderDashboard from "./pages/ProviderDashboard";
 import NotFound from "./pages/NotFound";
+import Install from "./pages/Install";
 
 const queryClient = new QueryClient();
 
@@ -67,6 +68,7 @@ const App = () => {
                     <Route path="/provider-login" element={<ProviderLogin />} />
                     <Route path="/provider-dashboard" element={<ProviderDashboard />} />
                     <Route path="/store/:providerId" element={<ProviderStore />} />
+                    <Route path="/install" element={<Install />} />
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                 </BrowserRouter>
