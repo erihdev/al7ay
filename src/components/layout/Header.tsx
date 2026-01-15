@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { CustomerSoundToggle } from '@/components/notifications/CustomerSoundToggle';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { useAuth } from '@/contexts/AuthContext';
-import logo from '@/assets/logo.png';
+import { AnimatedLogo } from '@/components/ui/AnimatedLogo';
 
 export function Header() {
   const { storeName, isWithinDeliveryZone, distance, locationPermission } = useLocationContext();
@@ -22,13 +22,7 @@ export function Header() {
       <div className="container mx-auto px-4 py-3">
         <div className="flex items-center justify-between">
           {/* Logo */}
-          <div className="flex items-center gap-3">
-            <img src={logo} alt="الحي" className="w-12 h-12 object-contain" />
-            <div>
-              <h1 className="text-lg font-bold font-arabic text-foreground">{storeName}</h1>
-              <p className="text-xs text-muted-foreground font-arabic">قهوة الحي</p>
-            </div>
-          </div>
+          <AnimatedLogo size="lg" showText={true} />
 
           {/* Location Status & Controls */}
           <div className="flex items-center gap-1">

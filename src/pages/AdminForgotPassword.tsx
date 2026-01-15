@@ -14,7 +14,7 @@ import {
   CheckCircle
 } from 'lucide-react';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
-import logo from '@/assets/logo.png';
+import { AnimatedLogo } from '@/components/ui/AnimatedLogo';
 
 const AdminForgotPassword = () => {
   const [email, setEmail] = useState('');
@@ -62,8 +62,8 @@ const AdminForgotPassword = () => {
         <div className="w-full max-w-md">
           {/* Logo & Title */}
           <div className="text-center mb-8">
-            <div className="w-20 h-20 mx-auto mb-4 rounded-2xl bg-primary/10 flex items-center justify-center shadow-lg border border-primary/20">
-              <img src={logo} alt="الحيّ" className="w-14 h-14 object-contain" />
+            <div className="flex justify-center mb-4">
+              <AnimatedLogo size="xl" showText={false} />
             </div>
             <h1 className="text-2xl font-bold mb-2">استعادة كلمة المرور</h1>
             <p className="text-muted-foreground text-sm">

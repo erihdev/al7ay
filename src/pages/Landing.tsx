@@ -23,7 +23,7 @@ import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import NeighborhoodsMap from '@/components/landing/NeighborhoodsMap';
-import logo from '@/assets/logo.png';
+import { AnimatedLogo } from '@/components/ui/AnimatedLogo';
 
 interface Neighborhood {
   id: string;
@@ -286,10 +286,9 @@ const Landing = () => {
       {/* Header */}
       <header className="sticky top-0 z-50 bg-background/95 backdrop-blur border-b">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <img src={logo} alt="الحي" className="h-10 w-10 rounded-xl" />
-            <span className="text-xl font-bold text-primary">الحي</span>
-          </div>
+          <Link to="/">
+            <AnimatedLogo size="md" showText={true} />
+          </Link>
           <div className="flex items-center gap-4">
             <ThemeToggle />
             <Link to="/provider-login">
@@ -659,10 +658,7 @@ const Landing = () => {
       <footer className="bg-muted py-12">
         <div className="container mx-auto px-4">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <img src={logo} alt="الحي" className="h-8 w-8 rounded-lg" />
-              <span className="font-bold text-primary">منصة الحي</span>
-            </div>
+            <AnimatedLogo size="sm" showText={true} textClassName="!text-lg" />
             <div className="text-center md:text-right">
               <p className="text-muted-foreground text-sm">
                 © 2024 منصة الحي. جميع الحقوق محفوظة.
