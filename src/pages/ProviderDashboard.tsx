@@ -40,16 +40,26 @@ const ProviderDashboard = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('overview');
   const [soundEnabled, setSoundEnabled] = useState(true);
+  const [loadingTimeout, setLoadingTimeout] = useState(false);
 
   // Check if user has service_provider role and auto-fix if needed
   const { hasRole: hasProviderRole, hasProfile, isLoading: roleLoading, checkComplete } = useAutoFixProviderRole();
 
-  const { data: provider, isLoading: providerLoading } = useProviderProfile();
+  const { data: provider, isLoading: providerLoading, error: providerError } = useProviderProfile();
   const { data: products } = useProviderProducts(provider?.id);
   const { data: orders } = useProviderOrders(provider?.id);
 
   // Enable real-time order notifications
   useProviderOrderNotifications(provider?.id, soundEnabled);
+
+  // Timeout to prevent infinite loading
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      setLoadingTimeout(true);
+    }, 8000); // 8 seconds max loading time
+
+    return () => clearTimeout(timeout);
+  }, []);
 
   useEffect(() => {
     // Only redirect after all checks are complete
@@ -71,18 +81,73 @@ const ProviderDashboard = () => {
     navigate('/provider-login');
   };
 
-  if (authLoading || roleLoading || providerLoading) {
+  const handleRetry = () => {
+    window.location.reload();
+  };
+
+  // Show loading state with visible content
+  if ((authLoading || roleLoading || providerLoading) && !loadingTimeout) {
     return (
       <div className="min-h-screen bg-background p-4" dir="rtl">
         <div className="container mx-auto max-w-6xl space-y-6">
-          <Skeleton className="h-16 rounded-lg" />
+          {/* Header skeleton */}
+          <div className="h-16 rounded-lg bg-muted animate-pulse flex items-center justify-center">
+            <span className="text-muted-foreground">جاري تحميل لوحة التحكم...</span>
+          </div>
+          {/* Cards skeleton */}
           <div className="grid md:grid-cols-4 gap-4">
             {[1, 2, 3, 4].map(i => (
-              <Skeleton key={i} className="h-32 rounded-lg" />
+              <div key={i} className="h-32 rounded-lg bg-muted animate-pulse" />
             ))}
           </div>
-          <Skeleton className="h-96 rounded-lg" />
+          {/* Main content skeleton */}
+          <div className="h-96 rounded-lg bg-muted animate-pulse flex items-center justify-center">
+            <div className="text-center">
+              <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+              <span className="text-muted-foreground text-sm">جاري التحميل...</span>
+            </div>
+          </div>
         </div>
+      </div>
+    );
+  }
+
+  // Show error state if loading timed out or there's an error
+  if (loadingTimeout && !provider && !providerError) {
+    return (
+      <div className="min-h-screen bg-background font-arabic flex flex-col" dir="rtl">
+        <header className="sticky top-0 z-50 bg-background/95 backdrop-blur border-b">
+          <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+            <AnimatedLogo size="md" showText={true} />
+            <div className="flex items-center gap-2">
+              <ThemeToggle />
+              <Button variant="ghost" size="sm" onClick={handleLogout} className="font-arabic">
+                <LogOut className="h-4 w-4 ml-2" />
+                تسجيل الخروج
+              </Button>
+            </div>
+          </div>
+        </header>
+
+        <main className="flex-1 flex items-center justify-center p-4">
+          <Card className="max-w-md w-full">
+            <CardContent className="p-8 text-center">
+              <AlertCircle className="h-16 w-16 text-yellow-500 mx-auto mb-4" />
+              <h2 className="text-xl font-bold mb-2">تأخر في التحميل</h2>
+              <p className="text-muted-foreground mb-4">
+                يبدو أن هناك تأخر في تحميل البيانات. يرجى المحاولة مرة أخرى.
+              </p>
+              <div className="flex gap-2 justify-center">
+                <Button onClick={handleRetry} className="font-arabic">
+                  إعادة المحاولة
+                </Button>
+                <Button variant="outline" onClick={handleLogout} className="font-arabic">
+                  تسجيل الخروج
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </main>
       </div>
     );
   }
