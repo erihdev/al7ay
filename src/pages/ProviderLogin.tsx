@@ -9,7 +9,7 @@ import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { ArrowRight, Store, Mail, Lock, User, Loader2 } from 'lucide-react';
-import logo from '@/assets/logo.png';
+import { AnimatedLogo } from '@/components/ui/AnimatedLogo';
 
 const ProviderLogin = () => {
   const navigate = useNavigate();
@@ -182,9 +182,8 @@ const ProviderLogin = () => {
       {/* Header */}
       <header className="sticky top-0 z-50 bg-background/95 backdrop-blur border-b">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-3">
-            <img src={logo} alt="الحي" className="h-10 w-10 rounded-xl" />
-            <span className="text-xl font-bold text-primary">الحي</span>
+          <Link to="/">
+            <AnimatedLogo size="md" showText={true} />
           </Link>
           <div className="flex items-center gap-4">
             <ThemeToggle />

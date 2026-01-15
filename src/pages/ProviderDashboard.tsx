@@ -32,7 +32,7 @@ import {
   BarChart3
 } from 'lucide-react';
 import { toast } from 'sonner';
-import logo from '@/assets/logo.png';
+import { AnimatedLogo } from '@/components/ui/AnimatedLogo';
 
 const ProviderDashboard = () => {
   const { user, loading: authLoading, signOut } = useAuth();
@@ -157,7 +157,7 @@ const ProviderDashboard = () => {
             {provider.logo_url ? (
               <img src={provider.logo_url} alt={provider.business_name} className="h-10 w-10 rounded-xl object-cover" />
             ) : (
-              <img src={logo} alt="الحي" className="h-10 w-10 rounded-xl" />
+              <AnimatedLogo size="md" showText={false} />
             )}
             <div>
               <span className="text-xl font-bold text-primary">{provider.business_name}</span>
