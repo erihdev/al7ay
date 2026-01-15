@@ -21,7 +21,9 @@ import {
   ExternalLink,
   Zap,
   RefreshCw,
-  Info
+  Info,
+  Globe,
+  MapPinned
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -54,7 +56,8 @@ const ProviderSettingsManager = ({ provider, onUpdate }: ProviderSettingsManager
     business_name_en: '',
     description: '',
     phone: '',
-    email: ''
+    email: '',
+    delivery_scope: 'neighborhood' as 'neighborhood' | 'city'
   });
 
   const [paymentData, setPaymentData] = useState({
@@ -74,7 +77,8 @@ const ProviderSettingsManager = ({ provider, onUpdate }: ProviderSettingsManager
         business_name_en: provider.business_name_en || '',
         description: provider.description || '',
         phone: provider.phone || '',
-        email: provider.email || ''
+        email: provider.email || '',
+        delivery_scope: provider.delivery_scope || 'neighborhood'
       });
       setPaymentData({
         bank_name: provider.bank_name || '',
@@ -156,7 +160,8 @@ const ProviderSettingsManager = ({ provider, onUpdate }: ProviderSettingsManager
         description: formData.description || null,
         phone: formData.phone || null,
         email: formData.email,
-        logo_url: logoUrl
+        logo_url: logoUrl,
+        delivery_scope: formData.delivery_scope
       };
 
       if (onUpdate) {
@@ -339,7 +344,71 @@ const ProviderSettingsManager = ({ provider, onUpdate }: ProviderSettingsManager
               </div>
             </div>
 
-            <Button 
+            {/* Delivery Scope Setting */}
+            <div className="space-y-4 p-4 bg-muted/50 rounded-lg border">
+              <Label className="font-arabic font-medium flex items-center gap-2">
+                <MapPin className="h-4 w-4" />
+                نطاق استقبال الطلبات
+              </Label>
+              <div className="grid md:grid-cols-2 gap-4">
+                <div
+                  className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                    formData.delivery_scope === 'neighborhood'
+                      ? 'border-primary bg-primary/5'
+                      : 'border-muted hover:border-primary/50'
+                  }`}
+                  onClick={() => setFormData({ ...formData, delivery_scope: 'neighborhood' })}
+                >
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className={`w-4 h-4 rounded-full border-2 ${
+                      formData.delivery_scope === 'neighborhood' ? 'border-primary bg-primary' : 'border-muted-foreground'
+                    }`}>
+                      {formData.delivery_scope === 'neighborhood' && (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <div className="w-1.5 h-1.5 rounded-full bg-white" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <MapPinned className="h-4 w-4 text-primary" />
+                      <span className="font-medium font-arabic">الحي فقط</span>
+                    </div>
+                  </div>
+                  <p className="text-sm text-muted-foreground font-arabic pr-7">
+                    استقبل الطلبات من العملاء في نفس الحي الذي يتواجد فيه متجرك فقط
+                  </p>
+                </div>
+                <div
+                  className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                    formData.delivery_scope === 'city'
+                      ? 'border-primary bg-primary/5'
+                      : 'border-muted hover:border-primary/50'
+                  }`}
+                  onClick={() => setFormData({ ...formData, delivery_scope: 'city' })}
+                >
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className={`w-4 h-4 rounded-full border-2 ${
+                      formData.delivery_scope === 'city' ? 'border-primary bg-primary' : 'border-muted-foreground'
+                    }`}>
+                      {formData.delivery_scope === 'city' && (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <div className="w-1.5 h-1.5 rounded-full bg-white" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Globe className="h-4 w-4 text-primary" />
+                      <span className="font-medium font-arabic">كل المدينة</span>
+                    </div>
+                  </div>
+                  <p className="text-sm text-muted-foreground font-arabic pr-7">
+                    استقبل الطلبات من جميع أحياء المدينة التي يتواجد فيها متجرك
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <Button
               type="submit" 
               className="w-full font-arabic"
               disabled={isLoading}
