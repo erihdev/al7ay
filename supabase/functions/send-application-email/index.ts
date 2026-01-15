@@ -10,16 +10,18 @@ const corsHeaders = {
 };
 
 interface ApplicationEmailRequest {
-  type?: 'applicant_notification' | 'admin_notification' | 'neighborhood_suggestion';
+  type?: 'applicant_notification' | 'admin_notification' | 'neighborhood_suggestion' | 'neighborhood_approved';
   email: string;
   fullName: string;
-  businessName: string;
+  businessName?: string;
   neighborhood?: string;
   phone?: string;
   status?: 'approved' | 'rejected';
   notes?: string;
   customNeighborhood?: string;
   customCity?: string;
+  neighborhoodName?: string;
+  city?: string;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -28,14 +30,74 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { type = 'applicant_notification', email, fullName, businessName, neighborhood, phone, status, notes, customNeighborhood, customCity }: ApplicationEmailRequest = await req.json();
+    const { type = 'applicant_notification', email, fullName, businessName, neighborhood, phone, status, notes, customNeighborhood, customCity, neighborhoodName, city }: ApplicationEmailRequest = await req.json();
 
     let subject: string;
     let htmlContent: string;
     let toEmail: string;
 
-    // Neighborhood suggestion notification to admin
-    if (type === 'neighborhood_suggestion') {
+    // Neighborhood approval notification to user
+    if (type === 'neighborhood_approved') {
+      toEmail = email;
+      subject = `🎉 تم قبول اقتراحك لإضافة حي ${neighborhoodName}`;
+      htmlContent = `
+        <!DOCTYPE html>
+        <html dir="rtl" lang="ar">
+        <head>
+          <meta charset="utf-8">
+          <style>
+            body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f5f5f5; margin: 0; padding: 20px; }
+            .container { max-width: 600px; margin: 0 auto; background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+            .header { background: linear-gradient(135deg, #059669, #047857); color: white; padding: 40px 30px; text-align: center; }
+            .header h1 { margin: 0; font-size: 24px; }
+            .success-icon { font-size: 64px; margin-bottom: 20px; }
+            .content { padding: 30px; }
+            .highlight-box { background: #ECFDF5; border: 2px solid #10B981; border-radius: 12px; padding: 24px; margin: 20px 0; text-align: center; }
+            .neighborhood-name { font-size: 24px; font-weight: bold; color: #059669; margin: 0; }
+            .city-name { color: #6b7280; font-size: 16px; margin-top: 8px; }
+            .cta-button { display: inline-block; background: #059669; color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: bold; margin-top: 20px; }
+            .footer { background: #f9fafb; padding: 20px; text-align: center; color: #6b7280; font-size: 14px; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <div class="success-icon">🎉</div>
+              <h1>تم قبول اقتراحك!</h1>
+            </div>
+            <div class="content">
+              <p>مرحباً <strong>${fullName}</strong>،</p>
+              <p>يسعدنا إبلاغك بأنه تم قبول اقتراحك لإضافة حي جديد إلى منصة الحي!</p>
+              
+              <div class="highlight-box">
+                <p class="neighborhood-name">📍 ${neighborhoodName}</p>
+                <p class="city-name">${city}</p>
+              </div>
+
+              <p>الحي الآن متاح في قائمة الأحياء النشطة ويمكن للمستخدمين والتجار استخدامه.</p>
+
+              ${notes ? `
+                <div style="background: #f9fafb; border-radius: 8px; padding: 16px; margin: 20px 0;">
+                  <strong>ملاحظة من الإدارة:</strong><br>
+                  ${notes}
+                </div>
+              ` : ''}
+
+              <p>شكراً لمساهمتك في توسيع نطاق خدمة منصة الحي! 💚</p>
+
+              <div style="text-align: center;">
+                <a href="https://al7ay.lovable.app" class="cta-button">زيارة المنصة</a>
+              </div>
+            </div>
+            <div class="footer">
+              <p>فريق منصة الحي</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `;
+    } else if (type === 'neighborhood_suggestion') {
+      // Neighborhood suggestion notification to admin
       const adminEmail = 'difmashni@gmail.com';
       toEmail = adminEmail;
       subject = `📍 اقتراح حي جديد - ${customNeighborhood}، ${customCity}`;
