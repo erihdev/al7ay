@@ -339,71 +339,293 @@ const ProviderRegister = () => {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
+            className="space-y-12"
           >
             <div className="text-center mb-8">
               <h1 className="text-3xl font-bold mb-2">اختر خطة الاشتراك</h1>
               <p className="text-muted-foreground">ابدأ مجاناً أو اختر خطة تناسب احتياجاتك</p>
             </div>
 
+            {/* Plans Cards */}
             <div className="grid md:grid-cols-3 gap-6">
-              {plans.map((plan) => (
-                <Card 
-                  key={plan.id} 
-                  className={`cursor-pointer transition-all hover:shadow-lg ${
-                    plan.is_trial ? 'border-green-500 ring-2 ring-green-500/20' : ''
-                  }`}
-                  onClick={() => handleSelectPlan(plan)}
+              {plans.map((plan, index) => (
+                <motion.div
+                  key={plan.id}
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.1 }}
                 >
-                  <CardContent className="p-6">
+                  <Card 
+                    className={`cursor-pointer transition-all hover:shadow-xl hover:scale-105 h-full ${
+                      plan.is_trial ? 'border-green-500 ring-2 ring-green-500/20 relative overflow-hidden' : 
+                      index === 1 ? 'border-primary ring-2 ring-primary/20 relative overflow-hidden' : ''
+                    }`}
+                    onClick={() => handleSelectPlan(plan)}
+                  >
                     {plan.is_trial && (
-                      <Badge className="bg-green-500 mb-4">
-                        <Gift className="h-3 w-3 ml-1" />
-                        مجاني لمدة {plan.duration_days} أيام
-                      </Badge>
+                      <div className="absolute top-0 left-0 right-0 bg-gradient-to-r from-green-500 to-emerald-500 text-white text-xs font-bold py-1.5 text-center">
+                        ✨ ابدأ مجاناً
+                      </div>
                     )}
-                    
-                    <div className="flex items-center gap-2 mb-2">
-                      {plan.is_trial ? (
-                        <Gift className="h-6 w-6 text-green-500" />
-                      ) : (
-                        <CreditCard className="h-6 w-6 text-primary" />
-                      )}
-                      <h3 className="text-xl font-bold">{plan.name_ar}</h3>
-                    </div>
-                    
-                    <p className="text-sm text-muted-foreground mb-4">
-                      {plan.description_ar}
-                    </p>
+                    {!plan.is_trial && index === 1 && (
+                      <div className="absolute top-0 left-0 right-0 bg-gradient-to-r from-primary to-primary/80 text-primary-foreground text-xs font-bold py-1.5 text-center">
+                        🔥 الأكثر شعبية
+                      </div>
+                    )}
+                    <CardContent className={`p-6 ${(plan.is_trial || index === 1) ? 'pt-10' : ''}`}>
+                      <div className="flex items-center gap-2 mb-2">
+                        {plan.is_trial ? (
+                          <Gift className="h-6 w-6 text-green-500" />
+                        ) : (
+                          <CreditCard className="h-6 w-6 text-primary" />
+                        )}
+                        <h3 className="text-xl font-bold">{plan.name_ar}</h3>
+                      </div>
+                      
+                      <p className="text-sm text-muted-foreground mb-4 min-h-[40px]">
+                        {plan.description_ar}
+                      </p>
 
-                    <div className="flex items-baseline gap-1 mb-6">
-                      <span className="text-3xl font-bold">
-                        {plan.price === 0 ? 'مجاني' : plan.price}
-                      </span>
-                      {plan.price > 0 && (
-                        <>
-                          <span className="text-lg">ر.س</span>
-                          <span className="text-muted-foreground">/ {plan.duration_days === 30 ? 'شهر' : plan.duration_days === 365 ? 'سنة' : `${plan.duration_days} يوم`}</span>
-                        </>
-                      )}
-                    </div>
+                      <div className="flex items-baseline gap-1 mb-6">
+                        <span className="text-4xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+                          {plan.price === 0 ? 'مجاني' : plan.price}
+                        </span>
+                        {plan.price > 0 && (
+                          <>
+                            <span className="text-lg text-muted-foreground">ر.س</span>
+                            <span className="text-muted-foreground text-sm">/ {plan.duration_days === 30 ? 'شهر' : plan.duration_days === 365 ? 'سنة' : `${plan.duration_days} يوم`}</span>
+                          </>
+                        )}
+                      </div>
 
-                    <ul className="space-y-2 mb-6">
-                      {plan.features.map((feature, i) => (
-                        <li key={i} className="flex items-center gap-2 text-sm">
-                          <Check className="h-4 w-4 text-green-500 shrink-0" />
-                          <span>{feature}</span>
-                        </li>
-                      ))}
-                    </ul>
+                      <ul className="space-y-3 mb-6">
+                        {plan.features.map((feature, i) => (
+                          <motion.li 
+                            key={i} 
+                            className="flex items-center gap-2 text-sm"
+                            initial={{ opacity: 0, x: -10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: 0.2 + i * 0.05 }}
+                          >
+                            <div className="h-5 w-5 rounded-full bg-green-500/10 flex items-center justify-center shrink-0">
+                              <Check className="h-3 w-3 text-green-500" />
+                            </div>
+                            <span>{feature}</span>
+                          </motion.li>
+                        ))}
+                      </ul>
 
-                    <Button className="w-full" variant={plan.is_trial ? 'default' : 'outline'}>
-                      {plan.is_trial ? 'ابدأ مجاناً' : 'اختر الخطة'}
-                      <ArrowRight className="h-4 w-4 mr-2" />
-                    </Button>
-                  </CardContent>
-                </Card>
+                      <Button 
+                        className="w-full" 
+                        variant={plan.is_trial || index === 1 ? 'default' : 'outline'}
+                        size="lg"
+                      >
+                        {plan.is_trial ? 'ابدأ مجاناً' : 'اختر الخطة'}
+                        <ArrowRight className="h-4 w-4 mr-2" />
+                      </Button>
+                    </CardContent>
+                  </Card>
+                </motion.div>
               ))}
             </div>
+
+            {/* Features Comparison Table */}
+            {plans.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}
+              >
+                <Card className="overflow-hidden">
+                  <CardHeader className="bg-muted/50">
+                    <CardTitle className="text-center flex items-center justify-center gap-2">
+                      <Sparkles className="h-5 w-5 text-primary" />
+                      مقارنة تفصيلية للخطط
+                    </CardTitle>
+                    <CardDescription className="text-center">
+                      اطلع على جميع المميزات المتاحة في كل خطة
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
+                        <thead>
+                          <tr className="border-b bg-muted/30">
+                            <th className="text-right p-4 font-bold min-w-[200px]">المميزات</th>
+                            {plans.map((plan) => (
+                              <th key={plan.id} className="p-4 text-center min-w-[150px]">
+                                <div className="flex flex-col items-center gap-1">
+                                  <span className="font-bold text-lg">{plan.name_ar}</span>
+                                  <Badge variant={plan.is_trial ? 'default' : 'secondary'} className={plan.is_trial ? 'bg-green-500' : ''}>
+                                    {plan.price === 0 ? 'مجاني' : `${plan.price} ر.س`}
+                                  </Badge>
+                                </div>
+                              </th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {/* Common Features Comparison */}
+                          <tr className="border-b hover:bg-muted/20 transition-colors">
+                            <td className="p-4 font-medium">📦 عدد المنتجات</td>
+                            {plans.map((plan, idx) => (
+                              <td key={plan.id} className="p-4 text-center">
+                                <span className="font-bold text-primary">
+                                  {idx === 0 ? '10' : idx === 1 ? '50' : 'غير محدود'}
+                                </span>
+                              </td>
+                            ))}
+                          </tr>
+                          <tr className="border-b hover:bg-muted/20 transition-colors">
+                            <td className="p-4 font-medium">📊 لوحة التحكم</td>
+                            {plans.map((plan) => (
+                              <td key={plan.id} className="p-4 text-center">
+                                <Check className="h-5 w-5 text-green-500 mx-auto" />
+                              </td>
+                            ))}
+                          </tr>
+                          <tr className="border-b hover:bg-muted/20 transition-colors">
+                            <td className="p-4 font-medium">📱 إشعارات الطلبات</td>
+                            {plans.map((plan) => (
+                              <td key={plan.id} className="p-4 text-center">
+                                <Check className="h-5 w-5 text-green-500 mx-auto" />
+                              </td>
+                            ))}
+                          </tr>
+                          <tr className="border-b hover:bg-muted/20 transition-colors">
+                            <td className="p-4 font-medium">🏪 متجر خاص</td>
+                            {plans.map((plan, idx) => (
+                              <td key={plan.id} className="p-4 text-center">
+                                {idx === 0 ? (
+                                  <span className="text-muted-foreground">-</span>
+                                ) : (
+                                  <Check className="h-5 w-5 text-green-500 mx-auto" />
+                                )}
+                              </td>
+                            ))}
+                          </tr>
+                          <tr className="border-b hover:bg-muted/20 transition-colors">
+                            <td className="p-4 font-medium">📈 تقارير متقدمة</td>
+                            {plans.map((plan, idx) => (
+                              <td key={plan.id} className="p-4 text-center">
+                                {idx < 2 ? (
+                                  <span className="text-muted-foreground">-</span>
+                                ) : (
+                                  <Check className="h-5 w-5 text-green-500 mx-auto" />
+                                )}
+                              </td>
+                            ))}
+                          </tr>
+                          <tr className="border-b hover:bg-muted/20 transition-colors">
+                            <td className="p-4 font-medium">🎨 تخصيص المتجر</td>
+                            {plans.map((plan, idx) => (
+                              <td key={plan.id} className="p-4 text-center">
+                                {idx < 2 ? (
+                                  <span className="text-muted-foreground">-</span>
+                                ) : (
+                                  <Check className="h-5 w-5 text-green-500 mx-auto" />
+                                )}
+                              </td>
+                            ))}
+                          </tr>
+                          <tr className="border-b hover:bg-muted/20 transition-colors">
+                            <td className="p-4 font-medium">💬 دعم فني</td>
+                            {plans.map((plan, idx) => (
+                              <td key={plan.id} className="p-4 text-center">
+                                <span className={idx === 2 ? 'text-primary font-bold' : ''}>
+                                  {idx === 0 ? 'أساسي' : idx === 1 ? 'بريد إلكتروني' : 'أولوية 24/7'}
+                                </span>
+                              </td>
+                            ))}
+                          </tr>
+                          <tr className="border-b hover:bg-muted/20 transition-colors">
+                            <td className="p-4 font-medium">🏷️ كوبونات خصم</td>
+                            {plans.map((plan, idx) => (
+                              <td key={plan.id} className="p-4 text-center">
+                                {idx === 0 ? (
+                                  <span className="text-muted-foreground">-</span>
+                                ) : (
+                                  <Check className="h-5 w-5 text-green-500 mx-auto" />
+                                )}
+                              </td>
+                            ))}
+                          </tr>
+                          <tr className="hover:bg-muted/20 transition-colors">
+                            <td className="p-4 font-medium">📍 عرض في الخريطة</td>
+                            {plans.map((plan) => (
+                              <td key={plan.id} className="p-4 text-center">
+                                <Check className="h-5 w-5 text-green-500 mx-auto" />
+                              </td>
+                            ))}
+                          </tr>
+                        </tbody>
+                        <tfoot>
+                          <tr className="bg-muted/50">
+                            <td className="p-4"></td>
+                            {plans.map((plan) => (
+                              <td key={plan.id} className="p-4 text-center">
+                                <Button 
+                                  onClick={() => handleSelectPlan(plan)}
+                                  variant={plan.is_trial ? 'default' : 'outline'}
+                                  className="w-full"
+                                >
+                                  {plan.is_trial ? 'ابدأ مجاناً' : 'اختر الخطة'}
+                                </Button>
+                              </td>
+                            ))}
+                          </tr>
+                        </tfoot>
+                      </table>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            )}
+
+            {/* FAQ Section */}
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5 }}
+              className="grid md:grid-cols-2 gap-6"
+            >
+              <Card className="p-6">
+                <h3 className="font-bold text-lg mb-3 flex items-center gap-2">
+                  <Gift className="h-5 w-5 text-green-500" />
+                  هل التجربة المجانية ملزمة؟
+                </h3>
+                <p className="text-muted-foreground text-sm">
+                  لا، يمكنك إلغاء اشتراكك في أي وقت خلال فترة التجربة المجانية دون أي رسوم.
+                </p>
+              </Card>
+              <Card className="p-6">
+                <h3 className="font-bold text-lg mb-3 flex items-center gap-2">
+                  <CreditCard className="h-5 w-5 text-primary" />
+                  ما هي طرق الدفع المتاحة؟
+                </h3>
+                <p className="text-muted-foreground text-sm">
+                  نقبل الدفع عبر البطاقات الائتمانية (فيزا، ماستركارد) وأبل باي ومدى.
+                </p>
+              </Card>
+              <Card className="p-6">
+                <h3 className="font-bold text-lg mb-3 flex items-center gap-2">
+                  <Store className="h-5 w-5 text-primary" />
+                  هل يمكنني ترقية خطتي لاحقاً؟
+                </h3>
+                <p className="text-muted-foreground text-sm">
+                  نعم، يمكنك الترقية في أي وقت وستحصل على خصم نسبي عن المدة المتبقية في خطتك الحالية.
+                </p>
+              </Card>
+              <Card className="p-6">
+                <h3 className="font-bold text-lg mb-3 flex items-center gap-2">
+                  <MapPin className="h-5 w-5 text-primary" />
+                  هل يمكنني العمل في أكثر من حي؟
+                </h3>
+                <p className="text-muted-foreground text-sm">
+                  نعم، الخطط المدفوعة تتيح لك إضافة أكثر من موقع وتوسيع نطاق خدماتك.
+                </p>
+              </Card>
+            </motion.div>
           </motion.div>
         )}
 
