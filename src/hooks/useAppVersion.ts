@@ -69,43 +69,64 @@ export function useAppVersion() {
   }, [user]);
 
   const dismissUpdate = async () => {
-    if (!user || !latestVersion) return;
+    if (!user || !latestVersion) {
+      // Still hide the notification even if we can't save
+      setHasUpdate(false);
+      return;
+    }
 
     try {
       // Check if record exists
-      const { data: existingRecord } = await supabase
+      const { data: existingRecord, error: checkError } = await supabase
         .from('user_app_versions')
         .select('id')
         .eq('user_id', user.id)
         .maybeSingle();
 
+      if (checkError) {
+        console.error('Error checking existing version record:', checkError);
+        // Still hide the notification even if DB fails
+        setHasUpdate(false);
+        return;
+      }
+
       if (existingRecord) {
         // Update existing record
-        await supabase
+        const { error: updateError } = await supabase
           .from('user_app_versions')
           .update({ 
             last_seen_version: latestVersion.version,
             updated_at: new Date().toISOString()
           })
           .eq('user_id', user.id);
+        
+        if (updateError) {
+          console.error('Error updating version record:', updateError);
+        }
       } else {
         // Insert new record
-        await supabase
+        const { error: insertError } = await supabase
           .from('user_app_versions')
           .insert({
             user_id: user.id,
             last_seen_version: latestVersion.version
           });
+        
+        if (insertError) {
+          console.error('Error inserting version record:', insertError);
+        }
       }
 
       setHasUpdate(false);
     } catch (error) {
       console.error('Error dismissing update:', error);
+      // Still hide the notification even on error
+      setHasUpdate(false);
     }
   };
 
-  const refreshApp = () => {
-    dismissUpdate();
+  const refreshApp = async () => {
+    await dismissUpdate();
     window.location.reload();
   };
 
