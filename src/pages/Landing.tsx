@@ -327,6 +327,9 @@ const Landing = () => {
                   <Link to="/privacy" className="text-muted-foreground hover:text-primary transition-colors">
                     سياسة الخصوصية
                   </Link>
+                  <Link to="/faq" className="text-muted-foreground hover:text-primary transition-colors">
+                    الأسئلة الشائعة
+                  </Link>
                 </div>
                 <p className="text-muted-foreground text-sm">
                   © 2025 منصة الحي. جميع الحقوق محفوظة.
