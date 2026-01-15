@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -11,6 +11,7 @@ import { ArrowRight, Store, Mail, Lock, Loader2, LogIn, KeyRound } from 'lucide-
 import { AnimatedLogo } from '@/components/ui/AnimatedLogo';
 
 const ProviderLogin = () => {
+  const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -41,9 +42,10 @@ const ProviderLogin = () => {
       return;
     }
 
-    // Success - navigate directly
+    // Success - navigate using React Router
     toast.success('تم تسجيل الدخول بنجاح');
-    window.location.href = '/provider-dashboard';
+    setIsLoading(false);
+    navigate('/provider-dashboard', { replace: true });
   };
 
   const handleForgotPassword = async (e: React.FormEvent) => {
