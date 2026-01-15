@@ -42,11 +42,15 @@ const AdminLogin = () => {
       const { error } = await signIn(email, password);
       if (error) throw error;
       
-      // The useEffect will handle redirect once isAdmin is updated
       toast.success('تم تسجيل الدخول بنجاح');
+      
+      // Give time for auth state to update and check admin role
+      setTimeout(() => {
+        // Force navigation - the admin check will happen on the admin page
+        navigate('/admin');
+      }, 500);
     } catch (error: any) {
       toast.error(error.message || 'بيانات الدخول غير صحيحة');
-    } finally {
       setIsLoading(false);
     }
   };
