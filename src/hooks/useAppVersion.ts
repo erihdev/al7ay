@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
-export const CURRENT_APP_VERSION = '1.5.0';
+export const CURRENT_APP_VERSION = 'v2.5.0';
 
 interface AppVersion {
   id: string;
@@ -127,7 +127,17 @@ export function useAppVersion() {
 
   const refreshApp = async () => {
     await dismissUpdate();
-    window.location.reload();
+    // Clear cache and force reload
+    if ('caches' in window) {
+      try {
+        const cacheNames = await caches.keys();
+        await Promise.all(cacheNames.map(name => caches.delete(name)));
+      } catch (e) {
+        console.error('Failed to clear cache:', e);
+      }
+    }
+    // Force hard reload to get latest version
+    window.location.href = window.location.href.split('?')[0] + '?v=' + Date.now();
   };
 
   return {
