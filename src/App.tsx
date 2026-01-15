@@ -13,9 +13,7 @@ import { UpdateNotification } from "@/components/notifications/UpdateNotificatio
 import { AppFooter } from "@/components/layout/AppFooter";
 
 // Import main pages directly for instant load
-import Welcome from "./pages/Welcome";
-import CustomerLanding from "./pages/CustomerLanding";
-import ProviderLanding from "./pages/ProviderLanding";
+import Landing from "./pages/Landing";
 import Index from "./pages/Index";
 // Lazy load secondary pages for better performance
 const ProviderStore = lazy(() => import("./pages/ProviderStore"));
@@ -76,9 +74,7 @@ const App = () => {
                 <BrowserRouter>
                   <Suspense fallback={<PageLoader />}>
                     <Routes>
-                      <Route path="/" element={<Welcome />} />
-                      <Route path="/for-customers" element={<CustomerLanding />} />
-                      <Route path="/for-providers" element={<ProviderLanding />} />
+                      <Route path="/" element={<Landing />} />
                       <Route path="/app" element={<Index />} />
                       <Route path="/product/:productId" element={<ProductDetails />} />
                       <Route path="/cart" element={<Cart />} />
