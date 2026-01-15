@@ -5,10 +5,110 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { SearchableSelect } from '@/components/ui/searchable-select';
 import { Car, Edit2, Save, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 
+// قائمة شاملة بماركات السيارات
+const CAR_BRANDS = [
+  // الماركات اليابانية
+  { value: 'تويوتا', label: 'تويوتا (Toyota)' },
+  { value: 'هوندا', label: 'هوندا (Honda)' },
+  { value: 'نيسان', label: 'نيسان (Nissan)' },
+  { value: 'مازدا', label: 'مازدا (Mazda)' },
+  { value: 'سوبارو', label: 'سوبارو (Subaru)' },
+  { value: 'ميتسوبيشي', label: 'ميتسوبيشي (Mitsubishi)' },
+  { value: 'سوزوكي', label: 'سوزوكي (Suzuki)' },
+  { value: 'لكزس', label: 'لكزس (Lexus)' },
+  { value: 'إنفينيتي', label: 'إنفينيتي (Infiniti)' },
+  { value: 'أكورا', label: 'أكورا (Acura)' },
+  { value: 'إيسوزو', label: 'إيسوزو (Isuzu)' },
+  
+  // الماركات الكورية
+  { value: 'هيونداي', label: 'هيونداي (Hyundai)' },
+  { value: 'كيا', label: 'كيا (Kia)' },
+  { value: 'جينيسيس', label: 'جينيسيس (Genesis)' },
+  { value: 'سانج يونج', label: 'سانج يونج (SsangYong)' },
+  
+  // الماركات الأمريكية
+  { value: 'فورد', label: 'فورد (Ford)' },
+  { value: 'شيفروليه', label: 'شيفروليه (Chevrolet)' },
+  { value: 'جي إم سي', label: 'جي إم سي (GMC)' },
+  { value: 'دودج', label: 'دودج (Dodge)' },
+  { value: 'جيب', label: 'جيب (Jeep)' },
+  { value: 'كاديلاك', label: 'كاديلاك (Cadillac)' },
+  { value: 'لينكولن', label: 'لينكولن (Lincoln)' },
+  { value: 'كرايسلر', label: 'كرايسلر (Chrysler)' },
+  { value: 'بويك', label: 'بويك (Buick)' },
+  { value: 'تسلا', label: 'تسلا (Tesla)' },
+  { value: 'رام', label: 'رام (RAM)' },
+  
+  // الماركات الألمانية
+  { value: 'مرسيدس', label: 'مرسيدس بنز (Mercedes-Benz)' },
+  { value: 'بي إم دبليو', label: 'بي إم دبليو (BMW)' },
+  { value: 'أودي', label: 'أودي (Audi)' },
+  { value: 'فولكس واجن', label: 'فولكس واجن (Volkswagen)' },
+  { value: 'بورشه', label: 'بورشه (Porsche)' },
+  { value: 'أوبل', label: 'أوبل (Opel)' },
+  { value: 'ميني', label: 'ميني (MINI)' },
+  
+  // الماركات البريطانية
+  { value: 'لاند روفر', label: 'لاند روفر (Land Rover)' },
+  { value: 'رينج روفر', label: 'رينج روفر (Range Rover)' },
+  { value: 'جاكوار', label: 'جاكوار (Jaguar)' },
+  { value: 'بنتلي', label: 'بنتلي (Bentley)' },
+  { value: 'رولز رويس', label: 'رولز رويس (Rolls-Royce)' },
+  { value: 'أستون مارتن', label: 'أستون مارتن (Aston Martin)' },
+  { value: 'ماكلارين', label: 'ماكلارين (McLaren)' },
+  { value: 'لوتس', label: 'لوتس (Lotus)' },
+  { value: 'إم جي', label: 'إم جي (MG)' },
+  
+  // الماركات الفرنسية
+  { value: 'بيجو', label: 'بيجو (Peugeot)' },
+  { value: 'رينو', label: 'رينو (Renault)' },
+  { value: 'سيتروين', label: 'سيتروين (Citroën)' },
+  { value: 'دي إس', label: 'دي إس (DS)' },
+  
+  // الماركات الإيطالية
+  { value: 'فيراري', label: 'فيراري (Ferrari)' },
+  { value: 'لامبورجيني', label: 'لامبورجيني (Lamborghini)' },
+  { value: 'مازيراتي', label: 'مازيراتي (Maserati)' },
+  { value: 'ألفا روميو', label: 'ألفا روميو (Alfa Romeo)' },
+  { value: 'فيات', label: 'فيات (Fiat)' },
+  
+  // الماركات السويدية
+  { value: 'فولفو', label: 'فولفو (Volvo)' },
+  { value: 'بوليستار', label: 'بوليستار (Polestar)' },
+  
+  // الماركات الصينية
+  { value: 'جيلي', label: 'جيلي (Geely)' },
+  { value: 'شيري', label: 'شيري (Chery)' },
+  { value: 'بي واي دي', label: 'بي واي دي (BYD)' },
+  { value: 'هافال', label: 'هافال (Haval)' },
+  { value: 'جريت وول', label: 'جريت وول (Great Wall)' },
+  { value: 'إم جي', label: 'إم جي (MG)' },
+  { value: 'شانجان', label: 'شانجان (Changan)' },
+  { value: 'جاك', label: 'جاك (JAC)' },
+  { value: 'فاو', label: 'فاو (FAW)' },
+  { value: 'دونج فينج', label: 'دونج فينج (Dongfeng)' },
+  { value: 'غاز', label: 'غاز (GAC)' },
+  { value: 'ليون', label: 'ليون (Lynk & Co)' },
+  { value: 'زيكر', label: 'زيكر (Zeekr)' },
+  { value: 'نيو', label: 'نيو (NIO)' },
+  { value: 'إكسبينج', label: 'إكسبينج (Xpeng)' },
+  { value: 'لي أوتو', label: 'لي أوتو (Li Auto)' },
+  
+  // الماركات الهندية
+  { value: 'تاتا', label: 'تاتا (Tata)' },
+  { value: 'ماهيندرا', label: 'ماهيندرا (Mahindra)' },
+  
+  // ماركات أخرى
+  { value: 'سكودا', label: 'سكودا (Škoda)' },
+  { value: 'سيات', label: 'سيات (SEAT)' },
+  { value: 'كوبرا', label: 'كوبرا (Cupra)' },
+  { value: 'داسيا', label: 'داسيا (Dacia)' },
+];
 interface VehicleData {
   vehicle_brand: string | null;
   vehicle_model: string | null;
@@ -146,12 +246,13 @@ export function VehicleInfo() {
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label htmlFor="vehicle_brand" className="text-xs">ماركة السيارة</Label>
-                <Input
-                  id="vehicle_brand"
-                  placeholder="مثال: تويوتا"
+                <SearchableSelect
+                  options={CAR_BRANDS}
                   value={vehicleData.vehicle_brand || ''}
-                  onChange={(e) => setVehicleData({ ...vehicleData, vehicle_brand: e.target.value })}
-                  className="h-9"
+                  onValueChange={(value) => setVehicleData({ ...vehicleData, vehicle_brand: value })}
+                  placeholder="اختر الماركة..."
+                  searchPlaceholder="ابحث عن الماركة..."
+                  emptyMessage="لم يتم العثور على ماركة"
                 />
               </div>
               <div className="space-y-1.5">
