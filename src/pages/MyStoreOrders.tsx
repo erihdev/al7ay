@@ -209,20 +209,21 @@ const MyStoreOrders = () => {
     <div className="min-h-screen bg-background pb-20 font-arabic" dir="rtl">
       <div className="max-w-md mx-auto p-4">
         {/* Header */}
-        <div className="flex items-center gap-3 mb-6">
+        <div className="flex items-center gap-2 mb-4">
           <Link to="/">
-            <Button variant="ghost" size="icon">
-              <ArrowRight className="h-5 w-5" />
+            <Button variant="ghost" size="icon" className="h-8 w-8">
+              <ArrowRight className="h-4 w-4" />
             </Button>
           </Link>
-          <h1 className="text-xl font-bold flex-1">طلباتي من المتاجر</h1>
+          <h1 className="text-base sm:text-xl font-bold flex-1">طلباتي من المتاجر</h1>
           <Button 
             variant="ghost" 
             size="icon"
+            className="h-8 w-8"
             onClick={() => window.location.reload()}
             title="تحديث الصفحة"
           >
-            <RefreshCw className="h-5 w-5" />
+            <RefreshCw className="h-4 w-4" />
           </Button>
         </div>
 
@@ -245,13 +246,13 @@ const MyStoreOrders = () => {
           <div className="space-y-6">
             {/* Active Orders */}
             {activeOrders.length > 0 && (
-              <div className="space-y-4">
-                <h2 className="text-lg font-semibold flex items-center gap-2">
-                  <Clock className="h-5 w-5 text-primary" />
+              <div className="space-y-3">
+                <h2 className="text-sm sm:text-lg font-semibold flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-primary" />
                   الطلبات النشطة ({activeOrders.length})
                 </h2>
                 
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {activeOrders.map((order) => {
                     // Priority: 1) store_lat/lng 2) active_neighborhoods 3) defaultStoreLocation
                     const provider = order.service_providers;
@@ -277,9 +278,9 @@ const MyStoreOrders = () => {
 
             {/* Completed Orders */}
             {completedOrders.length > 0 && (
-              <div className="space-y-4">
-                <h2 className="text-lg font-semibold flex items-center gap-2">
-                  <CheckCircle2 className="h-5 w-5 text-muted-foreground" />
+              <div className="space-y-3">
+                <h2 className="text-sm sm:text-lg font-semibold flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
                   الطلبات السابقة ({completedOrders.length})
                 </h2>
                 
@@ -295,31 +296,31 @@ const MyStoreOrders = () => {
                       transition={{ delay: index * 0.05 }}
                     >
                       <Card className="overflow-hidden opacity-80 hover:opacity-100 transition-opacity">
-                        <CardContent className="p-4">
-                          <div className="flex items-center gap-3">
+                        <CardContent className="p-2.5 sm:p-4">
+                          <div className="flex items-center gap-2">
                             {order.service_providers?.logo_url ? (
                               <img 
                                 src={order.service_providers.logo_url} 
                                 alt={order.service_providers.business_name}
-                                className="w-10 h-10 rounded-lg object-cover grayscale"
+                                className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg object-cover grayscale"
                               />
                             ) : (
-                              <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
-                                <StoreIcon className="h-5 w-5 text-muted-foreground" />
+                              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-muted flex items-center justify-center">
+                                <StoreIcon className="h-4 w-4 text-muted-foreground" />
                               </div>
                             )}
-                            <div className="flex-1">
-                              <h3 className="font-medium text-sm">{order.service_providers?.business_name || 'متجر'}</h3>
-                              <p className="text-xs text-muted-foreground">
+                            <div className="flex-1 min-w-0">
+                              <h3 className="font-medium text-xs sm:text-sm truncate">{order.service_providers?.business_name || 'متجر'}</h3>
+                              <p className="text-[10px] sm:text-xs text-muted-foreground">
                                 {format(new Date(order.created_at), 'dd MMM yyyy', { locale: ar })}
                               </p>
                             </div>
-                            <div className="text-left">
-                              <Badge variant="secondary" className={status.color}>
-                                <StatusIcon className="h-3 w-3 ml-1" />
+                            <div className="text-left shrink-0">
+                              <Badge variant="secondary" className={`${status.color} text-[10px] sm:text-xs px-1.5 py-0.5`}>
+                                <StatusIcon className="h-2.5 w-2.5 ml-0.5" />
                                 {status.label}
                               </Badge>
-                              <p className="text-sm font-semibold mt-1">{order.total_amount} ر.س</p>
+                              <p className="text-xs sm:text-sm font-semibold mt-0.5">{order.total_amount} ر.س</p>
                             </div>
                           </div>
                         </CardContent>

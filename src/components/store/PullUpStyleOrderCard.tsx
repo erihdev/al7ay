@@ -391,55 +391,55 @@ export function PullUpStyleOrderCard({
       className="rounded-2xl overflow-hidden shadow-xl bg-card border"
     >
       {/* Header Section */}
-      <div className="bg-gradient-to-l from-orange-500 to-amber-500 p-4">
+      <div className="bg-gradient-to-l from-orange-500 to-amber-500 p-2.5 sm:p-4">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl bg-white/90 flex items-center justify-center shadow-md">
-              <Store className="h-6 w-6 text-orange-600" />
+          <div className="flex items-center gap-2">
+            <div className="w-9 h-9 sm:w-12 sm:h-12 rounded-xl bg-white/90 flex items-center justify-center shadow-md">
+              <Store className="h-4 w-4 sm:h-6 sm:w-6 text-orange-600" />
             </div>
             <div>
-              <h3 className="text-lg font-bold text-white">
+              <h3 className="text-sm sm:text-lg font-bold text-white">
                 {order.service_providers?.business_name || 'المتجر'}
               </h3>
-              <p className="text-white/90 text-sm">
+              <p className="text-white/90 text-[10px] sm:text-sm">
                 طلب #{order.id.slice(-4).toUpperCase()}
               </p>
             </div>
           </div>
           <div className="text-left">
-            <p className="text-2xl font-bold text-white">
+            <p className="text-lg sm:text-2xl font-bold text-white">
               {order.total_amount.toFixed(0)}
-              <span className="text-sm font-normal mr-1">ر.س</span>
+              <span className="text-[10px] sm:text-sm font-normal mr-1">ر.س</span>
             </p>
           </div>
         </div>
       </div>
 
       {/* Status & Progress Section */}
-      <div className="p-4 bg-muted/30">
+      <div className="p-2.5 sm:p-4 bg-muted/30">
         {/* Status Badge */}
-        <div className="flex items-center justify-between mb-4">
-          <Badge className={`${status.bgColor} ${status.color} border-0 px-3 py-1 text-sm font-medium`}>
-            <StatusIcon className="h-4 w-4 ml-1.5" />
+        <div className="flex items-center justify-between mb-2.5 sm:mb-4">
+          <Badge className={`${status.bgColor} ${status.color} border-0 px-2 py-0.5 text-[10px] sm:text-sm font-medium`}>
+            <StatusIcon className="h-3 w-3 sm:h-4 sm:w-4 ml-1" />
             {status.label}
           </Badge>
           {routeInfo && (
-            <span className="text-sm font-medium text-muted-foreground">
+            <span className="text-[10px] sm:text-sm font-medium text-muted-foreground">
               {routeInfo.distance} • {routeInfo.duration}
             </span>
           )}
         </div>
 
         {/* Progress Bar */}
-        <div className="flex items-center gap-3 mb-3">
+        <div className="flex items-center gap-2 sm:gap-3 mb-2.5">
           <div className="flex flex-col items-center">
-            <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center shadow">
-              <Navigation2 className="h-4 w-4 text-primary-foreground" />
+            <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-primary flex items-center justify-center shadow">
+              <Navigation2 className="h-3 w-3 sm:h-4 sm:w-4 text-primary-foreground" />
             </div>
-            <span className="text-[10px] text-muted-foreground mt-1">موقعك</span>
+            <span className="text-[8px] sm:text-[10px] text-muted-foreground mt-0.5">موقعك</span>
           </div>
 
-          <div className="flex-1 relative h-2.5 bg-muted rounded-full overflow-hidden">
+          <div className="flex-1 relative h-2 sm:h-2.5 bg-muted rounded-full overflow-hidden">
             <motion.div 
               className="absolute left-0 top-0 h-full bg-gradient-to-r from-primary to-primary/80 rounded-full"
               initial={{ width: '0%' }}
@@ -449,26 +449,26 @@ export function PullUpStyleOrderCard({
           </div>
 
           <div className="flex flex-col items-center">
-            <div className="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center shadow">
-              <MapPin className="h-4 w-4 text-white" />
+            <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-orange-500 flex items-center justify-center shadow">
+              <MapPin className="h-3 w-3 sm:h-4 sm:w-4 text-white" />
             </div>
-            <span className="text-[10px] text-muted-foreground mt-1">المتجر</span>
+            <span className="text-[8px] sm:text-[10px] text-muted-foreground mt-0.5">المتجر</span>
           </div>
         </div>
 
         {/* "I'm here" button for ready orders */}
         {order.status === 'ready' && order.order_type === 'pickup' && (
           <Button 
-            className={`w-full gap-2 shadow-lg ${hasNotifiedStore ? 'bg-gray-500' : 'bg-green-600 hover:bg-green-700'} text-white`}
+            className={`w-full gap-1.5 shadow-lg text-xs sm:text-sm h-9 sm:h-10 ${hasNotifiedStore ? 'bg-gray-500' : 'bg-green-600 hover:bg-green-700'} text-white`}
             onClick={notifyStoreArrival}
             disabled={isNotifyingStore || hasNotifiedStore}
           >
             {isNotifyingStore ? (
-              <Loader2 className="h-5 w-5 animate-spin" />
+              <Loader2 className="h-4 w-4 animate-spin" />
             ) : hasNotifiedStore ? (
-              <CheckCircle2 className="h-5 w-5" />
+              <CheckCircle2 className="h-4 w-4" />
             ) : (
-              <Bell className="h-5 w-5" />
+              <Bell className="h-4 w-4" />
             )}
             {hasNotifiedStore ? 'تم إبلاغ المتجر' : 'وصلت؟ أبلغ المتجر'}
           </Button>
@@ -478,36 +478,36 @@ export function PullUpStyleOrderCard({
       {/* Map Section - Always visible */}
       <div className="relative">
         {isLoadingToken ? (
-          <div className="h-48 bg-muted flex items-center justify-center">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          <div className="h-36 sm:h-48 bg-muted flex items-center justify-center">
+            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
           </div>
         ) : (
-          <div ref={mapContainer} className="h-48 w-full" />
+          <div ref={mapContainer} className="h-36 sm:h-48 w-full" />
         )}
 
         {isLocating && (
           <div className="absolute inset-0 bg-background/60 backdrop-blur-sm flex items-center justify-center">
             <div className="text-center">
-              <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2 text-primary" />
-              <p className="text-sm text-muted-foreground">جاري تحديد موقعك...</p>
+              <Loader2 className="h-6 w-6 animate-spin mx-auto mb-1.5 text-primary" />
+              <p className="text-xs sm:text-sm text-muted-foreground">جاري تحديد موقعك...</p>
             </div>
           </div>
         )}
       </div>
 
       {/* Footer Actions */}
-      <div className="p-4 border-t flex items-center gap-3">
+      <div className="p-2.5 sm:p-4 border-t flex items-center gap-2">
         <Button
-          className="flex-1 gap-2 bg-primary hover:bg-primary/90"
+          className="flex-1 gap-1.5 bg-primary hover:bg-primary/90 text-xs sm:text-sm h-9 sm:h-10"
           onClick={openExternalNavigation}
         >
-          <Navigation2 className="h-4 w-4" />
+          <Navigation2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
           ابدأ الملاحة
         </Button>
 
         <Button
           variant="outline"
-          className="flex-1 gap-1"
+          className="flex-1 gap-1 text-xs sm:text-sm h-9 sm:h-10"
           onClick={onDetailsClick}
         >
           تفاصيل الطلب
