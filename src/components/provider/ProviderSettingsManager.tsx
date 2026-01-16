@@ -257,20 +257,20 @@ const ProviderSettingsManager = ({ provider, onUpdate }: ProviderSettingsManager
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Store Information Card */}
       <Card>
-        <CardHeader>
-          <CardTitle className="font-arabic flex items-center gap-2">
-            <Store className="h-5 w-5" />
+        <CardHeader className="py-3 px-4">
+          <CardTitle className="font-arabic flex items-center gap-2 text-base">
+            <Store className="h-4 w-4" />
             معلومات المتجر
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Logo Upload */}
-            <div className="flex flex-col items-center gap-4">
-              <div className="w-32 h-32 rounded-xl border-2 border-dashed border-muted-foreground/30 flex items-center justify-center overflow-hidden bg-muted">
+        <CardContent className="px-4 pb-4 pt-0">
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Logo Upload - Compact */}
+            <div className="flex flex-col items-center gap-3">
+              <div className="w-24 h-24 rounded-xl border-2 border-dashed border-muted-foreground/30 flex items-center justify-center overflow-hidden bg-muted">
                 {logoPreview ? (
                   <img 
                     src={logoPreview} 
@@ -278,7 +278,7 @@ const ProviderSettingsManager = ({ provider, onUpdate }: ProviderSettingsManager
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <Store className="h-12 w-12 text-muted-foreground" />
+                  <Store className="h-10 w-10 text-muted-foreground" />
                 )}
               </div>
               <div>
@@ -291,8 +291,8 @@ const ProviderSettingsManager = ({ provider, onUpdate }: ProviderSettingsManager
                 />
                 <label htmlFor="logo-upload">
                   <Button type="button" variant="outline" size="sm" asChild>
-                    <span className="cursor-pointer font-arabic">
-                      <Upload className="h-4 w-4 ml-2" />
+                    <span className="cursor-pointer font-arabic text-xs">
+                      <Upload className="h-3.5 w-3.5 ml-1.5" />
                       تغيير الشعار
                     </span>
                   </Button>
@@ -300,51 +300,53 @@ const ProviderSettingsManager = ({ provider, onUpdate }: ProviderSettingsManager
               </div>
             </div>
 
-            <div className="grid md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="font-arabic">اسم المتجر (عربي) *</Label>
+            <div className="grid md:grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="font-arabic text-sm">اسم المتجر (عربي) *</Label>
                 <Input
                   value={formData.business_name}
                   onChange={(e) => setFormData({ ...formData, business_name: e.target.value })}
                   placeholder="قهوة الحي"
                   required
-                  className="font-arabic"
+                  className="font-arabic h-9 text-sm"
                 />
               </div>
-              <div className="space-y-2">
-                <Label className="font-arabic">اسم المتجر (إنجليزي)</Label>
+              <div className="space-y-1.5">
+                <Label className="font-arabic text-sm">اسم المتجر (إنجليزي)</Label>
                 <Input
                   value={formData.business_name_en}
                   onChange={(e) => setFormData({ ...formData, business_name_en: e.target.value })}
                   placeholder="Al-Hay Coffee"
                   dir="ltr"
+                  className="h-9 text-sm"
                 />
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label className="font-arabic">وصف المتجر</Label>
+            <div className="space-y-1.5">
+              <Label className="font-arabic text-sm">وصف المتجر</Label>
               <Textarea
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 placeholder="نبذة عن متجرك وخدماتك..."
-                className="font-arabic"
-                rows={3}
+                className="font-arabic text-sm min-h-[60px]"
+                rows={2}
               />
             </div>
 
-            <div className="grid md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="font-arabic">رقم الهاتف</Label>
+            <div className="grid md:grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="font-arabic text-sm">رقم الهاتف</Label>
                 <Input
                   value={formData.phone}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                   placeholder="05XXXXXXXX"
                   dir="ltr"
+                  className="h-9 text-sm"
                 />
               </div>
-              <div className="space-y-2">
-                <Label className="font-arabic">البريد الإلكتروني *</Label>
+              <div className="space-y-1.5">
+                <Label className="font-arabic text-sm">البريد الإلكتروني *</Label>
                 <Input
                   type="email"
                   value={formData.email}
@@ -352,69 +354,66 @@ const ProviderSettingsManager = ({ provider, onUpdate }: ProviderSettingsManager
                   placeholder="store@example.com"
                   required
                   dir="ltr"
+                  className="h-9 text-sm"
                 />
               </div>
             </div>
 
-            {/* Delivery Scope Setting */}
-            <div className="space-y-4 p-4 bg-muted/50 rounded-lg border">
-              <Label className="font-arabic font-medium flex items-center gap-2">
-                <MapPin className="h-4 w-4" />
+            {/* Delivery Scope Setting - Compact */}
+            <div className="space-y-3 p-3 bg-muted/50 rounded-lg border">
+              <Label className="font-arabic font-medium flex items-center gap-2 text-sm">
+                <MapPin className="h-3.5 w-3.5" />
                 نطاق استقبال الطلبات
               </Label>
-              <div className="grid md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-2">
                 <div
-                  className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                  className={`p-2.5 border-2 rounded-lg cursor-pointer transition-all ${
                     formData.delivery_scope === 'neighborhood'
                       ? 'border-primary bg-primary/5'
                       : 'border-muted hover:border-primary/50'
                   }`}
                   onClick={() => setFormData({ ...formData, delivery_scope: 'neighborhood' })}
                 >
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className={`w-4 h-4 rounded-full border-2 ${
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className={`w-3.5 h-3.5 rounded-full border-2 ${
                       formData.delivery_scope === 'neighborhood' ? 'border-primary bg-primary' : 'border-muted-foreground'
                     }`}>
                       {formData.delivery_scope === 'neighborhood' && (
                         <div className="w-full h-full flex items-center justify-center">
-                          <div className="w-1.5 h-1.5 rounded-full bg-white" />
+                          <div className="w-1 h-1 rounded-full bg-white" />
                         </div>
                       )}
                     </div>
-                    <div className="flex items-center gap-2">
-                      <MapPinned className="h-4 w-4 text-primary" />
-                      <span className="font-medium font-arabic">الحي فقط</span>
-                    </div>
+                    <MapPinned className="h-3.5 w-3.5 text-primary" />
+                    <span className="font-medium font-arabic text-xs">الحي فقط</span>
                   </div>
-                  <p className="text-sm text-muted-foreground font-arabic pr-7">
-                    استقبل الطلبات من العملاء في نفس الحي الذي يتواجد فيه متجرك فقط
+                  <p className="text-[11px] text-muted-foreground font-arabic pr-5 leading-tight">
+                    الطلبات من نفس الحي
                   </p>
                 </div>
                 <div
-                  className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                  className={`p-2.5 border-2 rounded-lg cursor-pointer transition-all ${
                     formData.delivery_scope === 'city'
                       ? 'border-primary bg-primary/5'
                       : 'border-muted hover:border-primary/50'
                   }`}
                   onClick={() => setFormData({ ...formData, delivery_scope: 'city' })}
                 >
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className={`w-4 h-4 rounded-full border-2 ${
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className={`w-3.5 h-3.5 rounded-full border-2 ${
                       formData.delivery_scope === 'city' ? 'border-primary bg-primary' : 'border-muted-foreground'
                     }`}>
                       {formData.delivery_scope === 'city' && (
                         <div className="w-full h-full flex items-center justify-center">
-                          <div className="w-1.5 h-1.5 rounded-full bg-white" />
+                          <div className="w-1 h-1 rounded-full bg-white" />
                         </div>
                       )}
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Globe className="h-4 w-4 text-primary" />
-                      <span className="font-medium font-arabic">كل المدينة</span>
-                    </div>
+                    <Globe className="h-3.5 w-3.5 text-primary" />
+                    <span className="font-medium font-arabic text-xs">كل المدينة</span>
                   </div>
-                  <p className="text-sm text-muted-foreground font-arabic pr-7">
-                    استقبل الطلبات من جميع أحياء المدينة التي يتواجد فيها متجرك
+                  <p className="text-[11px] text-muted-foreground font-arabic pr-5 leading-tight">
+                    الطلبات من جميع الأحياء
                   </p>
                 </div>
               </div>
@@ -427,49 +426,46 @@ const ProviderSettingsManager = ({ provider, onUpdate }: ProviderSettingsManager
               deliveryRadiusKm={formData.delivery_radius_km}
             />
 
-            {/* Delivery Radius Setting */}
+            {/* Delivery Radius Setting - Compact */}
             {formData.store_lat && formData.store_lng && (
-              <div className="space-y-4 p-4 bg-muted/50 rounded-lg border">
-                <Label className="font-arabic font-medium flex items-center gap-2">
-                  <MapPin className="h-4 w-4" />
-                  نطاق التوصيل (بالكيلومترات)
+              <div className="space-y-2 p-3 bg-muted/50 rounded-lg border">
+                <Label className="font-arabic font-medium flex items-center gap-2 text-sm">
+                  <MapPin className="h-3.5 w-3.5" />
+                  نطاق التوصيل
                 </Label>
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-3">
                   <input
                     type="range"
                     min="1"
                     max="50"
                     value={formData.delivery_radius_km}
                     onChange={(e) => setFormData({ ...formData, delivery_radius_km: Number(e.target.value) })}
-                    className="flex-1 h-2 bg-muted rounded-lg appearance-none cursor-pointer accent-primary"
+                    className="flex-1 h-1.5 bg-muted rounded-lg appearance-none cursor-pointer accent-primary"
                   />
-                  <div className="flex items-center gap-2 min-w-[100px]">
+                  <div className="flex items-center gap-1.5 min-w-[80px]">
                     <Input
                       type="number"
                       min="1"
                       max="50"
                       value={formData.delivery_radius_km}
                       onChange={(e) => setFormData({ ...formData, delivery_radius_km: Math.min(50, Math.max(1, Number(e.target.value))) })}
-                      className="w-20 text-center"
+                      className="w-14 h-8 text-center text-sm"
                     />
-                    <span className="text-sm text-muted-foreground font-arabic">كم</span>
+                    <span className="text-xs text-muted-foreground font-arabic">كم</span>
                   </div>
                 </div>
-                <p className="text-sm text-muted-foreground font-arabic">
-                  سيتم قبول طلبات التوصيل فقط من العملاء ضمن نطاق {formData.delivery_radius_km} كيلومتر من موقع متجرك
-                </p>
               </div>
             )}
 
             <Button
               type="submit" 
-              className="w-full font-arabic"
+              className="w-full font-arabic h-9 text-sm"
               disabled={isLoading}
             >
               {isLoading ? (
-                <Loader2 className="h-4 w-4 animate-spin ml-2" />
+                <Loader2 className="h-3.5 w-3.5 animate-spin ml-1.5" />
               ) : (
-                <Save className="h-4 w-4 ml-2" />
+                <Save className="h-3.5 w-3.5 ml-1.5" />
               )}
               حفظ معلومات المتجر
             </Button>
@@ -479,138 +475,138 @@ const ProviderSettingsManager = ({ provider, onUpdate }: ProviderSettingsManager
 
       {/* Payment & Verification Card */}
       <Card className="border-primary/20">
-        <CardHeader>
+        <CardHeader className="py-3 px-4">
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle className="font-arabic flex items-center gap-2">
-                <CreditCard className="h-5 w-5 text-primary" />
+              <CardTitle className="font-arabic flex items-center gap-2 text-base">
+                <CreditCard className="h-4 w-4 text-primary" />
                 بيانات الدفع والتوثيق
               </CardTitle>
-              <CardDescription className="font-arabic mt-1">
-                مطلوبة لربط متجرك بنظام الدفع الإلكتروني
+              <CardDescription className="font-arabic mt-0.5 text-xs">
+                مطلوبة لربط متجرك بنظام الدفع
               </CardDescription>
             </div>
             {provider.is_payment_verified ? (
-              <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 gap-1">
-                <CheckCircle className="h-3 w-3" />
-                تم التوثيق
+              <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 gap-1 text-[10px]">
+                <CheckCircle className="h-2.5 w-2.5" />
+                موثق
               </Badge>
             ) : (
-              <Badge variant="outline" className="text-amber-600 border-amber-300 gap-1">
-                <AlertCircle className="h-3 w-3" />
+              <Badge variant="outline" className="text-amber-600 border-amber-300 gap-1 text-[10px]">
+                <AlertCircle className="h-2.5 w-2.5" />
                 غير موثق
               </Badge>
             )}
           </div>
         </CardHeader>
-        <CardContent>
-          <form onSubmit={handlePaymentSubmit} className="space-y-6">
-            {/* Payment Method Selection */}
-            <div className="space-y-4">
-              <Label className="font-arabic font-medium">طريقة استقبال المدفوعات *</Label>
-              <div className="grid md:grid-cols-2 gap-4">
+        <CardContent className="px-4 pb-4 pt-0">
+          <form onSubmit={handlePaymentSubmit} className="space-y-4">
+            {/* Payment Method Selection - Compact */}
+            <div className="space-y-2">
+              <Label className="font-arabic font-medium text-sm">طريقة استقبال المدفوعات *</Label>
+              <div className="grid grid-cols-2 gap-2">
                 <div
-                  className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                  className={`p-2.5 border-2 rounded-lg cursor-pointer transition-all ${
                     paymentData.payment_method === 'platform_managed'
                       ? 'border-primary bg-primary/5'
                       : 'border-muted hover:border-primary/50'
                   }`}
                   onClick={() => setPaymentData({ ...paymentData, payment_method: 'platform_managed' })}
                 >
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className={`w-4 h-4 rounded-full border-2 ${
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className={`w-3.5 h-3.5 rounded-full border-2 ${
                       paymentData.payment_method === 'platform_managed' ? 'border-primary bg-primary' : 'border-muted-foreground'
                     }`}>
                       {paymentData.payment_method === 'platform_managed' && (
                         <div className="w-full h-full flex items-center justify-center">
-                          <div className="w-1.5 h-1.5 rounded-full bg-white" />
+                          <div className="w-1 h-1 rounded-full bg-white" />
                         </div>
                       )}
                     </div>
-                    <span className="font-medium font-arabic">من خلال المنصة</span>
+                    <span className="font-medium font-arabic text-xs">من خلال المنصة</span>
                   </div>
-                  <p className="text-sm text-muted-foreground font-arabic pr-7">
-                    المنصة تستقبل المدفوعات وتحول لك أرباحك أسبوعياً بعد خصم العمولة
+                  <p className="text-[11px] text-muted-foreground font-arabic pr-5 leading-tight">
+                    تحويل أرباحك أسبوعياً
                   </p>
                 </div>
                 <div
-                  className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                  className={`p-2.5 border-2 rounded-lg cursor-pointer transition-all ${
                     paymentData.payment_method === 'direct_gateway'
                       ? 'border-primary bg-primary/5'
                       : 'border-muted hover:border-primary/50'
                   }`}
                   onClick={() => setPaymentData({ ...paymentData, payment_method: 'direct_gateway' })}
                 >
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className={`w-4 h-4 rounded-full border-2 ${
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className={`w-3.5 h-3.5 rounded-full border-2 ${
                       paymentData.payment_method === 'direct_gateway' ? 'border-primary bg-primary' : 'border-muted-foreground'
                     }`}>
                       {paymentData.payment_method === 'direct_gateway' && (
                         <div className="w-full h-full flex items-center justify-center">
-                          <div className="w-1.5 h-1.5 rounded-full bg-white" />
+                          <div className="w-1 h-1 rounded-full bg-white" />
                         </div>
                       )}
                     </div>
-                    <span className="font-medium font-arabic">التسجيل المباشر مع ادفع باي</span>
+                    <span className="font-medium font-arabic text-xs">ادفع باي مباشر</span>
                   </div>
-                  <p className="text-sm text-muted-foreground font-arabic pr-7">
-                    تسجل مباشرة مع بوابة الدفع وترسل لنا الموافقة للتفعيل
+                  <p className="text-[11px] text-muted-foreground font-arabic pr-5 leading-tight">
+                    ربط حسابك مباشرة
                   </p>
                 </div>
               </div>
             </div>
 
-            {/* Direct Gateway Instructions */}
+            {/* Direct Gateway Instructions - Compact */}
             {paymentData.payment_method === 'direct_gateway' && (
-              <div className="space-y-4 p-4 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-900">
+              <div className="space-y-3 p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-900">
                 <div className="flex items-center justify-between">
-                  <h4 className="font-medium font-arabic text-blue-800 dark:text-blue-300">إعدادات ربط ادفع باي:</h4>
+                  <h4 className="font-medium font-arabic text-blue-800 dark:text-blue-300 text-sm">إعدادات ربط ادفع باي:</h4>
                   <Link 
                     to="/edfapay-guide" 
-                    className="text-xs text-primary hover:underline flex items-center gap-1"
+                    className="text-[10px] text-primary hover:underline flex items-center gap-0.5"
                   >
-                    <ExternalLink className="h-3 w-3" />
+                    <ExternalLink className="h-2.5 w-2.5" />
                     دليل التسجيل
                   </Link>
                 </div>
                 
-                {/* Merchant ID & Secret Key for testing */}
-                <div className="grid md:grid-cols-2 gap-3">
-                  <div className="space-y-2">
-                    <Label className="font-arabic text-sm flex items-center gap-1">
-                      <CreditCard className="h-3 w-3" />
+                {/* Merchant ID & Secret Key for testing - Compact */}
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="space-y-1">
+                    <Label className="font-arabic text-xs flex items-center gap-1">
+                      <CreditCard className="h-2.5 w-2.5" />
                       Merchant ID
                     </Label>
                     <Input
                       value={paymentData.merchant_id}
                       onChange={(e) => setPaymentData({ ...paymentData, merchant_id: e.target.value })}
-                      placeholder="أدخل معرف التاجر"
+                      placeholder="معرف التاجر"
                       dir="ltr"
-                      className="font-mono text-sm"
+                      className="font-mono text-xs h-8"
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label className="font-arabic text-sm flex items-center gap-1">
-                      <CreditCard className="h-3 w-3" />
+                  <div className="space-y-1">
+                    <Label className="font-arabic text-xs flex items-center gap-1">
+                      <CreditCard className="h-2.5 w-2.5" />
                       Secret Key
                     </Label>
                     <Input
                       type="password"
                       value={paymentData.secret_key}
                       onChange={(e) => setPaymentData({ ...paymentData, secret_key: e.target.value })}
-                      placeholder="أدخل المفتاح السري"
+                      placeholder="المفتاح السري"
                       dir="ltr"
-                      className="font-mono text-sm"
+                      className="font-mono text-xs h-8"
                     />
                   </div>
                 </div>
 
-                {/* Test Connection Button */}
-                <div className="space-y-3">
+                {/* Test Connection Button - Compact */}
+                <div className="space-y-2">
                   <Button
                     type="button"
                     variant="outline"
-                    className="w-full font-arabic"
+                    className="w-full font-arabic h-8 text-xs"
                     onClick={async () => {
                       if (!paymentData.merchant_id || !paymentData.secret_key) {
                         toast.error('يرجى إدخال Merchant ID و Secret Key');
@@ -644,25 +640,25 @@ const ProviderSettingsManager = ({ provider, onUpdate }: ProviderSettingsManager
                         if (result.success) {
                           setTestResult({
                             success: true,
-                            message: result.message || 'تم التحقق من بيانات الربط وحفظها بنجاح!',
+                            message: result.message || 'تم التحقق والحفظ بنجاح!',
                             merchantName: result.merchantName || provider.business_name,
                             status: 'active'
                           });
-                          toast.success('تم التحقق والحفظ بنجاح! تم إرسال إشعار لبريدك الإلكتروني');
+                          toast.success('تم التحقق والحفظ بنجاح!');
                         } else {
                           setTestResult({
                             success: false,
-                            message: result.message || 'بيانات الربط غير صحيحة. تأكد من Merchant ID و Secret Key'
+                            message: result.message || 'بيانات الربط غير صحيحة'
                           });
-                          toast.error('فشل التحقق من بيانات الربط');
+                          toast.error('فشل التحقق');
                         }
                       } catch (error) {
                         console.error('Error verifying EdfaPay:', error);
                         setTestResult({
                           success: false,
-                          message: 'حدث خطأ أثناء الاتصال بـ EdfaPay'
+                          message: 'خطأ في الاتصال'
                         });
-                        toast.error('حدث خطأ أثناء الاختبار');
+                        toast.error('خطأ في الاختبار');
                       } finally {
                         setIsTesting(false);
                       }
@@ -671,82 +667,65 @@ const ProviderSettingsManager = ({ provider, onUpdate }: ProviderSettingsManager
                   >
                     {isTesting ? (
                       <>
-                        <Loader2 className="h-4 w-4 animate-spin ml-2" />
-                        جاري اختبار الاتصال والتحقق...
+                        <Loader2 className="h-3 w-3 animate-spin ml-1" />
+                        جاري الاختبار...
                       </>
                     ) : (
                       <>
-                        <Zap className="h-4 w-4 ml-2" />
-                        اختبار وحفظ بيانات EdfaPay
+                        <Zap className="h-3 w-3 ml-1" />
+                        اختبار وحفظ
                       </>
                     )}
                   </Button>
 
-                  {/* Test Result Display */}
+                  {/* Test Result Display - Compact */}
                   {testResult && (
-                    <div className={`p-3 rounded-lg border ${
+                    <div className={`p-2 rounded-lg border text-xs ${
                       testResult.success 
-                        ? 'bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-900' 
-                        : 'bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-900'
+                        ? 'bg-green-50 dark:bg-green-950/30 border-green-200' 
+                        : 'bg-red-50 dark:bg-red-950/30 border-red-200'
                     }`}>
-                      <div className="flex items-start gap-2">
+                      <div className="flex items-center gap-1.5">
                         {testResult.success ? (
-                          <CheckCircle className="h-5 w-5 text-green-600 shrink-0 mt-0.5" />
+                          <CheckCircle className="h-3.5 w-3.5 text-green-600" />
                         ) : (
-                          <AlertCircle className="h-5 w-5 text-red-600 shrink-0 mt-0.5" />
+                          <AlertCircle className="h-3.5 w-3.5 text-red-600" />
                         )}
-                        <div>
-                          <p className={`text-sm font-medium ${
-                            testResult.success ? 'text-green-800 dark:text-green-300' : 'text-red-800 dark:text-red-300'
-                          }`}>
-                            {testResult.message}
-                          </p>
-                          {testResult.success && testResult.merchantName && (
-                            <p className="text-xs text-green-600 dark:text-green-400 mt-1">
-                              اسم التاجر: {testResult.merchantName} | الحالة: {testResult.status === 'active' ? 'نشط' : 'غير نشط'}
-                            </p>
-                          )}
-                        </div>
+                        <span className={testResult.success ? 'text-green-700' : 'text-red-700'}>
+                          {testResult.message}
+                        </span>
                       </div>
                     </div>
                   )}
                 </div>
 
-                <div className="flex items-start gap-2 p-2 bg-amber-50 dark:bg-amber-950/30 rounded text-xs">
-                  <Info className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
-                  <p className="text-amber-700 dark:text-amber-400 font-arabic">
-                    بيانات Merchant ID و Secret Key متوفرة في لوحة تحكم حسابك في EdfaPay بعد الموافقة على طلبك
-                  </p>
-                </div>
-
-                <div className="space-y-2 pt-2 border-t border-blue-200 dark:border-blue-800">
-                  <Label className="font-arabic text-sm">رابط أو رقم موافقة ادفع باي (اختياري)</Label>
+                <div className="space-y-1 pt-2 border-t border-blue-200 dark:border-blue-800">
+                  <Label className="font-arabic text-xs">رابط موافقة ادفع باي (اختياري)</Label>
                   <Input
                     value={paymentData.gateway_approval_url}
                     onChange={(e) => setPaymentData({ ...paymentData, gateway_approval_url: e.target.value })}
-                    placeholder="أدخل رابط الموافقة أو رقم الحساب في ادفع باي"
+                    placeholder="رابط أو رقم الحساب"
                     dir="ltr"
+                    className="h-8 text-xs"
                   />
                 </div>
               </div>
             )}
 
-            {/* Commission Rate Display */}
-            <div className="bg-muted/50 rounded-lg p-4 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                  <Percent className="h-5 w-5 text-primary" />
+            {/* Commission Rate Display - Compact */}
+            <div className="bg-muted/50 rounded-lg p-3 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Percent className="h-4 w-4 text-primary" />
                 </div>
                 <div>
-                  <p className="font-medium font-arabic">نسبة المنصة من الطلبات</p>
-                  <p className="text-sm text-muted-foreground font-arabic">
-                    {paymentData.payment_method === 'platform_managed' 
-                      ? 'يتم خصمها قبل التحويل الأسبوعي'
-                      : 'يجب تحويلها للمنصة بعد كل طلب'}
+                  <p className="font-medium font-arabic text-sm">نسبة المنصة</p>
+                  <p className="text-[11px] text-muted-foreground font-arabic">
+                    {paymentData.payment_method === 'platform_managed' ? 'تخصم أسبوعياً' : 'تحول بعد كل طلب'}
                   </p>
                 </div>
               </div>
-              <span className="text-2xl font-bold text-primary">{provider.commission_rate}%</span>
+              <span className="text-xl font-bold text-primary">{provider.commission_rate}%</span>
             </div>
 
             {/* Freelance Certificate Upload */}
