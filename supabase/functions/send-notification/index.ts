@@ -15,6 +15,60 @@ const statusMessages: Record<string, string> = {
   cancelled: 'تم إلغاء طلبك ❌',
 };
 
+// Send Web Push notification using VAPID
+async function sendWebPushToUser(
+  supabase: any,
+  userId: string,
+  title: string,
+  body: string,
+  url: string
+): Promise<boolean> {
+  try {
+    // Get user's push subscriptions
+    const { data: subscriptions, error } = await supabase
+      .from('push_subscriptions')
+      .select('*')
+      .eq('user_id', userId);
+
+    if (error || !subscriptions || subscriptions.length === 0) {
+      console.log('No push subscriptions found for user:', userId);
+      return false;
+    }
+
+    console.log(`Found ${subscriptions.length} push subscriptions for user:`, userId);
+
+    // Call send-webpush edge function for each subscription
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+
+    const response = await fetch(`${supabaseUrl}/functions/v1/send-webpush`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${supabaseServiceKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        userId,
+        title,
+        body,
+        icon: 'https://al7ay.lovable.app/icons/icon-192.png',
+        url,
+      }),
+    });
+
+    if (response.ok) {
+      console.log('Web Push sent successfully to user:', userId);
+      return true;
+    } else {
+      console.error('Web Push failed:', await response.text());
+      return false;
+    }
+  } catch (error) {
+    console.error('Error sending Web Push:', error);
+    return false;
+  }
+}
+
 // Send Aimtell push notification using alias for targeting
 async function sendAimtellNotification(
   title: string,
@@ -169,7 +223,7 @@ serve(async (req) => {
         }
       );
 
-      // Send Aimtell push notification for background notification
+      // Send Aimtell push notification for background notification (Android/Desktop)
       const aimtellSent = await sendAimtellNotification(
         notificationTitle,
         notificationBody,
@@ -177,14 +231,24 @@ serve(async (req) => {
         { provider_id: providerId }
       );
 
-      console.log('New order notification sent for order:', orderId, 'aimtellSent:', aimtellSent);
+      // Also send Web Push for iOS PWA users
+      const webPushSent = await sendWebPushToUser(
+        supabase,
+        provider.user_id,
+        notificationTitle,
+        notificationBody,
+        `/provider-dashboard?tab=orders`
+      );
+
+      console.log('New order notification sent for order:', orderId, 'aimtellSent:', aimtellSent, 'webPushSent:', webPushSent);
 
       return new Response(
         JSON.stringify({ 
           success: true,
           message: 'Provider notified of new order',
           broadcastSent: true,
-          aimtellSent: aimtellSent
+          aimtellSent: aimtellSent,
+          webPushSent: webPushSent
         }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
