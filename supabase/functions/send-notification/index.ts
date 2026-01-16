@@ -15,12 +15,12 @@ const statusMessages: Record<string, string> = {
   cancelled: 'تم إلغاء طلبك ❌',
 };
 
-// Send Aimtell push notification
+// Send Aimtell push notification using attributes for targeting
 async function sendAimtellNotification(
   title: string,
   body: string,
   url: string,
-  tags?: string[]
+  attributes?: Record<string, string>
 ): Promise<boolean> {
   const apiKey = Deno.env.get('AIMTELL_API_KEY');
   const siteId = Deno.env.get('AIMTELL_SITE_ID');
@@ -31,15 +31,20 @@ async function sendAimtellNotification(
   }
 
   try {
-    const payload = {
+    // Build payload with attributes for targeted delivery
+    const payload: Record<string, any> = {
       idSite: siteId,
       title: title,
       body: body,
       link: url,
-      tags: tags || [],
       requireInteraction: true,
       icon: 'https://al7ay.lovable.app/icons/icon-192.png',
     };
+    
+    // Add attributes for targeting specific subscribers
+    if (attributes && Object.keys(attributes).length > 0) {
+      payload.attributes = attributes;
+    }
     
     console.log('Sending Aimtell notification with payload:', JSON.stringify(payload));
     
@@ -52,12 +57,13 @@ async function sendAimtellNotification(
       body: JSON.stringify(payload),
     });
 
+    const responseText = await response.text();
+    
     if (response.ok) {
-      console.log('Aimtell notification sent successfully');
+      console.log('Aimtell notification sent successfully. Response:', responseText);
       return true;
     } else {
-      const errorText = await response.text();
-      console.error('Aimtell API error:', response.status, errorText);
+      console.error('Aimtell API error:', response.status, responseText);
       return false;
     }
   } catch (error) {
@@ -148,7 +154,7 @@ serve(async (req) => {
         notificationTitle,
         notificationBody,
         `/provider-dashboard?tab=orders`,
-        [`provider:${providerId}`]
+        { provider_id: providerId }
       );
 
       console.log('New order notification sent for order:', orderId, 'aimtellSent:', aimtellSent);
@@ -208,7 +214,7 @@ serve(async (req) => {
         '🙋 وصول عميل',
         arrivalMessage,
         `/provider-dashboard?tab=orders`,
-        [`provider:${providerId}`]
+        { provider_id: providerId }
       );
 
       console.log('Customer arrival notification sent for order:', orderId, 'aimtellSent:', aimtellSent);
@@ -240,7 +246,7 @@ serve(async (req) => {
         'الحي - تحديث الطلب',
         statusMessage,
         `/my-store-orders`,
-        [`customer:${customerId}`]
+        { customer_id: customerId }
       );
 
       return new Response(
