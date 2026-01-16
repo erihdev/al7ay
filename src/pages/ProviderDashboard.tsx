@@ -13,6 +13,7 @@ import ProviderSettingsManager from '@/components/provider/ProviderSettingsManag
 import StoreThemeCustomizer from '@/components/provider/StoreThemeCustomizer';
 import ProviderStats from '@/components/provider/ProviderStats';
 import { StoreLocationAlert } from '@/components/provider/StoreLocationAlert';
+import { NotificationStatusIndicator } from '@/components/provider/NotificationStatusIndicator';
 import { 
   ShoppingBag, 
   TrendingUp, 
@@ -461,6 +462,7 @@ const ProviderDashboard = () => {
 
             {/* Actions */}
             <div className="flex items-center gap-2">
+              <NotificationStatusIndicator providerId={provider?.id} />
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button 
