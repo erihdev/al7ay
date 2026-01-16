@@ -103,8 +103,8 @@ const Install = () => {
     return (
       <div className="min-h-screen bg-background flex flex-col relative">
         <InteractiveBackground variant="gradient" intensity="subtle" />
-        <header className="sticky top-0 z-40 bg-card/95 backdrop-blur-sm border-b border-border safe-area-inset-top">
-          <div className="container mx-auto px-4 py-3">
+        <header className="sticky top-0 z-40 bg-card/95 backdrop-blur-sm border-b border-border pt-[env(safe-area-inset-top)]">
+          <div className="container mx-auto px-4 py-1">
             <div className="flex items-center justify-between">
               <Link to="/">
                 <AnimatedLogo size="md" showText={true} />
@@ -142,8 +142,8 @@ const Install = () => {
     <div className="min-h-screen bg-background relative">
       <InteractiveBackground variant="gradient" intensity="subtle" />
       {/* Header */}
-      <header className="sticky top-0 z-40 bg-card/95 backdrop-blur-sm border-b border-border safe-area-inset-top">
-        <div className="container mx-auto px-4 py-3">
+      <header className="sticky top-0 z-40 bg-card/95 backdrop-blur-sm border-b border-border pt-[env(safe-area-inset-top)]">
+        <div className="container mx-auto px-4 py-1">
           <div className="flex items-center justify-between">
             <Link to="/">
               <AnimatedLogo size="md" showText={true} />

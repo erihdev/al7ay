@@ -460,7 +460,7 @@ const ProviderStoreContent = () => {
 
       {/* Fixed Header */}
       <header 
-        className="fixed top-0 left-0 right-0 z-50 overflow-hidden"
+        className="fixed top-0 left-0 right-0 z-50 overflow-hidden pt-[env(safe-area-inset-top)]"
         style={{ background: getHeaderBackground() }}
       >
         {/* Background Image with Effects */}

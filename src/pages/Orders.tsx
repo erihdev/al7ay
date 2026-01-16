@@ -172,8 +172,8 @@ const Orders = () => {
   const completedOrders = orders?.filter(o => ['completed', 'cancelled'].includes(o.status)) || [];
 
   return (
-    <div className="min-h-screen bg-background font-arabic" dir="rtl">
-      <div className="container mx-auto px-4 py-8 pb-24">
+    <div className="min-h-screen bg-background font-arabic pt-[env(safe-area-inset-top)]" dir="rtl">
+      <div className="container mx-auto px-4 py-4 pb-24">
         {/* Header */}
         <motion.div 
           initial={{ opacity: 0, y: -20 }}

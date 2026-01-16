@@ -97,7 +97,7 @@ const Profile = () => {
     <PageTransition>
       <div className="min-h-screen bg-gradient-to-b from-primary/5 via-background to-background font-arabic" dir="rtl">
         {/* Compact Hero Header */}
-        <div className="relative pt-6 pb-4 px-4">
+        <div className="relative pt-[env(safe-area-inset-top)] pb-4 px-4">
           <motion.div 
             className="flex items-center justify-between"
             initial={{ opacity: 0, y: -20 }}
