@@ -1,31 +1,11 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { SignJWT, importPKCS8 } from "https://deno.land/x/jose@v5.2.0/index.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
-
-// Convert base64url to Uint8Array
-function base64UrlToUint8Array(base64Url: string): Uint8Array {
-  const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-  const padding = '='.repeat((4 - base64.length % 4) % 4);
-  const binary = atob(base64 + padding);
-  const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i++) {
-    bytes[i] = binary.charCodeAt(i);
-  }
-  return bytes;
-}
-
-// Convert Uint8Array to base64url
-function uint8ArrayToBase64Url(uint8Array: Uint8Array): string {
-  let binary = '';
-  for (let i = 0; i < uint8Array.length; i++) {
-    binary += String.fromCharCode(uint8Array[i]);
-  }
-  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-}
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -90,43 +70,32 @@ serve(async (req) => {
       data: { url: url || '/' },
     });
 
-    // Create simple JWT for VAPID
-    const createSimpleJwt = async (audience: string): Promise<string> => {
-      const header = { alg: 'ES256', typ: 'JWT' };
-      const now = Math.floor(Date.now() / 1000);
-      const claims = {
-        aud: audience,
-        exp: now + 12 * 60 * 60,
-        sub: 'mailto:admin@al7ay.lovable.app',
-      };
-
-      const headerB64 = uint8ArrayToBase64Url(new TextEncoder().encode(JSON.stringify(header)));
-      const claimsB64 = uint8ArrayToBase64Url(new TextEncoder().encode(JSON.stringify(claims)));
-      const unsignedToken = `${headerB64}.${claimsB64}`;
-
+    // Create VAPID JWT using jose
+    const createVapidJwt = async (audience: string): Promise<string> => {
       try {
-        // Convert private key from base64url to raw bytes
-        const privateKeyBytes = base64UrlToUint8Array(vapidPrivateKey);
+        // Convert base64url private key to PEM format
+        const privateKeyBase64 = vapidPrivateKey
+          .replace(/-/g, '+')
+          .replace(/_/g, '/');
+        const padding = '='.repeat((4 - privateKeyBase64.length % 4) % 4);
         
-        // Import as raw P-256 private key (32 bytes)
-        const keyData = await crypto.subtle.importKey(
-          'raw',
-          privateKeyBytes.buffer as ArrayBuffer,
-          { name: 'ECDSA', namedCurve: 'P-256' },
-          false,
-          ['sign']
-        );
+        // Create PEM from raw EC private key
+        const pemHeader = '-----BEGIN EC PRIVATE KEY-----\n';
+        const pemFooter = '\n-----END EC PRIVATE KEY-----';
+        const pem = pemHeader + privateKeyBase64 + padding + pemFooter;
 
-        const signature = await crypto.subtle.sign(
-          { name: 'ECDSA', hash: 'SHA-256' },
-          keyData,
-          new TextEncoder().encode(unsignedToken)
-        );
+        const privateKey = await importPKCS8(pem, 'ES256');
 
-        const signatureB64 = uint8ArrayToBase64Url(new Uint8Array(signature));
-        return `${unsignedToken}.${signatureB64}`;
+        const jwt = await new SignJWT({})
+          .setProtectedHeader({ alg: 'ES256', typ: 'JWT' })
+          .setAudience(audience)
+          .setSubject('mailto:admin@al7ay.lovable.app')
+          .setExpirationTime('12h')
+          .sign(privateKey);
+
+        return jwt;
       } catch (e) {
-        console.error('JWT signing failed:', e);
+        console.error('JWT creation failed:', e);
         throw e;
       }
     };
@@ -142,10 +111,11 @@ serve(async (req) => {
           
           let authHeader = '';
           try {
-            const jwt = await createSimpleJwt(audience);
+            const jwt = await createVapidJwt(audience);
             authHeader = `vapid t=${jwt}, k=${vapidPublicKey}`;
+            console.log('✅ VAPID JWT created successfully');
           } catch (vapidError) {
-            console.error('⚠️ VAPID auth failed, trying without:', vapidError);
+            console.error('⚠️ VAPID auth failed:', vapidError);
           }
 
           // Send push notification
