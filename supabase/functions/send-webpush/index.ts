@@ -1,11 +1,32 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { SignJWT, importPKCS8 } from "https://deno.land/x/jose@v5.2.0/index.ts";
+import { SignJWT, importJWK } from "https://deno.land/x/jose@v5.2.0/index.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// Convert base64url to Uint8Array
+function base64UrlToUint8Array(base64Url: string): Uint8Array {
+  const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+  const padding = '='.repeat((4 - base64.length % 4) % 4);
+  const binary = atob(base64 + padding);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return bytes;
+}
+
+// Convert Uint8Array to base64url
+function uint8ArrayToBase64Url(bytes: Uint8Array): string {
+  let binary = '';
+  for (let i = 0; i < bytes.length; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -70,21 +91,31 @@ serve(async (req) => {
       data: { url: url || '/' },
     });
 
-    // Create VAPID JWT using jose
+    // Create VAPID JWT using jose with JWK
     const createVapidJwt = async (audience: string): Promise<string> => {
       try {
-        // Convert base64url private key to PEM format
-        const privateKeyBase64 = vapidPrivateKey
-          .replace(/-/g, '+')
-          .replace(/_/g, '/');
-        const padding = '='.repeat((4 - privateKeyBase64.length % 4) % 4);
-        
-        // Create PEM from raw EC private key
-        const pemHeader = '-----BEGIN EC PRIVATE KEY-----\n';
-        const pemFooter = '\n-----END EC PRIVATE KEY-----';
-        const pem = pemHeader + privateKeyBase64 + padding + pemFooter;
+        // Get raw bytes from base64url keys
+        const publicKeyBytes = base64UrlToUint8Array(vapidPublicKey);
+        const privateKeyBytes = base64UrlToUint8Array(vapidPrivateKey);
 
-        const privateKey = await importPKCS8(pem, 'ES256');
+        console.log(`📏 Key lengths - Public: ${publicKeyBytes.length}, Private: ${privateKeyBytes.length}`);
+
+        // Extract x and y coordinates from public key (skip the first byte which is 0x04)
+        const x = uint8ArrayToBase64Url(publicKeyBytes.slice(1, 33));
+        const y = uint8ArrayToBase64Url(publicKeyBytes.slice(33, 65));
+        const d = uint8ArrayToBase64Url(privateKeyBytes);
+
+        // Create JWK for EC P-256 private key
+        const jwk = {
+          kty: 'EC',
+          crv: 'P-256',
+          x: x,
+          y: y,
+          d: d,
+        };
+
+        console.log('🔑 Importing JWK...');
+        const privateKey = await importJWK(jwk, 'ES256');
 
         const jwt = await new SignJWT({})
           .setProtectedHeader({ alg: 'ES256', typ: 'JWT' })
@@ -93,6 +124,7 @@ serve(async (req) => {
           .setExpirationTime('12h')
           .sign(privateKey);
 
+        console.log('✅ JWT created successfully');
         return jwt;
       } catch (e) {
         console.error('JWT creation failed:', e);
@@ -113,7 +145,6 @@ serve(async (req) => {
           try {
             const jwt = await createVapidJwt(audience);
             authHeader = `vapid t=${jwt}, k=${vapidPublicKey}`;
-            console.log('✅ VAPID JWT created successfully');
           } catch (vapidError) {
             console.error('⚠️ VAPID auth failed:', vapidError);
           }
