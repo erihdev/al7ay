@@ -421,8 +421,8 @@ const ProviderDashboard = () => {
   return (
     <div className="min-h-screen bg-gradient-to-bl from-primary/5 via-background to-background font-arabic" dir="rtl">
       {/* Modern Header */}
-      <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b shadow-sm">
-        <div className="container mx-auto px-2 sm:px-4 py-2">
+      <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b shadow-sm pt-[env(safe-area-inset-top)]">
+        <div className="container mx-auto px-2 sm:px-4 py-1">
           <div className="flex items-center justify-between">
             {/* Brand - Compact on mobile */}
             <div className="flex items-center gap-2">

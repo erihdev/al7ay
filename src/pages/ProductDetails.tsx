@@ -91,7 +91,7 @@ export default function ProductDetails() {
   return (
     <div className="min-h-screen bg-background font-arabic pb-24" dir="rtl">
       {/* Header */}
-      <header className="bg-card border-b border-border p-4 sticky top-0 z-10">
+      <header className="bg-card border-b border-border p-2 sticky top-0 z-10 pt-[env(safe-area-inset-top)]">
         <div className="container mx-auto flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
             <ArrowRight className="h-5 w-5" />

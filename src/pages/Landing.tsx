@@ -54,8 +54,8 @@ const Landing = () => {
         <InteractiveBackground variant="particles" intensity="subtle" />
         
         {/* Header */}
-        <header className="sticky top-0 z-50 bg-background/95 backdrop-blur border-b">
-          <div className="container mx-auto px-4 py-3">
+        <header className="sticky top-0 z-50 bg-background/95 backdrop-blur border-b pt-[env(safe-area-inset-top)]">
+          <div className="container mx-auto px-4 py-1">
             <div className="flex items-center justify-between mb-3">
               <AnimatedLogo size="md" showText={true} />
               <ThemeToggle />
