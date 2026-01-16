@@ -15,6 +15,7 @@ import StoreThemeCustomizer from '@/components/provider/StoreThemeCustomizer';
 import ProviderStats from '@/components/provider/ProviderStats';
 import { StoreLocationAlert } from '@/components/provider/StoreLocationAlert';
 import { SimpleNotificationIndicator } from '@/components/provider/SimpleNotificationIndicator';
+import { NotificationSetupGuide } from '@/components/provider/NotificationSetupGuide';
 import { 
   ShoppingBag, 
   TrendingUp, 
@@ -682,6 +683,9 @@ const ProviderDashboard = () => {
                 </CardContent>
               </Card>
             </div>
+
+            {/* Notification Setup Guide */}
+            <NotificationSetupGuide providerId={provider.id} />
           </TabsContent>
 
           <TabsContent value="stats">
