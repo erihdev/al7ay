@@ -2,6 +2,7 @@ import { useEffect, useRef, useCallback, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { playStatusSound, playNewOrderSound, playCustomerArrivedSound } from '@/utils/orderSounds';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 
 interface StatusInfo {
@@ -18,71 +19,10 @@ const statusMessages: Record<string, StatusInfo> = {
   cancelled: { message: 'تم إلغاء طلبك', emoji: '❌' },
 };
 
-// Melody notification sound using Web Audio API
-function createMelodySound() {
-  let audioContext: AudioContext | null = null;
-  
-  const playSound = (isPositive: boolean = true) => {
-    try {
-      if (!audioContext) {
-        audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-      }
-      
-      if (audioContext.state === 'suspended') {
-        audioContext.resume();
-      }
-
-      if (isPositive) {
-        // Happy ascending melody for positive updates
-        const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
-        notes.forEach((freq, i) => {
-          const oscillator = audioContext!.createOscillator();
-          const gainNode = audioContext!.createGain();
-          
-          oscillator.connect(gainNode);
-          gainNode.connect(audioContext!.destination);
-          
-          oscillator.type = 'sine';
-          oscillator.frequency.setValueAtTime(freq, audioContext!.currentTime + i * 0.12);
-          
-          gainNode.gain.setValueAtTime(0, audioContext!.currentTime + i * 0.12);
-          gainNode.gain.linearRampToValueAtTime(0.25, audioContext!.currentTime + i * 0.12 + 0.03);
-          gainNode.gain.linearRampToValueAtTime(0, audioContext!.currentTime + i * 0.12 + 0.2);
-          
-          oscillator.start(audioContext!.currentTime + i * 0.12);
-          oscillator.stop(audioContext!.currentTime + i * 0.12 + 0.25);
-        });
-      } else {
-        // Descending melody for cancelled
-        const oscillator = audioContext.createOscillator();
-        const gainNode = audioContext.createGain();
-        
-        oscillator.connect(gainNode);
-        gainNode.connect(audioContext.destination);
-        
-        oscillator.type = 'sine';
-        oscillator.frequency.setValueAtTime(400, audioContext.currentTime);
-        oscillator.frequency.linearRampToValueAtTime(200, audioContext.currentTime + 0.3);
-        
-        gainNode.gain.setValueAtTime(0.2, audioContext.currentTime);
-        gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.3);
-        
-        oscillator.start(audioContext.currentTime);
-        oscillator.stop(audioContext.currentTime + 0.4);
-      }
-    } catch (error) {
-      console.error('Error playing notification sound:', error);
-    }
-  };
-
-  return { playSound };
-}
-
 export function useProviderOrderStatusNotifications() {
   const { user } = useAuth();
   const channelRef = useRef<RealtimeChannel | null>(null);
   const regularChannelRef = useRef<RealtimeChannel | null>(null);
-  const soundRef = useRef<ReturnType<typeof createMelodySound> | null>(null);
   
   const [soundEnabled, setSoundEnabled] = useState(() => {
     const saved = localStorage.getItem('provider-order-sound-notifications');
@@ -94,13 +34,9 @@ export function useProviderOrderStatusNotifications() {
     localStorage.setItem('provider-order-sound-notifications', String(enabled));
   }, []);
 
-  const playNotificationSound = useCallback((isPositive: boolean = true) => {
+  const playNotificationSound = useCallback((status: string) => {
     if (!soundEnabled) return;
-    
-    if (!soundRef.current) {
-      soundRef.current = createMelodySound();
-    }
-    soundRef.current.playSound(isPositive);
+    playStatusSound(status);
   }, [soundEnabled]);
 
   useEffect(() => {
@@ -139,9 +75,8 @@ export function useProviderOrderStatusNotifications() {
                 }
               }
 
-              // Play appropriate sound
-              const isPositive = newStatus !== 'cancelled';
-              playNotificationSound(isPositive);
+              // Play status-specific sound
+              playNotificationSound(newStatus);
               
               // Show toast notification
               toast.success(statusInfo.message, {
@@ -182,8 +117,7 @@ export function useProviderOrderStatusNotifications() {
             const statusInfo = statusMessages[newStatus];
             
             if (statusInfo) {
-              const isPositive = newStatus !== 'cancelled';
-              playNotificationSound(isPositive);
+              playNotificationSound(newStatus);
               
               toast.success(statusInfo.message, {
                 description: `${statusInfo.emoji} رقم الطلب: #${(payload.new?.id as string)?.slice(0, 8)}`,

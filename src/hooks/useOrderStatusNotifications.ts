@@ -2,6 +2,7 @@ import { useEffect, useRef, useCallback, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { playStatusSound } from '@/utils/orderSounds';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 
 const statusMessages: Record<string, { message: string; emoji: string }> = {
@@ -13,52 +14,9 @@ const statusMessages: Record<string, { message: string; emoji: string }> = {
   cancelled: { message: 'تم إلغاء طلبك', emoji: '❌' },
 };
 
-// Simple notification sound using Web Audio API
-function createNotificationSound() {
-  let audioContext: AudioContext | null = null;
-  
-  const playSound = () => {
-    try {
-      if (!audioContext) {
-        audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-      }
-      
-      // Resume context if suspended (browser autoplay policy)
-      if (audioContext.state === 'suspended') {
-        audioContext.resume();
-      }
-
-      // Create pleasant chime sound
-      const oscillator = audioContext.createOscillator();
-      const gainNode = audioContext.createGain();
-      
-      oscillator.connect(gainNode);
-      gainNode.connect(audioContext.destination);
-      
-      oscillator.type = 'sine';
-      oscillator.frequency.setValueAtTime(523.25, audioContext.currentTime); // C5
-      oscillator.frequency.setValueAtTime(659.25, audioContext.currentTime + 0.15); // E5
-      oscillator.frequency.setValueAtTime(783.99, audioContext.currentTime + 0.3); // G5
-      
-      gainNode.gain.setValueAtTime(0, audioContext.currentTime);
-      gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 0.05);
-      gainNode.gain.linearRampToValueAtTime(0.2, audioContext.currentTime + 0.2);
-      gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.6);
-      
-      oscillator.start(audioContext.currentTime);
-      oscillator.stop(audioContext.currentTime + 0.6);
-    } catch (error) {
-      console.error('Error playing notification sound:', error);
-    }
-  };
-
-  return { playSound };
-}
-
 export function useOrderStatusNotifications() {
   const { user } = useAuth();
   const channelRef = useRef<RealtimeChannel | null>(null);
-  const soundRef = useRef<ReturnType<typeof createNotificationSound> | null>(null);
   
   // Load sound preference from localStorage
   const [soundEnabled, setSoundEnabled] = useState(() => {
@@ -71,13 +29,9 @@ export function useOrderStatusNotifications() {
     localStorage.setItem('order-sound-notifications', String(enabled));
   }, []);
 
-  const playNotificationSound = useCallback(() => {
+  const playNotificationSound = useCallback((status: string) => {
     if (!soundEnabled) return;
-    
-    if (!soundRef.current) {
-      soundRef.current = createNotificationSound();
-    }
-    soundRef.current.playSound();
+    playStatusSound(status);
   }, [soundEnabled]);
 
   useEffect(() => {
@@ -103,8 +57,8 @@ export function useOrderStatusNotifications() {
             const statusInfo = statusMessages[newStatus];
             
             if (statusInfo) {
-              // Play sound
-              playNotificationSound();
+              // Play status-specific sound
+              playNotificationSound(newStatus);
               
               // Show toast notification
               toast(statusInfo.message, {

@@ -1,9 +1,10 @@
 import { Button } from '@/components/ui/button';
 import { Volume2, VolumeX } from 'lucide-react';
 import { useOrderStatusNotifications } from '@/hooks/useOrderStatusNotifications';
+import { playReadySound } from '@/utils/orderSounds';
 
 export function CustomerSoundToggle() {
-  const { soundEnabled, toggleSound, playNotificationSound } = useOrderStatusNotifications();
+  const { soundEnabled, toggleSound } = useOrderStatusNotifications();
 
   const handleToggle = () => {
     const newValue = !soundEnabled;
@@ -11,7 +12,7 @@ export function CustomerSoundToggle() {
     
     // Play a test sound when enabling
     if (newValue) {
-      setTimeout(() => playNotificationSound(), 100);
+      setTimeout(() => playReadySound(), 100);
     }
   };
 
