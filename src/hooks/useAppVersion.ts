@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
-export const CURRENT_APP_VERSION = 'v2.9.9';
+export const CURRENT_APP_VERSION = 'v3.0.0';
 
 interface AppVersion {
   id: string;
