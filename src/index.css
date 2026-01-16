@@ -230,6 +230,28 @@ html {
   select {
     font-size: 16px !important;
   }
+  
+  /* iPhone compact sizing */
+  h1 {
+    font-size: 1.25rem !important;
+  }
+  
+  h2 {
+    font-size: 1rem !important;
+  }
+  
+  h3 {
+    font-size: 0.875rem !important;
+  }
+  
+  p, span, label {
+    font-size: 0.8125rem;
+  }
+  
+  .container {
+    padding-left: 0.75rem !important;
+    padding-right: 0.75rem !important;
+  }
 }
 
 /* iPad landscape optimization */

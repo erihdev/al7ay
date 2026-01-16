@@ -21,7 +21,7 @@ export function BottomNav() {
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-md border-t border-border safe-area-inset-bottom">
-      <div className="flex items-center justify-around h-16">
+      <div className="flex items-center justify-around h-14">
         {navItems.map(({ path, icon: Icon, label }) => {
           const isActive = location.pathname === path;
           const isCart = path === '/cart';
@@ -48,7 +48,7 @@ export function BottomNav() {
                   transition={{ duration: 0.3 }}
                 >
                   <Icon className={cn(
-                    "h-6 w-6 transition-all duration-300",
+                    "h-5 w-5 transition-all duration-300",
                     isActive && "drop-shadow-[0_0_8px_hsl(var(--primary)/0.5)]",
                     !isActive && "group-hover:scale-110"
                   )} />
@@ -57,7 +57,7 @@ export function BottomNav() {
                   <motion.span 
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
-                    className="absolute -top-2 -right-2 bg-accent text-accent-foreground text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center shadow-lg"
+                    className="absolute -top-1.5 -right-1.5 bg-accent text-accent-foreground text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center shadow-lg"
                   >
                     {totalItems}
                   </motion.span>
@@ -66,7 +66,7 @@ export function BottomNav() {
                   <motion.span 
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
-                    className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center shadow-lg"
+                    className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center shadow-lg"
                   >
                     {favoritesCount}
                   </motion.span>
@@ -74,7 +74,7 @@ export function BottomNav() {
               </motion.div>
               <motion.span 
                 className={cn(
-                  "text-xs mt-1 font-arabic transition-all duration-300",
+                  "text-[10px] mt-0.5 font-arabic transition-all duration-300",
                   isActive && "font-semibold"
                 )}
                 animate={isActive ? { y: [0, -2, 0] } : {}}
