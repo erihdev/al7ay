@@ -14,7 +14,7 @@ import ProviderSettingsManager from '@/components/provider/ProviderSettingsManag
 import StoreThemeCustomizer from '@/components/provider/StoreThemeCustomizer';
 import ProviderStats from '@/components/provider/ProviderStats';
 import { StoreLocationAlert } from '@/components/provider/StoreLocationAlert';
-import { ProviderLocationPermission } from '@/components/provider/ProviderLocationPermission';
+import { ProviderNotificationPermission } from '@/components/provider/ProviderNotificationPermission';
 import { SimpleNotificationIndicator } from '@/components/provider/SimpleNotificationIndicator';
 import { NotificationSetupGuide } from '@/components/provider/NotificationSetupGuide';
 import { 
@@ -553,8 +553,8 @@ const ProviderDashboard = () => {
             </TabsList>
           </div>
 
-          {/* Provider Location Permission */}
-          <ProviderLocationPermission />
+          {/* Provider Notification Permission - like customer location permission */}
+          <ProviderNotificationPermission providerId={provider.id} />
 
           {/* Store Location Alert - Show if location not set */}
           {(!provider.store_lat || !provider.store_lng) && (
