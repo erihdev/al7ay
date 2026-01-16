@@ -422,38 +422,36 @@ const ProviderDashboard = () => {
     <div className="min-h-screen bg-gradient-to-bl from-primary/5 via-background to-background font-arabic" dir="rtl">
       {/* Modern Header */}
       <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b shadow-sm">
-        <div className="container mx-auto px-4 py-3">
+        <div className="container mx-auto px-2 sm:px-4 py-2">
           <div className="flex items-center justify-between">
-            {/* Brand */}
-            <div className="flex items-center gap-3">
+            {/* Brand - Compact on mobile */}
+            <div className="flex items-center gap-2">
               <div className="relative">
                 {provider.logo_url ? (
                   <img 
                     src={provider.logo_url} 
                     alt={provider.business_name} 
-                    className="h-12 w-12 rounded-xl object-cover ring-2 ring-primary/20 shadow-md" 
+                    className="h-9 w-9 sm:h-11 sm:w-11 rounded-lg object-cover ring-2 ring-primary/20 shadow-md" 
                   />
                 ) : (
-                  <div className="h-12 w-12 rounded-xl bg-gradient-to-bl from-primary to-primary/80 flex items-center justify-center shadow-md">
-                    <Store className="h-6 w-6 text-white" />
+                  <div className="h-9 w-9 sm:h-11 sm:w-11 rounded-lg bg-gradient-to-bl from-primary to-primary/80 flex items-center justify-center shadow-md">
+                    <Store className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
                   </div>
                 )}
                 {/* Online indicator */}
-                <div className="absolute -bottom-1 -left-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white shadow" />
+                <div className="absolute -bottom-0.5 -left-0.5 w-3 h-3 bg-green-500 rounded-full border-2 border-white shadow" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-foreground">{provider.business_name}</h1>
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
-                    <span className="w-1.5 h-1.5 rounded-full bg-green-500 ml-1" />
-                    متصل
-                  </Badge>
-                </div>
+                <h1 className="text-sm sm:text-lg font-bold text-foreground line-clamp-1">{provider.business_name}</h1>
+                <Badge variant="outline" className="text-[10px] sm:text-xs h-5 bg-green-50 text-green-700 border-green-200">
+                  <span className="w-1.5 h-1.5 rounded-full bg-green-500 ml-1" />
+                  متصل
+                </Badge>
               </div>
             </div>
 
             {/* Quick Stats - Hidden on mobile */}
-            <div className="hidden md:flex items-center gap-6">
+            <div className="hidden lg:flex items-center gap-6">
               <div className="text-center">
                 <p className="text-2xl font-bold text-foreground">{todayOrders.length}</p>
                 <p className="text-xs text-muted-foreground">طلبات اليوم</p>
@@ -465,8 +463,8 @@ const ProviderDashboard = () => {
               </div>
             </div>
 
-            {/* Actions */}
-            <div className="flex items-center gap-2">
+            {/* Actions - More compact on mobile */}
+            <div className="flex items-center gap-1 sm:gap-2">
               <SimpleNotificationIndicator />
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -475,12 +473,12 @@ const ProviderDashboard = () => {
                     size="icon" 
                     onClick={handleTestNotification}
                     disabled={testingNotification}
-                    className="relative"
+                    className="relative h-8 w-8 sm:h-9 sm:w-9"
                   >
                     {testingNotification ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <Loader2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 animate-spin" />
                     ) : (
-                      <Bell className="h-4 w-4" />
+                      <Bell className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                     )}
                   </Button>
                 </TooltipTrigger>
@@ -492,71 +490,64 @@ const ProviderDashboard = () => {
                 variant={soundEnabled ? "default" : "outline"} 
                 size="icon" 
                 onClick={() => setSoundEnabled(!soundEnabled)}
-                className={soundEnabled ? "bg-primary/10 text-primary hover:bg-primary/20" : ""}
+                className={`h-8 w-8 sm:h-9 sm:w-9 ${soundEnabled ? "bg-primary/10 text-primary hover:bg-primary/20" : ""}`}
               >
-                {soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
+                {soundEnabled ? <Volume2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> : <VolumeX className="h-3.5 w-3.5 sm:h-4 sm:w-4" />}
               </Button>
               <ThemeToggle />
-              <Button variant="ghost" size="sm" onClick={handleLogout} className="text-muted-foreground hover:text-foreground gap-2">
-                <LogOut className="h-4 w-4" />
-                <span className="hidden sm:inline">خروج</span>
+              <Button variant="ghost" size="icon" onClick={handleLogout} className="text-muted-foreground hover:text-foreground h-8 w-8 sm:h-9 sm:w-9">
+                <LogOut className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               </Button>
             </div>
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-6 max-w-7xl">
+      <main className="container mx-auto px-2 sm:px-4 py-3 sm:py-6 max-w-7xl">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          {/* Modern Tab Navigation */}
-          <div className="mb-6">
-            <TabsList className="w-full h-auto p-1.5 bg-muted/50 rounded-2xl grid grid-cols-5 gap-1">
+          {/* Modern Tab Navigation - Compact on mobile */}
+          <div className="mb-3 sm:mb-6">
+            <TabsList className="w-full h-auto p-1 bg-muted/50 rounded-xl grid grid-cols-6 gap-0.5">
               <TabsTrigger 
                 value="kitchen" 
-                className="rounded-xl data-[state=active]:bg-gradient-to-l data-[state=active]:from-amber-500 data-[state=active]:to-orange-500 data-[state=active]:text-white data-[state=active]:shadow-lg py-3 gap-2 transition-all"
+                className="rounded-lg data-[state=active]:bg-gradient-to-l data-[state=active]:from-amber-500 data-[state=active]:to-orange-500 data-[state=active]:text-white data-[state=active]:shadow-md py-2 sm:py-3 px-1 gap-1 transition-all"
               >
                 <ChefHat className="h-4 w-4" />
-                <span className="hidden sm:inline">المطبخ</span>
                 {pendingOrders > 0 && (
-                  <Badge className="bg-red-500 text-white text-xs h-5 w-5 p-0 flex items-center justify-center animate-pulse">
+                  <Badge className="bg-red-500 text-white text-[10px] h-4 min-w-4 p-0 flex items-center justify-center animate-pulse">
                     {pendingOrders}
                   </Badge>
                 )}
               </TabsTrigger>
               <TabsTrigger 
                 value="overview" 
-                className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-lg py-3 gap-2 transition-all"
+                className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-md py-2 sm:py-3 px-1 gap-1 transition-all"
               >
                 <TrendingUp className="h-4 w-4" />
-                <span className="hidden sm:inline">نظرة عامة</span>
               </TabsTrigger>
               <TabsTrigger 
                 value="stats" 
-                className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-lg py-3 gap-2 transition-all"
+                className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-md py-2 sm:py-3 px-1 gap-1 transition-all"
               >
                 <BarChart3 className="h-4 w-4" />
-                <span className="hidden sm:inline">الإحصائيات</span>
               </TabsTrigger>
               <TabsTrigger 
                 value="products" 
-                className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-lg py-3 gap-2 transition-all"
+                className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-md py-2 sm:py-3 px-1 gap-1 transition-all"
               >
                 <Coffee className="h-4 w-4" />
-                <span className="hidden sm:inline">المنتجات</span>
               </TabsTrigger>
               <TabsTrigger 
                 value="theme" 
-                className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-lg py-3 gap-2 transition-all"
+                className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-md py-2 sm:py-3 px-1 gap-1 transition-all"
               >
                 <Palette className="h-4 w-4" />
-                <span className="hidden sm:inline">الهوية</span>
               </TabsTrigger>
               <TabsTrigger 
                 value="settings" 
-                className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-lg py-3 gap-2 transition-all"
+                className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-md py-2 sm:py-3 px-1 gap-1 transition-all"
               >
                 <Settings className="h-4 w-4" />
-                <span className="hidden sm:inline">الإعدادات</span>
               </TabsTrigger>
             </TabsList>
           </div>
