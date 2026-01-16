@@ -22,7 +22,18 @@ export const setNotificationVolume = (volume: number) => {
   localStorage.setItem('notification-volume', String(Math.round(volume)));
 };
 
-// Tone control
+// Tone control - global and per-status
+export type OrderStatus = 'pending' | 'preparing' | 'ready' | 'out_for_delivery' | 'completed' | 'cancelled';
+
+export const orderStatusLabels: Record<OrderStatus, string> = {
+  pending: 'طلب جديد',
+  preparing: 'قيد التحضير',
+  ready: 'جاهز',
+  out_for_delivery: 'قيد التوصيل',
+  completed: 'مكتمل',
+  cancelled: 'ملغي',
+};
+
 export const getNotificationTone = (): SoundTone => {
   const saved = localStorage.getItem('notification-tone');
   return (saved as SoundTone) || 'classic';
@@ -30,6 +41,25 @@ export const getNotificationTone = (): SoundTone => {
 
 export const setNotificationTone = (tone: SoundTone) => {
   localStorage.setItem('notification-tone', tone);
+};
+
+// Per-status tone settings
+export const getStatusTone = (status: OrderStatus): SoundTone => {
+  const saved = localStorage.getItem(`notification-tone-${status}`);
+  return (saved as SoundTone) || getNotificationTone();
+};
+
+export const setStatusTone = (status: OrderStatus, tone: SoundTone) => {
+  localStorage.setItem(`notification-tone-${status}`, tone);
+};
+
+export const getPerStatusTonesEnabled = (): boolean => {
+  const saved = localStorage.getItem('per-status-tones-enabled');
+  return saved === 'true';
+};
+
+export const setPerStatusTonesEnabled = (enabled: boolean) => {
+  localStorage.setItem('per-status-tones-enabled', String(enabled));
 };
 
 const getVolumeMultiplier = (): number => {
@@ -323,35 +353,52 @@ const toneSounds: Record<SoundTone, Record<string, () => void>> = {
   },
 };
 
-// Public exports that use current tone
+// Get tone for a specific status (uses per-status if enabled, otherwise global)
+function getToneForStatus(status: OrderStatus): SoundTone {
+  if (getPerStatusTonesEnabled()) {
+    return getStatusTone(status);
+  }
+  return getNotificationTone();
+}
+
+// Public exports that use current tone (global or per-status)
 export function playPendingSound() {
-  const tone = getNotificationTone();
+  const tone = getToneForStatus('pending');
   toneSounds[tone].pending();
 }
 
 export function playPreparingSound() {
-  const tone = getNotificationTone();
+  const tone = getToneForStatus('preparing');
   toneSounds[tone].preparing();
 }
 
 export function playReadySound() {
-  const tone = getNotificationTone();
+  const tone = getToneForStatus('ready');
   toneSounds[tone].ready();
 }
 
 export function playOutForDeliverySound() {
-  const tone = getNotificationTone();
+  const tone = getToneForStatus('out_for_delivery');
   toneSounds[tone].out_for_delivery();
 }
 
 export function playCompletedSound() {
-  const tone = getNotificationTone();
+  const tone = getToneForStatus('completed');
   toneSounds[tone].completed();
 }
 
 export function playCancelledSound() {
-  const tone = getNotificationTone();
+  const tone = getToneForStatus('cancelled');
   toneSounds[tone].cancelled();
+}
+
+// Play demo sound for a specific status with specific tone
+export function playStatusDemoSound(status: OrderStatus, tone: SoundTone) {
+  try {
+    toneSounds[tone][status]();
+  } catch (error) {
+    console.error('Error playing status demo sound:', error);
+  }
 }
 
 // 🔔 New Order Alert for Providers
