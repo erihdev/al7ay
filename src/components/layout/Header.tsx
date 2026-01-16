@@ -1,47 +1,32 @@
-import { useLocation as useLocationContext } from '@/contexts/LocationContext';
-import { MapPin } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import { Link } from 'react-router-dom';
 import { CustomerSoundToggle } from '@/components/notifications/CustomerSoundToggle';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { useAuth } from '@/contexts/AuthContext';
 import { AnimatedLogo } from '@/components/ui/AnimatedLogo';
+import { User } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 export function Header() {
-  const { storeName, isWithinDeliveryZone, distance, locationPermission } = useLocationContext();
   const { user } = useAuth();
-
-  const formatDistance = (meters: number) => {
-    if (meters < 1000) {
-      return `${Math.round(meters)} متر`;
-    }
-    return `${(meters / 1000).toFixed(1)} كم`;
-  };
 
   return (
     <header className="sticky top-0 z-40 bg-card/95 backdrop-blur-sm border-b border-border safe-area-inset-top">
-      <div className="container mx-auto px-4 py-3">
+      <div className="container mx-auto px-4 py-2">
         <div className="flex items-center justify-between">
           {/* Logo */}
-          <AnimatedLogo size="lg" showText={true} />
+          <AnimatedLogo size="md" showText={true} />
 
-          {/* Location Status & Controls */}
+          {/* Controls */}
           <div className="flex items-center gap-1">
             <ThemeToggle />
             {user && <CustomerSoundToggle />}
-            {locationPermission === 'granted' && distance !== null && (
-              <div className="flex items-center gap-1 text-sm">
-                <MapPin className="h-4 w-4 text-muted-foreground" />
-                <span className="text-muted-foreground font-arabic">
-                  {formatDistance(distance)}
-                </span>
-              </div>
+            {user && (
+              <Link to="/profile">
+                <Button variant="ghost" size="icon" className="h-9 w-9">
+                  <User className="h-4 w-4" />
+                </Button>
+              </Link>
             )}
-            <Badge
-              variant={isWithinDeliveryZone ? 'default' : 'secondary'}
-              className="font-arabic text-xs"
-            >
-              {isWithinDeliveryZone ? 'التوصيل متاح' : 'استلام فقط'}
-            </Badge>
           </div>
         </div>
       </div>
