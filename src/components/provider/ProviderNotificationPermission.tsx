@@ -103,41 +103,59 @@ export function ProviderNotificationPermission({ providerId }: ProviderNotificat
     }
   };
 
-  // Auto-register when permission is already granted - with multiple retries
+  // CRITICAL: Always try to register when permission is granted - EVERY TIME the page loads
+  // Don't skip if hasRegistered.current is true from a previous session
   useEffect(() => {
-    if (permissionState !== 'granted' || !providerId || hasRegistered.current) return;
+    if (permissionState !== 'granted' || !providerId) return;
+
+    // Reset registration state on every page load
+    hasRegistered.current = false;
+    setIsRegistered(false);
 
     const registerWithRetries = async () => {
+      console.log('🔄 Starting Aimtell registration for provider:', providerId);
+      
       // Try multiple times as SDK might not be ready immediately
-      for (let attempt = 0; attempt < 10; attempt++) {
-        if (hasRegistered.current) break;
+      for (let attempt = 0; attempt < 15; attempt++) {
+        if (hasRegistered.current) {
+          console.log('✅ Registration confirmed, stopping retries');
+          break;
+        }
         
         const success = registerAimtellAttributes();
         if (success) {
           console.log(`✅ Auto-registered on attempt ${attempt + 1}`);
+          toast.success('✅ تم تسجيل الإشعارات بنجاح', {
+            description: 'ستتلقى إشعارات عند وصول طلب جديد',
+            duration: 3000,
+          });
           break;
         }
         
-        // Wait before next attempt
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        console.log(`Attempt ${attempt + 1} failed, waiting before retry...`);
+        // Wait before next attempt - shorter intervals at first
+        await new Promise(resolve => setTimeout(resolve, attempt < 5 ? 1000 : 2000));
       }
     };
 
-    // Start registration after a short delay
+    // Start registration after a short delay to let Aimtell SDK load
     const timer = setTimeout(registerWithRetries, 1500);
     return () => clearTimeout(timer);
   }, [permissionState, providerId]);
 
-  // Also retry registration periodically if not yet registered
+  // Periodic retries to ensure registration
   useEffect(() => {
-    if (permissionState !== 'granted' || !providerId || hasRegistered.current) return;
+    if (permissionState !== 'granted' || !providerId) return;
 
-    const retryIntervals = [5000, 10000, 20000];
+    const retryIntervals = [5000, 10000, 20000, 30000];
     const timers = retryIntervals.map((delay, i) => 
       setTimeout(() => {
         if (!hasRegistered.current) {
-          console.log(`Retry registration attempt ${i + 1}...`);
-          registerAimtellAttributes();
+          console.log(`🔄 Periodic retry attempt ${i + 1}...`);
+          const success = registerAimtellAttributes();
+          if (success) {
+            toast.success('✅ تم تسجيل الإشعارات', { duration: 2000 });
+          }
         }
       }, delay)
     );
