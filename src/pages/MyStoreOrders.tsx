@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useMyProviderOrders, ProviderOrder } from '@/hooks/useProviderOrders';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCustomerAimtellTag } from '@/hooks/useAimtellTags';
+import { useAutoNotificationPermission } from '@/hooks/useAutoNotificationPermission';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -85,6 +86,9 @@ const MyStoreOrders = () => {
 
   // Register Aimtell tag for customer push notifications
   useCustomerAimtellTag(user?.id);
+  
+  // Auto-request notification permission
+  useAutoNotificationPermission();
 
   // Fetch default store settings for fallback location
   useEffect(() => {
