@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useMyProviderOrders, ProviderOrder } from '@/hooks/useProviderOrders';
 import { useAuth } from '@/contexts/AuthContext';
+import { useCustomerAimtellTag } from '@/hooks/useAimtellTags';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -81,6 +82,9 @@ const MyStoreOrders = () => {
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
   const [showMapForOrder, setShowMapForOrder] = useState<string | null>(null);
   const [defaultStoreLocation, setDefaultStoreLocation] = useState<{ lat: number; lng: number } | null>(null);
+
+  // Register Aimtell tag for customer push notifications
+  useCustomerAimtellTag(user?.id);
 
   // Fetch default store settings for fallback location
   useEffect(() => {
