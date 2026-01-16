@@ -13,8 +13,8 @@ declare global {
 }
 
 /**
- * Hook to register Aimtell attributes for targeted push notifications
- * Attributes are used to target specific users (providers/customers) via the Aimtell API
+ * Hook to register Aimtell attributes AND aliases for targeted push notifications
+ * The alias format MUST match exactly what send-notification uses: "provider_id==VALUE"
  */
 export function useAimtellAttributes(attributes: Record<string, string>) {
   const registeredRef = useRef<Set<string>>(new Set());
@@ -42,12 +42,16 @@ export function useAimtellAttributes(attributes: Record<string, string>) {
             // Register attributes using Aimtell SDK
             window._at.track('attribute', newAttributes);
             
-            // Also set alias for unique identification
+            // CRITICAL: Also register alias with EXACT format used in send-notification
+            // Format: "provider_id==VALUE" or "customer_id==VALUE"
             for (const [key, value] of Object.entries(newAttributes)) {
+              const aliasValue = `${key}==${value}`;
+              window._at.track('alias', aliasValue);
+              console.log('✅ Aimtell alias registered:', aliasValue);
               registeredRef.current.add(`${key}:${value}`);
             }
             
-            console.log('Aimtell attributes registered:', newAttributes);
+            console.log('✅ Aimtell attributes registered:', newAttributes);
           } catch (error) {
             console.error('Error registering Aimtell attributes:', error);
           }
@@ -66,12 +70,14 @@ export function useAimtellAttributes(attributes: Record<string, string>) {
     const retryTimeout2 = setTimeout(registerAttributes, 2500);
     const retryTimeout3 = setTimeout(registerAttributes, 5000);
     const retryTimeout4 = setTimeout(registerAttributes, 10000);
+    const retryTimeout5 = setTimeout(registerAttributes, 15000);
 
     return () => {
       clearTimeout(retryTimeout1);
       clearTimeout(retryTimeout2);
       clearTimeout(retryTimeout3);
       clearTimeout(retryTimeout4);
+      clearTimeout(retryTimeout5);
     };
   }, [attributes]);
 }
