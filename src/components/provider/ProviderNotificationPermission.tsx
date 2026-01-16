@@ -38,9 +38,6 @@ export function ProviderNotificationPermission({ providerId }: ProviderNotificat
       console.log('Aimtell SDK not ready yet, checking window._at:', !!window._at);
       return false;
     }
-      console.log('Aimtell SDK not ready yet, checking window._at:', !!window._at);
-      return false;
-    }
 
     if (!providerId) {
       console.log('No providerId to register');
@@ -49,15 +46,13 @@ export function ProviderNotificationPermission({ providerId }: ProviderNotificat
 
     try {
       // Register attribute for segmentation
-      if (typeof window._at?.track === 'function') {
-        window._at.track('attribute', { provider_id: providerId });
-        
-        // CRITICAL: Register alias with exact format used in send-notification
-        const aliasValue = `provider_id==${providerId}`;
-        window._at.track('alias', aliasValue);
-        
-        console.log('✅ Provider registered for background notifications:', aliasValue);
-      }
+      window._at.track('attribute', { provider_id: providerId });
+      
+      // CRITICAL: Register alias with exact format used in send-notification
+      const aliasValue = `provider_id==${providerId}`;
+      window._at.track('alias', aliasValue);
+      
+      console.log('✅ Provider registered for background notifications:', aliasValue);
       
       hasRegistered.current = true;
       setIsRegistered(true);
