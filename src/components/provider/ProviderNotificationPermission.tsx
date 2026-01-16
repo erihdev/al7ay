@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Bell, BellRing, RefreshCw, Settings, ChevronDown, ChevronUp } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Bell, BellRing, RefreshCw, Settings, ChevronDown, ChevronUp, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { toast } from 'sonner';
@@ -14,6 +14,8 @@ export function ProviderNotificationPermission({ providerId }: ProviderNotificat
   const [permissionState, setPermissionState] = useState<PermissionState>('loading');
   const [showInstructions, setShowInstructions] = useState(true);
   const [isRetrying, setIsRetrying] = useState(false);
+  const [isRegistered, setIsRegistered] = useState(false);
+  const hasRegistered = useRef(false);
 
   useEffect(() => {
     checkPermission();
@@ -27,18 +29,28 @@ export function ProviderNotificationPermission({ providerId }: ProviderNotificat
     setPermissionState(Notification.permission as PermissionState);
   };
 
-  const registerAimtellAttributes = () => {
+  const registerAimtellAttributes = (): boolean => {
     if (typeof window._at?.track !== 'function') {
-      console.log('Aimtell SDK not ready');
+      console.log('Aimtell SDK not ready yet');
+      return false;
+    }
+
+    if (!providerId) {
+      console.log('No providerId to register');
       return false;
     }
 
     try {
-      if (providerId) {
-        window._at.track('attribute', { provider_id: providerId });
-        window._at.track('alias', `provider_id==${providerId}`);
-        console.log('✅ Provider registered for notifications:', providerId);
-      }
+      // Register attribute for segmentation
+      window._at.track('attribute', { provider_id: providerId });
+      
+      // CRITICAL: Register alias with exact format used in send-notification
+      const aliasValue = `provider_id==${providerId}`;
+      window._at.track('alias', aliasValue);
+      
+      console.log('✅ Provider registered for background notifications:', aliasValue);
+      hasRegistered.current = true;
+      setIsRegistered(true);
       return true;
     } catch (error) {
       console.error('Error registering Aimtell:', error);
@@ -54,17 +66,23 @@ export function ProviderNotificationPermission({ providerId }: ProviderNotificat
       setPermissionState(permission as PermissionState);
       
       if (permission === 'granted') {
-        // Register with Aimtell for push notifications
+        // Register with Aimtell for push notifications with retries
         let registered = false;
-        for (let attempt = 0; attempt < 5; attempt++) {
+        for (let attempt = 0; attempt < 10; attempt++) {
           await new Promise(resolve => setTimeout(resolve, 1000));
           registered = registerAimtellAttributes();
           if (registered) break;
         }
         
-        toast.success('🔔 تم تفعيل الإشعارات بنجاح!', {
-          description: 'ستتلقى إشعارات فورية عند وصول طلب جديد',
-        });
+        if (registered) {
+          toast.success('🔔 تم تفعيل الإشعارات بنجاح!', {
+            description: 'ستتلقى إشعارات فورية عند وصول طلب جديد',
+          });
+        } else {
+          toast.warning('⚠️ تم السماح بالإشعارات لكن التسجيل فشل', {
+            description: 'حاول إعادة تحميل الصفحة',
+          });
+        }
       } else if (permission === 'denied') {
         toast.error('❌ تم رفض الإشعارات', {
           description: 'لن تتلقى إشعارات الطلبات الجديدة',
@@ -85,17 +103,70 @@ export function ProviderNotificationPermission({ providerId }: ProviderNotificat
     }
   };
 
-  // Auto-register if already granted
+  // Auto-register when permission is already granted - with multiple retries
   useEffect(() => {
-    if (permissionState === 'granted' && providerId) {
-      const timer = setTimeout(() => {
-        registerAimtellAttributes();
-      }, 1500);
-      return () => clearTimeout(timer);
-    }
+    if (permissionState !== 'granted' || !providerId || hasRegistered.current) return;
+
+    const registerWithRetries = async () => {
+      // Try multiple times as SDK might not be ready immediately
+      for (let attempt = 0; attempt < 10; attempt++) {
+        if (hasRegistered.current) break;
+        
+        const success = registerAimtellAttributes();
+        if (success) {
+          console.log(`✅ Auto-registered on attempt ${attempt + 1}`);
+          break;
+        }
+        
+        // Wait before next attempt
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      }
+    };
+
+    // Start registration after a short delay
+    const timer = setTimeout(registerWithRetries, 1500);
+    return () => clearTimeout(timer);
   }, [permissionState, providerId]);
 
-  if (permissionState === 'granted' || permissionState === 'unsupported') {
+  // Also retry registration periodically if not yet registered
+  useEffect(() => {
+    if (permissionState !== 'granted' || !providerId || hasRegistered.current) return;
+
+    const retryIntervals = [5000, 10000, 20000];
+    const timers = retryIntervals.map((delay, i) => 
+      setTimeout(() => {
+        if (!hasRegistered.current) {
+          console.log(`Retry registration attempt ${i + 1}...`);
+          registerAimtellAttributes();
+        }
+      }, delay)
+    );
+
+    return () => timers.forEach(clearTimeout);
+  }, [permissionState, providerId]);
+
+  if (permissionState === 'unsupported') {
+    return null;
+  }
+
+  // Show success state briefly when permission is granted
+  if (permissionState === 'granted') {
+    // Still try to register if not yet done
+    if (!isRegistered && providerId) {
+      return (
+        <Card className="bg-amber-500/10 border-amber-500/20 mb-4">
+          <CardContent className="p-3 text-center">
+            <RefreshCw className="h-6 w-6 text-amber-500 mx-auto mb-1.5 animate-spin" />
+            <h3 className="font-bold font-arabic text-sm text-foreground mb-0.5">
+              جاري تسجيل الإشعارات...
+            </h3>
+            <p className="text-xs text-muted-foreground font-arabic">
+              يتم تسجيلك لاستقبال إشعارات الطلبات الجديدة
+            </p>
+          </CardContent>
+        </Card>
+      );
+    }
     return null;
   }
 
