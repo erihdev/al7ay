@@ -48,14 +48,43 @@ async function sendAimtellNotification(
     
     console.log('Sending Aimtell notification with payload:', JSON.stringify(payload));
     
+    // Try multiple authentication methods for Aimtell API
     const response = await fetch('https://api.aimtell.com/prod/push', {
       method: 'POST',
       headers: {
-        'X-Authorization': apiKey,
+        'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(payload),
     });
+    
+    // If Bearer auth fails, try with token in body
+    if (!response.ok) {
+      const responseText = await response.text();
+      console.log('Bearer auth failed, trying with token in payload:', responseText);
+      
+      const payloadWithToken = {
+        ...payload,
+        token: apiKey,
+      };
+      
+      const retryResponse = await fetch('https://api.aimtell.com/prod/push', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payloadWithToken),
+      });
+      
+      const retryText = await retryResponse.text();
+      if (retryResponse.ok) {
+        console.log('Aimtell notification sent with token in body. Response:', retryText);
+        return true;
+      } else {
+        console.error('Aimtell API error with token in body:', retryResponse.status, retryText);
+        return false;
+      }
+    }
 
     const responseText = await response.text();
     
