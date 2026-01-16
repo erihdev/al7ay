@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { useProviderOrderNotifications } from '@/hooks/useProviderOrderNotifications';
+import { useProviderAimtellTag } from '@/hooks/useAimtellTags';
 import ProviderProductsManager from '@/components/provider/ProviderProductsManager';
 import KitchenDisplaySystem from '@/components/provider/KitchenDisplaySystem';
 import ProviderSettingsManager from '@/components/provider/ProviderSettingsManager';
@@ -120,6 +121,9 @@ const ProviderDashboard = () => {
   const [payoutHistory, setPayoutHistory] = useState<PayoutRecord[]>([]);
   const [activeTab, setActiveTab] = useState('kitchen');
   const [soundEnabled, setSoundEnabled] = useState(true);
+
+  // Register Aimtell tag for background push notifications
+  useProviderAimtellTag(provider?.id);
 
   useProviderOrderNotifications(provider?.id, soundEnabled);
 
