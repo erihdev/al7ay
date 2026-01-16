@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Bell, BellRing, RefreshCw, Settings, ChevronDown, ChevronUp, CheckCircle2 } from 'lucide-react';
+import { Bell, BellRing, RefreshCw, Settings, ChevronDown, ChevronUp, CheckCircle2, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { toast } from 'sonner';
@@ -32,7 +32,7 @@ export function ProviderNotificationPermission({ providerId }: ProviderNotificat
   const [showInstructions, setShowInstructions] = useState(true);
   const [isRetrying, setIsRetrying] = useState(false);
   const [isRegistered, setIsRegistered] = useState(false);
-  const [registrationTimedOut, setRegistrationTimedOut] = useState(false);
+  const [isSendingTest, setIsSendingTest] = useState(false);
   const hasRegistered = useRef(false);
 
   useEffect(() => {
@@ -47,34 +47,53 @@ export function ProviderNotificationPermission({ providerId }: ProviderNotificat
     setPermissionState(Notification.permission as PermissionState);
   };
 
-  // Check if running as PWA on iOS
-  const isIOSPWA = () => {
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || 
-                         (window.navigator as any).standalone === true;
-    return isIOS && isStandalone;
-  };
-
-  // Register for Web Push (works on iOS PWA)
+  // Register for Web Push (works on all platforms including iOS PWA)
   const registerWebPush = useCallback(async (): Promise<boolean> => {
     if (!user) {
-      console.log('No user for web push registration');
+      console.log('❌ No user for web push registration');
       return false;
     }
 
     try {
-      // Register service worker if not already registered
-      const registration = await navigator.serviceWorker.register('/sw.js');
-      await navigator.serviceWorker.ready;
+      console.log('🔄 Starting Web Push registration for user:', user.id);
+      
+      // Check if service worker is supported
+      if (!('serviceWorker' in navigator)) {
+        console.log('❌ Service Worker not supported');
+        return false;
+      }
 
-      // Subscribe to push notifications
-      const applicationServerKey = urlBase64ToUint8Array(VAPID_PUBLIC_KEY);
-      const subscription = await registration.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: applicationServerKey as BufferSource,
-      });
+      // Register service worker
+      const registration = await navigator.serviceWorker.register('/sw.js');
+      console.log('✅ Service Worker registered');
+      
+      // Wait for service worker to be ready
+      await navigator.serviceWorker.ready;
+      console.log('✅ Service Worker ready');
+
+      // Check if push is supported
+      if (!('PushManager' in window)) {
+        console.log('❌ Push Manager not supported');
+        return false;
+      }
+
+      // Get existing subscription or create new one
+      let subscription = await registration.pushManager.getSubscription();
+      
+      if (!subscription) {
+        console.log('🔄 Creating new push subscription...');
+        const applicationServerKey = urlBase64ToUint8Array(VAPID_PUBLIC_KEY);
+        subscription = await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: applicationServerKey.buffer as ArrayBuffer,
+        });
+        console.log('✅ New push subscription created');
+      } else {
+        console.log('✅ Existing push subscription found');
+      }
 
       const subscriptionJson = subscription.toJSON();
+      console.log('📦 Subscription endpoint:', subscriptionJson.endpoint?.substring(0, 50) + '...');
 
       // Save subscription to database
       const { error } = await supabase.from('push_subscriptions').upsert({
@@ -87,70 +106,102 @@ export function ProviderNotificationPermission({ providerId }: ProviderNotificat
       });
 
       if (error) {
-        console.error('Error saving web push subscription:', error);
+        console.error('❌ Error saving push subscription:', error);
         return false;
       }
 
-      console.log('✅ Web Push subscription saved for user:', user.id);
+      console.log('✅ Web Push subscription saved successfully for user:', user.id);
       return true;
     } catch (error) {
-      console.error('Error registering web push:', error);
+      console.error('❌ Error registering web push:', error);
       return false;
     }
   }, [user]);
 
-  const registerAimtellAttributes = async (): Promise<boolean> => {
-    // For iOS PWA, use Web Push instead of Aimtell
-    if (isIOSPWA()) {
-      console.log('📱 iOS PWA detected - using Web Push');
-      if (Notification.permission === 'granted') {
-        const webPushSuccess = await registerWebPush();
-        if (webPushSuccess) {
-          console.log('✅ iOS PWA registered with Web Push');
-          hasRegistered.current = true;
-          setIsRegistered(true);
-          return true;
-        }
-      }
-      return false;
-    }
-    
-    // Check if Aimtell SDK is fully loaded
-    if (typeof window._at !== 'object' || window._at === null) {
-      console.log('Aimtell _at object not available yet');
-      return false;
-    }
-    
-    if (typeof window._at.track !== 'function') {
-      console.log('Aimtell track function not ready, _at keys:', Object.keys(window._at || {}));
+  // Also register with Aimtell for Android/Desktop
+  const registerAimtell = async (): Promise<boolean> => {
+    if (typeof window._at !== 'object' || !window._at?.track) {
+      console.log('⚠️ Aimtell SDK not available');
       return false;
     }
 
     if (!providerId) {
-      console.log('No providerId to register');
       return false;
     }
 
     try {
-      // Register attribute for segmentation
       window._at.track('attribute', { provider_id: providerId });
-      
-      // CRITICAL: Register alias with exact format used in send-notification
-      const aliasValue = `provider_id==${providerId}`;
-      window._at.track('alias', aliasValue);
-      
-      console.log('✅ Provider registered for background notifications:', aliasValue);
-      console.log('✅ Aimtell SDK ready with keys:', Object.keys(window._at));
-      
-      // Also register for Web Push as backup
-      await registerWebPush();
-      
-      hasRegistered.current = true;
-      setIsRegistered(true);
+      window._at.track('alias', `provider_id==${providerId}`);
+      console.log('✅ Aimtell registered for provider:', providerId);
       return true;
     } catch (error) {
-      console.error('Error registering Aimtell:', error);
+      console.error('❌ Error registering Aimtell:', error);
       return false;
+    }
+  };
+
+  // Main registration function
+  const registerNotifications = async (): Promise<boolean> => {
+    console.log('🔄 Starting notification registration...');
+    
+    // Always try Web Push first (works everywhere including iOS PWA)
+    const webPushSuccess = await registerWebPush();
+    
+    // Also try Aimtell for Android/Desktop fallback
+    const aimtellSuccess = await registerAimtell();
+    
+    const success = webPushSuccess || aimtellSuccess;
+    
+    if (success) {
+      hasRegistered.current = true;
+      setIsRegistered(true);
+      console.log('✅ Notification registration complete:', { webPushSuccess, aimtellSuccess });
+    }
+    
+    return success;
+  };
+
+  // Send test notification
+  const sendTestNotification = async () => {
+    if (!user) {
+      toast.error('يجب تسجيل الدخول أولاً');
+      return;
+    }
+
+    setIsSendingTest(true);
+    
+    try {
+      console.log('📤 Sending test notification to user:', user.id);
+      
+      const response = await supabase.functions.invoke('send-webpush', {
+        body: {
+          userId: user.id,
+          title: '🔔 إشعار تجريبي',
+          body: 'تم تفعيل الإشعارات بنجاح! ستتلقى إشعاراً فورياً عند وصول طلب جديد.',
+          url: '/provider-dashboard?tab=orders',
+        },
+      });
+
+      console.log('📬 Test notification response:', response);
+
+      if (response.error) {
+        throw new Error(response.error.message);
+      }
+
+      if (response.data?.success) {
+        toast.success('✅ تم إرسال الإشعار التجريبي!', {
+          description: `تم الإرسال إلى ${response.data.sentCount} جهاز`,
+        });
+      } else {
+        toast.warning('⚠️ لم يتم إرسال الإشعار', {
+          description: response.data?.message || 'لا توجد اشتراكات مسجلة',
+        });
+      }
+    } catch (error) {
+      console.error('❌ Error sending test notification:', error);
+      toast.error('❌ فشل إرسال الإشعار التجريبي');
+    } finally {
+      setIsSendingTest(false);
     }
   };
 
@@ -162,17 +213,11 @@ export function ProviderNotificationPermission({ providerId }: ProviderNotificat
       setPermissionState(permission as PermissionState);
       
       if (permission === 'granted') {
-        // Register with Aimtell for push notifications with retries
-        let registered = false;
-        for (let attempt = 0; attempt < 10; attempt++) {
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          registered = await registerAimtellAttributes();
-          if (registered) break;
-        }
+        const registered = await registerNotifications();
         
         if (registered) {
           toast.success('🔔 تم تفعيل الإشعارات بنجاح!', {
-            description: 'ستتلقى إشعارات فورية عند وصول طلب جديد',
+            description: 'اضغط "إرسال إشعار تجريبي" للتأكد',
           });
         } else {
           toast.warning('⚠️ تم السماح بالإشعارات لكن التسجيل فشل', {
@@ -180,9 +225,7 @@ export function ProviderNotificationPermission({ providerId }: ProviderNotificat
           });
         }
       } else if (permission === 'denied') {
-        toast.error('❌ تم رفض الإشعارات', {
-          description: 'لن تتلقى إشعارات الطلبات الجديدة',
-        });
+        toast.error('❌ تم رفض الإشعارات');
       }
     } catch (error) {
       console.error('Error requesting permission:', error);
@@ -199,123 +242,70 @@ export function ProviderNotificationPermission({ providerId }: ProviderNotificat
     }
   };
 
-  // CRITICAL: Always try to register when permission is granted - EVERY TIME the page loads
+  // Auto-register when permission is granted
   useEffect(() => {
-    if (permissionState !== 'granted' || !providerId) return;
+    if (permissionState !== 'granted' || hasRegistered.current) return;
 
-    // Reset registration state on every page load
-    hasRegistered.current = false;
-    setIsRegistered(false);
-    setRegistrationTimedOut(false);
-
-    const registerWithRetries = async () => {
-      console.log('🔄 Starting Aimtell registration for provider:', providerId);
-      
-      // Try more times with longer delays for iOS Safari
-      const maxAttempts = 30; // Increased for slower iOS
-      for (let attempt = 0; attempt < maxAttempts; attempt++) {
-        if (hasRegistered.current) {
-          console.log('✅ Registration confirmed, stopping retries');
-          break;
-        }
-        
-        const success = await registerAimtellAttributes();
-        if (success) {
-          console.log(`✅ Auto-registered on attempt ${attempt + 1}`);
-          toast.success('✅ الإشعارات جاهزة!', {
-            description: 'ستتلقى تنبيهاً فورياً عند وصول طلب جديد',
-            duration: 4000,
-          });
-          break;
-        }
-        
-        console.log(`Attempt ${attempt + 1}/${maxAttempts} - waiting for SDK...`);
-        // Longer waits for iOS Safari which loads SDK slowly
-        await new Promise(resolve => setTimeout(resolve, 2000));
-      }
-      
-      // After all attempts, show timeout warning
-      if (!hasRegistered.current) {
-        console.log('⚠️ SDK failed to load after all attempts');
-        setRegistrationTimedOut(true);
-      }
+    const autoRegister = async () => {
+      console.log('🔄 Auto-registering notifications...');
+      await registerNotifications();
     };
 
-    // Start registration after a short delay to let Aimtell SDK load
-    const timer = setTimeout(registerWithRetries, 1500);
-    
+    // Small delay to ensure everything is loaded
+    const timer = setTimeout(autoRegister, 1000);
     return () => clearTimeout(timer);
-  }, [permissionState, providerId]);
-
-  // Periodic retries to ensure registration
-  useEffect(() => {
-    if (permissionState !== 'granted' || !providerId) return;
-
-    const retryIntervals = [5000, 10000, 20000, 30000];
-    const timers = retryIntervals.map((delay, i) => 
-      setTimeout(async () => {
-        if (!hasRegistered.current) {
-          console.log(`🔄 Periodic retry attempt ${i + 1}...`);
-          const success = await registerAimtellAttributes();
-          if (success) {
-            toast.success('✅ تم تسجيل الإشعارات', { duration: 2000 });
-          }
-        }
-      }, delay)
-    );
-
-    return () => timers.forEach(clearTimeout);
-  }, [permissionState, providerId]);
+  }, [permissionState, registerWebPush]);
 
   if (permissionState === 'unsupported') {
     return null;
   }
 
-  // Show success state briefly when permission is granted
-  if (permissionState === 'granted') {
-    // If registration timed out, show warning but don't block
-    if (registrationTimedOut && !isRegistered) {
-      return (
-        <Card className="bg-amber-500/10 border-amber-500/20 mb-4">
-          <CardContent className="p-3 text-center">
-            <Bell className="h-6 w-6 text-amber-500 mx-auto mb-1.5" />
-            <h3 className="font-bold font-arabic text-sm text-foreground mb-0.5">
-              الإشعارات مفعلة
-            </h3>
-            <p className="text-xs text-muted-foreground font-arabic mb-2">
-              قد لا تصلك إشعارات الخلفية - جرب إعادة تحميل الصفحة
-            </p>
-            <Button
-              onClick={() => window.location.reload()}
-              variant="outline"
-              size="sm"
-              className="font-arabic h-7 text-xs"
-            >
-              <RefreshCw className="h-3 w-3 ml-1.5" />
-              إعادة تحميل
-            </Button>
-          </CardContent>
-        </Card>
-      );
-    }
-    
-    // Still try to register if not yet done - but with max time
-    if (!isRegistered && providerId && !registrationTimedOut) {
-      return (
-        <Card className="bg-amber-500/10 border-amber-500/20 mb-4">
-          <CardContent className="p-3 text-center">
-            <RefreshCw className="h-6 w-6 text-amber-500 mx-auto mb-1.5 animate-spin" />
-            <h3 className="font-bold font-arabic text-sm text-foreground mb-0.5">
-              جاري تسجيل الإشعارات...
-            </h3>
-            <p className="text-xs text-muted-foreground font-arabic">
-              يتم تسجيلك لاستقبال إشعارات الطلبات الجديدة
-            </p>
-          </CardContent>
-        </Card>
-      );
-    }
-    return null;
+  // Success state - show test button
+  if (permissionState === 'granted' && isRegistered) {
+    return (
+      <Card className="bg-green-500/10 border-green-500/20 mb-4">
+        <CardContent className="p-3 text-center">
+          <CheckCircle2 className="h-6 w-6 text-green-500 mx-auto mb-1.5" />
+          <h3 className="font-bold font-arabic text-sm text-foreground mb-0.5">
+            ✅ الإشعارات جاهزة
+          </h3>
+          <p className="text-xs text-muted-foreground font-arabic mb-2">
+            ستتلقى تنبيهاً فورياً عند وصول طلب جديد
+          </p>
+          <Button
+            onClick={sendTestNotification}
+            disabled={isSendingTest}
+            variant="outline"
+            size="sm"
+            className="font-arabic h-7 text-xs"
+          >
+            {isSendingTest ? (
+              <RefreshCw className="h-3 w-3 ml-1.5 animate-spin" />
+            ) : (
+              <Send className="h-3 w-3 ml-1.5" />
+            )}
+            إرسال إشعار تجريبي
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Still registering state
+  if (permissionState === 'granted' && !isRegistered) {
+    return (
+      <Card className="bg-amber-500/10 border-amber-500/20 mb-4">
+        <CardContent className="p-3 text-center">
+          <RefreshCw className="h-6 w-6 text-amber-500 mx-auto mb-1.5 animate-spin" />
+          <h3 className="font-bold font-arabic text-sm text-foreground mb-0.5">
+            جاري تسجيل الإشعارات...
+          </h3>
+          <p className="text-xs text-muted-foreground font-arabic">
+            يتم تسجيلك لاستقبال إشعارات الطلبات الجديدة
+          </p>
+        </CardContent>
+      </Card>
+    );
   }
 
   if (permissionState === 'denied') {
@@ -332,7 +322,6 @@ export function ProviderNotificationPermission({ providerId }: ProviderNotificat
             </p>
           </div>
 
-          {/* Retry Button */}
           <div className="flex justify-center gap-2 mb-2">
             <Button
               onClick={handleRetry}
@@ -350,39 +339,28 @@ export function ProviderNotificationPermission({ providerId }: ProviderNotificat
             </Button>
           </div>
 
-          {/* Toggle Instructions */}
           <button
             onClick={() => setShowInstructions(!showInstructions)}
             className="w-full flex items-center justify-center gap-1.5 text-xs text-primary font-arabic py-1.5 hover:underline"
           >
             <Settings className="h-3.5 w-3.5" />
             كيفية تفعيل الإشعارات
-            {showInstructions ? (
-              <ChevronUp className="h-3.5 w-3.5" />
-            ) : (
-              <ChevronDown className="h-3.5 w-3.5" />
-            )}
+            {showInstructions ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
           </button>
 
-          {/* Instructions */}
           {showInstructions && (
             <div className="mt-2 p-2 bg-background/50 rounded-lg text-right">
-              <p className="font-bold text-xs font-arabic mb-1.5 text-foreground">
-                📱 على الجوال:
-              </p>
+              <p className="font-bold text-xs font-arabic mb-1.5 text-foreground">📱 على الآيفون:</p>
               <ol className="text-[10px] text-muted-foreground font-arabic space-y-0.5 list-decimal list-inside mb-2">
-                <li>اضغط على أيقونة "aA" أو 🔒 بجانب العنوان</li>
-                <li>اختر "إعدادات الموقع"</li>
-                <li>فعّل "الإشعارات"</li>
+                <li>أضف التطبيق للشاشة الرئيسية أولاً</li>
+                <li>افتح التطبيق من الشاشة الرئيسية</li>
+                <li>اضغط "السماح" عند ظهور نافذة الإشعارات</li>
               </ol>
-              <p className="font-bold text-xs font-arabic mb-1.5 text-foreground">
-                💻 على الكمبيوتر:
-              </p>
+              <p className="font-bold text-xs font-arabic mb-1.5 text-foreground">📱 على الأندرويد:</p>
               <ol className="text-[10px] text-muted-foreground font-arabic space-y-0.5 list-decimal list-inside mb-2">
                 <li>اضغط على أيقونة 🔒 بجانب العنوان</li>
                 <li>اختر "الإشعارات" → "سماح"</li>
               </ol>
-
               <Button
                 onClick={() => window.location.reload()}
                 variant="secondary"
@@ -394,15 +372,12 @@ export function ProviderNotificationPermission({ providerId }: ProviderNotificat
               </Button>
             </div>
           )}
-
-          <p className="text-[10px] text-muted-foreground font-arabic text-center mt-2">
-            💡 الإشعارات مطلوبة لتنبيهك فوراً عند وصول طلب جديد
-          </p>
         </CardContent>
       </Card>
     );
   }
 
+  // Default state - ask for permission
   return (
     <Card className="bg-primary/5 border-primary/20 mb-4">
       <CardContent className="p-3 text-center">

@@ -6,83 +6,6 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Simple Web Push using the push service directly
-// This is a simplified implementation that works with most push services
-async function sendWebPushNotification(
-  subscription: { endpoint: string; p256dh: string; auth: string },
-  payload: { title: string; body: string; icon?: string; url?: string },
-  vapidPublicKey: string,
-  vapidPrivateKey: string
-): Promise<{ success: boolean; shouldRemove: boolean }> {
-  try {
-    const audience = new URL(subscription.endpoint).origin;
-    
-    // Create VAPID JWT token
-    const jwtHeader = { typ: 'JWT', alg: 'ES256' };
-    const jwtPayload = {
-      aud: audience,
-      exp: Math.floor(Date.now() / 1000) + 12 * 60 * 60,
-      sub: 'mailto:DIFMASHNI@GMAIL.COM',
-    };
-
-    // For now, use a simpler approach - send without encryption for testing
-    // In production, you'd use a proper web-push library
-    
-    const payloadString = JSON.stringify(payload);
-    
-    // Create authorization header with VAPID
-    const vapidToken = await createSimpleVapidToken(audience, vapidPrivateKey);
-    
-    const response = await fetch(subscription.endpoint, {
-      method: 'POST',
-      headers: {
-        'Authorization': `vapid t=${vapidToken}, k=${vapidPublicKey}`,
-        'Content-Type': 'application/json',
-        'TTL': '86400',
-        'Urgency': 'high',
-      },
-      body: payloadString,
-    });
-
-    console.log('Push response:', response.status);
-
-    if (response.status === 201 || response.status === 200) {
-      return { success: true, shouldRemove: false };
-    } else if (response.status === 410 || response.status === 404) {
-      // Subscription is gone
-      return { success: false, shouldRemove: true };
-    } else {
-      const text = await response.text();
-      console.error('Push failed:', response.status, text);
-      return { success: false, shouldRemove: false };
-    }
-  } catch (error) {
-    console.error('Error sending push:', error);
-    return { success: false, shouldRemove: false };
-  }
-}
-
-// Create a simple VAPID token
-async function createSimpleVapidToken(audience: string, privateKey: string): Promise<string> {
-  try {
-    const header = btoa(JSON.stringify({ typ: 'JWT', alg: 'ES256' }))
-      .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
-    
-    const payload = btoa(JSON.stringify({
-      aud: audience,
-      exp: Math.floor(Date.now() / 1000) + 12 * 60 * 60,
-      sub: 'mailto:DIFMASHNI@GMAIL.COM',
-    })).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
-
-    // For now, return unsigned token (some push services accept this for testing)
-    // Production would need proper ECDSA signing
-    return `${header}.${payload}.signature`;
-  } catch (error) {
-    console.error('Error creating VAPID token:', error);
-    throw error;
-  }
-}
-
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -93,6 +16,7 @@ serve(async (req) => {
     const vapidPrivateKey = Deno.env.get('VAPID_PRIVATE_KEY');
 
     if (!vapidPublicKey || !vapidPrivateKey) {
+      console.error('VAPID keys not configured');
       return new Response(
         JSON.stringify({ error: 'VAPID keys not configured' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -104,6 +28,7 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     const { userId, title, body, icon, url } = await req.json();
+    console.log('📬 Received push request:', { userId, title, body });
 
     if (!userId || !title || !body) {
       return new Response(
@@ -127,50 +52,65 @@ serve(async (req) => {
     }
 
     if (!subscriptions || subscriptions.length === 0) {
-      console.log('No subscriptions found for user:', userId);
+      console.log('⚠️ No subscriptions found for user:', userId);
       return new Response(
         JSON.stringify({ success: false, message: 'No subscriptions found for user' }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log(`Found ${subscriptions.length} subscriptions for user ${userId}`);
+    console.log(`📦 Found ${subscriptions.length} subscriptions for user ${userId}`);
 
-    const payload = {
+    const payload = JSON.stringify({
       title,
       body,
-      icon: icon || 'https://al7ay.lovable.app/icons/icon-192.png',
-      url: url || '/',
-    };
+      icon: icon || '/icons/icon-192.png',
+      badge: '/icons/icon-192.png',
+      data: { url: url || '/' },
+    });
+
+    // Dynamic import web-push
+    const webpush = await import("https://esm.sh/web-push@3.6.7?target=deno");
+    
+    webpush.setVapidDetails(
+      'mailto:admin@al7ay.lovable.app',
+      vapidPublicKey,
+      vapidPrivateKey
+    );
 
     // Send to all user's subscriptions
     const results = await Promise.all(
-      subscriptions.map(async (sub) => {
-        const result = await sendWebPushNotification(
-          {
-            endpoint: sub.endpoint,
+      subscriptions.map(async (sub: { id: string; endpoint: string; p256dh: string; auth: string }) => {
+        const pushSubscription = {
+          endpoint: sub.endpoint,
+          keys: {
             p256dh: sub.p256dh,
             auth: sub.auth,
           },
-          payload,
-          vapidPublicKey,
-          vapidPrivateKey
-        );
+        };
 
-        // If subscription is invalid, remove it
-        if (result.shouldRemove) {
-          console.log('Removing invalid subscription:', sub.id);
-          await supabase
-            .from('push_subscriptions')
-            .delete()
-            .eq('id', sub.id);
+        try {
+          console.log('📤 Sending to:', sub.endpoint.substring(0, 60) + '...');
+          await webpush.sendNotification(pushSubscription, payload);
+          console.log('✅ Push sent successfully');
+          return { success: true, subscriptionId: sub.id };
+        } catch (err: unknown) {
+          const error = err as { statusCode?: number; body?: string; message?: string };
+          console.error('❌ Push failed:', error.statusCode, error.body || error.message);
+          
+          if (error.statusCode === 410 || error.statusCode === 404) {
+            console.log('🗑️ Removing expired subscription:', sub.id);
+            await supabase.from('push_subscriptions').delete().eq('id', sub.id);
+            return { success: false, subscriptionId: sub.id, removed: true };
+          }
+          
+          return { success: false, subscriptionId: sub.id, error: error.message };
         }
-
-        return result.success;
       })
     );
 
-    const successCount = results.filter(Boolean).length;
+    const successCount = results.filter((r: { success: boolean }) => r.success).length;
+    console.log(`📊 Sent ${successCount}/${subscriptions.length} successfully`);
 
     return new Response(
       JSON.stringify({
@@ -178,11 +118,12 @@ serve(async (req) => {
         message: `Sent to ${successCount}/${subscriptions.length} subscriptions`,
         sentCount: successCount,
         totalSubscriptions: subscriptions.length,
+        results,
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
-    console.error('Error:', error);
+    console.error('❌ Error:', error);
     return new Response(
       JSON.stringify({ error: 'Internal server error', details: String(error) }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
