@@ -1,1 +1,4 @@
 project_id = "hmnpraslunhnuigeetoe"
+
+[functions.send-webpush]
+verify_jwt = false
