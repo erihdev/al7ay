@@ -39,12 +39,16 @@ export function useAutoNotificationPermission(options: UseAutoNotificationPermis
       // Register attributes for segmentation
       window._at.track('attribute', attributes);
       
-      // CRITICAL: Also set alias for each attribute for direct targeting
-      // Aimtell uses alias format: "attribute_name==value" for push API targeting
-      for (const [key, value] of Object.entries(attributes)) {
-        const aliasValue = `${key}==${value}`;
-        window._at.track('alias', aliasValue);
-        console.log('✅ Aimtell alias registered:', aliasValue);
+      // CRITICAL: Register alias using Aimtell's documented format
+      // Per Aimtell docs: _at.track("alias", {"user": "USERNAME"})
+      if (options.providerId) {
+        window._at.track('alias', { user: options.providerId });
+        console.log('✅ Aimtell alias registered for provider:', options.providerId);
+      }
+      
+      if (options.customerId) {
+        window._at.track('alias', { user: options.customerId });
+        console.log('✅ Aimtell alias registered for customer:', options.customerId);
       }
       
       hasRegisteredAttributes.current = true;
