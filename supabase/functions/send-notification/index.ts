@@ -41,13 +41,13 @@ async function sendAimtellNotification(
       icon: 'https://al7ay.lovable.app/icons/icon-192.png',
     };
     
-    // Add user alias for targeting specific subscribers
-    // Per Aimtell docs, use "user" field with the ID value
+    // Add alias for targeting - format: "provider_id==VALUE" or "customer_id==VALUE"
+    // This worked before (result: success in logs)
     if (attributes) {
       if (attributes.provider_id) {
-        payload.user = attributes.provider_id;
+        payload.alias = `provider_id==${attributes.provider_id}`;
       } else if (attributes.customer_id) {
-        payload.user = attributes.customer_id;
+        payload.alias = `customer_id==${attributes.customer_id}`;
       }
     }
     
