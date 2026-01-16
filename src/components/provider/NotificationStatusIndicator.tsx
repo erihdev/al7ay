@@ -15,7 +15,7 @@ interface NotificationStatusIndicatorProps {
 }
 
 export function NotificationStatusIndicator({ providerId }: NotificationStatusIndicatorProps) {
-  const { isSDKLoaded, isSubscribed, permissionState, checkStatus, requestPermission } = useAimtellStatus(providerId);
+  const { isSDKLoaded, isSubscribed, permissionState, isReady, checkStatus, requestPermission } = useAimtellStatus(providerId);
   const [requesting, setRequesting] = useState(false);
 
   const handleRequestPermission = async () => {
@@ -34,28 +34,28 @@ export function NotificationStatusIndicator({ providerId }: NotificationStatusIn
 
   // Determine overall status
   const getOverallStatus = () => {
-    if (!isSDKLoaded) {
-      return { status: 'loading', color: 'bg-yellow-500', icon: Loader2 };
+    if (!isReady) {
+      return { status: 'loading' as const, color: 'bg-yellow-500', icon: Loader2 };
     }
     if (permissionState === 'denied') {
-      return { status: 'denied', color: 'bg-destructive', icon: XCircle };
+      return { status: 'denied' as const, color: 'bg-destructive', icon: XCircle };
     }
     if (permissionState === 'default') {
-      return { status: 'pending', color: 'bg-yellow-500', icon: AlertCircle };
+      return { status: 'pending' as const, color: 'bg-yellow-500', icon: AlertCircle };
     }
-    if (isSubscribed && permissionState === 'granted') {
-      return { status: 'active', color: 'bg-green-500', icon: CheckCircle };
+    if (isSubscribed) {
+      return { status: 'active' as const, color: 'bg-green-500', icon: CheckCircle };
     }
-    return { status: 'inactive', color: 'bg-muted', icon: BellOff };
+    return { status: 'inactive' as const, color: 'bg-muted', icon: BellOff };
   };
 
-  const { status, color, icon: StatusIcon } = getOverallStatus();
+  const { status, color } = getOverallStatus();
 
-  const statusMessages = {
+  const statusMessages: Record<typeof status, string> = {
     loading: 'جاري التحميل...',
     denied: 'الإشعارات مرفوضة',
     pending: 'بانتظار التفعيل',
-    active: 'الإشعارات مفعّلة',
+    active: 'الإشعارات مفعّلة ✓',
     inactive: 'الإشعارات غير مفعّلة',
   };
 
@@ -78,7 +78,10 @@ export function NotificationStatusIndicator({ providerId }: NotificationStatusIn
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h4 className="font-semibold font-arabic">حالة الإشعارات</h4>
-            <Badge variant={status === 'active' ? 'default' : 'secondary'} className="font-arabic">
+            <Badge 
+              variant={status === 'active' ? 'default' : 'secondary'} 
+              className={`font-arabic ${status === 'active' ? 'bg-green-500' : ''}`}
+            >
               {statusMessages[status]}
             </Badge>
           </div>
@@ -88,9 +91,15 @@ export function NotificationStatusIndicator({ providerId }: NotificationStatusIn
               <span className="text-muted-foreground font-arabic">SDK Aimtell</span>
               <span className="flex items-center gap-1">
                 {isSDKLoaded ? (
-                  <CheckCircle className="h-4 w-4 text-green-500" />
+                  <>
+                    <CheckCircle className="h-4 w-4 text-green-500" />
+                    <span className="text-xs text-green-600">جاهز</span>
+                  </>
                 ) : (
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                    <span className="text-xs text-muted-foreground">جاري التحميل</span>
+                  </>
                 )}
               </span>
             </div>
@@ -99,16 +108,21 @@ export function NotificationStatusIndicator({ providerId }: NotificationStatusIn
               <span className="text-muted-foreground font-arabic">صلاحية المتصفح</span>
               <span className="flex items-center gap-1">
                 {permissionState === 'granted' ? (
-                  <CheckCircle className="h-4 w-4 text-green-500" />
+                  <>
+                    <CheckCircle className="h-4 w-4 text-green-500" />
+                    <span className="text-xs text-green-600">مسموح</span>
+                  </>
                 ) : permissionState === 'denied' ? (
-                  <XCircle className="h-4 w-4 text-destructive" />
+                  <>
+                    <XCircle className="h-4 w-4 text-destructive" />
+                    <span className="text-xs text-destructive">مرفوض</span>
+                  </>
                 ) : (
-                  <AlertCircle className="h-4 w-4 text-yellow-500" />
+                  <>
+                    <AlertCircle className="h-4 w-4 text-yellow-500" />
+                    <span className="text-xs text-yellow-600">غير محدد</span>
+                  </>
                 )}
-                <span className="font-arabic text-xs">
-                  {permissionState === 'granted' ? 'مسموح' : 
-                   permissionState === 'denied' ? 'مرفوض' : 'غير محدد'}
-                </span>
               </span>
             </div>
 
@@ -116,28 +130,36 @@ export function NotificationStatusIndicator({ providerId }: NotificationStatusIn
               <span className="text-muted-foreground font-arabic">الاشتراك</span>
               <span className="flex items-center gap-1">
                 {isSubscribed ? (
-                  <CheckCircle className="h-4 w-4 text-green-500" />
+                  <>
+                    <CheckCircle className="h-4 w-4 text-green-500" />
+                    <span className="text-xs text-green-600">مشترك</span>
+                  </>
                 ) : (
-                  <XCircle className="h-4 w-4 text-muted-foreground" />
+                  <>
+                    <XCircle className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-xs text-muted-foreground">غير مشترك</span>
+                  </>
                 )}
-                <span className="font-arabic text-xs">
-                  {isSubscribed ? 'مشترك' : 'غير مشترك'}
-                </span>
               </span>
             </div>
           </div>
 
+          {status === 'active' && (
+            <div className="p-3 bg-green-500/10 rounded-lg text-sm font-arabic text-center">
+              <p className="text-green-700 dark:text-green-400">
+                ✅ ستتلقى إشعارات الطلبات الجديدة حتى عند إغلاق المتصفح
+              </p>
+            </div>
+          )}
+
           {permissionState === 'denied' && (
             <div className="p-3 bg-destructive/10 rounded-lg text-sm font-arabic">
-              <p className="text-destructive">
-                تم رفض الإشعارات. يرجى تفعيلها من إعدادات المتصفح:
+              <p className="text-destructive font-semibold mb-2">
+                ⚠️ تم رفض الإشعارات
               </p>
-              <ol className="list-decimal list-inside mt-2 text-muted-foreground space-y-1">
-                <li>اضغط على أيقونة القفل بجانب عنوان الموقع</li>
-                <li>ابحث عن "الإشعارات" أو "Notifications"</li>
-                <li>غيّر الإعداد إلى "سماح"</li>
-                <li>أعد تحميل الصفحة</li>
-              </ol>
+              <p className="text-muted-foreground text-xs">
+                لتفعيلها: اضغط على أيقونة القفل 🔒 بجانب عنوان الموقع → الإشعارات → سماح → أعد تحميل الصفحة
+              </p>
             </div>
           )}
 
@@ -145,7 +167,7 @@ export function NotificationStatusIndicator({ providerId }: NotificationStatusIn
             <Button 
               onClick={handleRequestPermission} 
               disabled={requesting}
-              className="w-full font-arabic"
+              className="w-full font-arabic bg-primary"
             >
               {requesting ? (
                 <Loader2 className="h-4 w-4 animate-spin ml-2" />
@@ -156,19 +178,13 @@ export function NotificationStatusIndicator({ providerId }: NotificationStatusIn
             </Button>
           )}
 
-          {status === 'active' && (
-            <p className="text-sm text-muted-foreground font-arabic text-center">
-              ✅ ستتلقى إشعارات الطلبات الجديدة حتى عند إغلاق المتصفح
-            </p>
-          )}
-
           <Button 
             variant="ghost" 
             size="sm" 
             onClick={checkStatus}
             className="w-full text-xs font-arabic"
           >
-            تحديث الحالة
+            🔄 تحديث الحالة
           </Button>
         </div>
       </PopoverContent>
