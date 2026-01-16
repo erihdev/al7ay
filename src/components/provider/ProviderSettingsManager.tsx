@@ -23,8 +23,10 @@ import {
   RefreshCw,
   Info,
   Globe,
-  MapPinned
+  MapPinned,
+  Bell
 } from 'lucide-react';
+import { VolumeControl } from '@/components/notifications/VolumeControl';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { ServiceProvider } from '@/hooks/useProviderData';
@@ -909,6 +911,22 @@ const ProviderSettingsManager = ({ provider, onUpdate }: ProviderSettingsManager
               </div>
             </div>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Notification Settings Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="font-arabic flex items-center gap-2">
+            <Bell className="h-5 w-5" />
+            إعدادات الإشعارات
+          </CardTitle>
+          <CardDescription className="font-arabic">
+            تحكم في مستوى صوت ونغمة إشعارات الطلبات الجديدة
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <VolumeControl />
         </CardContent>
       </Card>
     </div>
