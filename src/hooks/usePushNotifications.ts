@@ -2,9 +2,8 @@ import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
-// Generate VAPID keys for production - these are placeholder public keys
-// In production, generate real keys using: npx web-push generate-vapid-keys
-const VAPID_PUBLIC_KEY = 'BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuBkr3qBUYIHBQFLXYp5Nksh8U';
+// VAPID public key for Web Push notifications
+const VAPID_PUBLIC_KEY = 'BBSkQQTuHO2QUmjfNrrLFt0HHKf3MZem5LCnRcFgDV3v722xd3MR4E6Kg5O_wPyDfIVydp0JFhyJRYGAIkgVcXU';
 
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
