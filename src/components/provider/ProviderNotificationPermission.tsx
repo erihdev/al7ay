@@ -33,6 +33,7 @@ export function ProviderNotificationPermission({ providerId }: ProviderNotificat
   const [isRetrying, setIsRetrying] = useState(false);
   const [isRegistered, setIsRegistered] = useState(false);
   const [isSendingTest, setIsSendingTest] = useState(false);
+  const [isReRegistering, setIsReRegistering] = useState(false);
   const hasRegistered = useRef(false);
 
   useEffect(() => {
@@ -211,6 +212,31 @@ export function ProviderNotificationPermission({ providerId }: ProviderNotificat
     }
   };
 
+  // Re-register notifications manually
+  const handleReRegister = async () => {
+    setIsReRegistering(true);
+    hasRegistered.current = false;
+    setIsRegistered(false);
+    
+    try {
+      const success = await registerWebPush();
+      if (success) {
+        setIsRegistered(true);
+        hasRegistered.current = true;
+        toast.success('✅ تم إعادة تسجيل الإشعارات بنجاح!', {
+          description: 'جرب إرسال إشعار تجريبي للتأكد',
+        });
+      } else {
+        toast.error('❌ فشل إعادة تسجيل الإشعارات');
+      }
+    } catch (error) {
+      console.error('❌ Error re-registering:', error);
+      toast.error('❌ حدث خطأ أثناء إعادة التسجيل');
+    } finally {
+      setIsReRegistering(false);
+    }
+  };
+
   const requestNotificationPermission = async () => {
     setPermissionState('loading');
     
@@ -278,20 +304,36 @@ export function ProviderNotificationPermission({ providerId }: ProviderNotificat
           <p className="text-xs text-muted-foreground font-arabic mb-2">
             ستتلقى تنبيهاً فورياً عند وصول طلب جديد
           </p>
-          <Button
-            onClick={sendTestNotification}
-            disabled={isSendingTest}
-            variant="outline"
-            size="sm"
-            className="font-arabic h-7 text-xs"
-          >
-            {isSendingTest ? (
-              <RefreshCw className="h-3 w-3 ml-1.5 animate-spin" />
-            ) : (
-              <Send className="h-3 w-3 ml-1.5" />
-            )}
-            إرسال إشعار تجريبي
-          </Button>
+          <div className="flex justify-center gap-2">
+            <Button
+              onClick={sendTestNotification}
+              disabled={isSendingTest || isReRegistering}
+              variant="outline"
+              size="sm"
+              className="font-arabic h-7 text-xs"
+            >
+              {isSendingTest ? (
+                <RefreshCw className="h-3 w-3 ml-1.5 animate-spin" />
+              ) : (
+                <Send className="h-3 w-3 ml-1.5" />
+              )}
+              إشعار تجريبي
+            </Button>
+            <Button
+              onClick={handleReRegister}
+              disabled={isSendingTest || isReRegistering}
+              variant="ghost"
+              size="sm"
+              className="font-arabic h-7 text-xs text-muted-foreground"
+            >
+              {isReRegistering ? (
+                <RefreshCw className="h-3 w-3 ml-1.5 animate-spin" />
+              ) : (
+                <RefreshCw className="h-3 w-3 ml-1.5" />
+              )}
+              إعادة تسجيل
+            </Button>
+          </div>
         </CardContent>
       </Card>
     );
