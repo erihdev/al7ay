@@ -7,13 +7,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { useProviderOrderNotifications } from '@/hooks/useProviderOrderNotifications';
 import { useProviderAimtellTag } from '@/hooks/useAimtellTags';
+import { useAutoNotificationPermission } from '@/hooks/useAutoNotificationPermission';
 import ProviderProductsManager from '@/components/provider/ProviderProductsManager';
 import KitchenDisplaySystem from '@/components/provider/KitchenDisplaySystem';
 import ProviderSettingsManager from '@/components/provider/ProviderSettingsManager';
 import StoreThemeCustomizer from '@/components/provider/StoreThemeCustomizer';
 import ProviderStats from '@/components/provider/ProviderStats';
 import { StoreLocationAlert } from '@/components/provider/StoreLocationAlert';
-import { NotificationStatusIndicator } from '@/components/provider/NotificationStatusIndicator';
+import { SimpleNotificationIndicator } from '@/components/provider/SimpleNotificationIndicator';
 import { 
   ShoppingBag, 
   TrendingUp, 
@@ -128,6 +129,9 @@ const ProviderDashboard = () => {
 
   // Register Aimtell tag for background push notifications
   useProviderAimtellTag(provider?.id);
+
+  // Auto-request notification permission
+  useAutoNotificationPermission();
 
   useProviderOrderNotifications(provider?.id, soundEnabled);
 
@@ -462,7 +466,7 @@ const ProviderDashboard = () => {
 
             {/* Actions */}
             <div className="flex items-center gap-2">
-              <NotificationStatusIndicator providerId={provider?.id} />
+              <SimpleNotificationIndicator />
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button 
