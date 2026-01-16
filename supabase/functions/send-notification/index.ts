@@ -48,47 +48,45 @@ async function sendAimtellNotification(
     
     console.log('Sending Aimtell notification with payload:', JSON.stringify(payload));
     
-    // Try multiple authentication methods for Aimtell API
+    // Use X-Authorization-Api-Key header as per Aimtell documentation
     const response = await fetch('https://api.aimtell.com/prod/push', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${apiKey}`,
+        'X-Authorization-Api-Key': apiKey,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(payload),
     });
+
+    const responseText = await response.text();
+    console.log('Aimtell API response:', response.status, responseText);
     
-    // If Bearer auth fails, try with token in body
-    if (!response.ok) {
-      const responseText = await response.text();
-      console.log('Bearer auth failed, trying with token in payload:', responseText);
-      
-      const payloadWithToken = {
-        ...payload,
-        token: apiKey,
-      };
+    // If X-Authorization-Api-Key fails, try X-Authorization header
+    if (!response.ok || responseText.includes('Missing token')) {
+      console.log('Trying X-Authorization header...');
       
       const retryResponse = await fetch('https://api.aimtell.com/prod/push', {
         method: 'POST',
         headers: {
+          'X-Authorization': apiKey,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(payloadWithToken),
+        body: JSON.stringify(payload),
       });
       
       const retryText = await retryResponse.text();
-      if (retryResponse.ok) {
-        console.log('Aimtell notification sent with token in body. Response:', retryText);
+      console.log('X-Authorization response:', retryResponse.status, retryText);
+      
+      if (retryResponse.ok && !retryText.includes('Missing token')) {
+        console.log('Aimtell notification sent with X-Authorization. Response:', retryText);
         return true;
       } else {
-        console.error('Aimtell API error with token in body:', retryResponse.status, retryText);
+        console.error('Aimtell API error:', retryResponse.status, retryText);
         return false;
       }
     }
-
-    const responseText = await response.text();
     
-    if (response.ok) {
+    if (response.ok && !responseText.includes('Missing token')) {
       console.log('Aimtell notification sent successfully. Response:', responseText);
       return true;
     } else {
