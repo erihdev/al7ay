@@ -37,6 +37,7 @@ import { InteractiveBackground } from '@/components/ui/InteractiveBackground';
 import { PageTransition } from '@/components/ui/PageTransition';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { useRef, useEffect, useState } from 'react';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 // Animated counter component
 const AnimatedCounter = ({ target, duration = 2, suffix = '' }: { target: number; duration?: number; suffix?: string }) => {
@@ -73,13 +74,16 @@ const AnimatedCounter = ({ target, duration = 2, suffix = '' }: { target: number
   return <span ref={ref}>{count.toLocaleString()}{suffix}</span>;
 };
 
-// Floating icons component
-const FloatingIcons = () => {
+// Floating icons component - simplified for mobile
+const FloatingIcons = ({ isMobile }: { isMobile: boolean }) => {
   const icons = [Coffee, Cake, ShoppingBag, Gift, Star, Heart];
+  
+  // Reduce number of floating icons on mobile for performance
+  const visibleIcons = isMobile ? icons.slice(0, 3) : icons;
   
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none">
-      {icons.map((Icon, i) => (
+      {visibleIcons.map((Icon, i) => (
         <motion.div
           key={i}
           className="absolute text-primary/10"
@@ -90,17 +94,17 @@ const FloatingIcons = () => {
           }}
           animate={{ 
             y: [null, '-20%', '120%'],
-            rotate: [0, 360],
-            opacity: [0, 0.3, 0]
+            rotate: isMobile ? [0, 180] : [0, 360],
+            opacity: [0, isMobile ? 0.2 : 0.3, 0]
           }}
           transition={{ 
-            duration: 15 + Math.random() * 10,
+            duration: isMobile ? 20 + Math.random() * 10 : 15 + Math.random() * 10,
             repeat: Infinity,
-            delay: i * 2,
+            delay: i * 3,
             ease: 'linear'
           }}
         >
-          <Icon className="h-8 w-8 md:h-12 md:w-12" />
+          <Icon className="h-6 w-6 md:h-8 md:w-8 lg:h-12 lg:w-12" />
         </motion.div>
       ))}
     </div>
@@ -120,10 +124,13 @@ const GradientText = ({ children, className = '' }: { children: React.ReactNode;
 
 const WhyAlHay = () => {
   const containerRef = useRef<HTMLDivElement>(null);
+  const isMobile = useIsMobile();
   const { scrollYProgress } = useScroll({ target: containerRef });
-  const y1 = useTransform(scrollYProgress, [0, 1], ['0%', '50%']);
-  const y2 = useTransform(scrollYProgress, [0, 1], ['0%', '-30%']);
-  const scale = useTransform(scrollYProgress, [0, 0.5], [1, 1.1]);
+  
+  // Reduce parallax effect on mobile for smoother scrolling
+  const y1 = useTransform(scrollYProgress, [0, 1], ['0%', isMobile ? '20%' : '50%']);
+  const y2 = useTransform(scrollYProgress, [0, 1], ['0%', isMobile ? '-10%' : '-30%']);
+  const scale = useTransform(scrollYProgress, [0, 0.5], [1, isMobile ? 1.02 : 1.1]);
 
   const customerBenefits = [
     { 
@@ -242,8 +249,9 @@ const WhyAlHay = () => {
   return (
     <PageTransition>
       <div ref={containerRef} className="min-h-screen bg-background font-arabic relative overflow-hidden" dir="rtl">
-        <InteractiveBackground variant="particles" intensity="medium" />
-        <FloatingIcons />
+        {/* Disable heavy background effects on mobile */}
+        {!isMobile && <InteractiveBackground variant="particles" intensity="medium" />}
+        <FloatingIcons isMobile={isMobile} />
         
         {/* Header */}
         <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-lg border-b pt-[env(safe-area-inset-top)]">
@@ -262,105 +270,108 @@ const WhyAlHay = () => {
         </header>
 
         {/* Hero Section with Parallax */}
-        <section className="relative py-16 md:py-24 overflow-hidden">
-          <motion.div className="absolute inset-0" style={{ y: y1 }}>
+        <section className="relative py-10 sm:py-16 md:py-24 overflow-hidden">
+          {/* Only apply parallax on desktop */}
+          <motion.div 
+            className="absolute inset-0" 
+            style={isMobile ? {} : { y: y1 }}
+          >
             <img 
               src={neighborhoodConnection} 
               alt="شبكة الحي" 
-              className="w-full h-full object-cover opacity-20 scale-110"
+              className="w-full h-full object-cover opacity-15 sm:opacity-20 scale-105 sm:scale-110"
             />
-            <div className="absolute inset-0 bg-gradient-to-b from-background via-background/90 to-background" />
+            <div className="absolute inset-0 bg-gradient-to-b from-background via-background/95 to-background" />
           </motion.div>
           
-          {/* Animated decorative elements */}
-          <motion.div 
-            className="absolute top-20 right-10 w-20 h-20 rounded-full bg-primary/20 blur-xl"
-            animate={{ scale: [1, 1.3, 1], opacity: [0.3, 0.6, 0.3] }}
-            transition={{ duration: 4, repeat: Infinity }}
-          />
-          <motion.div 
-            className="absolute bottom-20 left-10 w-32 h-32 rounded-full bg-accent/20 blur-xl"
-            animate={{ scale: [1.2, 1, 1.2], opacity: [0.4, 0.2, 0.4] }}
-            transition={{ duration: 5, repeat: Infinity }}
-          />
+          {/* Animated decorative elements - smaller on mobile */}
+          {!isMobile && (
+            <>
+              <motion.div 
+                className="absolute top-20 right-10 w-20 h-20 rounded-full bg-primary/20 blur-xl"
+                animate={{ scale: [1, 1.3, 1], opacity: [0.3, 0.6, 0.3] }}
+                transition={{ duration: 4, repeat: Infinity }}
+              />
+              <motion.div 
+                className="absolute bottom-20 left-10 w-32 h-32 rounded-full bg-accent/20 blur-xl"
+                animate={{ scale: [1.2, 1, 1.2], opacity: [0.4, 0.2, 0.4] }}
+                transition={{ duration: 5, repeat: Infinity }}
+              />
+            </>
+          )}
           
           <div className="container mx-auto px-4 relative z-10">
             <motion.div 
               className="text-center max-w-3xl mx-auto"
-              initial={{ opacity: 0, y: 50 }}
+              initial={{ opacity: 0, y: isMobile ? 20 : 50 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, ease: 'easeOut' }}
+              transition={{ duration: isMobile ? 0.5 : 0.8, ease: 'easeOut' }}
             >
               <motion.div
-                initial={{ scale: 0, rotate: -180 }}
+                initial={{ scale: 0, rotate: isMobile ? -90 : -180 }}
                 animate={{ scale: 1, rotate: 0 }}
-                transition={{ type: 'spring', stiffness: 200, delay: 0.2 }}
+                transition={{ type: 'spring', stiffness: 200, delay: 0.1 }}
               >
-                <Badge className="mb-6 text-sm px-6 py-2 bg-gradient-to-r from-primary/20 to-accent/20 border-primary/30">
-                  <motion.div
-                    animate={{ rotate: [0, 15, -15, 0] }}
-                    transition={{ duration: 2, repeat: Infinity }}
-                  >
-                    <Sparkles className="h-4 w-4 ml-2" />
-                  </motion.div>
+                <Badge className="mb-4 sm:mb-6 text-xs sm:text-sm px-4 sm:px-6 py-1.5 sm:py-2 bg-gradient-to-r from-primary/20 to-accent/20 border-primary/30">
+                  {!isMobile && (
+                    <motion.div
+                      animate={{ rotate: [0, 15, -15, 0] }}
+                      transition={{ duration: 2, repeat: Infinity }}
+                    >
+                      <Sparkles className="h-3 w-3 sm:h-4 sm:w-4 ml-1.5 sm:ml-2" />
+                    </motion.div>
+                  )}
+                  {isMobile && <Sparkles className="h-3 w-3 ml-1.5" />}
                   لماذا تختار الحي؟
                 </Badge>
               </motion.div>
               
               <motion.h1 
-                className="text-5xl md:text-7xl font-bold mb-6"
-                initial={{ opacity: 0, y: 30 }}
+                className="text-3xl sm:text-5xl md:text-7xl font-bold mb-4 sm:mb-6"
+                initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
+                transition={{ delay: 0.2 }}
               >
                 <GradientText>الحي يحيييك</GradientText>
               </motion.h1>
               
               <motion.p 
-                className="text-xl md:text-2xl text-muted-foreground mb-8"
+                className="text-base sm:text-xl md:text-2xl text-muted-foreground mb-6 sm:mb-8 px-2"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                transition={{ delay: 0.5 }}
+                transition={{ delay: 0.3 }}
               >
                 منصة تربط بين جيران الحي الواحد
                 <br />
-                <motion.span 
-                  className="text-primary font-semibold inline-block"
-                  animate={{ scale: [1, 1.05, 1] }}
-                  transition={{ duration: 2, repeat: Infinity }}
-                >
+                <span className="text-primary font-semibold">
                   خدمات محلية بلمسة جارك
-                </motion.span>
+                </span>
               </motion.p>
               
               <motion.div 
-                className="flex flex-wrap justify-center gap-4"
-                initial={{ opacity: 0, y: 20 }}
+                className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4 px-4 sm:px-0"
+                initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.7 }}
+                transition={{ delay: 0.4 }}
               >
-                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                  <Button size="lg" className="text-lg px-8 shadow-lg shadow-primary/25" asChild>
-                    <Link to="/app">
-                      <ShoppingBag className="h-5 w-5 ml-2" />
-                      ابدأ كعميل
-                    </Link>
-                  </Button>
-                </motion.div>
-                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                  <Button size="lg" variant="outline" className="text-lg px-8 border-accent text-accent hover:bg-accent hover:text-accent-foreground" asChild>
-                    <Link to="/provider-register">
-                      <Store className="h-5 w-5 ml-2" />
-                      انضم كمزود
-                    </Link>
-                  </Button>
-                </motion.div>
+                <Button size={isMobile ? "default" : "lg"} className="text-base sm:text-lg px-6 sm:px-8 h-11 sm:h-12 shadow-lg shadow-primary/25" asChild>
+                  <Link to="/app">
+                    <ShoppingBag className="h-4 w-4 sm:h-5 sm:w-5 ml-2" />
+                    ابدأ كعميل
+                  </Link>
+                </Button>
+                <Button size={isMobile ? "default" : "lg"} variant="outline" className="text-base sm:text-lg px-6 sm:px-8 h-11 sm:h-12 border-accent text-accent hover:bg-accent hover:text-accent-foreground" asChild>
+                  <Link to="/provider-register">
+                    <Store className="h-4 w-4 sm:h-5 sm:w-5 ml-2" />
+                    انضم كمزود
+                  </Link>
+                </Button>
               </motion.div>
             </motion.div>
 
             {/* Stats with animated counters */}
             <motion.div 
-              className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-16 max-w-3xl mx-auto"
+              className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-6 mt-8 sm:mt-16 max-w-3xl mx-auto px-2"
               variants={containerVariants}
               initial="hidden"
               whileInView="visible"
@@ -370,17 +381,17 @@ const WhyAlHay = () => {
                 <motion.div
                   key={index}
                   variants={itemVariants}
-                  className="text-center p-4 rounded-2xl bg-card/50 backdrop-blur border"
-                  whileHover={{ scale: 1.1, borderColor: 'hsl(var(--primary))' }}
+                  className="text-center p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-card/50 backdrop-blur border"
+                  whileHover={isMobile ? {} : { scale: 1.1, borderColor: 'hsl(var(--primary))' }}
                 >
-                  <div className="text-2xl md:text-3xl font-bold text-primary">
+                  <div className="text-xl sm:text-2xl md:text-3xl font-bold text-primary">
                     {stat.suffix === '⭐' ? (
                       <span>{stat.value}{stat.suffix}</span>
                     ) : (
                       <AnimatedCounter target={stat.value} suffix={stat.suffix} />
                     )}
                   </div>
-                  <div className="text-sm text-muted-foreground mt-1">{stat.label}</div>
+                  <div className="text-xs sm:text-sm text-muted-foreground mt-1">{stat.label}</div>
                 </motion.div>
               ))}
             </motion.div>
@@ -388,570 +399,394 @@ const WhyAlHay = () => {
         </section>
 
         {/* Customer Section */}
-        <section className="py-16 md:py-24 bg-gradient-to-b from-muted/30 to-background relative overflow-hidden">
-          <motion.div 
-            className="absolute -right-20 top-1/2 w-40 h-40 rounded-full bg-primary/10 blur-3xl"
-            animate={{ x: [0, 30, 0], y: [-30, 30, -30] }}
-            transition={{ duration: 8, repeat: Infinity }}
-          />
+        <section className="py-10 sm:py-16 md:py-24 bg-gradient-to-b from-muted/30 to-background relative overflow-hidden">
+          {!isMobile && (
+            <motion.div 
+              className="absolute -right-20 top-1/2 w-40 h-40 rounded-full bg-primary/10 blur-3xl"
+              animate={{ x: [0, 30, 0], y: [-30, 30, -30] }}
+              transition={{ duration: 8, repeat: Infinity }}
+            />
+          )}
           
           <div className="container mx-auto px-4">
-            <div className="grid lg:grid-cols-2 gap-12 items-center">
+            <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
               <motion.div
-                initial={{ opacity: 0, x: -50, rotateY: -15 }}
+                initial={{ opacity: 0, x: isMobile ? 0 : -50, rotateY: isMobile ? 0 : -15 }}
                 whileInView={{ opacity: 1, x: 0, rotateY: 0 }}
                 viewport={{ once: true }}
-                transition={{ duration: 0.8 }}
+                transition={{ duration: isMobile ? 0.5 : 0.8 }}
               >
                 <motion.div 
-                  className="relative rounded-3xl overflow-hidden shadow-2xl group"
-                  whileHover={{ scale: 1.02 }}
-                  style={{ scale }}
+                  className="relative rounded-2xl sm:rounded-3xl overflow-hidden shadow-xl sm:shadow-2xl group"
+                  whileHover={isMobile ? {} : { scale: 1.02 }}
+                  style={isMobile ? {} : { scale }}
                 >
-                  <motion.img 
+                  <img 
                     src={heroCustomerWhy} 
                     alt="تجربة العميل" 
-                    className="w-full h-auto transition-transform duration-700 group-hover:scale-110"
+                    className="w-full h-auto"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-                  <motion.div 
-                    className="absolute bottom-6 right-6 left-6"
-                    initial={{ y: 20, opacity: 0 }}
-                    whileInView={{ y: 0, opacity: 1 }}
-                    transition={{ delay: 0.3 }}
-                  >
-                    <Badge className="bg-primary text-lg px-6 py-2.5 shadow-lg">
-                      <motion.div
-                        animate={{ rotate: [0, -10, 10, 0] }}
-                        transition={{ duration: 1.5, repeat: Infinity }}
-                      >
-                        <ShoppingBag className="h-5 w-5 ml-2" />
-                      </motion.div>
+                  <div className="absolute bottom-4 sm:bottom-6 right-4 sm:right-6 left-4 sm:left-6">
+                    <Badge className="bg-primary text-sm sm:text-lg px-4 sm:px-6 py-1.5 sm:py-2.5 shadow-lg">
+                      <ShoppingBag className="h-4 w-4 sm:h-5 sm:w-5 ml-1.5 sm:ml-2" />
                       للعملاء
                     </Badge>
-                  </motion.div>
+                  </div>
                   
-                  {/* Floating badge */}
-                  <motion.div 
-                    className="absolute top-4 left-4"
-                    animate={{ y: [0, -10, 0] }}
-                    transition={{ duration: 2, repeat: Infinity }}
-                  >
-                    <Badge variant="secondary" className="bg-white/90 text-primary shadow-lg">
-                      <Star className="h-4 w-4 ml-1 fill-yellow-400 text-yellow-400" />
-                      تجربة مميزة
-                    </Badge>
-                  </motion.div>
+                  {/* Floating badge - simpler on mobile */}
+                  {!isMobile && (
+                    <motion.div 
+                      className="absolute top-4 left-4"
+                      animate={{ y: [0, -10, 0] }}
+                      transition={{ duration: 2, repeat: Infinity }}
+                    >
+                      <Badge variant="secondary" className="bg-white/90 text-primary shadow-lg">
+                        <Star className="h-4 w-4 ml-1 fill-yellow-400 text-yellow-400" />
+                        تجربة مميزة
+                      </Badge>
+                    </motion.div>
+                  )}
                 </motion.div>
               </motion.div>
 
               <motion.div
-                initial={{ opacity: 0, x: 50 }}
+                initial={{ opacity: 0, x: isMobile ? 0 : 50 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
-                transition={{ duration: 0.8 }}
+                transition={{ duration: isMobile ? 0.5 : 0.8 }}
               >
-                <motion.h2 
-                  className="text-3xl md:text-5xl font-bold mb-6"
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                >
+                <h2 className="text-2xl sm:text-3xl md:text-5xl font-bold mb-4 sm:mb-6">
                   لماذا تطلب من <GradientText>الحي</GradientText>؟
-                </motion.h2>
-                <motion.p 
-                  className="text-lg text-muted-foreground mb-10"
-                  initial={{ opacity: 0 }}
-                  whileInView={{ opacity: 1 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: 0.2 }}
-                >
+                </h2>
+                <p className="text-sm sm:text-lg text-muted-foreground mb-6 sm:mb-10">
                   استمتع بتجربة تسوق فريدة من مزودي خدمات محليين موهوبين في حيّك
-                </motion.p>
+                </p>
                 
-                <motion.div 
-                  className="grid sm:grid-cols-2 gap-4"
-                  variants={containerVariants}
-                  initial="hidden"
-                  whileInView="visible"
-                  viewport={{ once: true }}
-                >
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   {customerBenefits.map((benefit, index) => (
                     <motion.div
                       key={index}
-                      variants={itemVariants}
-                      initial="rest"
-                      whileHover="hover"
+                      initial={{ opacity: 0, y: 20 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ delay: isMobile ? index * 0.05 : index * 0.1 }}
                     >
-                      <motion.div variants={cardHoverVariants}>
-                        <Card className="h-full border-2 hover:border-primary/50 transition-colors cursor-pointer overflow-hidden group">
-                          <CardContent className="p-5 relative">
-                            <div className={`absolute inset-0 bg-gradient-to-br ${benefit.color} opacity-0 group-hover:opacity-5 transition-opacity`} />
-                            <motion.div
-                              className={`h-12 w-12 mb-4 rounded-xl bg-gradient-to-br ${benefit.color} flex items-center justify-center`}
-                              whileHover={{ rotate: [0, -10, 10, 0] }}
-                              transition={{ duration: 0.5 }}
-                            >
-                              <benefit.icon className="h-6 w-6 text-white" />
-                            </motion.div>
-                            <h3 className="font-bold text-lg mb-2">{benefit.title}</h3>
-                            <p className="text-sm text-muted-foreground leading-relaxed">{benefit.desc}</p>
-                          </CardContent>
-                        </Card>
-                      </motion.div>
+                      <Card className="h-full border hover:border-primary/50 transition-colors">
+                        <CardContent className="p-4 sm:p-5 flex items-start gap-3 sm:gap-4">
+                          <div className={`h-10 w-10 sm:h-12 sm:w-12 shrink-0 rounded-lg sm:rounded-xl bg-gradient-to-br ${benefit.color} flex items-center justify-center`}>
+                            <benefit.icon className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
+                          </div>
+                          <div>
+                            <h3 className="font-bold text-base sm:text-lg mb-1">{benefit.title}</h3>
+                            <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">{benefit.desc}</p>
+                          </div>
+                        </CardContent>
+                      </Card>
                     </motion.div>
                   ))}
-                </motion.div>
+                </div>
 
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: 0.5 }}
-                >
-                  <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                    <Button className="mt-10 w-full sm:w-auto text-lg px-10 h-14 shadow-lg shadow-primary/25" size="lg" asChild>
-                      <Link to="/app">
-                        ابدأ الطلب الآن
-                        <motion.div
-                          animate={{ x: [0, 5, 0] }}
-                          transition={{ duration: 1, repeat: Infinity }}
-                        >
-                          <ArrowLeft className="h-5 w-5 mr-2" />
-                        </motion.div>
-                      </Link>
-                    </Button>
-                  </motion.div>
-                </motion.div>
+                <Button className="mt-6 sm:mt-10 w-full sm:w-auto text-base sm:text-lg px-6 sm:px-10 h-11 sm:h-14 shadow-lg shadow-primary/25" size={isMobile ? "default" : "lg"} asChild>
+                  <Link to="/app">
+                    ابدأ الطلب الآن
+                    <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
+                  </Link>
+                </Button>
               </motion.div>
             </div>
           </div>
         </section>
 
         {/* Provider Section */}
-        <section className="py-16 md:py-24 relative overflow-hidden">
-          <motion.div 
-            className="absolute -left-20 top-1/3 w-60 h-60 rounded-full bg-accent/10 blur-3xl"
-            animate={{ x: [0, -30, 0], y: [30, -30, 30] }}
-            transition={{ duration: 10, repeat: Infinity }}
-          />
+        <section className="py-10 sm:py-16 md:py-24 relative overflow-hidden">
+          {!isMobile && (
+            <motion.div 
+              className="absolute -left-20 top-1/3 w-60 h-60 rounded-full bg-accent/10 blur-3xl"
+              animate={{ x: [0, -30, 0], y: [30, -30, 30] }}
+              transition={{ duration: 10, repeat: Infinity }}
+            />
+          )}
           
           <div className="container mx-auto px-4">
-            <div className="grid lg:grid-cols-2 gap-12 items-center">
+            <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
               <motion.div
                 className="order-2 lg:order-1"
-                initial={{ opacity: 0, x: -50 }}
+                initial={{ opacity: 0, x: isMobile ? 0 : -50 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
-                transition={{ duration: 0.8 }}
+                transition={{ duration: isMobile ? 0.5 : 0.8 }}
               >
-                <motion.h2 
-                  className="text-3xl md:text-5xl font-bold mb-6"
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                >
+                <h2 className="text-2xl sm:text-3xl md:text-5xl font-bold mb-4 sm:mb-6">
                   لماذا تنضم كـ<span className="text-accent">مزود خدمة</span>؟
-                </motion.h2>
-                <motion.p 
-                  className="text-lg text-muted-foreground mb-10"
-                  initial={{ opacity: 0 }}
-                  whileInView={{ opacity: 1 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: 0.2 }}
-                >
+                </h2>
+                <p className="text-sm sm:text-lg text-muted-foreground mb-6 sm:mb-10">
                   حوّل موهبتك إلى مشروع ناجح واصل لعملاء في حيّك مباشرة
-                </motion.p>
+                </p>
                 
-                <motion.div 
-                  className="grid sm:grid-cols-2 gap-4"
-                  variants={containerVariants}
-                  initial="hidden"
-                  whileInView="visible"
-                  viewport={{ once: true }}
-                >
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   {providerBenefits.map((benefit, index) => (
                     <motion.div
                       key={index}
-                      variants={itemVariants}
-                      initial="rest"
-                      whileHover="hover"
+                      initial={{ opacity: 0, y: 20 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ delay: isMobile ? index * 0.05 : index * 0.1 }}
                     >
-                      <motion.div variants={cardHoverVariants}>
-                        <Card className="h-full border-2 hover:border-accent/50 transition-colors cursor-pointer overflow-hidden group">
-                          <CardContent className="p-5 relative">
-                            <div className={`absolute inset-0 bg-gradient-to-br ${benefit.color} opacity-0 group-hover:opacity-5 transition-opacity`} />
-                            <motion.div
-                              className={`h-12 w-12 mb-4 rounded-xl bg-gradient-to-br ${benefit.color} flex items-center justify-center`}
-                              whileHover={{ rotate: [0, -10, 10, 0] }}
-                              transition={{ duration: 0.5 }}
-                            >
-                              <benefit.icon className="h-6 w-6 text-white" />
-                            </motion.div>
-                            <h3 className="font-bold text-lg mb-2">{benefit.title}</h3>
-                            <p className="text-sm text-muted-foreground leading-relaxed">{benefit.desc}</p>
-                          </CardContent>
-                        </Card>
-                      </motion.div>
+                      <Card className="h-full border hover:border-accent/50 transition-colors">
+                        <CardContent className="p-4 sm:p-5 flex items-start gap-3 sm:gap-4">
+                          <div className={`h-10 w-10 sm:h-12 sm:w-12 shrink-0 rounded-lg sm:rounded-xl bg-gradient-to-br ${benefit.color} flex items-center justify-center`}>
+                            <benefit.icon className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
+                          </div>
+                          <div>
+                            <h3 className="font-bold text-base sm:text-lg mb-1">{benefit.title}</h3>
+                            <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">{benefit.desc}</p>
+                          </div>
+                        </CardContent>
+                      </Card>
                     </motion.div>
                   ))}
-                </motion.div>
+                </div>
 
-                <motion.div 
-                  className="flex flex-wrap gap-4 mt-10"
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: 0.5 }}
-                >
-                  <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                    <Button className="bg-accent hover:bg-accent/90 text-lg px-8 h-14 shadow-lg shadow-accent/25" size="lg" asChild>
-                      <Link to="/provider-register">
-                        <motion.div
-                          animate={{ scale: [1, 1.2, 1] }}
-                          transition={{ duration: 1.5, repeat: Infinity }}
-                        >
-                          <Zap className="h-5 w-5 ml-2" />
-                        </motion.div>
-                        ابدأ مجاناً - 30 يوم
-                      </Link>
-                    </Button>
-                  </motion.div>
-                  <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                    <Button variant="outline" size="lg" className="text-lg h-14" asChild>
-                      <Link to="/provider-login">
-                        تسجيل الدخول
-                      </Link>
-                    </Button>
-                  </motion.div>
-                </motion.div>
+                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mt-6 sm:mt-10">
+                  <Button className="bg-accent hover:bg-accent/90 text-base sm:text-lg px-6 sm:px-8 h-11 sm:h-14 shadow-lg shadow-accent/25" size={isMobile ? "default" : "lg"} asChild>
+                    <Link to="/provider-register">
+                      <Zap className="h-4 w-4 sm:h-5 sm:w-5 ml-2" />
+                      ابدأ مجاناً - 30 يوم
+                    </Link>
+                  </Button>
+                  <Button variant="outline" size={isMobile ? "default" : "lg"} className="text-base sm:text-lg h-11 sm:h-14" asChild>
+                    <Link to="/provider-login">
+                      تسجيل الدخول
+                    </Link>
+                  </Button>
+                </div>
               </motion.div>
 
               <motion.div
                 className="order-1 lg:order-2"
-                initial={{ opacity: 0, x: 50, rotateY: 15 }}
+                initial={{ opacity: 0, x: isMobile ? 0 : 50, rotateY: isMobile ? 0 : 15 }}
                 whileInView={{ opacity: 1, x: 0, rotateY: 0 }}
                 viewport={{ once: true }}
-                transition={{ duration: 0.8 }}
+                transition={{ duration: isMobile ? 0.5 : 0.8 }}
               >
-                <motion.div 
-                  className="relative rounded-3xl overflow-hidden shadow-2xl group"
-                  whileHover={{ scale: 1.02 }}
-                >
-                  <motion.img 
+                <div className="relative rounded-2xl sm:rounded-3xl overflow-hidden shadow-xl sm:shadow-2xl">
+                  <img 
                     src={heroProviderWhy} 
                     alt="تجربة المزود" 
-                    className="w-full h-auto transition-transform duration-700 group-hover:scale-110"
+                    className="w-full h-auto"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-                  <motion.div 
-                    className="absolute bottom-6 right-6 left-6"
-                    initial={{ y: 20, opacity: 0 }}
-                    whileInView={{ y: 0, opacity: 1 }}
-                    transition={{ delay: 0.3 }}
-                  >
-                    <Badge className="bg-accent text-lg px-6 py-2.5 shadow-lg">
-                      <motion.div
-                        animate={{ rotate: [0, -10, 10, 0] }}
-                        transition={{ duration: 1.5, repeat: Infinity }}
-                      >
-                        <Store className="h-5 w-5 ml-2" />
-                      </motion.div>
+                  <div className="absolute bottom-4 sm:bottom-6 right-4 sm:right-6 left-4 sm:left-6">
+                    <Badge className="bg-accent text-sm sm:text-lg px-4 sm:px-6 py-1.5 sm:py-2.5 shadow-lg">
+                      <Store className="h-4 w-4 sm:h-5 sm:w-5 ml-1.5 sm:ml-2" />
                       لمزودي الخدمات
                     </Badge>
-                  </motion.div>
+                  </div>
                   
-                  {/* Floating success badge */}
-                  <motion.div 
-                    className="absolute top-4 left-4"
-                    animate={{ y: [0, -10, 0] }}
-                    transition={{ duration: 2, repeat: Infinity, delay: 0.5 }}
-                  >
-                    <Badge variant="secondary" className="bg-white/90 text-accent shadow-lg">
-                      <TrendingUp className="h-4 w-4 ml-1" />
-                      نمو مستمر
-                    </Badge>
-                  </motion.div>
-                </motion.div>
+                  {/* Floating success badge - only on desktop */}
+                  {!isMobile && (
+                    <motion.div 
+                      className="absolute top-4 left-4"
+                      animate={{ y: [0, -10, 0] }}
+                      transition={{ duration: 2, repeat: Infinity, delay: 0.5 }}
+                    >
+                      <Badge variant="secondary" className="bg-white/90 text-accent shadow-lg">
+                        <TrendingUp className="h-4 w-4 ml-1" />
+                        نمو مستمر
+                      </Badge>
+                    </motion.div>
+                  )}
+                </div>
               </motion.div>
             </div>
           </div>
         </section>
 
         {/* Neighborhood Connection Section */}
-        <section className="py-16 md:py-24 bg-gradient-to-b from-muted/30 to-background relative overflow-hidden">
+        <section className="py-10 sm:py-16 md:py-24 bg-gradient-to-b from-muted/30 to-background relative overflow-hidden">
           <div className="container mx-auto px-4">
-            <motion.div 
-              className="text-center max-w-3xl mx-auto mb-12"
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-            >
-              <motion.h2 
-                className="text-3xl md:text-5xl font-bold mb-4"
-                initial={{ scale: 0.9 }}
-                whileInView={{ scale: 1 }}
-                viewport={{ once: true }}
-              >
+            <div className="text-center max-w-3xl mx-auto mb-8 sm:mb-12">
+              <h2 className="text-2xl sm:text-3xl md:text-5xl font-bold mb-3 sm:mb-4">
                 نربط بين <GradientText>جيران الحي</GradientText>
-              </motion.h2>
-              <p className="text-lg text-muted-foreground">
+              </h2>
+              <p className="text-sm sm:text-lg text-muted-foreground px-2">
                 منصة الحي تُنشئ شبكة تواصل بين سكان الحي الواحد، حيث يستفيد الجميع
               </p>
-            </motion.div>
+            </div>
 
             <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
+              initial={{ opacity: 0, scale: 0.95 }}
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.8 }}
+              transition={{ duration: isMobile ? 0.5 : 0.8 }}
             >
-              <motion.div 
-                className="relative rounded-3xl overflow-hidden shadow-2xl max-w-5xl mx-auto group"
-                whileHover={{ scale: 1.01 }}
-                style={{ y: y2 }}
+              <div 
+                className="relative rounded-2xl sm:rounded-3xl overflow-hidden shadow-xl sm:shadow-2xl max-w-5xl mx-auto"
               >
-                <motion.img 
+                <img 
                   src={neighborhoodConnection} 
                   alt="شبكة الحي" 
-                  className="w-full h-auto transition-transform duration-1000 group-hover:scale-105"
+                  className="w-full h-auto"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
-                <motion.div 
-                  className="absolute bottom-8 right-8 left-8 text-center"
-                  initial={{ y: 30, opacity: 0 }}
-                  whileInView={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 0.5 }}
-                >
-                  <h3 className="text-2xl md:text-3xl font-bold text-white drop-shadow-lg mb-3">
+                <div className="absolute bottom-4 sm:bottom-8 right-4 sm:right-8 left-4 sm:left-8 text-center">
+                  <h3 className="text-lg sm:text-2xl md:text-3xl font-bold text-white drop-shadow-lg mb-1 sm:mb-3">
                     كل نقطة مضيئة تمثل فرصة
                   </h3>
-                  <p className="text-white/90 drop-shadow-lg text-lg">
+                  <p className="text-white/90 drop-shadow-lg text-sm sm:text-lg">
                     مزودين محليين وعملاء متصلين في حي واحد
                   </p>
-                </motion.div>
+                </div>
                 
-                {/* Animated connection lines overlay */}
-                <motion.div 
-                  className="absolute inset-0 pointer-events-none"
-                  initial={{ opacity: 0 }}
-                  whileInView={{ opacity: 1 }}
-                  transition={{ delay: 0.8 }}
-                >
-                  <svg className="w-full h-full opacity-50">
-                    <motion.circle
-                      cx="30%"
-                      cy="40%"
-                      r="8"
-                      fill="hsl(var(--primary))"
-                      initial={{ scale: 0 }}
-                      animate={{ scale: [1, 1.5, 1], opacity: [1, 0.5, 1] }}
-                      transition={{ duration: 2, repeat: Infinity }}
-                    />
-                    <motion.circle
-                      cx="70%"
-                      cy="60%"
-                      r="8"
-                      fill="hsl(var(--accent))"
-                      initial={{ scale: 0 }}
-                      animate={{ scale: [1, 1.5, 1], opacity: [1, 0.5, 1] }}
-                      transition={{ duration: 2, repeat: Infinity, delay: 0.5 }}
-                    />
-                  </svg>
-                </motion.div>
-              </motion.div>
+                {/* Animated connection lines overlay - only on desktop */}
+                {!isMobile && (
+                  <motion.div 
+                    className="absolute inset-0 pointer-events-none"
+                    initial={{ opacity: 0 }}
+                    whileInView={{ opacity: 1 }}
+                    transition={{ delay: 0.8 }}
+                  >
+                    <svg className="w-full h-full opacity-50">
+                      <motion.circle
+                        cx="30%"
+                        cy="40%"
+                        r="8"
+                        fill="hsl(var(--primary))"
+                        initial={{ scale: 0 }}
+                        animate={{ scale: [1, 1.5, 1], opacity: [1, 0.5, 1] }}
+                        transition={{ duration: 2, repeat: Infinity }}
+                      />
+                      <motion.circle
+                        cx="70%"
+                        cy="60%"
+                        r="8"
+                        fill="hsl(var(--accent))"
+                        initial={{ scale: 0 }}
+                        animate={{ scale: [1, 1.5, 1], opacity: [1, 0.5, 1] }}
+                        transition={{ duration: 2, repeat: Infinity, delay: 0.5 }}
+                      />
+                    </svg>
+                  </motion.div>
+                )}
+              </div>
             </motion.div>
 
-            <motion.div 
-              className="grid md:grid-cols-3 gap-6 mt-12 max-w-4xl mx-auto"
-              variants={containerVariants}
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true }}
-            >
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mt-8 sm:mt-12 max-w-4xl mx-auto">
               {[
                 { icon: Home, title: 'محلي 100%', desc: 'خدمات من جيرانك في نفس الحي', color: 'primary' },
                 { icon: MessageCircle, title: 'تواصل مباشر', desc: 'تفاهم سريع وخدمة شخصية', color: 'accent' },
                 { icon: Wallet, title: 'اقتصاد الحي', desc: 'أموالك تبقى في مجتمعك', color: 'green-500' },
               ].map((item, index) => (
-                <motion.div key={index} variants={itemVariants}>
-                  <motion.div
-                    whileHover={{ y: -10, scale: 1.02 }}
-                    transition={{ type: 'spring', stiffness: 300 }}
-                  >
-                    <Card className={`text-center p-8 hover:border-${item.color}/50 transition-all h-full`}>
-                      <motion.div
-                        className={`h-16 w-16 mx-auto mb-4 rounded-2xl bg-${item.color}/10 flex items-center justify-center`}
-                        whileHover={{ rotate: 360 }}
-                        transition={{ duration: 0.6 }}
-                      >
-                        <item.icon className={`h-8 w-8 text-${item.color}`} />
-                      </motion.div>
-                      <h3 className="font-bold text-xl mb-2">{item.title}</h3>
-                      <p className="text-muted-foreground">{item.desc}</p>
-                    </Card>
-                  </motion.div>
+                <motion.div 
+                  key={index}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: index * 0.1 }}
+                >
+                  <Card className="text-center p-5 sm:p-8 h-full">
+                    <div className={`h-12 w-12 sm:h-16 sm:w-16 mx-auto mb-3 sm:mb-4 rounded-xl sm:rounded-2xl bg-${item.color}/10 flex items-center justify-center`}>
+                      <item.icon className={`h-6 w-6 sm:h-8 sm:w-8 text-${item.color}`} />
+                    </div>
+                    <h3 className="font-bold text-lg sm:text-xl mb-1 sm:mb-2">{item.title}</h3>
+                    <p className="text-sm sm:text-base text-muted-foreground">{item.desc}</p>
+                  </Card>
                 </motion.div>
               ))}
-            </motion.div>
+            </div>
           </div>
         </section>
 
         {/* CTA Section */}
-        <section className="py-20 md:py-32 relative overflow-hidden">
-          <motion.div 
-            className="absolute inset-0 bg-gradient-to-br from-primary/10 via-accent/5 to-primary/10"
-            animate={{ 
-              background: [
-                'linear-gradient(135deg, hsl(var(--primary)/0.1), hsl(var(--accent)/0.05), hsl(var(--primary)/0.1))',
-                'linear-gradient(135deg, hsl(var(--accent)/0.1), hsl(var(--primary)/0.05), hsl(var(--accent)/0.1))',
-                'linear-gradient(135deg, hsl(var(--primary)/0.1), hsl(var(--accent)/0.05), hsl(var(--primary)/0.1))'
-              ]
-            }}
-            transition={{ duration: 5, repeat: Infinity }}
-          />
+        <section className="py-12 sm:py-20 md:py-32 relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-accent/5 to-primary/10" />
           
-          {/* Animated shapes */}
-          <motion.div 
-            className="absolute top-10 left-10 w-24 h-24 border-2 border-primary/20 rounded-full"
-            animate={{ rotate: 360, scale: [1, 1.1, 1] }}
-            transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
-          />
-          <motion.div 
-            className="absolute bottom-10 right-10 w-32 h-32 border-2 border-accent/20 rounded-full"
-            animate={{ rotate: -360, scale: [1.1, 1, 1.1] }}
-            transition={{ duration: 25, repeat: Infinity, ease: 'linear' }}
-          />
+          {/* Animated shapes - only on desktop */}
+          {!isMobile && (
+            <>
+              <motion.div 
+                className="absolute top-10 left-10 w-24 h-24 border-2 border-primary/20 rounded-full"
+                animate={{ rotate: 360, scale: [1, 1.1, 1] }}
+                transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
+              />
+              <motion.div 
+                className="absolute bottom-10 right-10 w-32 h-32 border-2 border-accent/20 rounded-full"
+                animate={{ rotate: -360, scale: [1.1, 1, 1.1] }}
+                transition={{ duration: 25, repeat: Infinity, ease: 'linear' }}
+              />
+            </>
+          )}
           
           <div className="container mx-auto px-4 relative z-10">
             <motion.div 
               className="text-center max-w-2xl mx-auto"
-              initial={{ opacity: 0, y: 30 }}
+              initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
             >
-              <motion.h2 
-                className="text-4xl md:text-6xl font-bold mb-8"
-                initial={{ scale: 0.9 }}
-                whileInView={{ scale: 1 }}
-                viewport={{ once: true }}
-              >
+              <h2 className="text-2xl sm:text-4xl md:text-6xl font-bold mb-4 sm:mb-8">
                 انضم لمجتمع <GradientText>الحي</GradientText> اليوم
-              </motion.h2>
-              <motion.p 
-                className="text-xl text-muted-foreground mb-10"
-                initial={{ opacity: 0 }}
-                whileInView={{ opacity: 1 }}
-                transition={{ delay: 0.3 }}
-              >
+              </h2>
+              <p className="text-sm sm:text-xl text-muted-foreground mb-6 sm:mb-10 px-2">
                 سواء كنت تبحث عن خدمات محلية أو تريد بدء مشروعك، الحي هو مكانك
-              </motion.p>
-              <motion.div 
-                className="flex flex-wrap justify-center gap-4"
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.5 }}
-              >
-                <motion.div 
-                  whileHover={{ scale: 1.05, y: -3 }} 
-                  whileTap={{ scale: 0.95 }}
-                >
-                  <Button size="lg" className="text-xl px-10 h-16 shadow-2xl shadow-primary/30" asChild>
-                    <Link to="/app">
-                      <motion.div
-                        animate={{ rotate: [0, -10, 10, 0] }}
-                        transition={{ duration: 2, repeat: Infinity }}
-                      >
-                        <ShoppingBag className="h-6 w-6 ml-2" />
-                      </motion.div>
-                      تصفح الخدمات
-                    </Link>
-                  </Button>
-                </motion.div>
-                <motion.div 
-                  whileHover={{ scale: 1.05, y: -3 }} 
-                  whileTap={{ scale: 0.95 }}
-                >
-                  <Button size="lg" variant="outline" className="text-xl px-10 h-16 border-accent text-accent hover:bg-accent hover:text-accent-foreground" asChild>
-                    <Link to="/provider-register">
-                      <motion.div
-                        animate={{ scale: [1, 1.2, 1] }}
-                        transition={{ duration: 1.5, repeat: Infinity }}
-                      >
-                        <Zap className="h-6 w-6 ml-2" />
-                      </motion.div>
-                      سجل كمزود
-                    </Link>
-                  </Button>
-                </motion.div>
-              </motion.div>
+              </p>
+              <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4 px-4 sm:px-0">
+                <Button size={isMobile ? "default" : "lg"} className="text-base sm:text-xl px-6 sm:px-10 h-12 sm:h-16 shadow-2xl shadow-primary/30" asChild>
+                  <Link to="/app">
+                    <ShoppingBag className="h-5 w-5 sm:h-6 sm:w-6 ml-2" />
+                    تصفح الخدمات
+                  </Link>
+                </Button>
+                <Button size={isMobile ? "default" : "lg"} variant="outline" className="text-base sm:text-xl px-6 sm:px-10 h-12 sm:h-16 border-accent text-accent hover:bg-accent hover:text-accent-foreground" asChild>
+                  <Link to="/provider-register">
+                    <Zap className="h-5 w-5 sm:h-6 sm:w-6 ml-2" />
+                    سجل كمزود
+                  </Link>
+                </Button>
+              </div>
             </motion.div>
           </div>
         </section>
 
         {/* Trust Badges */}
-        <section className="py-8 bg-muted/30 border-t">
+        <section className="py-6 sm:py-8 bg-muted/30 border-t">
           <div className="container mx-auto px-4">
-            <motion.div 
-              className="flex flex-wrap justify-center gap-8 md:gap-12 text-sm"
-              variants={containerVariants}
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true }}
-            >
+            <div className="grid grid-cols-2 sm:flex sm:flex-wrap justify-center gap-4 sm:gap-8 md:gap-12 text-xs sm:text-sm">
               {[
                 { icon: Shield, text: 'دفع آمن 100%', color: 'text-green-500' },
                 { icon: Truck, text: 'توصيل سريع', color: 'text-primary' },
-                { icon: CheckCircle2, text: '30 يوم تجربة مجانية', color: 'text-blue-500' },
-                { icon: Star, text: '+50K عميل سعيد', color: 'text-yellow-500' },
+                { icon: CheckCircle2, text: '30 يوم تجربة', color: 'text-blue-500' },
+                { icon: Star, text: '+50K عميل', color: 'text-yellow-500' },
               ].map((badge, index) => (
-                <motion.div 
+                <div 
                   key={index}
-                  variants={itemVariants}
-                  className="flex items-center gap-2 text-muted-foreground"
-                  whileHover={{ scale: 1.1, color: 'hsl(var(--foreground))' }}
+                  className="flex items-center justify-center gap-1.5 sm:gap-2 text-muted-foreground"
                 >
-                  <motion.div
-                    animate={{ rotate: [0, 10, -10, 0] }}
-                    transition={{ duration: 2, repeat: Infinity, delay: index * 0.3 }}
-                  >
-                    <badge.icon className={`h-5 w-5 ${badge.color}`} />
-                  </motion.div>
+                  <badge.icon className={`h-4 w-4 sm:h-5 sm:w-5 ${badge.color}`} />
                   <span>{badge.text}</span>
-                </motion.div>
+                </div>
               ))}
-            </motion.div>
+            </div>
           </div>
         </section>
 
         {/* Footer */}
-        <footer className="py-8 border-t">
+        <footer className="py-6 sm:py-8 border-t pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
           <div className="container mx-auto px-4 text-center">
-            <motion.div 
-              className="flex flex-wrap items-center justify-center gap-4 text-sm text-muted-foreground mb-4"
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
-              viewport={{ once: true }}
-            >
+            <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 text-xs sm:text-sm text-muted-foreground mb-3 sm:mb-4">
               {['الرئيسية', 'الشروط', 'الخصوصية', 'الأسئلة', 'اتصل بنا'].map((item, index) => {
                 const paths = ['/', '/terms', '/privacy', '/faq', '/contact'];
                 return (
-                  <motion.div key={item} whileHover={{ scale: 1.1, y: -2 }}>
-                    <Link to={paths[index]} className="hover:text-primary transition-colors">
-                      {item}
-                    </Link>
-                  </motion.div>
+                  <Link key={item} to={paths[index]} className="hover:text-primary transition-colors">
+                    {item}
+                  </Link>
                 );
               })}
-            </motion.div>
-            <motion.p 
-              className="text-xs text-muted-foreground"
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
-              transition={{ delay: 0.3 }}
-            >
+            </div>
+            <p className="text-xs text-muted-foreground">
               © 2026 منصة الحي. جميع الحقوق محفوظة.
-            </motion.p>
+            </p>
           </div>
         </footer>
       </div>
