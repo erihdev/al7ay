@@ -6,6 +6,27 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Convert base64url to Uint8Array
+function base64UrlToUint8Array(base64Url: string): Uint8Array {
+  const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+  const padding = '='.repeat((4 - base64.length % 4) % 4);
+  const binary = atob(base64 + padding);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return bytes;
+}
+
+// Convert Uint8Array to base64url
+function uint8ArrayToBase64Url(uint8Array: Uint8Array): string {
+  let binary = '';
+  for (let i = 0; i < uint8Array.length; i++) {
+    binary += String.fromCharCode(uint8Array[i]);
+  }
+  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -69,41 +90,93 @@ serve(async (req) => {
       data: { url: url || '/' },
     });
 
-    // Dynamic import web-push
-    const webpush = await import("https://esm.sh/web-push@3.6.7?target=deno");
-    
-    webpush.setVapidDetails(
-      'mailto:admin@al7ay.lovable.app',
-      vapidPublicKey,
-      vapidPrivateKey
-    );
+    // Create simple JWT for VAPID
+    const createSimpleJwt = async (audience: string): Promise<string> => {
+      const header = { alg: 'ES256', typ: 'JWT' };
+      const now = Math.floor(Date.now() / 1000);
+      const claims = {
+        aud: audience,
+        exp: now + 12 * 60 * 60,
+        sub: 'mailto:admin@al7ay.lovable.app',
+      };
+
+      const headerB64 = uint8ArrayToBase64Url(new TextEncoder().encode(JSON.stringify(header)));
+      const claimsB64 = uint8ArrayToBase64Url(new TextEncoder().encode(JSON.stringify(claims)));
+      const unsignedToken = `${headerB64}.${claimsB64}`;
+
+      try {
+        // Convert private key from base64url to raw bytes
+        const privateKeyBytes = base64UrlToUint8Array(vapidPrivateKey);
+        
+        // Import as raw P-256 private key (32 bytes)
+        const keyData = await crypto.subtle.importKey(
+          'raw',
+          privateKeyBytes.buffer as ArrayBuffer,
+          { name: 'ECDSA', namedCurve: 'P-256' },
+          false,
+          ['sign']
+        );
+
+        const signature = await crypto.subtle.sign(
+          { name: 'ECDSA', hash: 'SHA-256' },
+          keyData,
+          new TextEncoder().encode(unsignedToken)
+        );
+
+        const signatureB64 = uint8ArrayToBase64Url(new Uint8Array(signature));
+        return `${unsignedToken}.${signatureB64}`;
+      } catch (e) {
+        console.error('JWT signing failed:', e);
+        throw e;
+      }
+    };
 
     // Send to all user's subscriptions
     const results = await Promise.all(
       subscriptions.map(async (sub: { id: string; endpoint: string; p256dh: string; auth: string }) => {
-        const pushSubscription = {
-          endpoint: sub.endpoint,
-          keys: {
-            p256dh: sub.p256dh,
-            auth: sub.auth,
-          },
-        };
-
         try {
           console.log('📤 Sending to:', sub.endpoint.substring(0, 60) + '...');
-          await webpush.sendNotification(pushSubscription, payload);
-          console.log('✅ Push sent successfully');
-          return { success: true, subscriptionId: sub.id };
-        } catch (err: unknown) {
-          const error = err as { statusCode?: number; body?: string; message?: string };
-          console.error('❌ Push failed:', error.statusCode, error.body || error.message);
           
-          if (error.statusCode === 410 || error.statusCode === 404) {
-            console.log('🗑️ Removing expired subscription:', sub.id);
-            await supabase.from('push_subscriptions').delete().eq('id', sub.id);
-            return { success: false, subscriptionId: sub.id, removed: true };
+          const endpointUrl = new URL(sub.endpoint);
+          const audience = endpointUrl.origin;
+          
+          let authHeader = '';
+          try {
+            const jwt = await createSimpleJwt(audience);
+            authHeader = `vapid t=${jwt}, k=${vapidPublicKey}`;
+          } catch (vapidError) {
+            console.error('⚠️ VAPID auth failed, trying without:', vapidError);
           }
-          
+
+          // Send push notification
+          const response = await fetch(sub.endpoint, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'TTL': '86400',
+              ...(authHeader ? { 'Authorization': authHeader } : {}),
+            },
+            body: payload,
+          });
+
+          if (response.ok || response.status === 201) {
+            console.log('✅ Push sent successfully');
+            return { success: true, subscriptionId: sub.id };
+          } else {
+            const errorText = await response.text();
+            console.error('❌ Push failed:', response.status, errorText);
+            
+            if (response.status === 410 || response.status === 404) {
+              console.log('🗑️ Removing expired subscription:', sub.id);
+              await supabase.from('push_subscriptions').delete().eq('id', sub.id);
+              return { success: false, subscriptionId: sub.id, removed: true };
+            }
+            
+            return { success: false, subscriptionId: sub.id, error: `${response.status}: ${errorText}` };
+          }
+        } catch (err: unknown) {
+          const error = err as { message?: string };
+          console.error('❌ Push error:', error.message);
           return { success: false, subscriptionId: sub.id, error: error.message };
         }
       })
