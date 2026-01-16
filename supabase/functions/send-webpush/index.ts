@@ -28,6 +28,153 @@ function uint8ArrayToBase64Url(bytes: Uint8Array): string {
   return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 
+// Concatenate Uint8Arrays
+function concatUint8Arrays(...arrays: Uint8Array[]): Uint8Array {
+  const totalLength = arrays.reduce((acc, arr) => acc + arr.length, 0);
+  const result = new Uint8Array(totalLength);
+  let offset = 0;
+  for (const arr of arrays) {
+    result.set(arr, offset);
+    offset += arr.length;
+  }
+  return result;
+}
+
+// HKDF implementation using Web Crypto
+async function hkdf(
+  salt: Uint8Array,
+  ikm: Uint8Array,
+  info: Uint8Array,
+  length: number
+): Promise<Uint8Array> {
+  const key = await crypto.subtle.importKey(
+    'raw',
+    ikm.buffer as ArrayBuffer,
+    { name: 'HKDF' },
+    false,
+    ['deriveBits']
+  );
+
+  const bits = await crypto.subtle.deriveBits(
+    {
+      name: 'HKDF',
+      hash: 'SHA-256',
+      salt: salt.buffer as ArrayBuffer,
+      info: info.buffer as ArrayBuffer,
+    },
+    key,
+    length * 8
+  );
+
+  return new Uint8Array(bits);
+}
+
+// Create info for HKDF
+function createInfo(type: string, clientPublicKey: Uint8Array, serverPublicKey: Uint8Array): Uint8Array {
+  const encoder = new TextEncoder();
+  const typeBytes = encoder.encode(type);
+  const nul = new Uint8Array([0]);
+  
+  const header = encoder.encode('Content-Encoding: ');
+  const p256 = encoder.encode('P-256');
+  
+  const clientLen = new Uint8Array([0, clientPublicKey.length]);
+  const serverLen = new Uint8Array([0, serverPublicKey.length]);
+  
+  return concatUint8Arrays(
+    header, typeBytes, nul, p256, nul,
+    clientLen, clientPublicKey,
+    serverLen, serverPublicKey
+  );
+}
+
+// Encrypt payload using aes128gcm
+async function encryptPayload(
+  payload: string,
+  clientPublicKeyBase64: string,
+  authSecretBase64: string
+): Promise<{ encrypted: Uint8Array; serverPublicKey: Uint8Array }> {
+  const encoder = new TextEncoder();
+  const payloadBytes = encoder.encode(payload);
+  
+  const clientPublicKey = base64UrlToUint8Array(clientPublicKeyBase64);
+  const authSecret = base64UrlToUint8Array(authSecretBase64);
+  
+  // Generate server's ECDH key pair
+  const serverKeyPair = await crypto.subtle.generateKey(
+    { name: 'ECDH', namedCurve: 'P-256' },
+    true,
+    ['deriveBits']
+  );
+  
+  const serverPublicKeyRaw = await crypto.subtle.exportKey('raw', serverKeyPair.publicKey);
+  const serverPublicKey = new Uint8Array(serverPublicKeyRaw);
+  
+  // Import client's public key
+  const clientKey = await crypto.subtle.importKey(
+    'raw',
+    clientPublicKey.buffer as ArrayBuffer,
+    { name: 'ECDH', namedCurve: 'P-256' },
+    false,
+    []
+  );
+  
+  // Derive shared secret using ECDH
+  const sharedSecretBits = await crypto.subtle.deriveBits(
+    { name: 'ECDH', public: clientKey },
+    serverKeyPair.privateKey,
+    256
+  );
+  const sharedSecret = new Uint8Array(sharedSecretBits);
+  
+  // Generate random salt
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  
+  // Derive PRK using HKDF with auth secret
+  const authInfo = encoder.encode('Content-Encoding: auth\0');
+  const prk = await hkdf(authSecret, sharedSecret, authInfo, 32);
+  
+  // Derive content encryption key
+  const cekInfo = createInfo('aes128gcm', clientPublicKey, serverPublicKey);
+  const contentEncryptionKey = await hkdf(salt, prk, cekInfo, 16);
+  
+  // Derive nonce
+  const nonceInfo = createInfo('nonce', clientPublicKey, serverPublicKey);
+  const nonce = await hkdf(salt, prk, nonceInfo, 12);
+  
+  // Add padding delimiter (0x02) to payload
+  const paddedPayload = concatUint8Arrays(payloadBytes, new Uint8Array([2]));
+  
+  // Encrypt using AES-GCM
+  const key = await crypto.subtle.importKey(
+    'raw',
+    contentEncryptionKey.buffer as ArrayBuffer,
+    { name: 'AES-GCM' },
+    false,
+    ['encrypt']
+  );
+  
+  const ciphertext = await crypto.subtle.encrypt(
+    { name: 'AES-GCM', iv: nonce.buffer as ArrayBuffer },
+    key,
+    paddedPayload.buffer as ArrayBuffer
+  );
+  
+  // Build aes128gcm header: salt(16) + rs(4) + idlen(1) + keyid(65)
+  const rs = new Uint8Array([0, 0, 16, 0]); // record size = 4096
+  const idlen = new Uint8Array([serverPublicKey.length]);
+  
+  const encrypted = concatUint8Arrays(
+    salt,
+    rs,
+    idlen,
+    serverPublicKey,
+    new Uint8Array(ciphertext)
+  );
+  
+  return { encrypted, serverPublicKey };
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -93,43 +240,22 @@ serve(async (req) => {
 
     // Create VAPID JWT using jose with JWK
     const createVapidJwt = async (audience: string): Promise<string> => {
-      try {
-        // Get raw bytes from base64url keys
-        const publicKeyBytes = base64UrlToUint8Array(vapidPublicKey);
-        const privateKeyBytes = base64UrlToUint8Array(vapidPrivateKey);
+      const publicKeyBytes = base64UrlToUint8Array(vapidPublicKey);
+      const privateKeyBytes = base64UrlToUint8Array(vapidPrivateKey);
 
-        console.log(`📏 Key lengths - Public: ${publicKeyBytes.length}, Private: ${privateKeyBytes.length}`);
+      const x = uint8ArrayToBase64Url(publicKeyBytes.slice(1, 33));
+      const y = uint8ArrayToBase64Url(publicKeyBytes.slice(33, 65));
+      const d = uint8ArrayToBase64Url(privateKeyBytes);
 
-        // Extract x and y coordinates from public key (skip the first byte which is 0x04)
-        const x = uint8ArrayToBase64Url(publicKeyBytes.slice(1, 33));
-        const y = uint8ArrayToBase64Url(publicKeyBytes.slice(33, 65));
-        const d = uint8ArrayToBase64Url(privateKeyBytes);
+      const jwk = { kty: 'EC', crv: 'P-256', x, y, d };
+      const privateKey = await importJWK(jwk, 'ES256');
 
-        // Create JWK for EC P-256 private key
-        const jwk = {
-          kty: 'EC',
-          crv: 'P-256',
-          x: x,
-          y: y,
-          d: d,
-        };
-
-        console.log('🔑 Importing JWK...');
-        const privateKey = await importJWK(jwk, 'ES256');
-
-        const jwt = await new SignJWT({})
-          .setProtectedHeader({ alg: 'ES256', typ: 'JWT' })
-          .setAudience(audience)
-          .setSubject('mailto:admin@al7ay.lovable.app')
-          .setExpirationTime('12h')
-          .sign(privateKey);
-
-        console.log('✅ JWT created successfully');
-        return jwt;
-      } catch (e) {
-        console.error('JWT creation failed:', e);
-        throw e;
-      }
+      return await new SignJWT({})
+        .setProtectedHeader({ alg: 'ES256', typ: 'JWT' })
+        .setAudience(audience)
+        .setSubject('mailto:admin@al7ay.lovable.app')
+        .setExpirationTime('12h')
+        .sign(privateKey);
     };
 
     // Send to all user's subscriptions
@@ -141,23 +267,26 @@ serve(async (req) => {
           const endpointUrl = new URL(sub.endpoint);
           const audience = endpointUrl.origin;
           
-          let authHeader = '';
-          try {
-            const jwt = await createVapidJwt(audience);
-            authHeader = `vapid t=${jwt}, k=${vapidPublicKey}`;
-          } catch (vapidError) {
-            console.error('⚠️ VAPID auth failed:', vapidError);
-          }
+          // Create VAPID JWT
+          const jwt = await createVapidJwt(audience);
+          const authHeader = `vapid t=${jwt}, k=${vapidPublicKey}`;
+          
+          // Encrypt the payload
+          console.log('🔐 Encrypting payload...');
+          const { encrypted } = await encryptPayload(payload, sub.p256dh, sub.auth);
+          console.log('✅ Payload encrypted, size:', encrypted.length);
 
           // Send push notification
           const response = await fetch(sub.endpoint, {
             method: 'POST',
             headers: {
-              'Content-Type': 'application/json',
+              'Content-Type': 'application/octet-stream',
+              'Content-Encoding': 'aes128gcm',
+              'Content-Length': encrypted.length.toString(),
               'TTL': '86400',
-              ...(authHeader ? { 'Authorization': authHeader } : {}),
+              'Authorization': authHeader,
             },
-            body: payload,
+            body: encrypted.buffer as ArrayBuffer,
           });
 
           if (response.ok || response.status === 201) {
