@@ -12,7 +12,7 @@ export function useAutoNotificationPermission(options: UseAutoNotificationPermis
   const hasRequested = useRef(false);
   const hasRegisteredAttributes = useRef(false);
 
-  // Register Aimtell attributes for targeted notifications
+  // Register Aimtell attributes AND alias for targeted notifications
   const registerAimtellAttributes = useCallback(() => {
     if (hasRegisteredAttributes.current) return;
     
@@ -36,9 +36,19 @@ export function useAutoNotificationPermission(options: UseAutoNotificationPermis
     }
 
     try {
+      // Register attributes for segmentation
       window._at.track('attribute', attributes);
+      
+      // CRITICAL: Also set alias for each attribute for direct targeting
+      // Aimtell uses alias format: "attribute_name==value" for push API targeting
+      for (const [key, value] of Object.entries(attributes)) {
+        const aliasValue = `${key}==${value}`;
+        window._at.track('alias', aliasValue);
+        console.log('✅ Aimtell alias registered:', aliasValue);
+      }
+      
       hasRegisteredAttributes.current = true;
-      console.log('✅ Aimtell attributes registered successfully:', attributes);
+      console.log('✅ Aimtell attributes and aliases registered successfully:', attributes);
       return true;
     } catch (error) {
       console.error('Error registering Aimtell attributes:', error);
