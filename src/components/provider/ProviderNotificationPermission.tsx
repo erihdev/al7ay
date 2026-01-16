@@ -15,6 +15,7 @@ export function ProviderNotificationPermission({ providerId }: ProviderNotificat
   const [showInstructions, setShowInstructions] = useState(true);
   const [isRetrying, setIsRetrying] = useState(false);
   const [isRegistered, setIsRegistered] = useState(false);
+  const [registrationTimedOut, setRegistrationTimedOut] = useState(false);
   const hasRegistered = useRef(false);
 
   useEffect(() => {
@@ -111,12 +112,13 @@ export function ProviderNotificationPermission({ providerId }: ProviderNotificat
     // Reset registration state on every page load
     hasRegistered.current = false;
     setIsRegistered(false);
+    setRegistrationTimedOut(false);
 
     const registerWithRetries = async () => {
       console.log('🔄 Starting Aimtell registration for provider:', providerId);
       
       // Try multiple times as SDK might not be ready immediately
-      for (let attempt = 0; attempt < 15; attempt++) {
+      for (let attempt = 0; attempt < 10; attempt++) {
         if (hasRegistered.current) {
           console.log('✅ Registration confirmed, stopping retries');
           break;
@@ -133,14 +135,30 @@ export function ProviderNotificationPermission({ providerId }: ProviderNotificat
         }
         
         console.log(`Attempt ${attempt + 1} failed, waiting before retry...`);
-        // Wait before next attempt - shorter intervals at first
-        await new Promise(resolve => setTimeout(resolve, attempt < 5 ? 1000 : 2000));
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+      
+      // After all attempts, if still not registered, timeout the loading state
+      if (!hasRegistered.current) {
+        console.log('⚠️ Registration timed out, SDK may not be available');
+        setRegistrationTimedOut(true);
       }
     };
 
     // Start registration after a short delay to let Aimtell SDK load
     const timer = setTimeout(registerWithRetries, 1500);
-    return () => clearTimeout(timer);
+    
+    // Also set a maximum timeout to avoid infinite loading
+    const maxTimeout = setTimeout(() => {
+      if (!hasRegistered.current) {
+        setRegistrationTimedOut(true);
+      }
+    }, 15000);
+    
+    return () => {
+      clearTimeout(timer);
+      clearTimeout(maxTimeout);
+    };
   }, [permissionState, providerId]);
 
   // Periodic retries to ensure registration
@@ -169,8 +187,34 @@ export function ProviderNotificationPermission({ providerId }: ProviderNotificat
 
   // Show success state briefly when permission is granted
   if (permissionState === 'granted') {
-    // Still try to register if not yet done
-    if (!isRegistered && providerId) {
+    // If registration timed out, show warning but don't block
+    if (registrationTimedOut && !isRegistered) {
+      return (
+        <Card className="bg-amber-500/10 border-amber-500/20 mb-4">
+          <CardContent className="p-3 text-center">
+            <Bell className="h-6 w-6 text-amber-500 mx-auto mb-1.5" />
+            <h3 className="font-bold font-arabic text-sm text-foreground mb-0.5">
+              الإشعارات مفعلة
+            </h3>
+            <p className="text-xs text-muted-foreground font-arabic mb-2">
+              قد لا تصلك إشعارات الخلفية - جرب إعادة تحميل الصفحة
+            </p>
+            <Button
+              onClick={() => window.location.reload()}
+              variant="outline"
+              size="sm"
+              className="font-arabic h-7 text-xs"
+            >
+              <RefreshCw className="h-3 w-3 ml-1.5" />
+              إعادة تحميل
+            </Button>
+          </CardContent>
+        </Card>
+      );
+    }
+    
+    // Still try to register if not yet done - but with max time
+    if (!isRegistered && providerId && !registrationTimedOut) {
       return (
         <Card className="bg-amber-500/10 border-amber-500/20 mb-4">
           <CardContent className="p-3 text-center">
