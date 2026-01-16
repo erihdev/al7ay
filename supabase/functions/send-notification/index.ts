@@ -15,7 +15,7 @@ const statusMessages: Record<string, string> = {
   cancelled: 'تم إلغاء طلبك ❌',
 };
 
-// Send Aimtell push notification using attributes for targeting
+// Send Aimtell push notification using alias for targeting
 async function sendAimtellNotification(
   title: string,
   body: string,
@@ -31,7 +31,16 @@ async function sendAimtellNotification(
   }
 
   try {
-    // Build payload with attributes for targeted delivery
+    // Build alias string for targeting specific subscribers
+    // Aimtell requires alias in format: "attribute_name==value"
+    let alias: string | undefined;
+    if (attributes && Object.keys(attributes).length > 0) {
+      // Use the first attribute as alias for targeting
+      const [key, value] = Object.entries(attributes)[0];
+      alias = `${key}==${value}`;
+    }
+
+    // Build payload with alias for targeted delivery
     const payload: Record<string, any> = {
       idSite: siteId,
       title: title,
@@ -41,9 +50,9 @@ async function sendAimtellNotification(
       icon: 'https://al7ay.lovable.app/icons/icon-192.png',
     };
     
-    // Add attributes for targeting specific subscribers
-    if (attributes && Object.keys(attributes).length > 0) {
-      payload.attributes = attributes;
+    // Add alias for targeting specific subscribers (Aimtell requirement)
+    if (alias) {
+      payload.alias = alias;
     }
     
     console.log('Sending Aimtell notification with payload:', JSON.stringify(payload));
@@ -61,34 +70,22 @@ async function sendAimtellNotification(
     const responseText = await response.text();
     console.log('Aimtell API response:', response.status, responseText);
     
-    // If X-Authorization-Api-Key fails, try X-Authorization header
-    if (!response.ok || responseText.includes('Missing token')) {
-      console.log('Trying X-Authorization header...');
-      
-      const retryResponse = await fetch('https://api.aimtell.com/prod/push', {
-        method: 'POST',
-        headers: {
-          'X-Authorization': apiKey,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      });
-      
-      const retryText = await retryResponse.text();
-      console.log('X-Authorization response:', retryResponse.status, retryText);
-      
-      if (retryResponse.ok && !retryText.includes('Missing token')) {
-        console.log('Aimtell notification sent with X-Authorization. Response:', retryText);
+    // Check if request was successful
+    if (response.ok) {
+      try {
+        const jsonResponse = JSON.parse(responseText);
+        if (jsonResponse.result === 'success') {
+          console.log('Aimtell notification sent successfully');
+          return true;
+        } else {
+          console.error('Aimtell API returned error:', jsonResponse);
+          return false;
+        }
+      } catch {
+        // If not JSON, just check HTTP status
+        console.log('Aimtell notification sent (non-JSON response)');
         return true;
-      } else {
-        console.error('Aimtell API error:', retryResponse.status, retryText);
-        return false;
       }
-    }
-    
-    if (response.ok && !responseText.includes('Missing token')) {
-      console.log('Aimtell notification sent successfully. Response:', responseText);
-      return true;
     } else {
       console.error('Aimtell API error:', response.status, responseText);
       return false;
