@@ -212,41 +212,41 @@ const Index = () => {
         <FloatingParticles count={12} />
         <Header />
         
-        <main className="container mx-auto px-4 pb-24 pt-4 space-y-6">
+        <main className="container mx-auto px-3 pb-20 pt-3 space-y-4">
           {/* Welcome Section */}
           <motion.div 
             variants={fadeInUp}
-            className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary/20 via-primary/10 to-transparent p-6"
+            className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/20 via-primary/10 to-transparent p-4"
           >
-            <div className="absolute top-0 left-0 w-32 h-32 bg-primary/10 rounded-full blur-3xl" />
-            <div className="absolute bottom-0 right-0 w-24 h-24 bg-primary/5 rounded-full blur-2xl" />
+            <div className="absolute top-0 left-0 w-24 h-24 bg-primary/10 rounded-full blur-3xl" />
+            <div className="absolute bottom-0 right-0 w-20 h-20 bg-primary/5 rounded-full blur-2xl" />
             <div className="relative z-10">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="bg-primary/20 p-3 rounded-2xl">
-                  <Store className="h-7 w-7 text-primary" />
+              <div className="flex items-center gap-2 mb-2">
+                <div className="bg-primary/20 p-2 rounded-xl">
+                  <Store className="h-5 w-5 text-primary" />
                 </div>
                 <div>
-                  <h1 className="text-xl font-bold">مرحباً بك في الحي! 👋</h1>
-                  <p className="text-sm text-muted-foreground">اكتشف مقدمي الخدمات القريبين منك</p>
+                  <h1 className="text-base font-bold">مرحباً بك في الحي! 👋</h1>
+                  <p className="text-xs text-muted-foreground">اكتشف مقدمي الخدمات القريبين منك</p>
                 </div>
               </div>
               
               {/* Quick Stats */}
-              <div className="grid grid-cols-3 gap-2 mt-4">
-                <div className="bg-background/60 backdrop-blur-sm rounded-xl p-3 text-center">
-                  <Store className="h-5 w-5 mx-auto mb-1 text-primary" />
-                  <p className="text-xs text-muted-foreground">مقدم خدمة</p>
-                  <p className="font-bold text-sm">{providers?.length || 0}</p>
+              <div className="grid grid-cols-3 gap-2 mt-3">
+                <div className="bg-background/60 backdrop-blur-sm rounded-lg p-2 text-center">
+                  <Store className="h-4 w-4 mx-auto mb-0.5 text-primary" />
+                  <p className="text-[10px] text-muted-foreground">مقدم خدمة</p>
+                  <p className="font-bold text-xs">{providers?.length || 0}</p>
                 </div>
-                <div className="bg-background/60 backdrop-blur-sm rounded-xl p-3 text-center">
-                  <Sparkles className="h-5 w-5 mx-auto mb-1 text-amber-500" />
-                  <p className="text-xs text-muted-foreground">موثق</p>
-                  <p className="font-bold text-sm">{providers?.filter(p => p.is_verified).length || 0}</p>
+                <div className="bg-background/60 backdrop-blur-sm rounded-lg p-2 text-center">
+                  <Sparkles className="h-4 w-4 mx-auto mb-0.5 text-amber-500" />
+                  <p className="text-[10px] text-muted-foreground">موثق</p>
+                  <p className="font-bold text-xs">{providers?.filter(p => p.is_verified).length || 0}</p>
                 </div>
-                <div className="bg-background/60 backdrop-blur-sm rounded-xl p-3 text-center">
-                  <MapPin className="h-5 w-5 mx-auto mb-1 text-green-500" />
-                  <p className="text-xs text-muted-foreground">أحياء</p>
-                  <p className="font-bold text-sm">
+                <div className="bg-background/60 backdrop-blur-sm rounded-lg p-2 text-center">
+                  <MapPin className="h-4 w-4 mx-auto mb-0.5 text-green-500" />
+                  <p className="text-[10px] text-muted-foreground">أحياء</p>
+                  <p className="font-bold text-xs">
                     {new Set(providers?.map(p => p.active_neighborhoods?.id).filter(Boolean)).size}
                   </p>
                 </div>
@@ -265,14 +265,14 @@ const Index = () => {
           </motion.div>
 
           {/* Search Section */}
-          <motion.div variants={fadeInUp} className="space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="bg-primary/10 p-2.5 rounded-xl">
-                <Store className="h-5 w-5 text-primary" />
+          <motion.div variants={fadeInUp} className="space-y-3">
+            <div className="flex items-center gap-2">
+              <div className="bg-primary/10 p-2 rounded-lg">
+                <Store className="h-4 w-4 text-primary" />
               </div>
               <div>
-                <h2 className="text-lg font-bold">مقدمو الخدمات</h2>
-                <p className="text-xs text-muted-foreground">
+                <h2 className="text-sm font-bold">مقدمو الخدمات</h2>
+                <p className="text-[10px] text-muted-foreground">
                   {providersWithDistance.length} مقدم خدمة {userLocation ? 'قريب منك' : 'متاح'}
                 </p>
               </div>
@@ -280,23 +280,23 @@ const Index = () => {
 
             {/* Search Input */}
             <div className="relative">
-              <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
               <Input
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="ابحث عن مقدم خدمة أو حي..."
-                className="pr-10 h-12 rounded-xl"
+                className="pr-9 h-10 rounded-lg text-sm"
                 dir="rtl"
               />
             </div>
 
             {/* Filters */}
-            <div className="flex gap-3 flex-wrap">
+            <div className="flex gap-2 flex-wrap">
               {/* City Filter */}
-              <div className="flex-1 min-w-[140px]">
+              <div className="flex-1 min-w-[120px]">
                 <Select value={selectedCity} onValueChange={handleCityChange}>
-                  <SelectTrigger className="h-11 rounded-xl">
-                    <Building2 className="h-4 w-4 ml-2 text-muted-foreground" />
+                  <SelectTrigger className="h-9 rounded-lg text-xs">
+                    <Building2 className="h-3.5 w-3.5 ml-1.5 text-muted-foreground" />
                     <SelectValue placeholder="المدينة" />
                   </SelectTrigger>
                   <SelectContent>
@@ -309,10 +309,10 @@ const Index = () => {
               </div>
 
               {/* Neighborhood Filter */}
-              <div className="flex-1 min-w-[140px]">
+              <div className="flex-1 min-w-[120px]">
                 <Select value={selectedNeighborhood} onValueChange={setSelectedNeighborhood}>
-                  <SelectTrigger className="h-11 rounded-xl">
-                    <MapPin className="h-4 w-4 ml-2 text-muted-foreground" />
+                  <SelectTrigger className="h-9 rounded-lg text-xs">
+                    <MapPin className="h-3.5 w-3.5 ml-1.5 text-muted-foreground" />
                     <SelectValue placeholder="الحي" />
                   </SelectTrigger>
                   <SelectContent>
@@ -329,22 +329,22 @@ const Index = () => {
 
             {/* Active Filters Badge */}
             {(selectedCity !== 'all' || selectedNeighborhood !== 'all') && (
-              <div className="flex items-center gap-2 flex-wrap">
-                <Filter className="h-4 w-4 text-primary" />
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <Filter className="h-3 w-3 text-primary" />
                 {selectedCity !== 'all' && (
-                  <Badge variant="secondary" className="text-xs">
+                  <Badge variant="secondary" className="text-[10px] py-0 px-1.5 h-5">
                     {selectedCity}
                   </Badge>
                 )}
                 {selectedNeighborhood !== 'all' && (
-                  <Badge variant="secondary" className="text-xs">
+                  <Badge variant="secondary" className="text-[10px] py-0 px-1.5 h-5">
                     {uniqueNeighborhoods.find(n => n?.id === selectedNeighborhood)?.name}
                   </Badge>
                 )}
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-6 text-xs text-muted-foreground hover:text-foreground"
+                  className="h-5 text-[10px] text-muted-foreground hover:text-foreground px-1.5"
                   onClick={() => {
                     setSelectedCity('all');
                     setSelectedNeighborhood('all');
@@ -358,16 +358,16 @@ const Index = () => {
 
           {/* Providers List */}
           {isLoading ? (
-            <div className="space-y-4">
+            <div className="space-y-3">
               {[1, 2, 3].map(i => (
                 <Card key={i} className="overflow-hidden">
-                  <CardContent className="p-4">
-                    <div className="flex gap-4">
-                      <Skeleton className="h-20 w-20 rounded-xl flex-shrink-0" />
-                      <div className="flex-1 space-y-2">
-                        <Skeleton className="h-5 w-3/4" />
-                        <Skeleton className="h-4 w-1/2" />
-                        <Skeleton className="h-4 w-1/3" />
+                  <CardContent className="p-3">
+                    <div className="flex gap-3">
+                      <Skeleton className="h-16 w-16 rounded-lg flex-shrink-0" />
+                      <div className="flex-1 space-y-1.5">
+                        <Skeleton className="h-4 w-3/4" />
+                        <Skeleton className="h-3 w-1/2" />
+                        <Skeleton className="h-3 w-1/3" />
                       </div>
                     </div>
                   </CardContent>
@@ -376,26 +376,26 @@ const Index = () => {
             </div>
           ) : providersWithDistance.length === 0 ? (
             <motion.div 
-              className="text-center py-16"
+              className="text-center py-12"
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
             >
-              <div className="relative inline-block mb-4">
+              <div className="relative inline-block mb-3">
                 <div className="absolute inset-0 bg-primary/20 rounded-full blur-2xl animate-pulse" />
-                <div className="relative bg-gradient-to-br from-muted to-muted/50 rounded-full p-6">
-                  <Store className="h-12 w-12 text-muted-foreground" />
+                <div className="relative bg-gradient-to-br from-muted to-muted/50 rounded-full p-4">
+                  <Store className="h-8 w-8 text-muted-foreground" />
                 </div>
               </div>
-              <p className="text-muted-foreground font-arabic text-lg">
+              <p className="text-muted-foreground font-arabic text-sm">
                 {searchQuery ? 'لا توجد نتائج' : 'لا يوجد مقدمو خدمات حالياً'}
               </p>
-              <p className="text-sm text-muted-foreground/70 mt-1">
+              <p className="text-xs text-muted-foreground/70 mt-1">
                 {searchQuery ? 'جرب البحث بكلمات مختلفة' : 'سيتم إضافة مقدمي خدمات قريباً'}
               </p>
             </motion.div>
           ) : (
             <motion.div 
-              className="space-y-4"
+              className="space-y-3"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
             >
@@ -409,10 +409,10 @@ const Index = () => {
                 >
                   <Link to={`/store/${provider.id}`}>
                     <Card className="overflow-hidden hover:shadow-lg transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]">
-                      <CardContent className="p-4">
-                        <div className="flex gap-4">
+                      <CardContent className="p-3">
+                        <div className="flex gap-3">
                           {/* Logo */}
-                          <div className="w-20 h-20 rounded-xl bg-muted flex items-center justify-center overflow-hidden flex-shrink-0">
+                          <div className="w-14 h-14 rounded-lg bg-muted flex items-center justify-center overflow-hidden flex-shrink-0">
                             {provider.logo_url ? (
                               <img 
                                 src={provider.logo_url} 
@@ -420,53 +420,48 @@ const Index = () => {
                                 className="w-full h-full object-cover"
                               />
                             ) : (
-                              <Store className="h-8 w-8 text-muted-foreground" />
+                              <Store className="h-6 w-6 text-muted-foreground" />
                             )}
                           </div>
 
                           {/* Info */}
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-start justify-between gap-2">
+                            <div className="flex items-start justify-between gap-1.5">
                               <div className="min-w-0">
-                                <h3 className="font-bold text-base truncate flex items-center gap-2">
+                                <h3 className="font-bold text-sm truncate flex items-center gap-1.5">
                                   {provider.business_name}
                                   {provider.is_verified && (
-                                    <Badge variant="secondary" className="text-xs px-1.5 py-0">
-                                      <Star className="h-3 w-3 ml-0.5 fill-amber-500 text-amber-500" />
+                                    <Badge variant="secondary" className="text-[10px] px-1 py-0 h-4">
+                                      <Star className="h-2.5 w-2.5 ml-0.5 fill-amber-500 text-amber-500" />
                                       موثق
                                     </Badge>
                                   )}
                                 </h3>
                                 {provider.active_neighborhoods && (
-                                  <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
-                                    <MapPin className="h-3.5 w-3.5 flex-shrink-0" />
+                                  <p className="text-xs text-muted-foreground flex items-center gap-0.5 mt-0.5">
+                                    <MapPin className="h-3 w-3 flex-shrink-0" />
                                     <span className="truncate">
                                       {provider.active_neighborhoods.name}، {provider.active_neighborhoods.city}
                                     </span>
                                   </p>
                                 )}
                               </div>
-                              <ArrowLeft className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                              <ArrowLeft className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                             </div>
 
                             {/* Distance & Description */}
-                            <div className="mt-2 flex items-center gap-2 flex-wrap">
+                            <div className="mt-1.5 flex items-center gap-1.5 flex-wrap">
                               {provider.distance !== null && (
-                                <Badge variant="outline" className="text-xs">
-                                  <Navigation className="h-3 w-3 ml-1" />
+                                <Badge variant="outline" className="text-[10px] py-0 px-1.5 h-5">
+                                  <Navigation className="h-2.5 w-2.5 ml-0.5" />
                                   {formatDistance(provider.distance)}
                                 </Badge>
                               )}
                               {provider.delivery_scope === 'city' && (
-                                <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
-                                  <Globe className="h-3 w-3 ml-1" />
+                                <Badge variant="secondary" className="text-[10px] py-0 px-1.5 h-5 bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+                                  <Globe className="h-2.5 w-2.5 ml-0.5" />
                                   يخدم كل المدينة
                                 </Badge>
-                              )}
-                              {provider.description && (
-                                <p className="text-xs text-muted-foreground truncate flex-1">
-                                  {provider.description}
-                                </p>
                               )}
                             </div>
                           </div>
@@ -480,11 +475,11 @@ const Index = () => {
               {/* Separator and providers outside coverage */}
               {notServingProviders.length > 0 && (
                 <>
-                  <div className="py-4">
-                    <Alert className="border-amber-500/50 bg-amber-50 dark:bg-amber-950/20">
-                      <AlertCircle className="h-4 w-4 text-amber-600" />
-                      <AlertDescription className="font-arabic text-amber-700 dark:text-amber-300 text-sm">
-                        المتاجر التالية قد لا تخدم منطقتك حالياً، لكن يمكنك تصفحها
+                  <div className="py-3">
+                    <Alert className="border-amber-500/50 bg-amber-50 dark:bg-amber-950/20 py-2 px-3">
+                      <AlertCircle className="h-3.5 w-3.5 text-amber-600" />
+                      <AlertDescription className="font-arabic text-amber-700 dark:text-amber-300 text-xs">
+                        المتاجر التالية قد لا تخدم منطقتك حالياً
                       </AlertDescription>
                     </Alert>
                   </div>
@@ -498,10 +493,10 @@ const Index = () => {
                     >
                       <Link to={`/store/${provider.id}`}>
                         <Card className="overflow-hidden hover:shadow-lg transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] opacity-70 hover:opacity-100">
-                          <CardContent className="p-4">
-                            <div className="flex gap-4">
+                          <CardContent className="p-3">
+                            <div className="flex gap-3">
                               {/* Logo */}
-                              <div className="w-20 h-20 rounded-xl bg-muted flex items-center justify-center overflow-hidden flex-shrink-0">
+                              <div className="w-14 h-14 rounded-lg bg-muted flex items-center justify-center overflow-hidden flex-shrink-0">
                                 {provider.logo_url ? (
                                   <img 
                                     src={provider.logo_url} 
@@ -509,46 +504,46 @@ const Index = () => {
                                     className="w-full h-full object-cover"
                                   />
                                 ) : (
-                                  <Store className="h-8 w-8 text-muted-foreground" />
+                                  <Store className="h-6 w-6 text-muted-foreground" />
                                 )}
                               </div>
 
                               {/* Info */}
                               <div className="flex-1 min-w-0">
-                                <div className="flex items-start justify-between gap-2">
+                                <div className="flex items-start justify-between gap-1.5">
                                   <div className="min-w-0">
-                                    <h3 className="font-bold text-base truncate flex items-center gap-2">
+                                    <h3 className="font-bold text-sm truncate flex items-center gap-1.5">
                                       {provider.business_name}
                                       {provider.is_verified && (
-                                        <Badge variant="secondary" className="text-xs px-1.5 py-0">
-                                          <Star className="h-3 w-3 ml-0.5 fill-amber-500 text-amber-500" />
+                                        <Badge variant="secondary" className="text-[10px] px-1 py-0 h-4">
+                                          <Star className="h-2.5 w-2.5 ml-0.5 fill-amber-500 text-amber-500" />
                                           موثق
                                         </Badge>
                                       )}
                                     </h3>
                                     {provider.active_neighborhoods && (
-                                      <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
-                                        <MapPin className="h-3.5 w-3.5 flex-shrink-0" />
+                                      <p className="text-xs text-muted-foreground flex items-center gap-0.5 mt-0.5">
+                                        <MapPin className="h-3 w-3 flex-shrink-0" />
                                         <span className="truncate">
                                           {provider.active_neighborhoods.name}، {provider.active_neighborhoods.city}
                                         </span>
                                       </p>
                                     )}
                                   </div>
-                                  <ArrowLeft className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                                  <ArrowLeft className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                                 </div>
 
                                 {/* Distance & Out of range badge */}
-                                <div className="mt-2 flex items-center gap-2 flex-wrap">
+                                <div className="mt-1.5 flex items-center gap-1.5 flex-wrap">
                                   {provider.distance !== null && (
-                                    <Badge variant="outline" className="text-xs">
-                                      <Navigation className="h-3 w-3 ml-1" />
+                                    <Badge variant="outline" className="text-[10px] py-0 px-1.5 h-5">
+                                      <Navigation className="h-2.5 w-2.5 ml-0.5" />
                                       {formatDistance(provider.distance)}
                                     </Badge>
                                   )}
-                                  <Badge variant="outline" className="text-xs border-amber-500 text-amber-600">
-                                    <AlertCircle className="h-3 w-3 ml-1" />
-                                    خارج نطاق التغطية
+                                  <Badge variant="outline" className="text-[10px] py-0 px-1.5 h-5 border-amber-500 text-amber-600">
+                                    <AlertCircle className="h-2.5 w-2.5 ml-0.5" />
+                                    خارج التغطية
                                   </Badge>
                                 </div>
                               </div>

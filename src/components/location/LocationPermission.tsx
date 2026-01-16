@@ -25,30 +25,30 @@ export function LocationPermission() {
   if (locationPermission === 'denied') {
     return (
       <Card className="bg-destructive/10 border-destructive/20">
-        <CardContent className="p-4">
+        <CardContent className="p-3">
           <div className="text-center">
-            <MapPin className="h-8 w-8 text-destructive mx-auto mb-2" />
-            <h3 className="font-bold font-arabic text-foreground mb-1">
+            <MapPin className="h-6 w-6 text-destructive mx-auto mb-1.5" />
+            <h3 className="font-bold font-arabic text-sm text-foreground mb-0.5">
               تم رفض الموقع
             </h3>
-            <p className="text-sm text-muted-foreground font-arabic mb-3">
+            <p className="text-xs text-muted-foreground font-arabic mb-2">
               لتفعيل خدمة التوصيل، يرجى السماح بالوصول للموقع
             </p>
           </div>
 
           {/* Retry Button */}
-          <div className="flex justify-center gap-2 mb-3">
+          <div className="flex justify-center gap-2 mb-2">
             <Button
               onClick={handleRetry}
               disabled={isRetrying}
               variant="outline"
               size="sm"
-              className="font-arabic"
+              className="font-arabic h-8 text-xs"
             >
               {isRetrying ? (
-                <RefreshCw className="h-4 w-4 ml-2 animate-spin" />
+                <RefreshCw className="h-3.5 w-3.5 ml-1.5 animate-spin" />
               ) : (
-                <RefreshCw className="h-4 w-4 ml-2" />
+                <RefreshCw className="h-3.5 w-3.5 ml-1.5" />
               )}
               حاول مرة أخرى
             </Button>
@@ -57,53 +57,42 @@ export function LocationPermission() {
           {/* Toggle Instructions */}
           <button
             onClick={() => setShowInstructions(!showInstructions)}
-            className="w-full flex items-center justify-center gap-2 text-sm text-primary font-arabic py-2 hover:underline"
+            className="w-full flex items-center justify-center gap-1.5 text-xs text-primary font-arabic py-1.5 hover:underline"
           >
-            <Settings className="h-4 w-4" />
-            كيفية تفعيل الموقع من الإعدادات
+            <Settings className="h-3.5 w-3.5" />
+            كيفية تفعيل الموقع
             {showInstructions ? (
-              <ChevronUp className="h-4 w-4" />
+              <ChevronUp className="h-3.5 w-3.5" />
             ) : (
-              <ChevronDown className="h-4 w-4" />
+              <ChevronDown className="h-3.5 w-3.5" />
             )}
           </button>
 
           {/* Instructions */}
           {showInstructions && (
-            <div className="mt-3 p-3 bg-background/50 rounded-lg text-right">
-              <p className="font-bold text-sm font-arabic mb-2 text-foreground">
-                📱 على الجوال (Safari/Chrome):
+            <div className="mt-2 p-2 bg-background/50 rounded-lg text-right">
+              <p className="font-bold text-xs font-arabic mb-1.5 text-foreground">
+                📱 على الجوال:
               </p>
-              <ol className="text-xs text-muted-foreground font-arabic space-y-1 list-decimal list-inside mb-3">
-                <li>اضغط على أيقونة "aA" أو 🔒 بجانب شريط العنوان</li>
-                <li>اختر "إعدادات الموقع" أو "Website Settings"</li>
-                <li>فعّل "الموقع الجغرافي" أو "Location"</li>
-                <li>أعد تحميل الصفحة</li>
-              </ol>
-              
-              <p className="font-bold text-sm font-arabic mb-2 text-foreground">
-                💻 على الكمبيوتر:
-              </p>
-              <ol className="text-xs text-muted-foreground font-arabic space-y-1 list-decimal list-inside">
-                <li>اضغط على أيقونة 🔒 بجانب شريط العنوان</li>
-                <li>ابحث عن "الموقع الجغرافي" أو "Location"</li>
-                <li>غيّرها إلى "السماح" أو "Allow"</li>
-                <li>أعد تحميل الصفحة</li>
+              <ol className="text-[10px] text-muted-foreground font-arabic space-y-0.5 list-decimal list-inside mb-2">
+                <li>اضغط على أيقونة "aA" أو 🔒 بجانب العنوان</li>
+                <li>اختر "إعدادات الموقع"</li>
+                <li>فعّل "الموقع الجغرافي"</li>
               </ol>
 
               <Button
                 onClick={() => window.location.reload()}
                 variant="secondary"
                 size="sm"
-                className="w-full mt-3 font-arabic"
+                className="w-full mt-2 font-arabic h-7 text-xs"
               >
-                <RefreshCw className="h-4 w-4 ml-2" />
-                إعادة تحميل الصفحة
+                <RefreshCw className="h-3 w-3 ml-1.5" />
+                إعادة تحميل
               </Button>
             </div>
           )}
 
-          <p className="text-xs text-muted-foreground font-arabic text-center mt-3">
+          <p className="text-[10px] text-muted-foreground font-arabic text-center mt-2">
             💡 يمكنك الاستلام من {storeName} مباشرة بدون تفعيل الموقع
           </p>
         </CardContent>
@@ -113,24 +102,25 @@ export function LocationPermission() {
 
   return (
     <Card className="bg-primary/5 border-primary/20">
-      <CardContent className="p-4 text-center">
-        <Navigation className="h-8 w-8 text-primary mx-auto mb-2" />
-        <h3 className="font-bold font-arabic text-foreground mb-1">
+      <CardContent className="p-3 text-center">
+        <Navigation className="h-6 w-6 text-primary mx-auto mb-1.5" />
+        <h3 className="font-bold font-arabic text-sm text-foreground mb-0.5">
           تفعيل الموقع
         </h3>
-        <p className="text-sm text-muted-foreground font-arabic mb-3">
+        <p className="text-xs text-muted-foreground font-arabic mb-2">
           نحتاج موقعك لنعرف إذا كان التوصيل متاحاً لك
         </p>
         <Button
           onClick={requestLocation}
           disabled={locationPermission === 'loading'}
-          className="font-arabic"
+          className="font-arabic h-8 text-xs"
+          size="sm"
         >
           {locationPermission === 'loading' ? (
             <>جاري التحميل...</>
           ) : (
             <>
-              <MapPin className="h-4 w-4 ml-2" />
+              <MapPin className="h-3.5 w-3.5 ml-1.5" />
               السماح بالموقع
             </>
           )}

@@ -11,19 +11,19 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-40 bg-card/95 backdrop-blur-sm border-b border-border safe-area-inset-top">
-      <div className="container mx-auto px-4 py-2">
+      <div className="container mx-auto px-3 py-1.5">
         <div className="flex items-center justify-between">
           {/* Logo */}
-          <AnimatedLogo size="md" showText={true} />
+          <AnimatedLogo size="sm" showText={true} />
 
           {/* Controls */}
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-0.5">
             <ThemeToggle />
             {user && <CustomerSoundToggle />}
             {user && (
               <Link to="/profile">
-                <Button variant="ghost" size="icon" className="h-9 w-9">
-                  <User className="h-4 w-4" />
+                <Button variant="ghost" size="icon" className="h-8 w-8">
+                  <User className="h-3.5 w-3.5" />
                 </Button>
               </Link>
             )}
