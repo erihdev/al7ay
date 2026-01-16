@@ -77,20 +77,26 @@ export function ProviderNotificationPermission({ providerId }: ProviderNotificat
         return false;
       }
 
-      // Get existing subscription or create new one
+      // ALWAYS unsubscribe old subscription and create new one to fix VapidPkHashMismatch
       let subscription = await registration.pushManager.getSubscription();
       
-      if (!subscription) {
-        console.log('🔄 Creating new push subscription...');
-        const applicationServerKey = urlBase64ToUint8Array(VAPID_PUBLIC_KEY);
-        subscription = await registration.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey: applicationServerKey.buffer as ArrayBuffer,
-        });
-        console.log('✅ New push subscription created');
-      } else {
-        console.log('✅ Existing push subscription found');
+      if (subscription) {
+        console.log('🔄 Unsubscribing old subscription to refresh VAPID key...');
+        await subscription.unsubscribe();
+        
+        // Delete old subscriptions from database
+        await supabase.from('push_subscriptions').delete().eq('user_id', user.id);
+        console.log('✅ Old subscription removed');
       }
+
+      // Create new subscription with current VAPID key
+      console.log('🔄 Creating new push subscription with current VAPID key...');
+      const applicationServerKey = urlBase64ToUint8Array(VAPID_PUBLIC_KEY);
+      subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: applicationServerKey.buffer as ArrayBuffer,
+      });
+      console.log('✅ New push subscription created');
 
       const subscriptionJson = subscription.toJSON();
       console.log('📦 Subscription endpoint:', subscriptionJson.endpoint?.substring(0, 50) + '...');
