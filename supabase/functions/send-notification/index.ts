@@ -31,21 +31,25 @@ async function sendAimtellNotification(
   }
 
   try {
+    const payload = {
+      idSite: siteId,
+      title: title,
+      body: body,
+      link: url,
+      tags: tags || [],
+      requireInteraction: true,
+      icon: 'https://al7ay.lovable.app/icons/icon-192.png',
+    };
+    
+    console.log('Sending Aimtell notification with payload:', JSON.stringify(payload));
+    
     const response = await fetch('https://api.aimtell.com/prod/push', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${apiKey}`,
+        'X-Authorization': apiKey,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        siteId: siteId,
-        title: title,
-        body: body,
-        url: url,
-        tags: tags || [],
-        requireInteraction: true,
-        icon: '/icons/icon-192.png',
-      }),
+      body: JSON.stringify(payload),
     });
 
     if (response.ok) {
