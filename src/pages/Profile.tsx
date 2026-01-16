@@ -7,6 +7,7 @@ import { BottomNav } from '@/components/layout/BottomNav';
 import { AuthForm } from '@/components/auth/AuthForm';
 import { NotificationSettings } from '@/components/notifications/NotificationSettings';
 import { LocalNotificationSettings } from '@/components/notifications/LocalNotificationSettings';
+import { VolumeControl } from '@/components/notifications/VolumeControl';
 import { ReferralCard } from '@/components/referral/ReferralCard';
 import { VehicleInfo } from '@/components/profile/VehicleInfo';
 import { ProfileInfo } from '@/components/profile/ProfileInfo';
@@ -338,6 +339,11 @@ const Profile = () => {
                 <h3 className="text-sm font-semibold text-muted-foreground">الإعدادات</h3>
               </div>
               <div className="space-y-3">
+                <Card className="border-0 shadow">
+                  <CardContent className="p-4">
+                    <VolumeControl />
+                  </CardContent>
+                </Card>
                 <NotificationSettings />
                 <LocalNotificationSettings />
               </div>

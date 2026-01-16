@@ -2,6 +2,20 @@
 
 let audioContext: AudioContext | null = null;
 
+// Volume control - get from localStorage (0-100, default 70)
+export const getNotificationVolume = (): number => {
+  const saved = localStorage.getItem('notification-volume');
+  return saved ? parseInt(saved, 10) : 70;
+};
+
+export const setNotificationVolume = (volume: number) => {
+  localStorage.setItem('notification-volume', String(Math.round(volume)));
+};
+
+const getVolumeMultiplier = (): number => {
+  return getNotificationVolume() / 100;
+};
+
 function getAudioContext(): AudioContext {
   if (!audioContext) {
     audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
@@ -18,11 +32,12 @@ function playNote(
   frequency: number,
   startTime: number,
   duration: number,
-  gain: number = 0.3,
+  baseGain: number = 0.3,
   type: OscillatorType = 'sine'
 ) {
   const oscillator = ctx.createOscillator();
   const gainNode = ctx.createGain();
+  const gain = baseGain * getVolumeMultiplier();
   
   oscillator.connect(gainNode);
   gainNode.connect(ctx.destination);
