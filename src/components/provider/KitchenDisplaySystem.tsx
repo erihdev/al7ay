@@ -378,73 +378,73 @@ const KitchenDisplaySystem = ({ providerId }: KitchenDisplaySystemProps) => {
         exit={{ opacity: 0, scale: 0.9, y: -20 }}
         transition={{ duration: 0.3 }}
         className={`
-          relative overflow-hidden rounded-2xl border-2 transition-all duration-300
+          relative overflow-hidden rounded-xl sm:rounded-2xl border-2 transition-all duration-300
           ${config.borderColor} ${config.bgColor}
           ${isNew ? 'ring-4 ring-amber-400/50 animate-pulse' : ''}
           ${urgency === 'urgent' ? 'ring-2 ring-red-500' : ''}
           ${urgency === 'warning' ? 'ring-2 ring-yellow-500' : ''}
         `}
       >
-        {/* Status Header */}
-        <div className={`bg-gradient-to-l ${config.gradient} p-3 flex items-center justify-between`}>
-          <div className="flex items-center gap-2 text-white">
-            <StatusIcon className="h-5 w-5" />
-            <span className="font-bold">{config.label}</span>
+        {/* Status Header - Compact */}
+        <div className={`bg-gradient-to-l ${config.gradient} p-2 sm:p-3 flex items-center justify-between`}>
+          <div className="flex items-center gap-1.5 text-white">
+            <StatusIcon className="h-4 w-4 sm:h-5 sm:w-5" />
+            <span className="font-bold text-sm sm:text-base">{config.label}</span>
           </div>
-          <span className="text-white/90 font-mono font-bold text-lg">
+          <span className="text-white/90 font-mono font-bold text-base sm:text-lg">
             #{order.id.slice(-4)}
           </span>
         </div>
 
-        {/* Order Content */}
-        <div className="p-4 space-y-3">
+        {/* Order Content - Compact */}
+        <div className="p-2.5 sm:p-4 space-y-2 sm:space-y-3">
           {/* Customer Info */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="w-10 h-10 rounded-full bg-white/80 dark:bg-gray-800 flex items-center justify-center shadow-sm">
-                <User className="h-5 w-5 text-muted-foreground" />
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-white/80 dark:bg-gray-800 flex items-center justify-center shadow-sm">
+                <User className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
               </div>
               <div>
-                <p className="font-bold text-foreground">{order.customer_name}</p>
-                <p className="text-xs text-muted-foreground flex items-center gap-1">
-                  <Phone className="h-3 w-3" />
+                <p className="font-bold text-sm sm:text-base text-foreground">{order.customer_name}</p>
+                <p className="text-[10px] sm:text-xs text-muted-foreground flex items-center gap-1">
+                  <Phone className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
                   <span dir="ltr">{order.customer_phone}</span>
                 </p>
               </div>
             </div>
             <div className="text-left">
-              <p className="text-xl font-bold text-primary">{order.total_amount}</p>
-              <p className="text-xs text-muted-foreground">ر.س</p>
+              <p className="text-lg sm:text-xl font-bold text-primary">{order.total_amount}</p>
+              <p className="text-[10px] sm:text-xs text-muted-foreground">ر.س</p>
             </div>
           </div>
 
-          {/* Products List */}
+          {/* Products List - Compact */}
           {items.length > 0 && (
-            <div className="bg-white/70 dark:bg-gray-800/70 rounded-xl p-3 space-y-2">
-              <div className="flex items-center gap-2 text-sm font-bold text-foreground border-b border-border/50 pb-2">
-                <ShoppingBag className="h-4 w-4 text-primary" />
+            <div className="bg-white/70 dark:bg-gray-800/70 rounded-lg sm:rounded-xl p-2 sm:p-3 space-y-1.5 sm:space-y-2">
+              <div className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-foreground border-b border-border/50 pb-1.5">
+                <ShoppingBag className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary" />
                 <span>المنتجات ({items.length})</span>
               </div>
-              <div className="space-y-2 max-h-40 overflow-y-auto">
+              <div className="space-y-1.5 max-h-32 sm:max-h-40 overflow-y-auto">
                 {items.map((item) => (
                   <div 
                     key={item.id} 
-                    className="bg-muted/50 rounded-lg px-2 py-2"
+                    className="bg-muted/50 rounded-md sm:rounded-lg px-2 py-1.5 sm:py-2"
                   >
-                    <div className="flex items-center justify-between text-sm">
-                      <div className="flex items-center gap-2">
-                        <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold shrink-0">
+                    <div className="flex items-center justify-between text-xs sm:text-sm">
+                      <div className="flex items-center gap-1.5 sm:gap-2">
+                        <span className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-[10px] sm:text-xs font-bold shrink-0">
                           {item.quantity}
                         </span>
-                        <span className="font-medium text-foreground">{item.product_name}</span>
+                        <span className="font-medium text-foreground text-xs sm:text-sm">{item.product_name}</span>
                       </div>
-                      <span className="text-muted-foreground font-mono text-xs shrink-0">
+                      <span className="text-muted-foreground font-mono text-[10px] sm:text-xs shrink-0">
                         {item.total_price} ر.س
                       </span>
                     </div>
                     {/* Selected Options */}
                     {item.selected_options && item.selected_options.length > 0 && (
-                      <div className="mt-1.5 mr-8 flex flex-wrap gap-1">
+                      <div className="mt-1 mr-6 sm:mr-8 flex flex-wrap gap-0.5 sm:gap-1">
                         {item.selected_options.map((option, idx) => (
                           <span 
                             key={idx}
@@ -559,22 +559,22 @@ const KitchenDisplaySystem = ({ providerId }: KitchenDisplaySystemProps) => {
   };
 
   return (
-    <div className={`space-y-6 ${isFullscreen ? 'p-6 bg-background min-h-screen' : ''}`}>
-      {/* Control Bar */}
-      <div className="flex items-center justify-between gap-4 flex-wrap">
-        <div className="flex items-center gap-2">
+    <div className={`space-y-3 sm:space-y-6 ${isFullscreen ? 'p-4 sm:p-6 bg-background min-h-screen' : ''}`}>
+      {/* Control Bar - Compact on mobile */}
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <div className="flex items-center gap-1 sm:gap-2">
           <Button
             variant={soundEnabled ? "default" : "outline"}
             size="sm"
             onClick={() => setSoundEnabled(!soundEnabled)}
-            className="gap-2"
+            className="gap-1 h-8 text-xs sm:text-sm px-2 sm:px-3"
           >
-            {soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
-            {soundEnabled ? 'الصوت مفعل' : 'الصوت معطل'}
+            {soundEnabled ? <Volume2 className="h-3.5 w-3.5" /> : <VolumeX className="h-3.5 w-3.5" />}
+            <span className="hidden xs:inline">{soundEnabled ? 'الصوت مفعل' : 'الصوت معطل'}</span>
           </Button>
           
-          {/* Test Sounds */}
-          <div className="flex items-center gap-1 border rounded-lg p-1">
+          {/* Test Sounds - Hidden on very small screens */}
+          <div className="hidden sm:flex items-center gap-0.5 border rounded-lg p-0.5">
             <Button
               variant="ghost"
               size="sm"
@@ -609,42 +609,42 @@ const KitchenDisplaySystem = ({ providerId }: KitchenDisplaySystemProps) => {
           variant="outline"
           size="sm"
           onClick={toggleFullscreen}
-          className="gap-2"
+          className="gap-1 h-8 text-xs px-2 sm:px-3"
         >
-          {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
-          {isFullscreen ? 'إنهاء ملء الشاشة' : 'ملء الشاشة'}
+          {isFullscreen ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
+          <span className="hidden sm:inline">{isFullscreen ? 'إنهاء ملء الشاشة' : 'ملء الشاشة'}</span>
         </Button>
       </div>
 
-      {/* Stats Bar */}
-      <div className={`grid gap-4 ${isFullscreen ? 'grid-cols-3' : 'grid-cols-3'}`}>
+      {/* Stats Bar - Compact on mobile */}
+      <div className={`grid gap-2 sm:gap-4 ${isFullscreen ? 'grid-cols-3' : 'grid-cols-3'}`}>
         <Card className="bg-gradient-to-bl from-amber-500 to-orange-500 text-white border-0">
-          <CardContent className="p-4 flex items-center justify-between">
+          <CardContent className="p-2 sm:p-4 flex items-center justify-between">
             <div>
-              <p className="text-amber-100 text-sm">طلبات جديدة</p>
-              <p className="text-4xl font-bold">{pendingOrders.length}</p>
+              <p className="text-amber-100 text-[10px] sm:text-sm">طلبات جديدة</p>
+              <p className="text-2xl sm:text-4xl font-bold">{pendingOrders.length}</p>
             </div>
-            <Bell className="h-10 w-10 text-amber-200" />
+            <Bell className="h-6 w-6 sm:h-10 sm:w-10 text-amber-200" />
           </CardContent>
         </Card>
         
         <Card className="bg-gradient-to-bl from-blue-500 to-cyan-500 text-white border-0">
-          <CardContent className="p-4 flex items-center justify-between">
+          <CardContent className="p-2 sm:p-4 flex items-center justify-between">
             <div>
-              <p className="text-blue-100 text-sm">قيد التحضير</p>
-              <p className="text-4xl font-bold">{preparingOrders.length}</p>
+              <p className="text-blue-100 text-[10px] sm:text-sm">قيد التحضير</p>
+              <p className="text-2xl sm:text-4xl font-bold">{preparingOrders.length}</p>
             </div>
-            <ChefHat className="h-10 w-10 text-blue-200" />
+            <ChefHat className="h-6 w-6 sm:h-10 sm:w-10 text-blue-200" />
           </CardContent>
         </Card>
         
         <Card className="bg-gradient-to-bl from-emerald-500 to-green-500 text-white border-0">
-          <CardContent className="p-4 flex items-center justify-between">
+          <CardContent className="p-2 sm:p-4 flex items-center justify-between">
             <div>
-              <p className="text-emerald-100 text-sm">جاهز</p>
-              <p className="text-4xl font-bold">{readyOrders.length}</p>
+              <p className="text-emerald-100 text-[10px] sm:text-sm">جاهز</p>
+              <p className="text-2xl sm:text-4xl font-bold">{readyOrders.length}</p>
             </div>
-            <CheckCircle className="h-10 w-10 text-emerald-200" />
+            <CheckCircle className="h-6 w-6 sm:h-10 sm:w-10 text-emerald-200" />
           </CardContent>
         </Card>
       </div>
