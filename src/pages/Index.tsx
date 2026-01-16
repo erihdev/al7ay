@@ -7,6 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Header } from '@/components/layout/Header';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { LocationPermission } from '@/components/location/LocationPermission';
+import { CustomerNotificationPermission } from '@/components/notifications/CustomerNotificationPermission';
 import { LoyaltyCard } from '@/components/loyalty/LoyaltyCard';
 import { FloatingParticles } from '@/components/ui/InteractiveBackground';
 import { PageTransition, fadeInUp } from '@/components/ui/PageTransition';
@@ -252,6 +253,11 @@ const Index = () => {
                 </div>
               </div>
             </div>
+          </motion.div>
+
+          {/* Notification Permission for background alerts */}
+          <motion.div variants={fadeInUp}>
+            <CustomerNotificationPermission customerId={user?.id} />
           </motion.div>
 
           {/* Location Permission */}
