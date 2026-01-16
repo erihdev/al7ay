@@ -31,16 +31,7 @@ async function sendAimtellNotification(
   }
 
   try {
-    // Build alias string for targeting specific subscribers
-    // Aimtell requires alias in format: "attribute_name==value"
-    let alias: string | undefined;
-    if (attributes && Object.keys(attributes).length > 0) {
-      // Use the first attribute as alias for targeting
-      const [key, value] = Object.entries(attributes)[0];
-      alias = `${key}==${value}`;
-    }
-
-    // Build payload with alias for targeted delivery
+    // Build payload for notification
     const payload: Record<string, any> = {
       idSite: siteId,
       title: title,
@@ -50,9 +41,14 @@ async function sendAimtellNotification(
       icon: 'https://al7ay.lovable.app/icons/icon-192.png',
     };
     
-    // Add alias for targeting specific subscribers (Aimtell requirement)
-    if (alias) {
-      payload.alias = alias;
+    // Add user alias for targeting specific subscribers
+    // Per Aimtell docs, use "user" field with the ID value
+    if (attributes) {
+      if (attributes.provider_id) {
+        payload.user = attributes.provider_id;
+      } else if (attributes.customer_id) {
+        payload.user = attributes.customer_id;
+      }
     }
     
     console.log('Sending Aimtell notification with payload:', JSON.stringify(payload));
