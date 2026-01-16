@@ -131,8 +131,8 @@ const ProviderDashboard = () => {
   // Register Aimtell tag for background push notifications
   useProviderAimtellTag(provider?.id);
 
-  // Auto-request notification permission
-  useAutoNotificationPermission();
+  // Auto-request notification permission and register provider for targeted notifications
+  useAutoNotificationPermission({ providerId: provider?.id });
 
   useProviderOrderNotifications(provider?.id, soundEnabled);
 
