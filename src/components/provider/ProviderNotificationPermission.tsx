@@ -1,8 +1,24 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Bell, BellRing, RefreshCw, Settings, ChevronDown, ChevronUp, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+
+// VAPID public key for Web Push notifications
+const VAPID_PUBLIC_KEY = 'BBSkQQTuHO2QUmjfNrrLFt0HHKf3MZem5LCnRcFgDV3v722xd3MR4E6Kg5O_wPyDfIVydp0JFhyJRYGAIkgVcXU';
+
+function urlBase64ToUint8Array(base64String: string): Uint8Array {
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = window.atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray;
+}
 
 type PermissionState = 'granted' | 'denied' | 'default' | 'loading' | 'unsupported';
 
@@ -11,6 +27,7 @@ interface ProviderNotificationPermissionProps {
 }
 
 export function ProviderNotificationPermission({ providerId }: ProviderNotificationPermissionProps) {
+  const { user } = useAuth();
   const [permissionState, setPermissionState] = useState<PermissionState>('loading');
   const [showInstructions, setShowInstructions] = useState(true);
   const [isRetrying, setIsRetrying] = useState(false);
@@ -30,7 +47,74 @@ export function ProviderNotificationPermission({ providerId }: ProviderNotificat
     setPermissionState(Notification.permission as PermissionState);
   };
 
-  const registerAimtellAttributes = (): boolean => {
+  // Check if running as PWA on iOS
+  const isIOSPWA = () => {
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || 
+                         (window.navigator as any).standalone === true;
+    return isIOS && isStandalone;
+  };
+
+  // Register for Web Push (works on iOS PWA)
+  const registerWebPush = useCallback(async (): Promise<boolean> => {
+    if (!user) {
+      console.log('No user for web push registration');
+      return false;
+    }
+
+    try {
+      // Register service worker if not already registered
+      const registration = await navigator.serviceWorker.register('/sw.js');
+      await navigator.serviceWorker.ready;
+
+      // Subscribe to push notifications
+      const applicationServerKey = urlBase64ToUint8Array(VAPID_PUBLIC_KEY);
+      const subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: applicationServerKey as BufferSource,
+      });
+
+      const subscriptionJson = subscription.toJSON();
+
+      // Save subscription to database
+      const { error } = await supabase.from('push_subscriptions').upsert({
+        user_id: user.id,
+        endpoint: subscriptionJson.endpoint!,
+        p256dh: subscriptionJson.keys!.p256dh,
+        auth: subscriptionJson.keys!.auth,
+      }, {
+        onConflict: 'user_id,endpoint',
+      });
+
+      if (error) {
+        console.error('Error saving web push subscription:', error);
+        return false;
+      }
+
+      console.log('✅ Web Push subscription saved for user:', user.id);
+      return true;
+    } catch (error) {
+      console.error('Error registering web push:', error);
+      return false;
+    }
+  }, [user]);
+
+  const registerAimtellAttributes = async (): Promise<boolean> => {
+    // For iOS PWA, use Web Push instead of Aimtell
+    if (isIOSPWA()) {
+      console.log('📱 iOS PWA detected - using Web Push');
+      if (Notification.permission === 'granted') {
+        const webPushSuccess = await registerWebPush();
+        if (webPushSuccess) {
+          console.log('✅ iOS PWA registered with Web Push');
+          hasRegistered.current = true;
+          setIsRegistered(true);
+          return true;
+        }
+      }
+      return false;
+    }
+    
     // Check if Aimtell SDK is fully loaded
     if (typeof window._at !== 'object' || window._at === null) {
       console.log('Aimtell _at object not available yet');
@@ -58,6 +142,9 @@ export function ProviderNotificationPermission({ providerId }: ProviderNotificat
       console.log('✅ Provider registered for background notifications:', aliasValue);
       console.log('✅ Aimtell SDK ready with keys:', Object.keys(window._at));
       
+      // Also register for Web Push as backup
+      await registerWebPush();
+      
       hasRegistered.current = true;
       setIsRegistered(true);
       return true;
@@ -79,7 +166,7 @@ export function ProviderNotificationPermission({ providerId }: ProviderNotificat
         let registered = false;
         for (let attempt = 0; attempt < 10; attempt++) {
           await new Promise(resolve => setTimeout(resolve, 1000));
-          registered = registerAimtellAttributes();
+          registered = await registerAimtellAttributes();
           if (registered) break;
         }
         
@@ -132,7 +219,7 @@ export function ProviderNotificationPermission({ providerId }: ProviderNotificat
           break;
         }
         
-        const success = registerAimtellAttributes();
+        const success = await registerAimtellAttributes();
         if (success) {
           console.log(`✅ Auto-registered on attempt ${attempt + 1}`);
           toast.success('✅ الإشعارات جاهزة!', {
@@ -166,10 +253,10 @@ export function ProviderNotificationPermission({ providerId }: ProviderNotificat
 
     const retryIntervals = [5000, 10000, 20000, 30000];
     const timers = retryIntervals.map((delay, i) => 
-      setTimeout(() => {
+      setTimeout(async () => {
         if (!hasRegistered.current) {
           console.log(`🔄 Periodic retry attempt ${i + 1}...`);
-          const success = registerAimtellAttributes();
+          const success = await registerAimtellAttributes();
           if (success) {
             toast.success('✅ تم تسجيل الإشعارات', { duration: 2000 });
           }
