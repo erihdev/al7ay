@@ -31,11 +31,14 @@ export function ProviderNotificationPermission({ providerId }: ProviderNotificat
   };
 
   const registerAimtellAttributes = (): boolean => {
-    // Check if Aimtell SDK is ready
-    const isAimtellReady = typeof window._at?.track === 'function';
+    // Check if Aimtell SDK is fully loaded
+    if (typeof window._at !== 'object' || window._at === null) {
+      console.log('Aimtell _at object not available yet');
+      return false;
+    }
     
-    if (!isAimtellReady) {
-      console.log('Aimtell SDK not ready yet, checking window._at:', !!window._at);
+    if (typeof window._at.track !== 'function') {
+      console.log('Aimtell track function not ready, _at keys:', Object.keys(window._at || {}));
       return false;
     }
 
@@ -53,6 +56,7 @@ export function ProviderNotificationPermission({ providerId }: ProviderNotificat
       window._at.track('alias', aliasValue);
       
       console.log('✅ Provider registered for background notifications:', aliasValue);
+      console.log('✅ Aimtell SDK ready with keys:', Object.keys(window._at));
       
       hasRegistered.current = true;
       setIsRegistered(true);
@@ -121,7 +125,7 @@ export function ProviderNotificationPermission({ providerId }: ProviderNotificat
       console.log('🔄 Starting Aimtell registration for provider:', providerId);
       
       // Try more times with longer delays for iOS Safari
-      const maxAttempts = 20; // Increased from 10
+      const maxAttempts = 30; // Increased for slower iOS
       for (let attempt = 0; attempt < maxAttempts; attempt++) {
         if (hasRegistered.current) {
           console.log('✅ Registration confirmed, stopping retries');
@@ -138,23 +142,20 @@ export function ProviderNotificationPermission({ providerId }: ProviderNotificat
           break;
         }
         
-        console.log(`Attempt ${attempt + 1}/${maxAttempts} - waiting...`);
+        console.log(`Attempt ${attempt + 1}/${maxAttempts} - waiting for SDK...`);
         // Longer waits for iOS Safari which loads SDK slowly
-        await new Promise(resolve => setTimeout(resolve, attempt < 5 ? 1000 : 1500));
+        await new Promise(resolve => setTimeout(resolve, 2000));
       }
       
-      // After all attempts, show success anyway if browser permission is granted
-      // The SDK might register later through periodic retries
+      // After all attempts, show timeout warning
       if (!hasRegistered.current) {
-        console.log('⚠️ SDK slow to load, but permission granted - assuming success');
-        // Don't show timeout warning, assume it will work
-        setIsRegistered(true);
-        hasRegistered.current = true;
+        console.log('⚠️ SDK failed to load after all attempts');
+        setRegistrationTimedOut(true);
       }
     };
 
     // Start registration after a short delay to let Aimtell SDK load
-    const timer = setTimeout(registerWithRetries, 2000);
+    const timer = setTimeout(registerWithRetries, 1500);
     
     return () => clearTimeout(timer);
   }, [permissionState, providerId]);
