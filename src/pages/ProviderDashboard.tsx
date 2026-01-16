@@ -30,12 +30,14 @@ import {
   ChefHat,
   DollarSign,
   Store,
-  Palette
+  Palette,
+  Bell
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { AnimatedLogo } from '@/components/ui/AnimatedLogo';
 import { Badge } from '@/components/ui/badge';
 import { motion } from 'framer-motion';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface Provider {
   id: string;
@@ -121,11 +123,48 @@ const ProviderDashboard = () => {
   const [payoutHistory, setPayoutHistory] = useState<PayoutRecord[]>([]);
   const [activeTab, setActiveTab] = useState('kitchen');
   const [soundEnabled, setSoundEnabled] = useState(true);
+  const [testingNotification, setTestingNotification] = useState(false);
 
   // Register Aimtell tag for background push notifications
   useProviderAimtellTag(provider?.id);
 
   useProviderOrderNotifications(provider?.id, soundEnabled);
+
+  // Test notification function
+  const handleTestNotification = async () => {
+    if (!provider?.id) return;
+    
+    setTestingNotification(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('send-notification', {
+        body: {
+          type: 'new_order',
+          orderId: `test-${Date.now()}`,
+          providerId: provider.id,
+          customerName: 'اختبار الإشعارات',
+          totalAmount: 50,
+          orderType: 'pickup'
+        }
+      });
+
+      if (error) throw error;
+
+      if (data?.aimtellSent) {
+        toast.success('تم إرسال إشعار تجريبي!', {
+          description: 'تحقق من الإشعارات في متصفحك'
+        });
+      } else {
+        toast.warning('تم الإرسال ولكن قد لا تستقبل الإشعار', {
+          description: 'تأكد من السماح بالإشعارات في المتصفح'
+        });
+      }
+    } catch (err) {
+      console.error('Test notification error:', err);
+      toast.error('فشل إرسال الإشعار التجريبي');
+    } finally {
+      setTestingNotification(false);
+    }
+  };
 
   // Load provider data - simplified direct fetch
   const loadProviderData = async (userId: string, accessToken: string) => {
@@ -422,6 +461,26 @@ const ProviderDashboard = () => {
 
             {/* Actions */}
             <div className="flex items-center gap-2">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    size="icon" 
+                    onClick={handleTestNotification}
+                    disabled={testingNotification}
+                    className="relative"
+                  >
+                    {testingNotification ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Bell className="h-4 w-4" />
+                    )}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>اختبار الإشعارات</p>
+                </TooltipContent>
+              </Tooltip>
               <Button 
                 variant={soundEnabled ? "default" : "outline"} 
                 size="icon" 
