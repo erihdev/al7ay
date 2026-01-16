@@ -1,26 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 
-// Use a type assertion approach to avoid conflicts with global declarations
-interface AimtellSDK {
-  track?: (event: string, data: string[]) => void;
-  trackEvent?: (event: string, data: any) => void;
-  getSubscriberId?: () => string | null;
-  isSubscribed?: () => boolean;
-  getPermissionState?: () => string;
-  getTags?: () => string[];
-}
-
-function getAimtellSDK(): AimtellSDK | undefined {
-  return (window as any)._at as AimtellSDK | undefined;
-}
-
 interface AimtellStatus {
   isSDKLoaded: boolean;
   isSubscribed: boolean;
   permissionState: 'granted' | 'denied' | 'default' | 'unknown';
-  subscriberId: string | null;
-  registeredTags: string[];
-  hasProviderTag: boolean;
+  isReady: boolean;
 }
 
 export function useAimtellStatus(providerId: string | undefined) {
@@ -28,16 +12,13 @@ export function useAimtellStatus(providerId: string | undefined) {
     isSDKLoaded: false,
     isSubscribed: false,
     permissionState: 'unknown',
-    subscriberId: null,
-    registeredTags: [],
-    hasProviderTag: false,
+    isReady: false,
   });
 
   const checkStatus = useCallback(() => {
-    const sdk = getAimtellSDK();
-    
-    // Check if SDK is loaded
-    const sdkLoaded = typeof sdk?.track === 'function';
+    // Check if Aimtell SDK is loaded by looking for the track function
+    const sdk = (window as any)._at;
+    const sdkLoaded = !!(sdk && typeof sdk.track === 'function');
     
     // Check browser notification permission
     let permissionState: AimtellStatus['permissionState'] = 'unknown';
@@ -45,76 +26,52 @@ export function useAimtellStatus(providerId: string | undefined) {
       permissionState = Notification.permission as AimtellStatus['permissionState'];
     }
 
-    // Try to get subscriber info from SDK
-    let subscriberId: string | null = null;
-    let isSubscribed = false;
-    let registeredTags: string[] = [];
-
-    if (sdkLoaded && sdk) {
-      try {
-        if (typeof sdk.getSubscriberId === 'function') {
-          subscriberId = sdk.getSubscriberId();
-        }
-        if (typeof sdk.isSubscribed === 'function') {
-          isSubscribed = sdk.isSubscribed();
-        }
-        if (typeof sdk.getTags === 'function') {
-          registeredTags = sdk.getTags() || [];
-        }
-      } catch (e) {
-        console.log('Error checking Aimtell status:', e);
-      }
-    }
-
-    // Check if push subscription exists via service worker
-    if ('serviceWorker' in navigator && 'PushManager' in window) {
-      navigator.serviceWorker.ready.then(registration => {
-        registration.pushManager.getSubscription().then(subscription => {
-          if (subscription) {
-            isSubscribed = true;
-          }
-        });
-      });
-    }
-
-    // For Aimtell, subscription is indicated by permission being granted
-    // and SDK being loaded
-    if (permissionState === 'granted' && sdkLoaded) {
-      isSubscribed = true;
-    }
-
-    const hasProviderTag = providerId ? registeredTags.includes(`provider:${providerId}`) : false;
+    // For Aimtell, if SDK is loaded AND permission is granted, user IS subscribed
+    // This is because Aimtell automatically registers the subscriber when permission is granted
+    const isSubscribed = sdkLoaded && permissionState === 'granted';
+    
+    // Ready means we've checked and have a definitive answer
+    const isReady = permissionState !== 'unknown';
 
     setStatus({
       isSDKLoaded: sdkLoaded,
       isSubscribed,
       permissionState,
-      subscriberId,
-      registeredTags,
-      hasProviderTag,
+      isReady,
     });
-  }, [providerId]);
+  }, []);
 
   useEffect(() => {
     // Check immediately
     checkStatus();
 
-    // Recheck after SDK might have loaded
-    const timer1 = setTimeout(checkStatus, 1000);
-    const timer2 = setTimeout(checkStatus, 3000);
-    const timer3 = setTimeout(checkStatus, 5000);
+    // Recheck multiple times as SDK loads asynchronously
+    const timers = [
+      setTimeout(checkStatus, 500),
+      setTimeout(checkStatus, 1500),
+      setTimeout(checkStatus, 3000),
+      setTimeout(checkStatus, 5000),
+    ];
+
+    // Also listen for permission changes
+    if ('permissions' in navigator) {
+      navigator.permissions.query({ name: 'notifications' as PermissionName }).then(permission => {
+        permission.onchange = checkStatus;
+      }).catch(() => {
+        // Some browsers don't support this
+      });
+    }
 
     return () => {
-      clearTimeout(timer1);
-      clearTimeout(timer2);
-      clearTimeout(timer3);
+      timers.forEach(clearTimeout);
     };
   }, [checkStatus]);
 
   const requestPermission = useCallback(async () => {
     if ('Notification' in window) {
       const permission = await Notification.requestPermission();
-      checkStatus();
+      // After permission granted, Aimtell SDK auto-registers
+      setTimeout(checkStatus, 500);
       return permission === 'granted';
     }
     return false;
