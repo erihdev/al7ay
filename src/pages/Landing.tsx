@@ -19,7 +19,8 @@ import {
   BarChart3,
   CreditCard,
   CheckCircle2,
-  Lock
+  Lock,
+  Sparkles
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
@@ -261,10 +262,20 @@ const Landing = () => {
           </div>
         </section>
 
+        {/* Why Al-Hay Link */}
+        <section className="py-6 text-center">
+          <Link to="/why" className="inline-flex items-center gap-2 text-primary hover:underline font-medium">
+            <Sparkles className="h-5 w-5" />
+            لماذا تختار الحي؟ اكتشف المزيد
+            <ArrowLeft className="h-4 w-4" />
+          </Link>
+        </section>
+
         {/* Footer */}
         <footer className="py-6 border-t">
           <div className="container mx-auto px-4 text-center">
             <div className="flex flex-wrap items-center justify-center gap-3 text-xs text-muted-foreground mb-3">
+              <Link to="/why" className="hover:text-primary transition-colors">لماذا الحي</Link>
               <Link to="/terms" className="hover:text-primary transition-colors">الشروط</Link>
               <Link to="/privacy" className="hover:text-primary transition-colors">الخصوصية</Link>
               <Link to="/faq" className="hover:text-primary transition-colors">الأسئلة</Link>

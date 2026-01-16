@@ -41,6 +41,7 @@ const Terms = lazy(() => import("./pages/Terms"));
 const Privacy = lazy(() => import("./pages/Privacy"));
 const FAQ = lazy(() => import("./pages/FAQ"));
 const Contact = lazy(() => import("./pages/Contact"));
+const WhyAlHay = lazy(() => import("./pages/WhyAlHay"));
 
 const queryClient = new QueryClient();
 
@@ -102,6 +103,7 @@ const App = () => {
                       <Route path="/privacy" element={<Privacy />} />
                       <Route path="/faq" element={<FAQ />} />
                       <Route path="/contact" element={<Contact />} />
+                      <Route path="/why" element={<WhyAlHay />} />
                       {/* Redirect old routes to home */}
                       <Route path="/for-providers" element={<Landing />} />
                       <Route path="/welcome" element={<Landing />} />
