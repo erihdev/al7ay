@@ -1,8 +1,50 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { toast } from 'sonner';
 
-export function useAutoNotificationPermission() {
+// Use the global Window type from useAimtellTags.ts
+
+interface UseAutoNotificationPermissionOptions {
+  providerId?: string;
+  customerId?: string;
+}
+
+export function useAutoNotificationPermission(options: UseAutoNotificationPermissionOptions = {}) {
   const hasRequested = useRef(false);
+  const hasRegisteredAttributes = useRef(false);
+
+  // Register Aimtell attributes for targeted notifications
+  const registerAimtellAttributes = useCallback(() => {
+    if (hasRegisteredAttributes.current) return;
+    
+    if (typeof window._at?.track !== 'function') {
+      console.log('Aimtell SDK not ready for attribute registration');
+      return false;
+    }
+
+    const attributes: Record<string, string> = {};
+    
+    if (options.providerId) {
+      attributes.provider_id = options.providerId;
+    }
+    
+    if (options.customerId) {
+      attributes.customer_id = options.customerId;
+    }
+
+    if (Object.keys(attributes).length === 0) {
+      return false;
+    }
+
+    try {
+      window._at.track('attribute', attributes);
+      hasRegisteredAttributes.current = true;
+      console.log('✅ Aimtell attributes registered successfully:', attributes);
+      return true;
+    } catch (error) {
+      console.error('Error registering Aimtell attributes:', error);
+      return false;
+    }
+  }, [options.providerId, options.customerId]);
 
   useEffect(() => {
     // Only run once per session
@@ -14,30 +56,74 @@ export function useAutoNotificationPermission() {
       return;
     }
 
-    // If already granted or denied, don't ask again
-    if (Notification.permission !== 'default') {
-      return;
-    }
-
     // Auto-request permission after a short delay
-    const timer = setTimeout(async () => {
+    const requestPermissionAndRegister = async () => {
       hasRequested.current = true;
       
       try {
-        const permission = await Notification.requestPermission();
-        
-        if (permission === 'granted') {
-          toast.success('تم تفعيل الإشعارات تلقائياً ✓', {
-            description: 'ستتلقى إشعارات الطلبات الجديدة'
-          });
+        // If permission not granted yet, request it
+        if (Notification.permission === 'default') {
+          const permission = await Notification.requestPermission();
+          
+          if (permission === 'granted') {
+            // Wait for Aimtell SDK to be ready and register attributes
+            let registered = false;
+            for (let attempt = 0; attempt < 5; attempt++) {
+              await new Promise(resolve => setTimeout(resolve, 1000));
+              registered = registerAimtellAttributes();
+              if (registered) break;
+            }
+
+            toast.success('🔔 تم تفعيل الإشعارات بنجاح!', {
+              description: 'ستتلقى إشعارات فورية عند وصول طلب جديد',
+              duration: 5000,
+            });
+          } else if (permission === 'denied') {
+            toast.error('❌ تم رفض الإشعارات', {
+              description: 'لن تتلقى إشعارات الطلبات الجديدة. يمكنك تفعيلها من إعدادات المتصفح.',
+              duration: 7000,
+            });
+          }
+        } else if (Notification.permission === 'granted') {
+          // Already granted, just register attributes
+          let registered = false;
+          for (let attempt = 0; attempt < 5; attempt++) {
+            registered = registerAimtellAttributes();
+            if (registered) break;
+            await new Promise(resolve => setTimeout(resolve, 1000));
+          }
+          
+          if (registered) {
+            console.log('✅ Notification system ready - attributes registered');
+          }
         }
       } catch (error) {
-        console.error('Error requesting notification permission:', error);
+        console.error('Error in notification setup:', error);
       }
-    }, 1500); // Wait 1.5 seconds before asking
+    };
+
+    // Wait a bit before asking for permission
+    const timer = setTimeout(requestPermissionAndRegister, 1500);
 
     return () => clearTimeout(timer);
-  }, []);
+  }, [registerAimtellAttributes]);
 
-  return Notification.permission;
+  // Also try to register attributes when SDK loads (retry mechanism)
+  useEffect(() => {
+    if (!options.providerId && !options.customerId) return;
+    if (Notification.permission !== 'granted') return;
+
+    const retryTimers = [
+      setTimeout(registerAimtellAttributes, 2000),
+      setTimeout(registerAimtellAttributes, 5000),
+      setTimeout(registerAimtellAttributes, 10000),
+    ];
+
+    return () => retryTimers.forEach(clearTimeout);
+  }, [options.providerId, options.customerId, registerAimtellAttributes]);
+
+  return {
+    permission: typeof Notification !== 'undefined' ? Notification.permission : 'default',
+    registerAimtellAttributes,
+  };
 }
