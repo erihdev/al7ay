@@ -63,6 +63,7 @@ import { LoginAttemptsManager } from '@/components/admin/LoginAttemptsManager';
 import { EmployeesManager } from '@/components/admin/EmployeesManager';
 import { ActivityLogManager } from '@/components/admin/ActivityLogManager';
 import { EmployeePerformanceStats } from '@/components/admin/EmployeePerformanceStats';
+import { EmployeePointsManager } from '@/components/admin/EmployeePointsManager';
 import { InteractiveBackground } from '@/components/ui/InteractiveBackground';
 import { useUpdateDeliveryLocation } from '@/hooks/useOrderTracking';
 import { useOrderNotifications } from '@/hooks/useOrderNotifications';
@@ -134,6 +135,7 @@ const TAB_CATEGORIES = [
     tabs: [
       { value: 'employees', label: 'الموظفين', icon: Users },
       { value: 'employee-performance', label: 'أداء الموظفين', icon: BarChart3 },
+      { value: 'employee-points', label: 'نقاط الموظفين', icon: UserPlus },
       { value: 'activity-log', label: 'سجل النشاطات', icon: FileText },
       { value: 'versions', label: 'الإصدارات', icon: Rocket },
       { value: 'login-attempts', label: 'سجل الدخول', icon: Shield },
@@ -859,6 +861,11 @@ const Admin = () => {
               {/* Activity Log Tab */}
               <TabsContent value="activity-log">
                 <ActivityLogManager />
+              </TabsContent>
+
+              {/* Employee Points Tab */}
+              <TabsContent value="employee-points">
+                <EmployeePointsManager />
               </TabsContent>
             </Tabs>
           </div>
