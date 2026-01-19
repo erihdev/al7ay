@@ -16,10 +16,13 @@ import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
-import { Plus, Edit, Trash2, Shield, User, Mail, Phone, Key, FileText, PenTool, Briefcase, CheckCircle, Clock, AlertCircle, Download, Send } from 'lucide-react';
+import { Plus, Edit, Trash2, Shield, User, Mail, Phone, Key, FileText, PenTool, Briefcase, CheckCircle, Clock, AlertCircle, Download, Send, GripVertical, X } from 'lucide-react';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { exportContractToPDF } from '@/utils/exportContractPDF';
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
+import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 // قائمة الصلاحيات المتاحة
 const PERMISSION_GROUPS = [
@@ -134,11 +137,74 @@ const CONTRACT_TYPE_LABELS: Record<string, string> = {
   contract: 'عقد مؤقت',
 };
 
+// Sortable Position Item Component
+interface SortablePositionItemProps {
+  id: string;
+  position: JobPosition | undefined;
+  isPrimary: boolean;
+  onRemove: () => void;
+}
+
+const SortablePositionItem = ({ id, position, isPrimary, onRemove }: SortablePositionItemProps) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`flex items-center gap-2 p-2 rounded-lg border ${isPrimary ? 'bg-primary/10 border-primary/30' : 'bg-muted/50 border-border'} transition-colors`}
+    >
+      <button
+        type="button"
+        {...attributes}
+        {...listeners}
+        className="cursor-grab active:cursor-grabbing p-1 hover:bg-muted rounded"
+      >
+        <GripVertical className="h-4 w-4 text-muted-foreground" />
+      </button>
+      <div className="flex-1">
+        <span className="text-sm font-medium">{position?.title_ar}</span>
+        {isPrimary && (
+          <Badge variant="default" className="mr-2 text-xs">رئيسي</Badge>
+        )}
+      </div>
+      <button
+        type="button"
+        onClick={onRemove}
+        className="p-1 hover:bg-destructive/10 hover:text-destructive rounded transition-colors"
+      >
+        <X className="h-4 w-4" />
+      </button>
+    </div>
+  );
+};
+
 export const EmployeesManager = () => {
   const queryClient = useQueryClient();
   const signatureCanvasRef = useRef<HTMLCanvasElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [activeTab, setActiveTab] = useState('employees');
+
+  // DnD Sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
   
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isPermissionsOpen, setIsPermissionsOpen] = useState(false);
@@ -178,6 +244,19 @@ export const EmployeesManager = () => {
   });
   
   const [permissions, setPermissions] = useState<Record<string, { view: boolean; edit: boolean }>>({});
+
+  // Handle drag end for position reordering
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    
+    if (over && active.id !== over.id) {
+      const oldIndex = formData.position_ids.indexOf(active.id as string);
+      const newIndex = formData.position_ids.indexOf(over.id as string);
+      
+      const newPositionIds = arrayMove(formData.position_ids, oldIndex, newIndex);
+      setFormData({ ...formData, position_ids: newPositionIds });
+    }
+  };
 
   // Fetch job positions
   const { data: jobPositions } = useQuery({
@@ -236,7 +315,7 @@ export const EmployeesManager = () => {
     return employeePositions?.filter(ep => ep.employee_id === employeeId) || [];
   };
 
-  const getEmployeePositionNames = (employeeId: string) => {
+  const _getEmployeePositionNames = (employeeId: string) => {
     const positions = getEmployeePositions(employeeId);
     return positions.map(p => p.job_positions?.title_ar).filter(Boolean).join('، ') || '-';
   };
@@ -1011,17 +1090,32 @@ export const EmployeesManager = () => {
                           </div>
                         ))}
                       </div>
+                      
                       {formData.position_ids.length > 0 && (
-                        <div className="flex flex-wrap gap-2">
-                          {formData.position_ids.map((posId, index) => {
-                            const pos = jobPositions?.find(p => p.id === posId);
-                            return (
-                              <Badge key={posId} variant={index === 0 ? 'default' : 'secondary'} className="text-xs">
-                                {pos?.title_ar}
-                                {index === 0 && <span className="mr-1">(رئيسي)</span>}
-                              </Badge>
-                            );
-                          })}
+                        <div className="space-y-2">
+                          <p className="text-xs text-muted-foreground">اسحب لإعادة الترتيب - الدور الأول هو الرئيسي</p>
+                          <DndContext
+                            sensors={sensors}
+                            collisionDetection={closestCenter}
+                            onDragEnd={handleDragEnd}
+                          >
+                            <SortableContext items={formData.position_ids} strategy={verticalListSortingStrategy}>
+                              <div className="space-y-2">
+                                {formData.position_ids.map((posId, index) => (
+                                  <SortablePositionItem 
+                                    key={posId} 
+                                    id={posId} 
+                                    position={jobPositions?.find(p => p.id === posId)}
+                                    isPrimary={index === 0}
+                                    onRemove={() => setFormData({ 
+                                      ...formData, 
+                                      position_ids: formData.position_ids.filter(id => id !== posId) 
+                                    })}
+                                  />
+                                ))}
+                              </div>
+                            </SortableContext>
+                          </DndContext>
                         </div>
                       )}
                     </div>
@@ -1064,7 +1158,7 @@ export const EmployeesManager = () => {
                         <TableCell>
                           <div className="flex flex-wrap gap-1">
                             {getEmployeePositions(employee.id).length > 0 ? (
-                              getEmployeePositions(employee.id).map((ep, idx) => (
+                              getEmployeePositions(employee.id).map((ep) => (
                                 <Badge 
                                   key={ep.id} 
                                   variant={ep.is_primary ? 'default' : 'secondary'}
