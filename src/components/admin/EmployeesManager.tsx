@@ -155,7 +155,7 @@ export const EmployeesManager = () => {
     email: '',
     phone: '',
     position: '',
-    position_id: '',
+    position_ids: [] as string[],
     password: '',
   });
   
@@ -218,6 +218,28 @@ export const EmployeesManager = () => {
       return data as Employee[];
     },
   });
+
+  // Fetch employee positions (many-to-many)
+  const { data: employeePositions } = useQuery({
+    queryKey: ['employee-positions'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('employee_positions')
+        .select('*, job_positions(*)');
+      if (error) throw error;
+      return data as { id: string; employee_id: string; position_id: string; is_primary: boolean; job_positions: JobPosition }[];
+    },
+  });
+
+  // Helper to get positions for an employee
+  const getEmployeePositions = (employeeId: string) => {
+    return employeePositions?.filter(ep => ep.employee_id === employeeId) || [];
+  };
+
+  const getEmployeePositionNames = (employeeId: string) => {
+    const positions = getEmployeePositions(employeeId);
+    return positions.map(p => p.job_positions?.title_ar).filter(Boolean).join('، ') || '-';
+  };
 
   // Fetch contracts
   const { data: contracts, isLoading: contractsLoading } = useQuery({
@@ -366,7 +388,10 @@ export const EmployeesManager = () => {
       if (authError) throw authError;
       if (!authData.user) throw new Error('Failed to create user');
 
-      const position = jobPositions?.find(p => p.id === formData.position_id);
+      // Get primary position name for legacy field
+      const primaryPositionId = formData.position_ids[0];
+      const positions = formData.position_ids.map(id => jobPositions?.find(p => p.id === id)?.title_ar).filter(Boolean);
+      const positionNames = positions.join('، ') || formData.position;
       
       const { data, error } = await supabase
         .from('admin_employees')
@@ -375,13 +400,23 @@ export const EmployeesManager = () => {
           name: formData.name,
           email: formData.email,
           phone: formData.phone || null,
-          position: position?.title_ar || formData.position,
-          position_id: formData.position_id || null,
+          position: positionNames,
+          position_id: primaryPositionId || null,
         })
         .select()
         .single();
       
       if (error) throw error;
+
+      // Insert employee positions (many-to-many)
+      if (formData.position_ids.length > 0) {
+        const positionsToInsert = formData.position_ids.map((posId, index) => ({
+          employee_id: data.id,
+          position_id: posId,
+          is_primary: index === 0,
+        }));
+        await supabase.from('employee_positions').insert(positionsToInsert);
+      }
 
       await supabase.from('user_roles').insert({
         user_id: authData.user.id,
@@ -396,6 +431,7 @@ export const EmployeesManager = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-employees'] });
+      queryClient.invalidateQueries({ queryKey: ['employee-positions'] });
       setIsDialogOpen(false);
       resetForm();
       toast.success('تم إضافة الموظف بنجاح وإرسال بيانات الدخول');
@@ -409,21 +445,38 @@ export const EmployeesManager = () => {
   const updateEmployee = useMutation({
     mutationFn: async () => {
       if (!selectedEmployee) return;
-      const position = jobPositions?.find(p => p.id === formData.position_id);
+      
+      // Get position names for legacy field
+      const primaryPositionId = formData.position_ids[0];
+      const positions = formData.position_ids.map(id => jobPositions?.find(p => p.id === id)?.title_ar).filter(Boolean);
+      const positionNames = positions.join('، ') || formData.position;
       
       const { error } = await supabase
         .from('admin_employees')
         .update({
           name: formData.name,
           phone: formData.phone || null,
-          position: position?.title_ar || formData.position,
-          position_id: formData.position_id || null,
+          position: positionNames,
+          position_id: primaryPositionId || null,
         })
         .eq('id', selectedEmployee.id);
       if (error) throw error;
+
+      // Delete existing positions and insert new ones
+      await supabase.from('employee_positions').delete().eq('employee_id', selectedEmployee.id);
+      
+      if (formData.position_ids.length > 0) {
+        const positionsToInsert = formData.position_ids.map((posId, index) => ({
+          employee_id: selectedEmployee.id,
+          position_id: posId,
+          is_primary: index === 0,
+        }));
+        await supabase.from('employee_positions').insert(positionsToInsert);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-employees'] });
+      queryClient.invalidateQueries({ queryKey: ['employee-positions'] });
       setIsDialogOpen(false);
       setSelectedEmployee(null);
       resetForm();
@@ -712,7 +765,7 @@ export const EmployeesManager = () => {
   };
 
   const resetForm = () => {
-    setFormData({ name: '', email: '', phone: '', position: '', position_id: '', password: '' });
+    setFormData({ name: '', email: '', phone: '', position: '', position_ids: [], password: '' });
   };
 
   const resetContractForm = () => {
@@ -740,12 +793,14 @@ export const EmployeesManager = () => {
 
   const openEditDialog = (employee: Employee) => {
     setSelectedEmployee(employee);
+    // Get existing positions for this employee
+    const existingPositions = getEmployeePositions(employee.id).map(ep => ep.position_id);
     setFormData({
       name: employee.name,
       email: employee.email,
       phone: employee.phone || '',
       position: employee.position,
-      position_id: employee.position_id || '',
+      position_ids: existingPositions.length > 0 ? existingPositions : (employee.position_id ? [employee.position_id] : []),
       password: '',
     });
     setIsDialogOpen(true);
@@ -753,8 +808,10 @@ export const EmployeesManager = () => {
 
   const openContractDialog = (employee: Employee) => {
     setSelectedEmployee(employee);
-    if (employee.position_id) {
-      setContractFormData(prev => ({ ...prev, position_id: employee.position_id || '' }));
+    const empPositions = getEmployeePositions(employee.id);
+    const primaryPosition = empPositions.find(ep => ep.is_primary)?.position_id || empPositions[0]?.position_id || employee.position_id;
+    if (primaryPosition) {
+      setContractFormData(prev => ({ ...prev, position_id: primaryPosition }));
     }
     setIsContractDialogOpen(true);
   };
@@ -929,23 +986,44 @@ export const EmployeesManager = () => {
                       </div>
                     </div>
                     
-                    <div className="space-y-2">
-                      <Label>المسمى الوظيفي</Label>
-                      <Select
-                        value={formData.position_id}
-                        onValueChange={(value) => setFormData({ ...formData, position_id: value })}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="اختر المسمى الوظيفي" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {jobPositions?.map((pos) => (
-                            <SelectItem key={pos.id} value={pos.id}>
+                    <div className="space-y-3">
+                      <Label>المسميات الوظيفية (يمكن اختيار أكثر من واحد)</Label>
+                      <div className="border rounded-lg p-3 space-y-2 max-h-48 overflow-y-auto bg-muted/30">
+                        {jobPositions?.map((pos) => (
+                          <div key={pos.id} className="flex items-center gap-3 p-2 rounded-md hover:bg-muted/50 transition-colors">
+                            <Checkbox
+                              id={`pos-${pos.id}`}
+                              checked={formData.position_ids.includes(pos.id)}
+                              onCheckedChange={(checked) => {
+                                if (checked) {
+                                  setFormData({ ...formData, position_ids: [...formData.position_ids, pos.id] });
+                                } else {
+                                  setFormData({ ...formData, position_ids: formData.position_ids.filter(id => id !== pos.id) });
+                                }
+                              }}
+                            />
+                            <label htmlFor={`pos-${pos.id}`} className="flex-1 cursor-pointer text-sm">
                               {pos.title_ar}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                              {pos.description_ar && (
+                                <span className="text-xs text-muted-foreground block">{pos.description_ar}</span>
+                              )}
+                            </label>
+                          </div>
+                        ))}
+                      </div>
+                      {formData.position_ids.length > 0 && (
+                        <div className="flex flex-wrap gap-2">
+                          {formData.position_ids.map((posId, index) => {
+                            const pos = jobPositions?.find(p => p.id === posId);
+                            return (
+                              <Badge key={posId} variant={index === 0 ? 'default' : 'secondary'} className="text-xs">
+                                {pos?.title_ar}
+                                {index === 0 && <span className="mr-1">(رئيسي)</span>}
+                              </Badge>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
                     
                     <Button
@@ -983,7 +1061,23 @@ export const EmployeesManager = () => {
                             <p className="text-sm text-muted-foreground">{employee.email}</p>
                           </div>
                         </TableCell>
-                        <TableCell>{employee.position}</TableCell>
+                        <TableCell>
+                          <div className="flex flex-wrap gap-1">
+                            {getEmployeePositions(employee.id).length > 0 ? (
+                              getEmployeePositions(employee.id).map((ep, idx) => (
+                                <Badge 
+                                  key={ep.id} 
+                                  variant={ep.is_primary ? 'default' : 'secondary'}
+                                  className="text-xs"
+                                >
+                                  {ep.job_positions?.title_ar}
+                                </Badge>
+                              ))
+                            ) : (
+                              <span className="text-muted-foreground">{employee.position || '-'}</span>
+                            )}
+                          </div>
+                        </TableCell>
                         <TableCell>
                           <Switch
                             checked={employee.is_active}
