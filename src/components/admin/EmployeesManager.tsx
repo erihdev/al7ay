@@ -999,77 +999,77 @@ export const EmployeesManager = () => {
                     إضافة موظف
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="max-w-md">
-                  <DialogHeader>
-                    <DialogTitle>
+                <DialogContent className="max-w-sm">
+                  <DialogHeader className="pb-2">
+                    <DialogTitle className="text-base">
                       {selectedEmployee ? 'تعديل بيانات الموظف' : 'إضافة موظف جديد'}
                     </DialogTitle>
                   </DialogHeader>
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label>الاسم الكامل</Label>
+                  <div className="space-y-3">
+                    <div className="space-y-1">
+                      <Label className="text-xs">الاسم الكامل</Label>
                       <div className="relative">
-                        <User className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <User className="absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                         <Input
                           value={formData.name}
                           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                           placeholder="أدخل اسم الموظف"
-                          className="pr-10"
+                          className="pr-8 h-8 text-sm"
                         />
                       </div>
                     </div>
                     
                     {!selectedEmployee && (
-                      <>
-                        <div className="space-y-2">
-                          <Label>البريد الإلكتروني</Label>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="space-y-1">
+                          <Label className="text-xs">البريد الإلكتروني</Label>
                           <div className="relative">
-                            <Mail className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Mail className="absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                             <Input
                               type="email"
                               value={formData.email}
                               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                               placeholder="example@email.com"
-                              className="pr-10"
+                              className="pr-8 h-8 text-sm"
                               dir="ltr"
                             />
                           </div>
                         </div>
-                        <div className="space-y-2">
-                          <Label>كلمة المرور</Label>
+                        <div className="space-y-1">
+                          <Label className="text-xs">كلمة المرور</Label>
                           <div className="relative">
-                            <Key className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Key className="absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                             <Input
                               type="password"
                               value={formData.password}
                               onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                               placeholder="كلمة مرور قوية"
-                              className="pr-10"
+                              className="pr-8 h-8 text-sm"
                             />
                           </div>
                         </div>
-                      </>
+                      </div>
                     )}
                     
-                    <div className="space-y-2">
-                      <Label>رقم الجوال</Label>
+                    <div className="space-y-1">
+                      <Label className="text-xs">رقم الجوال</Label>
                       <div className="relative">
-                        <Phone className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Phone className="absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                         <Input
                           value={formData.phone}
                           onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                           placeholder="05xxxxxxxx"
-                          className="pr-10"
+                          className="pr-8 h-8 text-sm"
                           dir="ltr"
                         />
                       </div>
                     </div>
                     
-                    <div className="space-y-3">
-                      <Label>المسميات الوظيفية (يمكن اختيار أكثر من واحد)</Label>
-                      <div className="border rounded-lg p-3 space-y-2 max-h-48 overflow-y-auto bg-muted/30">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">المسميات الوظيفية</Label>
+                      <div className="border rounded-md p-2 space-y-1 max-h-32 overflow-y-auto bg-muted/30">
                         {jobPositions?.map((pos) => (
-                          <div key={pos.id} className="flex items-center gap-3 p-2 rounded-md hover:bg-muted/50 transition-colors">
+                          <div key={pos.id} className="flex items-center gap-2 p-1.5 rounded hover:bg-muted/50 transition-colors">
                             <Checkbox
                               id={`pos-${pos.id}`}
                               checked={formData.position_ids.includes(pos.id)}
@@ -1080,27 +1080,25 @@ export const EmployeesManager = () => {
                                   setFormData({ ...formData, position_ids: formData.position_ids.filter(id => id !== pos.id) });
                                 }
                               }}
+                              className="h-3.5 w-3.5"
                             />
-                            <label htmlFor={`pos-${pos.id}`} className="flex-1 cursor-pointer text-sm">
+                            <label htmlFor={`pos-${pos.id}`} className="flex-1 cursor-pointer text-xs">
                               {pos.title_ar}
-                              {pos.description_ar && (
-                                <span className="text-xs text-muted-foreground block">{pos.description_ar}</span>
-                              )}
                             </label>
                           </div>
                         ))}
                       </div>
                       
                       {formData.position_ids.length > 0 && (
-                        <div className="space-y-2">
-                          <p className="text-xs text-muted-foreground">اسحب لإعادة الترتيب - الدور الأول هو الرئيسي</p>
+                        <div className="space-y-1">
+                          <p className="text-[10px] text-muted-foreground">اسحب لإعادة الترتيب</p>
                           <DndContext
                             sensors={sensors}
                             collisionDetection={closestCenter}
                             onDragEnd={handleDragEnd}
                           >
                             <SortableContext items={formData.position_ids} strategy={verticalListSortingStrategy}>
-                              <div className="space-y-2">
+                              <div className="space-y-1">
                                 {formData.position_ids.map((posId, index) => (
                                   <SortablePositionItem 
                                     key={posId} 
@@ -1121,7 +1119,7 @@ export const EmployeesManager = () => {
                     </div>
                     
                     <Button
-                      className="w-full"
+                      className="w-full h-8 text-sm"
                       onClick={() => selectedEmployee ? updateEmployee.mutate() : createEmployee.mutate()}
                       disabled={createEmployee.isPending || updateEmployee.isPending}
                     >
