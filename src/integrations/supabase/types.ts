@@ -154,6 +154,39 @@ export type Database = {
         }
         Relationships: []
       }
+      contact_settings: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          location: string
+          phone: string
+          updated_at: string
+          whatsapp: string
+          working_hours: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string
+          id?: string
+          location?: string
+          phone?: string
+          updated_at?: string
+          whatsapp?: string
+          working_hours?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          location?: string
+          phone?: string
+          updated_at?: string
+          whatsapp?: string
+          working_hours?: string
+        }
+        Relationships: []
+      }
       coupon_usage: {
         Row: {
           coupon_id: string
