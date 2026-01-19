@@ -154,6 +154,36 @@ export type Database = {
         }
         Relationships: []
       }
+      commission_settings: {
+        Row: {
+          commission_rate: number
+          created_at: string | null
+          description_ar: string | null
+          id: string
+          is_active: boolean | null
+          payment_method: string
+          updated_at: string | null
+        }
+        Insert: {
+          commission_rate?: number
+          created_at?: string | null
+          description_ar?: string | null
+          id?: string
+          is_active?: boolean | null
+          payment_method: string
+          updated_at?: string | null
+        }
+        Update: {
+          commission_rate?: number
+          created_at?: string | null
+          description_ar?: string | null
+          id?: string
+          is_active?: boolean | null
+          payment_method?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       contact_settings: {
         Row: {
           created_at: string
