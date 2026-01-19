@@ -16,9 +16,10 @@ import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
-import { Plus, Edit, Trash2, Shield, User, Mail, Phone, Key, FileText, PenTool, Briefcase, CheckCircle, Clock, AlertCircle } from 'lucide-react';
+import { Plus, Edit, Trash2, Shield, User, Mail, Phone, Key, FileText, PenTool, Briefcase, CheckCircle, Clock, AlertCircle, Download, Send } from 'lucide-react';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
+import { exportContractToPDF } from '@/utils/exportContractPDF';
 
 // قائمة الصلاحيات المتاحة
 const PERMISSION_GROUPS = [
@@ -250,7 +251,19 @@ export const EmployeesManager = () => {
   const sendEmployeeNotification = async (
     type: 'permissions_updated' | 'account_created' | 'status_changed' | 'contract_created',
     employee: Employee,
-    extraData?: { permissions?: any[]; isActive?: boolean; temporaryPassword?: string; contractNumber?: string }
+    extraData?: { 
+      permissions?: any[]; 
+      isActive?: boolean; 
+      temporaryPassword?: string; 
+      contractNumber?: string;
+      signingLink?: string;
+      contractDetails?: {
+        positionTitle: string;
+        salary: number;
+        startDate: string;
+        contractType: string;
+      };
+    }
   ) => {
     try {
       await supabase.functions.invoke('send-employee-notification', {
@@ -457,6 +470,11 @@ export const EmployeesManager = () => {
       const position = jobPositions?.find(p => p.id === contractFormData.position_id);
       const contractNumber = `EMP-${Date.now().toString(36).toUpperCase()}`;
       
+      // Generate signing token
+      const signingToken = crypto.randomUUID();
+      const signingTokenExpiresAt = new Date();
+      signingTokenExpiresAt.setDate(signingTokenExpiresAt.getDate() + 7); // 7 days
+      
       const { data, error } = await supabase
         .from('employee_contracts')
         .insert({
@@ -470,14 +488,26 @@ export const EmployeesManager = () => {
           duties: position?.duties || [],
           terms_ar: contractFormData.terms_ar || null,
           status: 'pending_signature',
+          signing_token: signingToken,
+          signing_token_expires_at: signingTokenExpiresAt.toISOString(),
         })
         .select()
         .single();
       
       if (error) throw error;
       
+      // Create signing link
+      const signingLink = `${window.location.origin}/sign-contract?token=${signingToken}`;
+      
       await sendEmployeeNotification('contract_created', selectedEmployee, {
         contractNumber,
+        signingLink,
+        contractDetails: {
+          positionTitle: position?.title_ar || '',
+          salary: parseFloat(contractFormData.salary),
+          startDate: format(new Date(contractFormData.start_date), 'dd MMMM yyyy', { locale: ar }),
+          contractType: contractFormData.contract_type,
+        },
       });
       
       return data;
@@ -486,7 +516,51 @@ export const EmployeesManager = () => {
       queryClient.invalidateQueries({ queryKey: ['employee-contracts'] });
       setIsContractDialogOpen(false);
       resetContractForm();
-      toast.success('تم إنشاء العقد بنجاح وإرسال إشعار للموظف');
+      toast.success('تم إنشاء العقد وإرسال رابط التوقيع للموظف');
+    },
+    onError: (error: any) => {
+      toast.error(error.message || 'حدث خطأ');
+    },
+  });
+
+  // Resend signing link mutation
+  const resendSigningLink = useMutation({
+    mutationFn: async (contract: EmployeeContract) => {
+      const employee = employees?.find(e => e.id === contract.employee_id);
+      if (!employee) throw new Error('الموظف غير موجود');
+      
+      // Generate new signing token
+      const signingToken = crypto.randomUUID();
+      const signingTokenExpiresAt = new Date();
+      signingTokenExpiresAt.setDate(signingTokenExpiresAt.getDate() + 7);
+      
+      const { error } = await supabase
+        .from('employee_contracts')
+        .update({
+          signing_token: signingToken,
+          signing_token_expires_at: signingTokenExpiresAt.toISOString(),
+        })
+        .eq('id', contract.id);
+      
+      if (error) throw error;
+      
+      const signingLink = `${window.location.origin}/sign-contract?token=${signingToken}`;
+      const position = jobPositions?.find(p => p.id === contract.position_id);
+      
+      await sendEmployeeNotification('contract_created', employee, {
+        contractNumber: contract.contract_number,
+        signingLink,
+        contractDetails: {
+          positionTitle: position?.title_ar || contract.job_positions?.title_ar || '',
+          salary: contract.salary,
+          startDate: format(new Date(contract.start_date), 'dd MMMM yyyy', { locale: ar }),
+          contractType: contract.contract_type,
+        },
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['employee-contracts'] });
+      toast.success('تم إرسال رابط التوقيع الجديد للموظف');
     },
     onError: (error: any) => {
       toast.error(error.message || 'حدث خطأ');
@@ -1236,6 +1310,25 @@ export const EmployeesManager = () => {
                                 <FileText className="h-4 w-4 ml-2" />
                                 عرض
                               </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => exportContractToPDF(contract, getEmployeeName(contract.employee_id))}
+                              >
+                                <Download className="h-4 w-4 ml-2" />
+                                PDF
+                              </Button>
+                              {!contract.employee_signature && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => resendSigningLink.mutate(contract)}
+                                  disabled={resendSigningLink.isPending}
+                                >
+                                  <Send className="h-4 w-4 ml-2" />
+                                  إرسال الرابط
+                                </Button>
+                              )}
                               {!contract.admin_signature && (
                                 <Button
                                   size="sm"

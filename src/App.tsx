@@ -42,6 +42,7 @@ const Privacy = lazy(() => import("./pages/Privacy"));
 const FAQ = lazy(() => import("./pages/FAQ"));
 const Contact = lazy(() => import("./pages/Contact"));
 const WhyAlHay = lazy(() => import("./pages/WhyAlHay"));
+const SignContract = lazy(() => import("./pages/SignContract"));
 
 const queryClient = new QueryClient();
 
@@ -104,6 +105,7 @@ const App = () => {
                       <Route path="/faq" element={<FAQ />} />
                       <Route path="/contact" element={<Contact />} />
                       <Route path="/why" element={<WhyAlHay />} />
+                      <Route path="/sign-contract" element={<SignContract />} />
                       {/* Redirect old routes to home */}
                       <Route path="/for-providers" element={<Landing />} />
                       <Route path="/welcome" element={<Landing />} />
