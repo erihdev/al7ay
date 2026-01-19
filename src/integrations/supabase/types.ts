@@ -337,6 +337,8 @@ export type Database = {
           id: string
           position_id: string
           salary: number
+          signing_token: string | null
+          signing_token_expires_at: string | null
           start_date: string
           status: string | null
           terms_ar: string | null
@@ -357,6 +359,8 @@ export type Database = {
           id?: string
           position_id: string
           salary: number
+          signing_token?: string | null
+          signing_token_expires_at?: string | null
           start_date: string
           status?: string | null
           terms_ar?: string | null
@@ -377,6 +381,8 @@ export type Database = {
           id?: string
           position_id?: string
           salary?: number
+          signing_token?: string | null
+          signing_token_expires_at?: string | null
           start_date?: string
           status?: string | null
           terms_ar?: string | null

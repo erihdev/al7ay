@@ -9,12 +9,20 @@ const corsHeaders = {
 };
 
 interface EmployeeNotificationRequest {
-  type: 'permissions_updated' | 'account_created' | 'status_changed';
+  type: 'permissions_updated' | 'account_created' | 'status_changed' | 'contract_created';
   employeeName: string;
   employeeEmail: string;
   permissions?: { key: string; label: string; canView: boolean; canEdit: boolean }[];
   isActive?: boolean;
   temporaryPassword?: string;
+  contractNumber?: string;
+  signingLink?: string;
+  contractDetails?: {
+    positionTitle: string;
+    salary: number;
+    startDate: string;
+    contractType: string;
+  };
 }
 
 const permissionLabels: Record<string, string> = {
@@ -38,13 +46,29 @@ const permissionLabels: Record<string, string> = {
   employees: 'إدارة الموظفين',
 };
 
+const contractTypeLabels: Record<string, string> = {
+  full_time: 'دوام كامل',
+  part_time: 'دوام جزئي',
+  contract: 'عقد مؤقت',
+};
+
 const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { type, employeeName, employeeEmail, permissions, isActive, temporaryPassword }: EmployeeNotificationRequest = await req.json();
+    const { 
+      type, 
+      employeeName, 
+      employeeEmail, 
+      permissions, 
+      isActive, 
+      temporaryPassword,
+      contractNumber,
+      signingLink,
+      contractDetails
+    }: EmployeeNotificationRequest = await req.json();
 
     let subject: string = '';
     let html: string = '';
@@ -64,6 +88,13 @@ const handler = async (req: Request): Promise<Response> => {
       .credential-value { font-family: monospace; font-size: 18px; color: #7c3aed; font-weight: bold; background: #f3e8ff; padding: 8px 16px; border-radius: 6px; display: inline-block; margin-top: 8px; }
       .status-active { color: #059669; }
       .status-inactive { color: #dc2626; }
+      .contract-details { background: #f9fafb; border-radius: 8px; padding: 20px; margin: 20px 0; }
+      .contract-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e5e7eb; }
+      .contract-row:last-child { border-bottom: none; }
+      .contract-label { color: #6b7280; }
+      .contract-value { font-weight: 600; color: #374151; }
+      .sign-button { display: inline-block; background: linear-gradient(135deg, #059669, #10B981); color: white; padding: 16px 40px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 18px; margin: 20px 0; }
+      .warning-box { background: #fef3c7; border: 1px solid #f59e0b; border-radius: 8px; padding: 15px; margin: 20px 0; color: #92400e; }
     `;
 
     if (type === 'account_created') {
@@ -198,6 +229,72 @@ const handler = async (req: Request): Promise<Response> => {
                 إذا كان لديك أي استفسار، يرجى التواصل مع المشرف.
               </p>
               `}
+            </div>
+            <div class="footer">
+              <p>فريق الحي</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `;
+    } else if (type === 'contract_created') {
+      subject = '📝 عقد عمل جديد بانتظار توقيعك';
+      html = `
+        <!DOCTYPE html>
+        <html dir="rtl" lang="ar">
+        <head>
+          <meta charset="UTF-8">
+          <style>${baseStyles}</style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header" style="background: linear-gradient(135deg, #0ea5e9, #06b6d4);">
+              <h1>📝 عقد عمل جديد</h1>
+              <p style="margin: 0; opacity: 0.9;">بانتظار توقيعك</p>
+            </div>
+            <div class="content">
+              <p>مرحباً <strong>${employeeName}</strong>،</p>
+              <p>تم إنشاء عقد عمل جديد لك. يرجى مراجعة تفاصيل العقد والتوقيع عليه.</p>
+              
+              <div class="contract-details">
+                <h3 style="margin-top: 0; color: #374151;">تفاصيل العقد</h3>
+                <div class="contract-row">
+                  <span class="contract-label">رقم العقد:</span>
+                  <span class="contract-value">${contractNumber}</span>
+                </div>
+                ${contractDetails ? `
+                <div class="contract-row">
+                  <span class="contract-label">المسمى الوظيفي:</span>
+                  <span class="contract-value">${contractDetails.positionTitle}</span>
+                </div>
+                <div class="contract-row">
+                  <span class="contract-label">نوع العقد:</span>
+                  <span class="contract-value">${contractTypeLabels[contractDetails.contractType] || contractDetails.contractType}</span>
+                </div>
+                <div class="contract-row">
+                  <span class="contract-label">الراتب الشهري:</span>
+                  <span class="contract-value">${contractDetails.salary.toLocaleString()} ر.س</span>
+                </div>
+                <div class="contract-row">
+                  <span class="contract-label">تاريخ البدء:</span>
+                  <span class="contract-value">${contractDetails.startDate}</span>
+                </div>
+                ` : ''}
+              </div>
+              
+              <div class="warning-box">
+                <strong>⏰ تنبيه هام:</strong> هذا الرابط صالح لمدة 7 أيام فقط. يرجى التوقيع على العقد قبل انتهاء الصلاحية.
+              </div>
+              
+              <p style="text-align: center;">
+                <a href="${signingLink}" class="sign-button">
+                  ✍️ مراجعة وتوقيع العقد
+                </a>
+              </p>
+              
+              <p style="color: #6b7280; font-size: 14px; text-align: center;">
+                إذا كانت لديك أي استفسارات حول العقد، يرجى التواصل مع قسم الموارد البشرية.
+              </p>
             </div>
             <div class="footer">
               <p>فريق الحي</p>
