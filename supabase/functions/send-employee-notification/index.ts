@@ -9,7 +9,7 @@ const corsHeaders = {
 };
 
 interface EmployeeNotificationRequest {
-  type: 'permissions_updated' | 'account_created' | 'status_changed' | 'contract_created' | 'achievement_unlocked' | 'inactivity_alert';
+  type: 'permissions_updated' | 'account_created' | 'status_changed' | 'contract_created' | 'achievement_unlocked' | 'inactivity_alert' | 'points_earned' | 'reward_claimed';
   employeeName: string;
   employeeEmail: string;
   permissions?: { key: string; label: string; canView: boolean; canEdit: boolean }[];
@@ -32,6 +32,16 @@ interface EmployeeNotificationRequest {
     count?: number;
   };
   inactivityDays?: number;
+  pointsEarned?: {
+    points: number;
+    totalPoints: number;
+    reason: string;
+  };
+  rewardClaimed?: {
+    rewardName: string;
+    pointsSpent: number;
+    remainingPoints: number;
+  };
 }
 
 const permissionLabels: Record<string, string> = {
@@ -78,7 +88,9 @@ const handler = async (req: Request): Promise<Response> => {
       signingLink,
       contractDetails,
       achievement,
-      inactivityDays
+      inactivityDays,
+      pointsEarned,
+      rewardClaimed
     }: EmployeeNotificationRequest = await req.json();
 
     let subject: string = '';
@@ -414,6 +426,103 @@ const handler = async (req: Request): Promise<Response> => {
                    style="display: inline-block; background: #7c3aed; color: white; padding: 12px 30px; text-decoration: none; border-radius: 8px; font-weight: bold;">
                   العودة إلى لوحة التحكم
                 </a>
+              </p>
+            </div>
+            <div class="footer">
+              <p>فريق الحي</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `;
+    } else if (type === 'points_earned') {
+      subject = `⭐ مبروك! حصلت على ${pointsEarned?.points || 0} نقطة جديدة`;
+      html = `
+        <!DOCTYPE html>
+        <html dir="rtl" lang="ar">
+        <head>
+          <meta charset="UTF-8">
+          <style>${baseStyles}</style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header" style="background: linear-gradient(135deg, #10b981, #34d399);">
+              <h1>⭐ نقاط جديدة!</h1>
+              <p style="margin: 0; opacity: 0.9;">تمت إضافة نقاط إلى رصيدك</p>
+            </div>
+            <div class="content">
+              <p>مرحباً <strong>${employeeName}</strong>،</p>
+              
+              <div style="background: linear-gradient(135deg, #ecfdf5, #d1fae5); border: 2px solid #10b981; border-radius: 12px; padding: 25px; margin: 20px 0; text-align: center;">
+                <div style="font-size: 64px; margin-bottom: 15px;">⭐</div>
+                <div style="font-size: 48px; font-weight: bold; color: #059669;">+${pointsEarned?.points || 0}</div>
+                <div style="color: #047857; font-size: 18px; margin-top: 10px;">نقطة جديدة</div>
+              </div>
+              
+              <div style="display: flex; justify-content: center; gap: 20px; margin: 20px 0;">
+                <div class="stat-card">
+                  <div class="stat-value">${pointsEarned?.totalPoints || 0}</div>
+                  <div class="stat-label">إجمالي النقاط</div>
+                </div>
+              </div>
+              
+              ${pointsEarned?.reason ? `
+              <p style="text-align: center; color: #6b7280; background: #f9fafb; padding: 15px; border-radius: 8px;">
+                <strong>السبب:</strong> ${pointsEarned.reason}
+              </p>
+              ` : ''}
+              
+              <p style="text-align: center; margin-top: 25px;">
+                <a href="https://al7ay.lovable.app/employee-rewards" 
+                   style="display: inline-block; background: #10b981; color: white; padding: 12px 30px; text-decoration: none; border-radius: 8px; font-weight: bold;">
+                  🎁 استبدل نقاطك بالمكافآت
+                </a>
+              </p>
+            </div>
+            <div class="footer">
+              <p>فريق الحي</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `;
+    } else if (type === 'reward_claimed') {
+      subject = `🎁 تم استلام طلب المكافأة - ${rewardClaimed?.rewardName}`;
+      html = `
+        <!DOCTYPE html>
+        <html dir="rtl" lang="ar">
+        <head>
+          <meta charset="UTF-8">
+          <style>${baseStyles}</style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header" style="background: linear-gradient(135deg, #8b5cf6, #a78bfa);">
+              <h1>🎁 تم استلام طلب المكافأة</h1>
+              <p style="margin: 0; opacity: 0.9;">جاري معالجة طلبك</p>
+            </div>
+            <div class="content">
+              <p>مرحباً <strong>${employeeName}</strong>،</p>
+              
+              <div style="background: linear-gradient(135deg, #f5f3ff, #ede9fe); border: 2px solid #8b5cf6; border-radius: 12px; padding: 25px; margin: 20px 0; text-align: center;">
+                <div style="font-size: 64px; margin-bottom: 15px;">🎁</div>
+                <div style="font-size: 24px; font-weight: bold; color: #6d28d9;">${rewardClaimed?.rewardName}</div>
+                <div style="color: #7c3aed; font-size: 16px; margin-top: 10px;">تم خصم ${rewardClaimed?.pointsSpent || 0} نقطة</div>
+              </div>
+              
+              <div style="display: flex; justify-content: center; gap: 20px; margin: 20px 0;">
+                <div class="stat-card">
+                  <div class="stat-value">${rewardClaimed?.remainingPoints || 0}</div>
+                  <div class="stat-label">النقاط المتبقية</div>
+                </div>
+              </div>
+              
+              <div class="warning-box" style="background: #fef3c7; border-color: #f59e0b;">
+                <strong>ℹ️ حالة الطلب:</strong> قيد المراجعة - سيتم التواصل معك قريباً
+              </div>
+              
+              <p style="text-align: center; color: #6b7280;">
+                شكراً لك على ثقتك! سيتم معالجة طلبك في أقرب وقت.
               </p>
             </div>
             <div class="footer">
