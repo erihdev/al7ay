@@ -59,6 +59,7 @@ export type Database = {
           name: string
           phone: string | null
           position: string
+          position_id: string | null
           updated_at: string | null
           user_id: string
         }
@@ -70,6 +71,7 @@ export type Database = {
           name: string
           phone?: string | null
           position?: string
+          position_id?: string | null
           updated_at?: string | null
           user_id: string
         }
@@ -81,10 +83,19 @@ export type Database = {
           name?: string
           phone?: string | null
           position?: string
+          position_id?: string | null
           updated_at?: string | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "admin_employees_position_id_fkey"
+            columns: ["position_id"]
+            isOneToOne: false
+            referencedRelation: "job_positions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       app_versions: {
         Row: {
@@ -311,6 +322,84 @@ export type Database = {
           },
         ]
       }
+      employee_contracts: {
+        Row: {
+          admin_signature: string | null
+          admin_signed_at: string | null
+          contract_number: string
+          contract_type: string
+          created_at: string | null
+          duties: Json | null
+          employee_id: string
+          employee_signature: string | null
+          employee_signed_at: string | null
+          end_date: string | null
+          id: string
+          position_id: string
+          salary: number
+          start_date: string
+          status: string | null
+          terms_ar: string | null
+          terms_en: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          admin_signature?: string | null
+          admin_signed_at?: string | null
+          contract_number: string
+          contract_type?: string
+          created_at?: string | null
+          duties?: Json | null
+          employee_id: string
+          employee_signature?: string | null
+          employee_signed_at?: string | null
+          end_date?: string | null
+          id?: string
+          position_id: string
+          salary: number
+          start_date: string
+          status?: string | null
+          terms_ar?: string | null
+          terms_en?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          admin_signature?: string | null
+          admin_signed_at?: string | null
+          contract_number?: string
+          contract_type?: string
+          created_at?: string | null
+          duties?: Json | null
+          employee_id?: string
+          employee_signature?: string | null
+          employee_signed_at?: string | null
+          end_date?: string | null
+          id?: string
+          position_id?: string
+          salary?: number
+          start_date?: string
+          status?: string | null
+          terms_ar?: string | null
+          terms_en?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_contracts_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "admin_employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_contracts_position_id_fkey"
+            columns: ["position_id"]
+            isOneToOne: false
+            referencedRelation: "job_positions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       employee_permissions: {
         Row: {
           can_edit: boolean | null
@@ -345,6 +434,51 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      job_positions: {
+        Row: {
+          created_at: string | null
+          description_ar: string | null
+          description_en: string | null
+          duties: Json | null
+          id: string
+          is_active: boolean | null
+          permissions_template: Json | null
+          salary_range_max: number | null
+          salary_range_min: number | null
+          title_ar: string
+          title_en: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description_ar?: string | null
+          description_en?: string | null
+          duties?: Json | null
+          id?: string
+          is_active?: boolean | null
+          permissions_template?: Json | null
+          salary_range_max?: number | null
+          salary_range_min?: number | null
+          title_ar: string
+          title_en?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description_ar?: string | null
+          description_en?: string | null
+          duties?: Json | null
+          id?: string
+          is_active?: boolean | null
+          permissions_template?: Json | null
+          salary_range_max?: number | null
+          salary_range_min?: number | null
+          title_ar?: string
+          title_en?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       login_attempts: {
         Row: {
