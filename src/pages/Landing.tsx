@@ -161,19 +161,12 @@ const Landing = () => {
                         </div>
                       ))}
                     </div>
-                    <div className="flex gap-2">
-                      <Button variant="outline" size="icon" className="h-9 w-9" asChild>
-                        <Link to="/install">
-                          <Download className="h-4 w-4" />
-                        </Link>
-                      </Button>
-                      <Button className="flex-1 font-arabic text-sm" size="sm" asChild>
-                        <Link to="/app">
-                          ابدأ الطلب
-                          <ArrowLeft className="h-3 w-3 mr-1" />
-                        </Link>
-                      </Button>
-                    </div>
+                    <Button className="w-full font-arabic text-sm" size="sm" asChild>
+                      <Link to="/app">
+                        ابدأ الطلب
+                        <ArrowLeft className="h-3 w-3 mr-1" />
+                      </Link>
+                    </Button>
                   </CardContent>
                 </Card>
               </motion.div>
@@ -241,7 +234,11 @@ const Landing = () => {
         {/* Trust Badges */}
         <section className="py-6 bg-muted/30">
           <div className="container mx-auto px-4">
-            <div className="flex flex-wrap justify-center gap-4 md:gap-8 text-xs md:text-sm text-muted-foreground">
+            <div className="flex flex-wrap items-center justify-center gap-4 md:gap-8 text-xs md:text-sm text-muted-foreground">
+              <Link to="/install" className="flex items-center gap-1.5 bg-primary/10 hover:bg-primary/20 text-primary px-3 py-1.5 rounded-full transition-colors">
+                <Download className="h-4 w-4" />
+                <span className="font-medium">ثبّت التطبيق</span>
+              </Link>
               <div className="flex items-center gap-1.5">
                 <Shield className="h-4 w-4 text-green-500" />
                 <span>دفع آمن</span>
