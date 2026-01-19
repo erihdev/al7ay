@@ -19,6 +19,7 @@ import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { z } from 'zod';
+import { useQuery } from '@tanstack/react-query';
 
 const contactSchema = z.object({
   name: z.string().trim().min(2, 'الاسم يجب أن يكون حرفين على الأقل').max(100, 'الاسم طويل جداً'),
@@ -41,6 +42,20 @@ export default function Contact() {
   const [errors, setErrors] = useState<Partial<Record<keyof ContactFormData, string>>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+
+  // Fetch contact settings from database
+  const { data: contactSettings } = useQuery({
+    queryKey: ['contact-settings-public'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('contact_settings')
+        .select('*')
+        .single();
+      
+      if (error) throw error;
+      return data;
+    }
+  });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -90,28 +105,30 @@ export default function Contact() {
     {
       icon: Mail,
       title: 'البريد الإلكتروني',
-      value: 'support@alhaay.com',
-      href: 'mailto:support@alhaay.com'
+      value: contactSettings?.email || 'support@alhaay.com',
+      href: `mailto:${contactSettings?.email || 'support@alhaay.com'}`
     },
     {
       icon: Phone,
       title: 'رقم الهاتف',
-      value: '+966 50 000 0000',
-      href: 'tel:+966500000000'
+      value: contactSettings?.phone || '+966 50 000 0000',
+      href: `tel:${(contactSettings?.phone || '+966500000000').replace(/\s/g, '')}`
     },
     {
       icon: MapPin,
       title: 'الموقع',
-      value: 'المملكة العربية السعودية',
+      value: contactSettings?.location || 'المملكة العربية السعودية',
       href: null
     },
     {
       icon: Clock,
       title: 'ساعات العمل',
-      value: 'السبت - الخميس: 9 ص - 9 م',
+      value: contactSettings?.working_hours || 'السبت - الخميس: 9 ص - 9 م',
       href: null
     }
   ];
+
+  const whatsappNumber = contactSettings?.whatsapp || '966500000000';
 
   if (isSubmitted) {
     return (
@@ -305,7 +322,7 @@ export default function Contact() {
                 </p>
                 <Button variant="outline" className="w-full" asChild>
                   <a 
-                    href="https://wa.me/966500000000" 
+                    href={`https://wa.me/${whatsappNumber}`}
                     target="_blank" 
                     rel="noopener noreferrer"
                   >
