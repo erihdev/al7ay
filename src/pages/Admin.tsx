@@ -66,6 +66,7 @@ import { ActivityLogManager } from '@/components/admin/ActivityLogManager';
 import { EmployeePerformanceStats } from '@/components/admin/EmployeePerformanceStats';
 import { EmployeePointsManager } from '@/components/admin/EmployeePointsManager';
 import { ContactSettingsManager } from '@/components/admin/ContactSettingsManager';
+import CommissionSettingsManager from '@/components/admin/CommissionSettingsManager';
 import { PasswordChangeForm } from '@/components/admin/PasswordChangeForm';
 import { InteractiveBackground } from '@/components/ui/InteractiveBackground';
 import { useUpdateDeliveryLocation } from '@/hooks/useOrderTracking';
@@ -141,6 +142,7 @@ const TAB_CATEGORIES = [
       { value: 'employee-points', label: 'نقاط الموظفين', icon: UserPlus },
       { value: 'activity-log', label: 'سجل النشاطات', icon: FileText },
       { value: 'contact-settings', label: 'معلومات التواصل', icon: MapPin },
+      { value: 'commission-settings', label: 'إعدادات العمولة', icon: CreditCard },
       { value: 'password-change', label: 'تغيير كلمة المرور', icon: Lock },
       { value: 'versions', label: 'الإصدارات', icon: Rocket },
       { value: 'login-attempts', label: 'سجل الدخول', icon: Shield },
@@ -876,6 +878,11 @@ const Admin = () => {
               {/* Contact Settings Tab */}
               <TabsContent value="contact-settings">
                 <ContactSettingsManager />
+              </TabsContent>
+
+              {/* Commission Settings Tab */}
+              <TabsContent value="commission-settings">
+                <CommissionSettingsManager />
               </TabsContent>
 
               {/* Password Change Tab */}

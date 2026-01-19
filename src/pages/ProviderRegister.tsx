@@ -85,6 +85,10 @@ const ProviderRegister = () => {
   const [filteredNeighborhoods, setFilteredNeighborhoods] = useState<Neighborhood[]>([]);
   const [showLocationPicker, setShowLocationPicker] = useState(false);
   const [customLocation, setCustomLocation] = useState<{ lat: number; lng: number; address: string } | null>(null);
+  const [commissionRates, setCommissionRates] = useState<{ platform_managed: number; direct_gateway: number }>({
+    platform_managed: 15,
+    direct_gateway: 10
+  });
   
   const [formData, setFormData] = useState({
     fullName: '',
@@ -101,6 +105,31 @@ const ProviderRegister = () => {
   });
   const [useCustomCity, setUseCustomCity] = useState(false);
   const [useCustomNeighborhood, setUseCustomNeighborhood] = useState(false);
+
+  // Fetch commission rates
+  useEffect(() => {
+    const fetchCommissionRates = async () => {
+      const { data, error } = await supabase
+        .from('commission_settings')
+        .select('payment_method, commission_rate');
+      
+      if (!error && data) {
+        const rates: { platform_managed: number; direct_gateway: number } = {
+          platform_managed: 15,
+          direct_gateway: 10
+        };
+        data.forEach((item: { payment_method: string; commission_rate: number }) => {
+          if (item.payment_method === 'platform_managed') {
+            rates.platform_managed = item.commission_rate;
+          } else if (item.payment_method === 'direct_gateway') {
+            rates.direct_gateway = item.commission_rate;
+          }
+        });
+        setCommissionRates(rates);
+      }
+    };
+    fetchCommissionRates();
+  }, []);
 
   // Toggle plan in compare list
   const toggleCompare = (plan: SubscriptionPlan) => {
@@ -1433,7 +1462,7 @@ const ProviderRegister = () => {
                             <div className="space-y-1.5">
                               <div className="flex items-center gap-1.5 text-xs text-amber-600">
                                 <X className="h-3 w-3" />
-                                <span>عمولة المنصة (15%)</span>
+                                <span>عمولة المنصة ({commissionRates.platform_managed}%)</span>
                               </div>
                               <div className="flex items-center gap-1.5 text-xs text-amber-600">
                                 <X className="h-3 w-3" />
@@ -1505,7 +1534,7 @@ const ProviderRegister = () => {
                               </div>
                               <div className="flex items-center gap-1.5 text-xs text-amber-600">
                                 <X className="h-3 w-3" />
-                                <span>عمولة المنصة (10%)</span>
+                                <span>عمولة المنصة ({commissionRates.direct_gateway}%)</span>
                               </div>
                             </div>
                             
