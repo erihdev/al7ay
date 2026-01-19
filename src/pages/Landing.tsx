@@ -162,15 +162,15 @@ const Landing = () => {
                       ))}
                     </div>
                     <div className="flex gap-2">
+                      <Button variant="outline" size="icon" className="h-9 w-9" asChild>
+                        <Link to="/install">
+                          <Download className="h-4 w-4" />
+                        </Link>
+                      </Button>
                       <Button className="flex-1 font-arabic text-sm" size="sm" asChild>
                         <Link to="/app">
                           ابدأ الطلب
                           <ArrowLeft className="h-3 w-3 mr-1" />
-                        </Link>
-                      </Button>
-                      <Button variant="outline" size="icon" className="h-9 w-9" asChild>
-                        <Link to="/install">
-                          <Download className="h-4 w-4" />
                         </Link>
                       </Button>
                     </div>
