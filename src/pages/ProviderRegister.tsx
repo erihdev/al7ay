@@ -1433,7 +1433,7 @@ const ProviderRegister = () => {
                             <div className="space-y-1.5">
                               <div className="flex items-center gap-1.5 text-xs text-amber-600">
                                 <X className="h-3 w-3" />
-                                <span>عمولة المنصة على المبيعات</span>
+                                <span>عمولة المنصة (15%)</span>
                               </div>
                               <div className="flex items-center gap-1.5 text-xs text-amber-600">
                                 <X className="h-3 w-3" />
@@ -1502,6 +1502,10 @@ const ProviderRegister = () => {
                               <div className="flex items-center gap-1.5 text-xs text-amber-600">
                                 <X className="h-3 w-3" />
                                 <span>عمولة بوابة الدفع (~2.5%)</span>
+                              </div>
+                              <div className="flex items-center gap-1.5 text-xs text-amber-600">
+                                <X className="h-3 w-3" />
+                                <span>عمولة المنصة (10%)</span>
                               </div>
                             </div>
                             
