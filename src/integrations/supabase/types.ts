@@ -264,6 +264,53 @@ export type Database = {
           },
         ]
       }
+      employee_activity_log: {
+        Row: {
+          action_description: string
+          action_type: string
+          created_at: string
+          details: Json | null
+          employee_id: string | null
+          id: string
+          ip_address: string | null
+          target_id: string | null
+          target_table: string | null
+          user_id: string
+        }
+        Insert: {
+          action_description: string
+          action_type: string
+          created_at?: string
+          details?: Json | null
+          employee_id?: string | null
+          id?: string
+          ip_address?: string | null
+          target_id?: string | null
+          target_table?: string | null
+          user_id: string
+        }
+        Update: {
+          action_description?: string
+          action_type?: string
+          created_at?: string
+          details?: Json | null
+          employee_id?: string | null
+          id?: string
+          ip_address?: string | null
+          target_id?: string | null
+          target_table?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_activity_log_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "admin_employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       employee_permissions: {
         Row: {
           can_edit: boolean | null
