@@ -62,6 +62,7 @@ import { EdfaPayReports } from '@/components/admin/EdfaPayReports';
 import { LoginAttemptsManager } from '@/components/admin/LoginAttemptsManager';
 import { EmployeesManager } from '@/components/admin/EmployeesManager';
 import { ActivityLogManager } from '@/components/admin/ActivityLogManager';
+import { EmployeePerformanceStats } from '@/components/admin/EmployeePerformanceStats';
 import { InteractiveBackground } from '@/components/ui/InteractiveBackground';
 import { useUpdateDeliveryLocation } from '@/hooks/useOrderTracking';
 import { useOrderNotifications } from '@/hooks/useOrderNotifications';
@@ -132,6 +133,7 @@ const TAB_CATEGORIES = [
     icon: Cog,
     tabs: [
       { value: 'employees', label: 'الموظفين', icon: Users },
+      { value: 'employee-performance', label: 'أداء الموظفين', icon: BarChart3 },
       { value: 'activity-log', label: 'سجل النشاطات', icon: FileText },
       { value: 'versions', label: 'الإصدارات', icon: Rocket },
       { value: 'login-attempts', label: 'سجل الدخول', icon: Shield },
@@ -847,6 +849,11 @@ const Admin = () => {
               {/* Versions Tab */}
               <TabsContent value="versions">
                 <VersionManager />
+              </TabsContent>
+
+              {/* Employee Performance Tab */}
+              <TabsContent value="employee-performance">
+                <EmployeePerformanceStats />
               </TabsContent>
 
               {/* Activity Log Tab */}
