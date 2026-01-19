@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
+
 import { Switch } from '@/components/ui/switch';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -122,6 +122,26 @@ export const EmployeesManager = () => {
     enabled: !!selectedEmployee,
   });
 
+  // Send employee notification
+  const sendEmployeeNotification = async (
+    type: 'permissions_updated' | 'account_created' | 'status_changed',
+    employee: Employee,
+    extraData?: { permissions?: any[]; isActive?: boolean; temporaryPassword?: string }
+  ) => {
+    try {
+      await supabase.functions.invoke('send-employee-notification', {
+        body: {
+          type,
+          employeeName: employee.name,
+          employeeEmail: employee.email,
+          ...extraData,
+        },
+      });
+    } catch (error) {
+      console.error('Error sending employee notification:', error);
+    }
+  };
+
   // Create employee mutation
   const createEmployee = useMutation({
     mutationFn: async () => {
@@ -160,13 +180,18 @@ export const EmployeesManager = () => {
         role: 'admin',
       });
 
+      // Send welcome email notification
+      await sendEmployeeNotification('account_created', data as Employee, {
+        temporaryPassword: formData.password,
+      });
+
       return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-employees'] });
       setIsDialogOpen(false);
       resetForm();
-      toast.success('تم إضافة الموظف بنجاح');
+      toast.success('تم إضافة الموظف بنجاح وإرسال بيانات الدخول');
     },
     onError: (error: any) => {
       toast.error(error.message || 'حدث خطأ أثناء إضافة الموظف');
@@ -201,16 +226,19 @@ export const EmployeesManager = () => {
 
   // Toggle employee active status
   const toggleActive = useMutation({
-    mutationFn: async ({ id, isActive }: { id: string; isActive: boolean }) => {
+    mutationFn: async ({ id, isActive, employee }: { id: string; isActive: boolean; employee: Employee }) => {
       const { error } = await supabase
         .from('admin_employees')
         .update({ is_active: isActive })
         .eq('id', id);
       if (error) throw error;
+      
+      // Send status change notification
+      await sendEmployeeNotification('status_changed', employee, { isActive });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-employees'] });
-      toast.success('تم تحديث حالة الموظف');
+      toast.success('تم تحديث حالة الموظف وإرسال إشعار');
     },
   });
 
@@ -256,11 +284,27 @@ export const EmployeesManager = () => {
           .insert(permissionsToInsert);
         if (error) throw error;
       }
+
+      // Get permission labels for notification
+      const allPermissions = PERMISSION_GROUPS.flatMap(g => g.permissions);
+      const permissionsForEmail = Object.entries(permissions)
+        .filter(([_, p]) => p.view || p.edit)
+        .map(([key, p]) => ({
+          key,
+          label: allPermissions.find(perm => perm.key === key)?.label || key,
+          canView: p.view,
+          canEdit: p.edit,
+        }));
+
+      // Send permissions update notification
+      await sendEmployeeNotification('permissions_updated', selectedEmployee, {
+        permissions: permissionsForEmail,
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['employee-permissions'] });
       setIsPermissionsOpen(false);
-      toast.success('تم حفظ الصلاحيات');
+      toast.success('تم حفظ الصلاحيات وإرسال إشعار للموظف');
     },
     onError: () => {
       toast.error('حدث خطأ أثناء حفظ الصلاحيات');
@@ -450,7 +494,7 @@ export const EmployeesManager = () => {
                       <Switch
                         checked={employee.is_active}
                         onCheckedChange={(checked) => 
-                          toggleActive.mutate({ id: employee.id, isActive: checked })
+                          toggleActive.mutate({ id: employee.id, isActive: checked, employee })
                         }
                       />
                     </TableCell>
