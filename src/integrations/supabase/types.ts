@@ -97,6 +97,39 @@ export type Database = {
           },
         ]
       }
+      admin_report_settings: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_enabled: boolean | null
+          last_sent_at: string | null
+          recipients: string[] | null
+          report_type: string
+          schedule: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_enabled?: boolean | null
+          last_sent_at?: string | null
+          recipients?: string[] | null
+          report_type: string
+          schedule?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_enabled?: boolean | null
+          last_sent_at?: string | null
+          recipients?: string[] | null
+          report_type?: string
+          schedule?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       app_versions: {
         Row: {
           created_at: string
@@ -322,6 +355,48 @@ export type Database = {
           },
         ]
       }
+      employee_claimed_rewards: {
+        Row: {
+          claimed_at: string | null
+          employee_id: string
+          id: string
+          points_spent: number
+          reward_id: string
+          status: string | null
+        }
+        Insert: {
+          claimed_at?: string | null
+          employee_id: string
+          id?: string
+          points_spent: number
+          reward_id: string
+          status?: string | null
+        }
+        Update: {
+          claimed_at?: string | null
+          employee_id?: string
+          id?: string
+          points_spent?: number
+          reward_id?: string
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_claimed_rewards_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "admin_employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_claimed_rewards_reward_id_fkey"
+            columns: ["reward_id"]
+            isOneToOne: false
+            referencedRelation: "employee_rewards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       employee_contracts: {
         Row: {
           admin_signature: string | null
@@ -441,6 +516,82 @@ export type Database = {
           },
         ]
       }
+      employee_points: {
+        Row: {
+          created_at: string | null
+          employee_id: string
+          id: string
+          last_reset_at: string | null
+          monthly_points: number | null
+          total_points: number | null
+          updated_at: string | null
+          weekly_points: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          employee_id: string
+          id?: string
+          last_reset_at?: string | null
+          monthly_points?: number | null
+          total_points?: number | null
+          updated_at?: string | null
+          weekly_points?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          employee_id?: string
+          id?: string
+          last_reset_at?: string | null
+          monthly_points?: number | null
+          total_points?: number | null
+          updated_at?: string | null
+          weekly_points?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_points_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: true
+            referencedRelation: "admin_employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      employee_points_history: {
+        Row: {
+          action_type: string
+          created_at: string | null
+          description: string | null
+          employee_id: string
+          id: string
+          points: number
+        }
+        Insert: {
+          action_type: string
+          created_at?: string | null
+          description?: string | null
+          employee_id: string
+          id?: string
+          points: number
+        }
+        Update: {
+          action_type?: string
+          created_at?: string | null
+          description?: string | null
+          employee_id?: string
+          id?: string
+          points?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_points_history_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "admin_employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       employee_positions: {
         Row: {
           created_at: string | null
@@ -479,6 +630,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      employee_rewards: {
+        Row: {
+          created_at: string | null
+          description_ar: string | null
+          id: string
+          is_active: boolean | null
+          name_ar: string
+          name_en: string | null
+          points_required: number
+        }
+        Insert: {
+          created_at?: string | null
+          description_ar?: string | null
+          id?: string
+          is_active?: boolean | null
+          name_ar: string
+          name_en?: string | null
+          points_required: number
+        }
+        Update: {
+          created_at?: string | null
+          description_ar?: string | null
+          id?: string
+          is_active?: boolean | null
+          name_ar?: string
+          name_en?: string | null
+          points_required?: number
+        }
+        Relationships: []
       }
       job_positions: {
         Row: {
