@@ -441,6 +441,45 @@ export type Database = {
           },
         ]
       }
+      employee_positions: {
+        Row: {
+          created_at: string | null
+          employee_id: string
+          id: string
+          is_primary: boolean | null
+          position_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          employee_id: string
+          id?: string
+          is_primary?: boolean | null
+          position_id: string
+        }
+        Update: {
+          created_at?: string | null
+          employee_id?: string
+          id?: string
+          is_primary?: boolean | null
+          position_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_positions_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "admin_employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_positions_position_id_fkey"
+            columns: ["position_id"]
+            isOneToOne: false
+            referencedRelation: "job_positions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       job_positions: {
         Row: {
           created_at: string | null
