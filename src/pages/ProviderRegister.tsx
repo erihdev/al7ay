@@ -1491,10 +1491,6 @@ const ProviderRegister = () => {
                                 <Check className="h-3 w-3" />
                                 <span>تحكم كامل في المدفوعات</span>
                               </div>
-                              <div className="flex items-center gap-1.5 text-xs text-green-600">
-                                <Check className="h-3 w-3" />
-                                <span>بدون عمولة منصة</span>
-                              </div>
                             </div>
                             
                             {/* Cons */}
