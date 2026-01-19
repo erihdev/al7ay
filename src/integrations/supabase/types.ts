@@ -50,6 +50,42 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_employees: {
+        Row: {
+          created_at: string | null
+          email: string
+          id: string
+          is_active: boolean | null
+          name: string
+          phone: string | null
+          position: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          id?: string
+          is_active?: boolean | null
+          name: string
+          phone?: string | null
+          position?: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          phone?: string | null
+          position?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       app_versions: {
         Row: {
           created_at: string
@@ -224,6 +260,41 @@ export type Database = {
             columns: ["order_id"]
             isOneToOne: true
             referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      employee_permissions: {
+        Row: {
+          can_edit: boolean | null
+          can_view: boolean | null
+          created_at: string | null
+          employee_id: string
+          id: string
+          permission_key: string
+        }
+        Insert: {
+          can_edit?: boolean | null
+          can_view?: boolean | null
+          created_at?: string | null
+          employee_id: string
+          id?: string
+          permission_key: string
+        }
+        Update: {
+          can_edit?: boolean | null
+          can_view?: boolean | null
+          created_at?: string | null
+          employee_id?: string
+          id?: string
+          permission_key?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_permissions_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "admin_employees"
             referencedColumns: ["id"]
           },
         ]
@@ -1715,6 +1786,10 @@ export type Database = {
     }
     Functions: {
       calculate_loyalty_tier: { Args: { points: number }; Returns: string }
+      employee_has_permission: {
+        Args: { _action?: string; _permission_key: string; _user_id: string }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
