@@ -38,7 +38,8 @@ import {
   Megaphone,
   Building,
   Wallet,
-  Cog
+  Cog,
+  Lock
 } from 'lucide-react';
 import { CouponManager } from '@/components/admin/CouponManager';
 import { SalesReports } from '@/components/admin/SalesReports';
@@ -65,6 +66,7 @@ import { ActivityLogManager } from '@/components/admin/ActivityLogManager';
 import { EmployeePerformanceStats } from '@/components/admin/EmployeePerformanceStats';
 import { EmployeePointsManager } from '@/components/admin/EmployeePointsManager';
 import { ContactSettingsManager } from '@/components/admin/ContactSettingsManager';
+import { PasswordChangeForm } from '@/components/admin/PasswordChangeForm';
 import { InteractiveBackground } from '@/components/ui/InteractiveBackground';
 import { useUpdateDeliveryLocation } from '@/hooks/useOrderTracking';
 import { useOrderNotifications } from '@/hooks/useOrderNotifications';
@@ -139,6 +141,7 @@ const TAB_CATEGORIES = [
       { value: 'employee-points', label: 'نقاط الموظفين', icon: UserPlus },
       { value: 'activity-log', label: 'سجل النشاطات', icon: FileText },
       { value: 'contact-settings', label: 'معلومات التواصل', icon: MapPin },
+      { value: 'password-change', label: 'تغيير كلمة المرور', icon: Lock },
       { value: 'versions', label: 'الإصدارات', icon: Rocket },
       { value: 'login-attempts', label: 'سجل الدخول', icon: Shield },
       { value: 'settings', label: 'إعدادات المتجر', icon: Settings },
@@ -873,6 +876,11 @@ const Admin = () => {
               {/* Contact Settings Tab */}
               <TabsContent value="contact-settings">
                 <ContactSettingsManager />
+              </TabsContent>
+
+              {/* Password Change Tab */}
+              <TabsContent value="password-change">
+                <PasswordChangeForm />
               </TabsContent>
             </Tabs>
           </div>
