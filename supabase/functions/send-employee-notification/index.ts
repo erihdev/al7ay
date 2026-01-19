@@ -9,7 +9,7 @@ const corsHeaders = {
 };
 
 interface EmployeeNotificationRequest {
-  type: 'permissions_updated' | 'account_created' | 'status_changed' | 'contract_created';
+  type: 'permissions_updated' | 'account_created' | 'status_changed' | 'contract_created' | 'achievement_unlocked' | 'inactivity_alert';
   employeeName: string;
   employeeEmail: string;
   permissions?: { key: string; label: string; canView: boolean; canEdit: boolean }[];
@@ -23,6 +23,15 @@ interface EmployeeNotificationRequest {
     startDate: string;
     contractType: string;
   };
+  achievement?: {
+    type: 'top_performer' | 'milestone_100' | 'milestone_500' | 'milestone_1000' | 'weekly_champion' | 'category_leader';
+    title: string;
+    description: string;
+    period?: string;
+    category?: string;
+    count?: number;
+  };
+  inactivityDays?: number;
 }
 
 const permissionLabels: Record<string, string> = {
@@ -67,7 +76,9 @@ const handler = async (req: Request): Promise<Response> => {
       temporaryPassword,
       contractNumber,
       signingLink,
-      contractDetails
+      contractDetails,
+      achievement,
+      inactivityDays
     }: EmployeeNotificationRequest = await req.json();
 
     let subject: string = '';
@@ -95,6 +106,14 @@ const handler = async (req: Request): Promise<Response> => {
       .contract-value { font-weight: 600; color: #374151; }
       .sign-button { display: inline-block; background: linear-gradient(135deg, #059669, #10B981); color: white; padding: 16px 40px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 18px; margin: 20px 0; }
       .warning-box { background: #fef3c7; border: 1px solid #f59e0b; border-radius: 8px; padding: 15px; margin: 20px 0; color: #92400e; }
+      .achievement-box { background: linear-gradient(135deg, #fef3c7, #fde68a); border: 2px solid #f59e0b; border-radius: 12px; padding: 25px; margin: 20px 0; text-align: center; }
+      .achievement-icon { font-size: 64px; margin-bottom: 15px; }
+      .achievement-title { font-size: 24px; font-weight: bold; color: #92400e; margin: 10px 0; }
+      .achievement-desc { color: #78716c; font-size: 16px; }
+      .inactivity-box { background: #fef2f2; border: 2px solid #ef4444; border-radius: 12px; padding: 25px; margin: 20px 0; text-align: center; }
+      .stat-card { background: #f9fafb; border-radius: 8px; padding: 15px; margin: 10px 5px; display: inline-block; min-width: 120px; }
+      .stat-value { font-size: 28px; font-weight: bold; color: #7c3aed; }
+      .stat-label { font-size: 12px; color: #6b7280; }
     `;
 
     if (type === 'account_created') {
@@ -294,6 +313,107 @@ const handler = async (req: Request): Promise<Response> => {
               
               <p style="color: #6b7280; font-size: 14px; text-align: center;">
                 إذا كانت لديك أي استفسارات حول العقد، يرجى التواصل مع قسم الموارد البشرية.
+              </p>
+            </div>
+            <div class="footer">
+              <p>فريق الحي</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `;
+    } else if (type === 'achievement_unlocked') {
+      const achievementEmojis: Record<string, string> = {
+        top_performer: '🏆',
+        milestone_100: '💯',
+        milestone_500: '🌟',
+        milestone_1000: '👑',
+        weekly_champion: '🥇',
+        category_leader: '🎯',
+      };
+      const emoji = achievement?.type ? achievementEmojis[achievement.type] || '🎉' : '🎉';
+      
+      subject = `${emoji} تهانينا! لقد حققت إنجازاً جديداً`;
+      html = `
+        <!DOCTYPE html>
+        <html dir="rtl" lang="ar">
+        <head>
+          <meta charset="UTF-8">
+          <style>${baseStyles}</style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header" style="background: linear-gradient(135deg, #f59e0b, #fbbf24);">
+              <h1>${emoji} إنجاز جديد!</h1>
+              <p style="margin: 0; opacity: 0.9;">تهانينا على أدائك المتميز</p>
+            </div>
+            <div class="content">
+              <p>مرحباً <strong>${employeeName}</strong>،</p>
+              
+              <div class="achievement-box">
+                <div class="achievement-icon">${emoji}</div>
+                <div class="achievement-title">${achievement?.title || 'إنجاز متميز'}</div>
+                <div class="achievement-desc">${achievement?.description || ''}</div>
+                ${achievement?.count ? `
+                <div class="stat-card" style="margin-top: 15px;">
+                  <div class="stat-value">${achievement.count}</div>
+                  <div class="stat-label">إجراء مكتمل</div>
+                </div>
+                ` : ''}
+                ${achievement?.period ? `
+                <p style="margin-top: 15px; color: #78716c; font-size: 14px;">
+                  📅 الفترة: ${achievement.period}
+                </p>
+                ` : ''}
+                ${achievement?.category ? `
+                <p style="margin-top: 5px; color: #78716c; font-size: 14px;">
+                  📂 القسم: ${achievement.category}
+                </p>
+                ` : ''}
+              </div>
+              
+              <p style="text-align: center; color: #6b7280;">
+                استمر في هذا الأداء الرائع! 💪
+              </p>
+            </div>
+            <div class="footer">
+              <p>فريق الحي</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `;
+    } else if (type === 'inactivity_alert') {
+      subject = '⚠️ تنبيه: لاحظنا غيابك عن النظام';
+      html = `
+        <!DOCTYPE html>
+        <html dir="rtl" lang="ar">
+        <head>
+          <meta charset="UTF-8">
+          <style>${baseStyles}</style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header" style="background: linear-gradient(135deg, #ef4444, #f87171);">
+              <h1>⚠️ تنبيه عدم النشاط</h1>
+            </div>
+            <div class="content">
+              <p>مرحباً <strong>${employeeName}</strong>،</p>
+              
+              <div class="inactivity-box">
+                <div style="font-size: 48px; margin-bottom: 15px;">😴</div>
+                <p style="font-size: 18px; color: #dc2626; margin: 0;">
+                  لم نلاحظ أي نشاط منك منذ <strong>${inactivityDays || 7}</strong> يوم
+                </p>
+              </div>
+              
+              <p>نأمل أن تكون بخير! إذا كنت بحاجة إلى أي مساعدة أو واجهتك مشكلة في الوصول إلى لوحة التحكم، لا تتردد في التواصل معنا.</p>
+              
+              <p style="text-align: center; margin-top: 25px;">
+                <a href="https://al7ay.lovable.app/admin-login" 
+                   style="display: inline-block; background: #7c3aed; color: white; padding: 12px 30px; text-decoration: none; border-radius: 8px; font-weight: bold;">
+                  العودة إلى لوحة التحكم
+                </a>
               </p>
             </div>
             <div class="footer">
