@@ -727,7 +727,7 @@ const ProviderStoreContent = () => {
                   </div>
                 </div>
                 
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-4 gap-1.5">
                   {featuredProducts.map((product, index) => (
                     <motion.div
                       key={product.id}
@@ -779,7 +779,7 @@ const ProviderStoreContent = () => {
                   </div>
 
                   {/* Products Grid - Same style as Featured */}
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-4 gap-1.5">
                     {categoryProducts.map((product: Product, index: number) => (
                       <motion.div
                         key={product.id}
