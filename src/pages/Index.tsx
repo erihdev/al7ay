@@ -32,15 +32,12 @@ import {
   Star, 
   Navigation,
   ArrowLeft,
-  Sparkles,
   Filter,
   Building2,
   Globe,
-  AlertCircle,
-  MapPinned
+  AlertCircle
 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { CustomerLocationPicker } from '@/components/location/CustomerLocationPicker';
 
 interface ServiceProvider {
   id: string;
@@ -93,7 +90,6 @@ const Index = () => {
   const [isAutoDetecting, setIsAutoDetecting] = useState(false);
   const [detectedLocation, setDetectedLocation] = useState<{ city: string; neighborhood: string; neighborhoodId: string; userCoords?: { lat: number; lng: number }; distance?: number } | null>(null);
   const [userGpsCoords, setUserGpsCoords] = useState<{ lat: number; lng: number } | null>(null);
-  const [showLocationPicker, setShowLocationPicker] = useState(false);
   const { requestLocation } = useLocation();
   const hasAutoDetectedRef = useRef(false);
   
@@ -290,21 +286,6 @@ const Index = () => {
     );
   };
 
-  // Handle manual location selection from map
-  const handleManualLocationSelected = (coords: { lat: number; lng: number }) => {
-    setUserGpsCoords(coords);
-    setDetectedLocation({
-      city: 'موقع مخصص',
-      neighborhood: 'تم تحديده على الخريطة',
-      neighborhoodId: 'manual',
-      userCoords: coords,
-      distance: 0
-    });
-    // Reset filters since we're using direct coordinates
-    setSelectedCity('all');
-    setSelectedNeighborhood('all');
-  };
-
   // Filter and sort providers by filters, distance, and delivery_scope
   const filteredProviders = providers?.filter(provider => {
     // Delivery scope filter
@@ -454,32 +435,21 @@ const Index = () => {
                 </div>
               </div>
               
-              {/* Location buttons */}
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={detectNearestNeighborhood}
-                  disabled={isAutoDetecting}
-                  className="gap-1.5 text-xs h-8"
-                >
-                  {isAutoDetecting ? (
-                    <div className="h-3.5 w-3.5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                  ) : (
-                    <Navigation className="h-3.5 w-3.5" />
-                  )}
-                  {isAutoDetecting ? 'جارٍ التحديد...' : 'موقعي'}
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowLocationPicker(true)}
-                  className="gap-1.5 text-xs h-8"
-                >
-                  <MapPinned className="h-3.5 w-3.5" />
-                  الخريطة
-                </Button>
-              </div>
+              {/* Location button */}
+              <Button
+                variant={detectedLocation ? "default" : "outline"}
+                size="sm"
+                onClick={detectNearestNeighborhood}
+                disabled={isAutoDetecting}
+                className="gap-1.5 text-xs h-8"
+              >
+                {isAutoDetecting ? (
+                  <div className="h-3.5 w-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <Navigation className="h-3.5 w-3.5" />
+                )}
+                {isAutoDetecting ? 'جارٍ التحديد...' : detectedLocation ? 'تحديث الموقع' : 'موقعي'}
+              </Button>
             </div>
 
             {/* Detected Location Badge */}
@@ -487,60 +457,27 @@ const Index = () => {
               <motion.div
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="flex flex-col gap-1.5 p-2.5 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg"
+                className="flex items-center gap-2 p-2 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg"
               >
-                <div className="flex items-center gap-2">
-                  <Navigation className="h-4 w-4 text-green-600 flex-shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium text-green-700 dark:text-green-400 truncate">
-                      تم تحديد موقعك: {detectedLocation.neighborhood}
-                    </p>
-                    <p className="text-[10px] text-green-600/80 dark:text-green-500/80">
-                      {detectedLocation.city}
-                    </p>
-                  </div>
-                  <div className="flex gap-1">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-6 px-2 text-[10px] text-primary hover:text-primary/80"
-                      onClick={() => setShowLocationPicker(true)}
-                    >
-                      تعديل
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-6 px-2 text-[10px] text-green-600 hover:text-green-700"
-                      onClick={() => {
-                        setDetectedLocation(null);
-                        setUserGpsCoords(null);
-                        setSelectedCity('all');
-                        setSelectedNeighborhood('all');
-                      }}
-                    >
-                      إلغاء
-                    </Button>
-                  </div>
+                <Navigation className="h-4 w-4 text-green-600 flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-medium text-green-700 dark:text-green-400 truncate">
+                    {detectedLocation.neighborhood}، {detectedLocation.city}
+                  </p>
                 </div>
-                {detectedLocation.userCoords && detectedLocation.distance && detectedLocation.distance > 500 && detectedLocation.neighborhoodId !== 'manual' && (
-                  <div className="flex items-center justify-between gap-2 pt-1 border-t border-green-200/50 dark:border-green-800/50">
-                    <div className="flex items-center gap-2">
-                      <AlertCircle className="h-3 w-3 text-amber-500 flex-shrink-0" />
-                      <p className="text-[10px] text-amber-600 dark:text-amber-400">
-                        GPS غير دقيق؟
-                      </p>
-                    </div>
-                    <Button
-                      variant="link"
-                      size="sm"
-                      className="h-5 px-1 text-[10px] text-amber-600"
-                      onClick={() => setShowLocationPicker(true)}
-                    >
-                      حدد يدوياً
-                    </Button>
-                  </div>
-                )}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 px-2 text-[10px] text-muted-foreground hover:text-foreground"
+                  onClick={() => {
+                    setDetectedLocation(null);
+                    setUserGpsCoords(null);
+                    setSelectedCity('all');
+                    setSelectedNeighborhood('all');
+                  }}
+                >
+                  إلغاء
+                </Button>
               </motion.div>
             )}
 
@@ -866,14 +803,6 @@ const Index = () => {
         </main>
 
         <BottomNav />
-
-        {/* Customer Location Picker Dialog */}
-        <CustomerLocationPicker
-          open={showLocationPicker}
-          onOpenChange={setShowLocationPicker}
-          onLocationSelected={handleManualLocationSelected}
-          initialCoords={userGpsCoords}
-        />
       </div>
     </PageTransition>
   );
