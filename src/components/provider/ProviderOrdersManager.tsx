@@ -89,7 +89,7 @@ const ProviderOrdersManager = ({ providerId }: ProviderOrdersManagerProps) => {
           <div className="flex items-start justify-between mb-3">
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <span className="font-bold">#{order.id.slice(-6)}</span>
+                <span className="font-bold">#{order.order_number || order.id.slice(-6)}</span>
                 <Badge className={`${config.bgColor} ${config.color} border-0`}>
                   <StatusIcon className="h-3 w-3 ml-1" />
                   {config.label}

@@ -26,6 +26,7 @@ export interface ProviderOrder {
   notes: string | null;
   total_amount: number;
   status: string;
+  order_number: number | null;
   created_at: string;
   updated_at: string;
   provider_order_items?: ProviderOrderItem[];

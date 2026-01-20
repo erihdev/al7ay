@@ -42,6 +42,7 @@ interface PullUpStyleOrderCardProps {
     order_type: string;
     total_amount: number;
     created_at: string;
+    order_number?: number | null;
     provider_order_items?: OrderItem[];
     service_providers?: ServiceProvider;
     delivery_address?: string | null;
@@ -127,7 +128,7 @@ export function PullUpStyleOrderCard({
           orderId: order.id,
           providerId: order.service_providers.id,
           customerName: 'العميل',
-          message: `العميل وصل لاستلام الطلب #${order.id.slice(-4).toUpperCase()} 🙋`
+          message: `العميل وصل لاستلام الطلب #${order.order_number || order.id.slice(-4).toUpperCase()} 🙋`
         }
       });
 
@@ -402,7 +403,7 @@ export function PullUpStyleOrderCard({
                 {order.service_providers?.business_name || 'المتجر'}
               </h3>
               <p className="text-white/90 text-[10px] sm:text-sm">
-                طلب #{order.id.slice(-4).toUpperCase()}
+                طلب #{order.order_number || order.id.slice(-4).toUpperCase()}
               </p>
             </div>
           </div>

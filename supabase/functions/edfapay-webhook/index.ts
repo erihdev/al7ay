@@ -93,6 +93,7 @@ serve(async (req) => {
     }
 
     let createdOrderId: string | null = null;
+    let createdOrderNumber: number | null = null;
 
     // Only create order if payment was successful
     if (shouldCreateOrder) {
@@ -144,7 +145,8 @@ serve(async (req) => {
       }
 
       createdOrderId = createdOrder.id;
-      console.log(`Order created successfully: ${createdOrderId}`);
+      createdOrderNumber = createdOrder.order_number;
+      console.log(`Order created successfully: ${createdOrderId}, order_number: ${createdOrderNumber}`);
 
       // Create order items from pending order items
       const items = pendingOrder.items as any[];
@@ -219,7 +221,7 @@ serve(async (req) => {
         let emailHtml: string = '';
 
         if (paymentStatus === 'paid' && createdOrderId) {
-          emailSubject = `✅ تم الدفع وإنشاء الطلب - طلب #${createdOrderId.slice(-6)}`;
+          emailSubject = `✅ تم الدفع وإنشاء الطلب - طلب #${createdOrderNumber || createdOrderId.slice(-6)}`;
           emailHtml = `
             <!DOCTYPE html>
             <html dir="rtl" lang="ar">
@@ -255,7 +257,7 @@ serve(async (req) => {
                   
                   <div class="info-row">
                     <span>رقم الطلب:</span>
-                    <strong>#${createdOrderId.slice(-6)}</strong>
+                    <strong>#${createdOrderNumber || createdOrderId.slice(-6)}</strong>
                   </div>
                   <div class="info-row">
                     <span>رقم العملية:</span>

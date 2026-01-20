@@ -80,7 +80,7 @@ export function useProviderOrderStatusNotifications() {
               
               // Show toast notification
               toast.success(statusInfo.message, {
-                description: `${statusInfo.emoji} من ${providerName} - رقم الطلب: #${(payload.new?.id as string)?.slice(0, 8)}`,
+                description: `${statusInfo.emoji} من ${providerName} - رقم الطلب: #${(payload.new as any)?.order_number || (payload.new?.id as string)?.slice(0, 8)}`,
                 duration: 10000,
               });
 
@@ -120,7 +120,7 @@ export function useProviderOrderStatusNotifications() {
               playNotificationSound(newStatus);
               
               toast.success(statusInfo.message, {
-                description: `${statusInfo.emoji} رقم الطلب: #${(payload.new?.id as string)?.slice(0, 8)}`,
+                description: `${statusInfo.emoji} رقم الطلب: #${(payload.new as any)?.order_number || (payload.new?.id as string)?.slice(0, 8)}`,
                 duration: 8000,
               });
             }
