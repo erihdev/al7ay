@@ -92,6 +92,11 @@ const NeighborhoodsManager = () => {
   const [selectedCity, setSelectedCity] = useState<string>('all');
   const [selectedLocationType, setSelectedLocationType] = useState<string>('all');
   const [showActiveOnly, setShowActiveOnly] = useState(false);
+  const [isGeocoding, setIsGeocoding] = useState(false);
+  const [geocodeResults, setGeocodeResults] = useState<{
+    summary: { total: number; updated: number; not_found: number; unchanged: number };
+    results: Array<{ name: string; status: string; distance_km?: number }>;
+  } | null>(null);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -275,6 +280,42 @@ const NeighborhoodsManager = () => {
     setShowActiveOnly(false);
   };
 
+  // تحديث الإحداثيات تلقائياً
+  const handleGeocodeNeighborhoods = async (dryRun: boolean = true) => {
+    setIsGeocoding(true);
+    setGeocodeResults(null);
+    
+    try {
+      const response = await supabase.functions.invoke('geocode-neighborhoods', {
+        body: { dryRun, minDistanceKm: 5 }
+      });
+      
+      if (response.error) throw response.error;
+      
+      const data = response.data;
+      if (data.success) {
+        setGeocodeResults({
+          summary: data.summary,
+          results: data.results
+        });
+        
+        if (!dryRun && data.summary.updated > 0) {
+          queryClient.invalidateQueries({ queryKey: ['admin-neighborhoods'] });
+          toast.success(`تم تحديث ${data.summary.updated} حي بنجاح`);
+        } else if (dryRun) {
+          toast.info(`معاينة: ${data.summary.updated} حي يحتاج تحديث`);
+        }
+      } else {
+        throw new Error(data.error || 'حدث خطأ');
+      }
+    } catch (error) {
+      console.error('Geocoding error:', error);
+      toast.error('حدث خطأ أثناء تحديث الإحداثيات');
+    } finally {
+      setIsGeocoding(false);
+    }
+  };
+
   const hasActiveFilters = searchTerm !== '' || selectedRegion !== 'all' || selectedCity !== 'all' || selectedLocationType !== 'all' || showActiveOnly;
 
   if (isLoading) {
@@ -299,11 +340,103 @@ const NeighborhoodsManager = () => {
             className="pr-10 font-arabic"
           />
         </div>
-        <Button onClick={() => setIsDialogOpen(true)} className="font-arabic">
-          <Plus className="h-4 w-4 ml-2" />
-          إضافة حي جديد
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            onClick={() => handleGeocodeNeighborhoods(true)} 
+            disabled={isGeocoding}
+            className="font-arabic"
+          >
+            {isGeocoding ? (
+              <div className="h-4 w-4 border-2 border-primary border-t-transparent rounded-full animate-spin ml-2" />
+            ) : (
+              <MapPin className="h-4 w-4 ml-2" />
+            )}
+            تحديث الإحداثيات تلقائياً
+          </Button>
+          <Button onClick={() => setIsDialogOpen(true)} className="font-arabic">
+            <Plus className="h-4 w-4 ml-2" />
+            إضافة حي جديد
+          </Button>
+        </div>
       </div>
+
+      {/* Geocode Results */}
+      {geocodeResults && (
+        <Card className="border-primary/20 bg-primary/5">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base flex items-center gap-2">
+              <MapPin className="h-4 w-4 text-primary" />
+              نتائج التحقق من الإحداثيات
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+              <div className="bg-background rounded-lg p-2 text-center">
+                <div className="font-bold text-lg">{geocodeResults.summary.total}</div>
+                <div className="text-muted-foreground text-xs">إجمالي</div>
+              </div>
+              <div className="bg-green-500/10 rounded-lg p-2 text-center">
+                <div className="font-bold text-lg text-green-600">{geocodeResults.summary.updated}</div>
+                <div className="text-muted-foreground text-xs">يحتاج تحديث</div>
+              </div>
+              <div className="bg-yellow-500/10 rounded-lg p-2 text-center">
+                <div className="font-bold text-lg text-yellow-600">{geocodeResults.summary.not_found}</div>
+                <div className="text-muted-foreground text-xs">غير موجود</div>
+              </div>
+              <div className="bg-muted rounded-lg p-2 text-center">
+                <div className="font-bold text-lg">{geocodeResults.summary.unchanged}</div>
+                <div className="text-muted-foreground text-xs">صحيح</div>
+              </div>
+            </div>
+            
+            {geocodeResults.results.length > 0 && (
+              <div className="space-y-2">
+                <div className="text-sm font-medium">الأحياء التي تحتاج تحديث:</div>
+                <div className="max-h-40 overflow-y-auto space-y-1">
+                  {geocodeResults.results.slice(0, 10).map((r, i) => (
+                    <div key={i} className="flex items-center justify-between text-xs bg-background rounded p-2">
+                      <span>{r.name}</span>
+                      <div className="flex items-center gap-2">
+                        {r.distance_km && <span className="text-muted-foreground">{r.distance_km.toFixed(1)} كم</span>}
+                        <Badge variant={r.status === 'updated' ? 'default' : 'secondary'} className="text-[10px]">
+                          {r.status === 'updated' ? 'يحتاج تحديث' : r.status === 'not_found' ? 'غير موجود' : 'خطأ'}
+                        </Badge>
+                      </div>
+                    </div>
+                  ))}
+                  {geocodeResults.results.length > 10 && (
+                    <div className="text-xs text-muted-foreground text-center">
+                      و {geocodeResults.results.length - 10} آخرين...
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+            
+            {geocodeResults.summary.updated > 0 && (
+              <div className="flex gap-2 pt-2">
+                <Button 
+                  size="sm" 
+                  onClick={() => handleGeocodeNeighborhoods(false)}
+                  disabled={isGeocoding}
+                  className="font-arabic"
+                >
+                  تطبيق التحديثات
+                </Button>
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  onClick={() => setGeocodeResults(null)}
+                  className="font-arabic"
+                >
+                  إلغاء
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Filters */}
       <Card>
