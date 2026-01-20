@@ -14,6 +14,7 @@ interface PendingOrderData {
   deliveryLng?: number;
   notes?: string;
   totalAmount: number;
+  paymentMethod?: 'card' | 'apple_pay';
   items: Array<{
     productId: string;
     productName: string;
@@ -76,6 +77,7 @@ export function useEdfaPayment() {
           customerPhone: orderData.customerPhone,
           description: `طلب من ${orderData.customerName}`,
           returnUrl,
+          paymentMethod: orderData.paymentMethod || 'card',
         },
       });
 
