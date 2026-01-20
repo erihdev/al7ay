@@ -911,13 +911,12 @@ const ProviderSettingsManager = ({ provider, onUpdate }: ProviderSettingsManager
         </CardContent>
       </Card>
 
-      {/* Invoice Settings - Only show for EdfaPay verified providers */}
-      {provider.edfapay_credentials_verified && (
-        <ProviderInvoiceSettings 
-          providerId={provider.id} 
-          providerName={provider.business_name}
-        />
-      )}
+      {/* Invoice Settings - Show for all providers, editable only for EdfaPay verified */}
+      <ProviderInvoiceSettings 
+        providerId={provider.id} 
+        providerName={provider.business_name}
+        isEditable={provider.edfapay_credentials_verified || false}
+      />
     </div>
   );
 };

@@ -21,12 +21,14 @@ import {
   FileText,
   Palette,
   QrCode,
-  Eye
+  Eye,
+  Info
 } from 'lucide-react';
 
 interface ProviderInvoiceSettingsProps {
   providerId: string;
   providerName: string;
+  isEditable?: boolean;
 }
 
 interface InvoiceSettings {
@@ -47,10 +49,13 @@ interface InvoiceSettings {
   primary_color: string;
 }
 
-export function ProviderInvoiceSettings({ providerId, providerName }: ProviderInvoiceSettingsProps) {
+export function ProviderInvoiceSettings({ providerId, providerName, isEditable = true }: ProviderInvoiceSettingsProps) {
   const queryClient = useQueryClient();
   const [isUploading, setIsUploading] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+  
+  // If not editable, show read-only notice
+  const readOnlyMode = !isEditable;
   
   const [settings, setSettings] = useState<InvoiceSettings>({
     provider_id: providerId,
@@ -217,7 +222,10 @@ export function ProviderInvoiceSettings({ providerId, providerName }: ProviderIn
                 إعدادات الفاتورة
               </CardTitle>
               <CardDescription>
-                تخصيص شكل ومحتوى الفواتير الخاصة بمتجرك
+                {readOnlyMode 
+                  ? 'بيانات الفاتورة المستخدمة - يتم استخدام فاتورة منصة الحي وسيتم تحويل المبالغ إليك'
+                  : 'تخصيص شكل ومحتوى الفواتير الخاصة بمتجرك'
+                }
               </CardDescription>
             </div>
             <Button
@@ -229,6 +237,19 @@ export function ProviderInvoiceSettings({ providerId, providerName }: ProviderIn
               {showPreview ? 'إخفاء المعاينة' : 'معاينة'}
             </Button>
           </div>
+          
+          {/* Read-only notice for non-EdfaPay providers */}
+          {readOnlyMode && (
+            <div className="mt-4 p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg">
+              <p className="text-sm text-amber-700 dark:text-amber-400 flex items-center gap-2">
+                <Info className="h-4 w-4 flex-shrink-0" />
+                <span>
+                  أنت تستخدم فاتورة منصة الحي. لتخصيص فاتورتك الخاصة، يرجى الاشتراك في{' '}
+                  <a href="/edfapay-guide" className="underline font-medium">بوابة EdfaPay</a>
+                </span>
+              </p>
+            </div>
+          )}
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Logo Upload */}
@@ -245,18 +266,20 @@ export function ProviderInvoiceSettings({ providerId, providerName }: ProviderIn
                   className="h-16 w-16 object-contain rounded-lg border bg-white"
                 />
               )}
-              <div className="flex-1">
-                <Input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleLogoUpload}
-                  disabled={isUploading}
-                  className="cursor-pointer"
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  يفضل صورة مربعة بحجم 200x200 بكسل
-                </p>
-              </div>
+              {!readOnlyMode && (
+                <div className="flex-1">
+                  <Input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleLogoUpload}
+                    disabled={isUploading}
+                    className="cursor-pointer"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    يفضل صورة مربعة بحجم 200x200 بكسل
+                  </p>
+                </div>
+              )}
               {isUploading && <Loader2 className="h-4 w-4 animate-spin" />}
             </div>
           </div>
@@ -274,6 +297,7 @@ export function ProviderInvoiceSettings({ providerId, providerName }: ProviderIn
                 value={settings.business_name || ''}
                 onChange={(e) => setSettings(prev => ({ ...prev, business_name: e.target.value }))}
                 placeholder="اسم المتجر بالعربية"
+                disabled={readOnlyMode}
               />
             </div>
             <div className="space-y-2">
@@ -283,6 +307,7 @@ export function ProviderInvoiceSettings({ providerId, providerName }: ProviderIn
                 onChange={(e) => setSettings(prev => ({ ...prev, business_name_en: e.target.value }))}
                 placeholder="Store Name in English"
                 dir="ltr"
+                disabled={readOnlyMode}
               />
             </div>
           </div>
@@ -293,6 +318,7 @@ export function ProviderInvoiceSettings({ providerId, providerName }: ProviderIn
               value={settings.slogan || ''}
               onChange={(e) => setSettings(prev => ({ ...prev, slogan: e.target.value }))}
               placeholder="مثال: أفضل القهوة المختصة"
+              disabled={readOnlyMode}
             />
           </div>
 
@@ -310,6 +336,7 @@ export function ProviderInvoiceSettings({ providerId, providerName }: ProviderIn
                 onChange={(e) => setSettings(prev => ({ ...prev, phone: e.target.value }))}
                 placeholder="05xxxxxxxx"
                 dir="ltr"
+                disabled={readOnlyMode}
               />
             </div>
             <div className="space-y-2">
@@ -322,6 +349,7 @@ export function ProviderInvoiceSettings({ providerId, providerName }: ProviderIn
                 onChange={(e) => setSettings(prev => ({ ...prev, email: e.target.value }))}
                 placeholder="info@store.com"
                 dir="ltr"
+                disabled={readOnlyMode}
               />
             </div>
           </div>
@@ -336,6 +364,7 @@ export function ProviderInvoiceSettings({ providerId, providerName }: ProviderIn
               onChange={(e) => setSettings(prev => ({ ...prev, address: e.target.value }))}
               placeholder="العنوان الكامل للمتجر"
               rows={2}
+              disabled={readOnlyMode}
             />
           </div>
 
@@ -350,6 +379,7 @@ export function ProviderInvoiceSettings({ providerId, providerName }: ProviderIn
                 onChange={(e) => setSettings(prev => ({ ...prev, vat_number: e.target.value }))}
                 placeholder="رقم التسجيل الضريبي"
                 dir="ltr"
+                disabled={readOnlyMode}
               />
             </div>
             <div className="space-y-2">
@@ -359,6 +389,7 @@ export function ProviderInvoiceSettings({ providerId, providerName }: ProviderIn
                 onChange={(e) => setSettings(prev => ({ ...prev, cr_number: e.target.value }))}
                 placeholder="رقم السجل"
                 dir="ltr"
+                disabled={readOnlyMode}
               />
             </div>
           </div>
@@ -382,6 +413,7 @@ export function ProviderInvoiceSettings({ providerId, providerName }: ProviderIn
               <Switch
                 checked={settings.show_vat_number}
                 onCheckedChange={(checked) => setSettings(prev => ({ ...prev, show_vat_number: checked }))}
+                disabled={readOnlyMode}
               />
             </div>
 
@@ -398,6 +430,7 @@ export function ProviderInvoiceSettings({ providerId, providerName }: ProviderIn
               <Switch
                 checked={settings.show_qr_code}
                 onCheckedChange={(checked) => setSettings(prev => ({ ...prev, show_qr_code: checked }))}
+                disabled={readOnlyMode}
               />
             </div>
           </div>
@@ -417,12 +450,14 @@ export function ProviderInvoiceSettings({ providerId, providerName }: ProviderIn
                   value={settings.primary_color}
                   onChange={(e) => setSettings(prev => ({ ...prev, primary_color: e.target.value }))}
                   className="w-12 h-10 p-1 cursor-pointer"
+                  disabled={readOnlyMode}
                 />
                 <Input
                   value={settings.primary_color}
                   onChange={(e) => setSettings(prev => ({ ...prev, primary_color: e.target.value }))}
                   className="flex-1"
                   dir="ltr"
+                  disabled={readOnlyMode}
                 />
               </div>
             </div>
@@ -432,25 +467,28 @@ export function ProviderInvoiceSettings({ providerId, providerName }: ProviderIn
                 value={settings.footer_text || ''}
                 onChange={(e) => setSettings(prev => ({ ...prev, footer_text: e.target.value }))}
                 placeholder="شكراً لتعاملكم معنا!"
+                disabled={readOnlyMode}
               />
             </div>
           </div>
 
-          {/* Save Button */}
-          <div className="flex justify-end pt-4">
-            <Button
-              onClick={handleSave}
-              disabled={saveMutation.isPending}
-              className="gap-2"
-            >
-              {saveMutation.isPending ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Save className="h-4 w-4" />
-              )}
-              حفظ الإعدادات
-            </Button>
-          </div>
+          {/* Save Button - Only show for editable mode */}
+          {!readOnlyMode && (
+            <div className="flex justify-end pt-4">
+              <Button
+                onClick={handleSave}
+                disabled={saveMutation.isPending}
+                className="gap-2"
+              >
+                {saveMutation.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Save className="h-4 w-4" />
+                )}
+                حفظ الإعدادات
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
 
