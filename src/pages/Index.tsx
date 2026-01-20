@@ -383,11 +383,6 @@ const Index = () => {
             <LocationPermission />
           </motion.div>
 
-          {/* Loyalty Card */}
-          <motion.div variants={fadeInUp}>
-            <LoyaltyCard />
-          </motion.div>
-
           {/* Search Section */}
           <motion.div variants={fadeInUp} className="space-y-3">
             <div className="flex items-center justify-between">
@@ -804,6 +799,11 @@ const Index = () => {
               )}
             </motion.div>
           )}
+
+          {/* Loyalty Card - At the bottom */}
+          <motion.div variants={fadeInUp}>
+            <LoyaltyCard />
+          </motion.div>
 
           {/* Bottom Padding for scroll */}
           <div className="h-4" />
