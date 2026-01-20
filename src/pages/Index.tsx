@@ -345,7 +345,7 @@ const Index = () => {
                   <Store className="h-5 w-5 text-primary" />
                 </div>
                 <div>
-                  <h1 className="text-base font-bold">مرحباً بك في الحي! 👋</h1>
+                  <h1 className="text-base font-bold">الحي يحيييييك! 👋</h1>
                   <p className="text-xs text-muted-foreground">اكتشف مقدمي الخدمات القريبين منك</p>
                 </div>
               </div>
