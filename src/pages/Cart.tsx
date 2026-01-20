@@ -28,7 +28,7 @@ const Cart = () => {
   const { user } = useAuth();
   const { isWithinDeliveryZone, userLocation } = useLocation();
   const { data: loyaltyPoints } = useLoyaltyPoints();
-  const { data: loyaltyTier } = useLoyaltyTier();
+  const { data: loyaltyTier } = useLoyaltyTier(user?.id);
   const createOrder = useCreateOrder();
   const navigate = useNavigate();
 

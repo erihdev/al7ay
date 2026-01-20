@@ -37,7 +37,7 @@ const tierBenefits: Record<LoyaltyTier, { icon: typeof Star; text: string }[]> =
 
 export default function LoyaltyTiers() {
   const { user } = useAuth();
-  const { data: loyaltyData, isLoading } = useLoyaltyTier();
+  const { data: loyaltyData, isLoading } = useLoyaltyTier(user?.id);
 
   const currentTier = loyaltyData?.tier || 'bronze';
 

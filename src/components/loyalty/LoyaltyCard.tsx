@@ -8,7 +8,7 @@ import { motion } from 'framer-motion';
 
 export function LoyaltyCard() {
   const { user } = useAuth();
-  const { data: loyaltyData, isLoading } = useLoyaltyTier();
+  const { data: loyaltyData, isLoading } = useLoyaltyTier(user?.id);
 
   const tier = loyaltyData?.tier || 'bronze';
   const tierConfig = tierConfigs[tier];

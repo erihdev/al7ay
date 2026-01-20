@@ -26,7 +26,7 @@ import { PageTransition, fadeInUp, staggerContainer } from '@/components/ui/Page
 const Profile = () => {
   const { user, loading: authLoading, signOut, isAdmin } = useAuth();
   const { data: loyaltyPoints, isLoading: pointsLoading } = useLoyaltyPoints();
-  const { data: loyaltyTier } = useLoyaltyTier();
+  const { data: loyaltyTier } = useLoyaltyTier(user?.id);
   const { data: pointsHistory, isLoading: historyLoading } = usePointsHistory();
   
   // Fetch profile data for avatar
