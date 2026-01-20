@@ -137,7 +137,9 @@ serve(async (req) => {
       transactionId,
       firstName,
       lastName,
-      clientIp 
+      clientIp,
+      paymentMethod: paymentMethod || 'not specified',
+      sendingApplePay: paymentMethod === 'apple_pay'
     });
 
     // Make request to EdfaPay
