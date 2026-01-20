@@ -660,10 +660,66 @@ const StoreCart = ({ primaryColor = '#1B4332', storeLocation, deliveryRadiusKm =
 
   const renderCheckoutView = () => (
     <div className="flex flex-col h-full">
-      <div className="flex-1 overflow-y-auto py-4 space-y-5 -mx-2 px-2">
-        {/* Order Type */}
+      <div className="flex-1 overflow-y-auto py-2 space-y-4 -mx-2 px-2">
+        
+        {/* Professional Invoice Header */}
+        <div className="relative overflow-hidden rounded-2xl p-4" style={{ background: `linear-gradient(135deg, ${primaryColor}15 0%, ${primaryColor}05 100%)` }}>
+          <div className="absolute top-0 right-0 w-24 h-24 rounded-full opacity-10" style={{ background: primaryColor, transform: 'translate(30%, -30%)' }} />
+          <div className="relative">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ backgroundColor: primaryColor }}>
+                <FileText className="h-6 w-6 text-white" />
+              </div>
+              <div>
+                <h3 className="font-bold text-lg">فاتورة الطلب</h3>
+                <p className="text-xs text-muted-foreground">{providerName || 'المتجر'}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Order Items - Invoice Style */}
+        <div className="bg-background rounded-2xl border shadow-sm overflow-hidden">
+          <div className="p-3 border-b bg-muted/30">
+            <h4 className="text-sm font-semibold flex items-center gap-2">
+              <Package className="h-4 w-4" />
+              تفاصيل الطلب ({items.length} منتج)
+            </h4>
+          </div>
+          <div className="divide-y">
+            {items.map((item, index) => (
+              <div key={item.id} className="p-3 flex items-center gap-3">
+                <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-xs font-bold text-muted-foreground">
+                  {index + 1}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium line-clamp-1">{item.productName}</p>
+                  <p className="text-xs text-muted-foreground">{item.price} ر.س × {item.quantity}</p>
+                </div>
+                <div className="text-sm font-bold" style={{ color: primaryColor }}>
+                  {(item.price * item.quantity).toFixed(0)} ر.س
+                </div>
+              </div>
+            ))}
+          </div>
+          {/* Total */}
+          <div className="p-4 border-t bg-muted/30">
+            <div className="flex justify-between items-center">
+              <span className="font-semibold">المجموع الكلي</span>
+              <div className="text-left">
+                <span className="text-2xl font-bold" style={{ color: primaryColor }}>{totalPrice.toFixed(0)}</span>
+                <span className="text-sm mr-1">ر.س</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Order Type Selection */}
         <div className="space-y-3">
-          <Label className="text-sm font-semibold">نوع الطلب</Label>
+          <Label className="text-sm font-semibold flex items-center gap-2">
+            <Store className="h-4 w-4" />
+            طريقة الاستلام
+          </Label>
           <RadioGroup 
             value={orderType} 
             onValueChange={(v) => setOrderType(v as 'pickup' | 'delivery')}
@@ -673,31 +729,33 @@ const StoreCart = ({ primaryColor = '#1B4332', storeLocation, deliveryRadiusKm =
               htmlFor="pickup" 
               className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 cursor-pointer transition-all ${
                 orderType === 'pickup' 
-                  ? 'border-primary bg-primary/5' 
+                  ? 'border-primary bg-primary/5 shadow-md' 
                   : 'border-muted hover:border-muted-foreground/30'
               }`}
               style={orderType === 'pickup' ? { borderColor: primaryColor } : {}}
             >
               <Store className="h-6 w-6" style={orderType === 'pickup' ? { color: primaryColor } : {}} />
               <span className="text-sm font-medium">استلام</span>
+              <span className="text-[10px] text-muted-foreground">من المتجر</span>
               <RadioGroupItem value="pickup" id="pickup" className="sr-only" />
             </Label>
             <Label 
               htmlFor="delivery" 
               className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 cursor-pointer transition-all ${
                 orderType === 'delivery' 
-                  ? 'border-primary bg-primary/5' 
+                  ? 'border-primary bg-primary/5 shadow-md' 
                   : 'border-muted hover:border-muted-foreground/30'
               }`}
               style={orderType === 'delivery' ? { borderColor: primaryColor } : {}}
             >
               <MapPin className="h-6 w-6" style={orderType === 'delivery' ? { color: primaryColor } : {}} />
               <span className="text-sm font-medium">توصيل</span>
+              <span className="text-[10px] text-muted-foreground">لموقعك</span>
               <RadioGroupItem value="delivery" id="delivery" className="sr-only" />
             </Label>
           </RadioGroup>
 
-          {/* Location Selection Options */}
+          {/* Location Selection Options for Delivery */}
           {orderType === 'delivery' && (
             <div className="space-y-3">
               {/* Location Mode Toggle */}
@@ -814,119 +872,46 @@ const StoreCart = ({ primaryColor = '#1B4332', storeLocation, deliveryRadiusKm =
                   </motion.div>
                 )}
               </AnimatePresence>
+
+              {/* Delivery Address */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium flex items-center gap-2">
+                  <MapPin className="h-4 w-4" />
+                  عنوان التوصيل التفصيلي *
+                </Label>
+                <Textarea
+                  value={deliveryAddress}
+                  onChange={(e) => setDeliveryAddress(e.target.value)}
+                  placeholder="مثال: حي النخيل، شارع الملك فهد، مبنى رقم 5، الدور الثاني"
+                  className="min-h-[70px] rounded-xl resize-none text-sm"
+                />
+              </div>
             </div>
           )}
         </div>
 
-        {/* Customer Info */}
-        <div className="space-y-4">
-          <h3 className="text-sm font-semibold flex items-center gap-2">
-            <User className="h-4 w-4" />
-            بيانات العميل
-          </h3>
-          
-          <div className="space-y-3">
-            <div className="relative">
-              <User className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                value={customerName}
-                onChange={(e) => setCustomerName(e.target.value)}
-                placeholder="الاسم الكامل *"
-                className="pr-10 h-12 rounded-xl"
-              />
-            </div>
-
-            <div className="relative">
-              <Phone className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                value={customerPhone}
-                onChange={(e) => setCustomerPhone(e.target.value)}
-                placeholder="رقم الهاتف * (05XXXXXXXX)"
-                dir="ltr"
-                className="pr-10 h-12 rounded-xl text-right"
-              />
-            </div>
-
-            <div className="relative">
-              <Mail className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="email"
-                value={customerEmail}
-                onChange={(e) => setCustomerEmail(e.target.value)}
-                placeholder="البريد الإلكتروني (اختياري)"
-                dir="ltr"
-                className="pr-10 h-12 rounded-xl text-right"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Delivery Address */}
-        <AnimatePresence>
-          {orderType === 'delivery' && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              className="space-y-3"
-            >
-              <h3 className="text-sm font-semibold flex items-center gap-2">
-                <MapPin className="h-4 w-4" />
-                عنوان التوصيل
-              </h3>
-              <Textarea
-                value={deliveryAddress}
-                onChange={(e) => setDeliveryAddress(e.target.value)}
-                placeholder="أدخل عنوان التوصيل بالتفصيل *"
-                className="min-h-[80px] rounded-xl resize-none"
-              />
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Notes */}
-        <div className="space-y-3">
-          <h3 className="text-sm font-semibold flex items-center gap-2">
+        {/* Notes - Compact */}
+        <div className="space-y-2">
+          <Label className="text-sm font-medium flex items-center gap-2">
             <FileText className="h-4 w-4" />
-            ملاحظات
-          </h3>
+            ملاحظات (اختياري)
+          </Label>
           <Textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            placeholder="ملاحظات إضافية على الطلب (اختياري)"
-            className="min-h-[60px] rounded-xl resize-none"
+            placeholder="أي ملاحظات إضافية على الطلب..."
+            className="min-h-[50px] rounded-xl resize-none text-sm"
           />
         </div>
 
-        {/* Order Summary */}
-        <Card className="border-0 bg-muted/50">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <Package className="h-4 w-4" />
-              ملخص الطلب
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="text-sm space-y-2">
-            {items.map(item => (
-              <div key={item.id} className="flex justify-between text-muted-foreground">
-                <span>{item.productName} × {item.quantity}</span>
-                <span>{(item.price * item.quantity).toFixed(0)} ر.س</span>
-              </div>
-            ))}
-            <div className="border-t pt-2 flex justify-between font-bold text-base">
-              <span>الإجمالي</span>
-              <span style={{ color: primaryColor }}>{totalPrice.toFixed(0)} ر.س</span>
-            </div>
-          </CardContent>
-        </Card>
       </div>
 
-      <SheetFooter className="border-t pt-4 flex-col gap-2 mt-2">
+      <SheetFooter className="border-t pt-4 flex-col gap-2 mt-2 bg-background">
         <Button
           className="w-full h-12 text-base font-semibold rounded-xl shadow-lg"
           style={{ backgroundColor: primaryColor }}
           onClick={handleSubmitOrder}
-          disabled={isSubmitting}
+          disabled={isSubmitting || (orderType === 'delivery' && isOutOfRange)}
         >
           {isSubmitting ? (
             <>
@@ -936,7 +921,7 @@ const StoreCart = ({ primaryColor = '#1B4332', storeLocation, deliveryRadiusKm =
           ) : (
             <>
               <Send className="h-5 w-5 ml-2" />
-              تأكيد الطلب
+              تأكيد الطلب • {totalPrice.toFixed(0)} ر.س
             </>
           )}
         </Button>
@@ -953,26 +938,27 @@ const StoreCart = ({ primaryColor = '#1B4332', storeLocation, deliveryRadiusKm =
   );
 
   const renderSuccessView = () => (
-    <div className="flex flex-col h-full items-center justify-center text-center py-8">
+    <div className="flex flex-col h-full items-center justify-center text-center py-4">
+      {/* Success Animation */}
       <motion.div
         initial={{ scale: 0 }}
         animate={{ scale: 1 }}
         transition={{ type: "spring", stiffness: 200, damping: 15 }}
-        className="relative"
+        className="relative mb-4"
       >
         <div 
-          className="w-24 h-24 rounded-full flex items-center justify-center mb-6"
+          className="w-20 h-20 rounded-full flex items-center justify-center"
           style={{ backgroundColor: `${primaryColor}15` }}
         >
-          <CheckCircle2 className="h-14 w-14" style={{ color: primaryColor }} />
+          <CheckCircle2 className="h-10 w-10" style={{ color: primaryColor }} />
         </div>
         <motion.div
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
           transition={{ delay: 0.3 }}
-          className="absolute -top-2 -right-2"
+          className="absolute -top-1 -right-1"
         >
-          <Sparkles className="h-8 w-8 text-yellow-500" />
+          <Sparkles className="h-6 w-6 text-yellow-500" />
         </motion.div>
       </motion.div>
       
@@ -980,66 +966,95 @@ const StoreCart = ({ primaryColor = '#1B4332', storeLocation, deliveryRadiusKm =
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
-        className="space-y-3"
+        className="space-y-2"
       >
-        <h2 className="text-2xl font-bold">تم استلام طلبك!</h2>
-        <p className="text-muted-foreground">
-          شكراً لك، سيتم التواصل معك قريباً
+        <h2 className="text-xl font-bold">تم استلام طلبك!</h2>
+        <p className="text-sm text-muted-foreground">
+          سيتم التواصل معك قريباً
         </p>
       </motion.div>
 
+      {/* Professional Receipt */}
       {orderResult && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
-          className="mt-6 p-4 rounded-xl bg-muted/50 space-y-2"
+          className="mt-4 w-full"
         >
-          <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-            <Clock className="h-4 w-4" />
-            <span>رقم الطلب</span>
+          <div className="bg-background rounded-2xl border shadow-sm overflow-hidden">
+            {/* Receipt Header */}
+            <div className="p-4 border-b text-center" style={{ background: `linear-gradient(135deg, ${primaryColor}10 0%, transparent 100%)` }}>
+              <div className="flex items-center justify-center gap-2 mb-2">
+                <Store className="h-5 w-5" style={{ color: primaryColor }} />
+                <span className="font-semibold">{providerName || 'المتجر'}</span>
+              </div>
+              <div className="text-xs text-muted-foreground">
+                {new Date().toLocaleDateString('ar-SA', { 
+                  year: 'numeric', 
+                  month: 'long', 
+                  day: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit'
+                })}
+              </div>
+            </div>
+
+            {/* Order Number */}
+            <div className="p-4 border-b bg-muted/30">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Clock className="h-4 w-4" />
+                  <span>رقم الطلب</span>
+                </div>
+                <p className="font-mono text-base font-bold" style={{ color: primaryColor }}>
+                  {orderResult.orderNumber}
+                </p>
+              </div>
+            </div>
+
+            {/* Order Type */}
+            <div className="p-4 border-b">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">نوع الطلب</span>
+                <div className="flex items-center gap-2">
+                  {orderType === 'pickup' ? (
+                    <>
+                      <Store className="h-4 w-4" style={{ color: primaryColor }} />
+                      <span className="text-sm font-medium">استلام من المتجر</span>
+                    </>
+                  ) : (
+                    <>
+                      <MapPin className="h-4 w-4" style={{ color: primaryColor }} />
+                      <span className="text-sm font-medium">توصيل</span>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Total */}
+            <div className="p-4" style={{ background: `${primaryColor}08` }}>
+              <div className="flex items-center justify-between">
+                <span className="font-semibold">المبلغ الإجمالي</span>
+                <div className="text-left">
+                  <span className="text-xl font-bold" style={{ color: primaryColor }}>{totalPrice.toFixed(0)}</span>
+                  <span className="text-sm mr-1">ر.س</span>
+                </div>
+              </div>
+            </div>
           </div>
-          <p className="font-mono text-lg font-bold" style={{ color: primaryColor }}>
-            {orderResult.orderNumber}
-          </p>
         </motion.div>
       )}
-
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.6 }}
-        className="mt-8 space-y-3 w-full max-w-[250px]"
-      >
-        <div className="text-sm text-muted-foreground space-y-2">
-          <div className="flex items-center gap-2 justify-center">
-            <Store className="h-4 w-4" />
-            <span>{providerName || 'المتجر'}</span>
-          </div>
-          <div className="flex items-center gap-2 justify-center">
-            {orderType === 'pickup' ? (
-              <>
-                <Store className="h-4 w-4" />
-                <span>استلام من المتجر</span>
-              </>
-            ) : (
-              <>
-                <MapPin className="h-4 w-4" />
-                <span>توصيل للعنوان</span>
-              </>
-            )}
-          </div>
-        </div>
-      </motion.div>
 
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.8 }}
-        className="mt-auto pt-6 w-full space-y-3"
+        className="mt-auto pt-4 w-full space-y-2"
       >
         <Button
-          className="w-full h-12 rounded-xl shadow-lg"
+          className="w-full h-11 rounded-xl shadow-lg"
           style={{ backgroundColor: primaryColor }}
           onClick={() => {
             handleNewOrder();
