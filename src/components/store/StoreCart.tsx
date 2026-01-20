@@ -3,6 +3,7 @@ import { useProviderCart } from '@/contexts/ProviderCartContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useMapboxToken } from '@/hooks/useMapboxToken';
 import { useEdfaPayment } from '@/hooks/useEdfaPayment';
+import { useApplePay } from '@/hooks/useApplePay';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { supabase } from '@/integrations/supabase/client';
@@ -296,6 +297,7 @@ const StoreCart = ({ primaryColor = '#1B4332', storeLocation, deliveryRadiusKm =
   const { items, providerId, providerName, totalItems, totalPrice, updateQuantity, removeItem, clearCart } = useProviderCart();
   const { user } = useAuth();
   const { initiatePayment } = useEdfaPayment();
+  const { isApplePayAvailable, initiateApplePayPayment, isProcessing: isApplePayProcessing } = useApplePay();
   const [isOpen, setIsOpen] = useState(false);
   const [viewState, setViewState] = useState<ViewState>('cart');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -470,8 +472,57 @@ const StoreCart = ({ primaryColor = '#1B4332', storeLocation, deliveryRadiusKm =
     try {
       // Order number will come from database
 
-      // If online payment (card or Apple Pay), use EdfaPay redirect flow
-      if (paymentMethod === 'online' || paymentMethod === 'apple_pay') {
+      // Handle Apple Pay natively
+      if (paymentMethod === 'apple_pay') {
+        if (!isApplePayAvailable) {
+          toast.error('Apple Pay غير متاح على هذا الجهاز');
+          setIsSubmitting(false);
+          return;
+        }
+
+        // Initiate native Apple Pay - MUST be synchronous from click handler
+        const applePayResult = await initiateApplePayPayment({
+          providerId: providerId || undefined,
+          customerId: user?.id,
+          customerName: customerName.trim(),
+          customerPhone: customerPhone.trim(),
+          customerEmail: customerEmail.trim() || undefined,
+          orderType: orderType,
+          deliveryAddress: orderType === 'delivery' ? deliveryAddress.trim() : undefined,
+          deliveryLat: customerLocation?.lat,
+          deliveryLng: customerLocation?.lng,
+          notes: notes.trim() || undefined,
+          totalAmount: totalPrice,
+          items: items.map(item => ({
+            productId: item.productId,
+            productName: item.productName,
+            quantity: item.quantity,
+            unitPrice: item.price,
+            totalPrice: item.price * item.quantity,
+            selectedOptions: null
+          })),
+        });
+
+        if (applePayResult.success) {
+          // Payment successful - show success view
+          setOrderResult({
+            orderId: applePayResult.orderId || '',
+            orderNumber: applePayResult.orderNumber || '',
+            invoiceNumber: applePayResult.orderNumber || '',
+            paymentMethod: 'Apple Pay',
+            createdAt: new Date()
+          });
+          setViewState('success');
+          clearCart();
+        } else if (applePayResult.error !== 'Payment cancelled') {
+          toast.error('فشل في عملية الدفع، يمكنك المحاولة مجدداً أو الدفع نقداً');
+        }
+        setIsSubmitting(false);
+        return;
+      }
+
+      // If online payment (card), use EdfaPay redirect flow
+      if (paymentMethod === 'online') {
         const paymentResult = await initiatePayment({
           providerId: providerId || undefined,
           customerId: user?.id,
@@ -482,7 +533,7 @@ const StoreCart = ({ primaryColor = '#1B4332', storeLocation, deliveryRadiusKm =
           deliveryAddress: orderType === 'delivery' ? deliveryAddress.trim() : undefined,
           notes: notes.trim() || undefined,
           totalAmount: totalPrice,
-          paymentMethod: paymentMethod === 'apple_pay' ? 'apple_pay' : 'card',
+          paymentMethod: 'card',
           items: items.map(item => ({
             productId: item.productId,
             productName: item.productName,
@@ -1055,11 +1106,22 @@ const StoreCart = ({ primaryColor = '#1B4332', storeLocation, deliveryRadiusKm =
             </Label>
           </RadioGroup>
           
-          {(paymentMethod === 'online' || paymentMethod === 'apple_pay') && (
+          {paymentMethod === 'online' && (
             <div className="flex items-center gap-2 p-2.5 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800">
               <CreditCard className="h-4 w-4 text-blue-600 shrink-0" />
               <p className="text-xs text-blue-700 dark:text-blue-400">
                 سيتم توجيهك لصفحة الدفع الآمنة بعد تأكيد الطلب
+              </p>
+            </div>
+          )}
+          
+          {paymentMethod === 'apple_pay' && (
+            <div className="flex items-center gap-2 p-2.5 bg-gray-900 dark:bg-gray-800 rounded-lg border border-gray-700">
+              <svg className="h-4 w-4 text-white shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M17.0425 8.60449C16.8625 8.44949 15.5175 7.78449 13.6325 7.78449C11.7475 7.78449 10.9875 8.79449 10.9875 9.59949C10.9875 10.5545 11.9025 11.0345 12.6675 11.3845C13.5325 11.7845 13.8275 12.0095 13.8275 12.4095C13.8275 12.8595 13.4075 13.1345 12.7675 13.1345C11.8025 13.1345 10.6175 12.5345 10.0675 12.1845L9.6475 13.6545C10.3475 14.0795 11.4825 14.5045 12.6675 14.5045C14.7025 14.5045 15.7425 13.4545 15.7425 12.3545C15.7425 11.0045 14.2275 10.4295 13.2375 9.97949C12.5475 9.65449 12.2025 9.42949 12.2025 9.00449C12.2025 8.62949 12.5475 8.35449 13.1375 8.35449C14.0275 8.35449 15.1625 8.85449 15.5325 9.05449L17.0425 8.60449Z"/>
+              </svg>
+              <p className="text-xs text-white">
+                اضغط تأكيد لإظهار Apple Pay مباشرة
               </p>
             </div>
           )}
@@ -1083,15 +1145,24 @@ const StoreCart = ({ primaryColor = '#1B4332', storeLocation, deliveryRadiusKm =
 
       <SheetFooter className="border-t pt-4 flex-col gap-2 mt-2 bg-background">
         <Button
-          className="w-full h-12 text-base font-semibold rounded-xl shadow-lg"
-          style={{ backgroundColor: primaryColor }}
+          className={`w-full h-12 text-base font-semibold rounded-xl shadow-lg ${
+            paymentMethod === 'apple_pay' ? 'bg-black hover:bg-gray-900 text-white' : ''
+          }`}
+          style={paymentMethod !== 'apple_pay' ? { backgroundColor: primaryColor } : {}}
           onClick={handleSubmitOrder}
-          disabled={isSubmitting || (orderType === 'delivery' && isOutOfRange)}
+          disabled={isSubmitting || isApplePayProcessing || (orderType === 'delivery' && isOutOfRange)}
         >
-          {isSubmitting ? (
+          {isSubmitting || isApplePayProcessing ? (
             <>
               <Loader2 className="h-5 w-5 ml-2 animate-spin" />
-              جاري إرسال الطلب...
+              {paymentMethod === 'apple_pay' ? 'جاري الدفع...' : 'جاري إرسال الطلب...'}
+            </>
+          ) : paymentMethod === 'apple_pay' ? (
+            <>
+              <svg className="h-5 w-5 ml-2" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M17.0425 8.60449C16.8625 8.44949 15.5175 7.78449 13.6325 7.78449C11.7475 7.78449 10.9875 8.79449 10.9875 9.59949C10.9875 10.5545 11.9025 11.0345 12.6675 11.3845C13.5325 11.7845 13.8275 12.0095 13.8275 12.4095C13.8275 12.8595 13.4075 13.1345 12.7675 13.1345C11.8025 13.1345 10.6175 12.5345 10.0675 12.1845L9.6475 13.6545C10.3475 14.0795 11.4825 14.5045 12.6675 14.5045C14.7025 14.5045 15.7425 13.4545 15.7425 12.3545C15.7425 11.0045 14.2275 10.4295 13.2375 9.97949C12.5475 9.65449 12.2025 9.42949 12.2025 9.00449C12.2025 8.62949 12.5475 8.35449 13.1375 8.35449C14.0275 8.35449 15.1625 8.85449 15.5325 9.05449L17.0425 8.60449Z"/>
+              </svg>
+              الدفع بـ Apple Pay • {totalPrice.toFixed(0)} ر.س
             </>
           ) : (
             <>
