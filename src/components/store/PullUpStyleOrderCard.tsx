@@ -13,7 +13,7 @@ import {
   MapPin,
   Loader2,
   Navigation2,
-  Hand,
+  
   Store,
   Bell
 } from 'lucide-react';
@@ -114,6 +114,7 @@ export function PullUpStyleOrderCard({
   const [mapReady, setMapReady] = useState(false);
   const [isNotifyingStore, setIsNotifyingStore] = useState(false);
   const [hasNotifiedStore, setHasNotifiedStore] = useState(false);
+  const [isNavigationMode, setIsNavigationMode] = useState(false);
 
   // Notify store that customer has arrived
   const notifyStoreArrival = useCallback(async () => {
@@ -257,17 +258,38 @@ export function PullUpStyleOrderCard({
     );
   }, [fetchRoute]);
 
-  // Open external navigation - using location.href to stay on same page until maps app opens
-  const openExternalNavigation = useCallback(() => {
-    const destination = `${storeLocation.lat},${storeLocation.lng}`;
-    const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${destination}&travelmode=driving`;
-    const appleMapsUrl = `http://maps.apple.com/?daddr=${destination}&dirflg=d`;
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  // Toggle navigation mode - zoom in and follow user location on the map
+  const toggleNavigationMode = useCallback(() => {
+    if (!map.current || !userLocation) {
+      toast.error('يرجى انتظار تحديد موقعك أولاً');
+      return;
+    }
     
-    // Use location.href instead of window.open to stay on same page
-    window.location.href = isIOS ? appleMapsUrl : googleMapsUrl;
-  }, [storeLocation]);
-
+    setIsNavigationMode(prev => {
+      const newMode = !prev;
+      if (newMode && map.current) {
+        // Enter navigation mode - zoom in and follow user
+        map.current.flyTo({
+          center: [userLocation.lng, userLocation.lat],
+          zoom: 17,
+          pitch: 60,
+          bearing: heading,
+          duration: 1000
+        });
+        toast.success('وضع الملاحة مفعّل', { description: 'الخريطة تتبع موقعك الآن' });
+      } else if (map.current) {
+        // Exit navigation mode - show full route
+        map.current.flyTo({
+          center: [storeLocation.lng, storeLocation.lat],
+          zoom: 14,
+          pitch: 0,
+          bearing: 0,
+          duration: 1000
+        });
+      }
+      return newMode;
+    });
+  }, [userLocation, heading, storeLocation]);
   // Initialize map
   useEffect(() => {
     if (!mapContainer.current || !mapboxToken) return;
@@ -338,7 +360,7 @@ export function PullUpStyleOrderCard({
     };
   }, [mapboxToken, storeLocation, startLocationWatch]);
 
-  // Update user marker
+  // Update user marker and follow in navigation mode
   useEffect(() => {
     if (!map.current || !userLocation || !mapReady) return;
 
@@ -375,8 +397,24 @@ export function PullUpStyleOrderCard({
         .addTo(map.current);
     } else {
       userMarker.current.setLngLat([userLocation.lng, userLocation.lat]);
+      
+      // Update heading rotation
+      const markerEl = userMarker.current.getElement();
+      const svg = markerEl.querySelector('svg');
+      if (svg) {
+        svg.style.transform = `rotate(${heading}deg)`;
+      }
     }
-  }, [userLocation, heading, mapReady]);
+    
+    // In navigation mode, follow user and rotate map
+    if (isNavigationMode && map.current) {
+      map.current.easeTo({
+        center: [userLocation.lng, userLocation.lat],
+        bearing: heading,
+        duration: 500
+      });
+    }
+  }, [userLocation, heading, mapReady, isNavigationMode]);
 
   // Progress steps based on order status
   const getProgressWidth = () => {
@@ -500,11 +538,12 @@ export function PullUpStyleOrderCard({
       {/* Footer Actions */}
       <div className="p-2.5 sm:p-4 border-t flex items-center gap-2">
         <Button
-          className="flex-1 gap-1.5 bg-primary hover:bg-primary/90 text-xs sm:text-sm h-9 sm:h-10"
-          onClick={openExternalNavigation}
+          className={`flex-1 gap-1.5 text-xs sm:text-sm h-9 sm:h-10 ${isNavigationMode ? 'bg-green-600 hover:bg-green-700' : 'bg-primary hover:bg-primary/90'}`}
+          onClick={toggleNavigationMode}
+          disabled={!userLocation}
         >
           <Navigation2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-          ابدأ الملاحة
+          {isNavigationMode ? 'إيقاف الملاحة' : 'ابدأ الملاحة'}
         </Button>
 
         <Button

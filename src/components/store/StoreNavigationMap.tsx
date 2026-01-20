@@ -2,10 +2,11 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { useMapboxToken } from '@/hooks/useMapboxToken';
-import { Loader2, Navigation2, RotateCw, MapPin, Store as StoreIcon, Locate } from 'lucide-react';
+import { Loader2, Navigation2, RotateCw, MapPin, Locate } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
+import { toast } from 'sonner';
 
 interface StoreNavigationMapProps {
   storeLocation: { lat: number; lng: number };
@@ -32,6 +33,7 @@ export function StoreNavigationMap({
   const [locationError, setLocationError] = useState<string | null>(null);
   const [isLocating, setIsLocating] = useState(true);
   const [heading, setHeading] = useState<number>(0);
+  const [isNavigationMode, setIsNavigationMode] = useState(false);
 
   // Calculate distance using Haversine formula
   const calculateDistance = useCallback((from: { lat: number; lng: number }, to: { lat: number; lng: number }) => {
@@ -167,22 +169,38 @@ export function StoreNavigationMap({
     }
   }, [userLocation]);
 
-  // Open external navigation - using location.href to stay on same page until maps app opens
-  const openExternalNavigation = useCallback(() => {
-    const destination = `${storeLocation.lat},${storeLocation.lng}`;
+  // Toggle navigation mode - zoom in and follow user location on the map
+  const toggleNavigationMode = useCallback(() => {
+    if (!map.current || !userLocation) {
+      toast.error('يرجى انتظار تحديد موقعك أولاً');
+      return;
+    }
     
-    // Try to open in Google Maps app first (works on mobile)
-    const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${destination}&travelmode=driving`;
-    
-    // For iOS, try Apple Maps as fallback
-    const appleMapsUrl = `http://maps.apple.com/?daddr=${destination}&dirflg=d`;
-    
-    // Check if we're on iOS
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-    
-    // Use location.href instead of window.open to stay on same page
-    window.location.href = isIOS ? appleMapsUrl : googleMapsUrl;
-  }, [storeLocation]);
+    setIsNavigationMode(prev => {
+      const newMode = !prev;
+      if (newMode && map.current) {
+        // Enter navigation mode - zoom in and follow user with 3D perspective
+        map.current.flyTo({
+          center: [userLocation.lng, userLocation.lat],
+          zoom: 17,
+          pitch: 60,
+          bearing: heading,
+          duration: 1000
+        });
+        toast.success('وضع الملاحة مفعّل', { description: 'الخريطة تتبع موقعك الآن' });
+      } else if (map.current) {
+        // Exit navigation mode - show full route
+        map.current.flyTo({
+          center: [storeLocation.lng, storeLocation.lat],
+          zoom: 14,
+          pitch: 0,
+          bearing: 0,
+          duration: 1000
+        });
+      }
+      return newMode;
+    });
+  }, [userLocation, heading, storeLocation]);
 
   // Initialize map
   useEffect(() => {
@@ -282,7 +300,7 @@ export function StoreNavigationMap({
     };
   }, [mapboxToken, storeLocation, storeName, startLocationWatch]);
 
-  // Update user marker position
+  // Update user marker position and follow in navigation mode
   useEffect(() => {
     if (!map.current || !userLocation) return;
 
@@ -337,7 +355,16 @@ export function StoreNavigationMap({
         svg.style.transform = `rotate(${heading}deg)`;
       }
     }
-  }, [userLocation, heading]);
+    
+    // In navigation mode, follow user and rotate map
+    if (isNavigationMode && map.current) {
+      map.current.easeTo({
+        center: [userLocation.lng, userLocation.lat],
+        bearing: heading,
+        duration: 500
+      });
+    }
+  }, [userLocation, heading, isNavigationMode]);
 
   if (isLoadingToken) {
     return (
@@ -449,11 +476,12 @@ export function StoreNavigationMap({
 
             {/* Navigation button */}
             <Button
-              className="w-full gap-2"
-              onClick={openExternalNavigation}
+              className={`w-full gap-2 ${isNavigationMode ? 'bg-green-600 hover:bg-green-700' : ''}`}
+              onClick={toggleNavigationMode}
+              disabled={!userLocation}
             >
               <Navigation2 className="h-4 w-4" />
-              ابدأ الملاحة
+              {isNavigationMode ? 'إيقاف الملاحة' : 'ابدأ الملاحة'}
             </Button>
           </div>
         </div>
