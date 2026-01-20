@@ -89,7 +89,7 @@ const Index = () => {
   const [selectedNeighborhood, setSelectedNeighborhood] = useState<string>('all');
   const [deliveryScopeFilter, setDeliveryScopeFilter] = useState<'all' | 'neighborhood' | 'city'>('all');
   const [isAutoDetecting, setIsAutoDetecting] = useState(false);
-  const [detectedLocation, setDetectedLocation] = useState<{ city: string; neighborhood: string; neighborhoodId: string } | null>(null);
+  const [detectedLocation, setDetectedLocation] = useState<{ city: string; neighborhood: string; neighborhoodId: string; userCoords?: { lat: number; lng: number }; distance?: number } | null>(null);
   const { userLocation, requestLocation } = useLocation();
   
   // Enable order status notifications for logged-in customers
@@ -193,7 +193,9 @@ const Index = () => {
           setDetectedLocation({
             city: nearest.city,
             neighborhood: nearest.name,
-            neighborhoodId: nearest.id
+            neighborhoodId: nearest.id,
+            userCoords: { lat: userLat, lng: userLng },
+            distance: nearest.distance
           });
           setSelectedCity(nearest.city);
           setSelectedNeighborhood(nearest.id);
@@ -402,29 +404,37 @@ const Index = () => {
               <motion.div
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="flex items-center gap-2 p-2.5 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg"
+                className="flex flex-col gap-1 p-2.5 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg"
               >
-                <Navigation className="h-4 w-4 text-green-600 flex-shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-medium text-green-700 dark:text-green-400 truncate">
-                    تم تحديد موقعك: {detectedLocation.neighborhood}
-                  </p>
-                  <p className="text-[10px] text-green-600/80 dark:text-green-500/80">
-                    {detectedLocation.city}
-                  </p>
+                <div className="flex items-center gap-2">
+                  <Navigation className="h-4 w-4 text-green-600 flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium text-green-700 dark:text-green-400 truncate">
+                      تم تحديد موقعك: {detectedLocation.neighborhood}
+                    </p>
+                    <p className="text-[10px] text-green-600/80 dark:text-green-500/80">
+                      {detectedLocation.city}
+                    </p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 px-2 text-[10px] text-green-600 hover:text-green-700"
+                    onClick={() => {
+                      setDetectedLocation(null);
+                      setSelectedCity('all');
+                      setSelectedNeighborhood('all');
+                    }}
+                  >
+                    إلغاء
+                  </Button>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-6 px-2 text-[10px] text-green-600 hover:text-green-700"
-                  onClick={() => {
-                    setDetectedLocation(null);
-                    setSelectedCity('all');
-                    setSelectedNeighborhood('all');
-                  }}
-                >
-                  إلغاء
-                </Button>
+                {detectedLocation.userCoords && (
+                  <p className="text-[9px] text-green-600/60 dark:text-green-500/60 font-mono" dir="ltr">
+                    GPS: {detectedLocation.userCoords.lat.toFixed(6)}, {detectedLocation.userCoords.lng.toFixed(6)} 
+                    {detectedLocation.distance && ` (${(detectedLocation.distance / 1000).toFixed(2)} كم)`}
+                  </p>
+                )}
               </motion.div>
             )}
 
