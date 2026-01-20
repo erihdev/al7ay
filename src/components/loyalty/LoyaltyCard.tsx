@@ -10,7 +10,11 @@ export function LoyaltyCard() {
   const { user } = useAuth();
   const { data: loyaltyData, isLoading } = useLoyaltyTier();
 
-  // Don't show anything if user is not logged in - let them browse first
+  const tier = loyaltyData?.tier || 'bronze';
+  const tierConfig = tierConfigs[tier];
+  const nextTier = getNextTier(tier);
+
+  // Don't show anything if user is not logged in
   if (!user) {
     return null;
   }
@@ -30,10 +34,6 @@ export function LoyaltyCard() {
       </Card>
     );
   }
-
-  const tier = loyaltyData?.tier || 'bronze';
-  const tierConfig = tierConfigs[tier];
-  const nextTier = getNextTier(tier);
 
   return (
     <motion.div
