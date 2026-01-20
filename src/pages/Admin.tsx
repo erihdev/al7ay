@@ -69,6 +69,7 @@ import { ContactSettingsManager } from '@/components/admin/ContactSettingsManage
 import CommissionSettingsManager from '@/components/admin/CommissionSettingsManager';
 import { PlatformRevenueManager } from '@/components/admin/PlatformRevenueManager';
 import { ProviderContractsManager } from '@/components/admin/ProviderContractsManager';
+import EdfaPayFeaturesManager from '@/components/admin/EdfaPayFeaturesManager';
 import { PasswordChangeForm } from '@/components/admin/PasswordChangeForm';
 import { InteractiveBackground } from '@/components/ui/InteractiveBackground';
 import { useUpdateDeliveryLocation } from '@/hooks/useOrderTracking';
@@ -134,6 +135,7 @@ const TAB_CATEGORIES = [
       { value: 'payouts', label: 'التحويلات', icon: CreditCard },
       { value: 'edfapay-verification', label: 'ربط EdfaPay', icon: CreditCard },
       { value: 'edfapay-reports', label: 'تقارير EdfaPay', icon: BarChart3 },
+      { value: 'edfapay-features', label: 'ميزات EdfaPay', icon: Settings },
     ],
   },
   {
@@ -867,6 +869,11 @@ const Admin = () => {
               {/* EdfaPay Reports Tab */}
               <TabsContent value="edfapay-reports">
                 <EdfaPayReports />
+              </TabsContent>
+
+              {/* EdfaPay Features Tab */}
+              <TabsContent value="edfapay-features">
+                <EdfaPayFeaturesManager />
               </TabsContent>
 
               {/* Versions Tab */}
