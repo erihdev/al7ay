@@ -1226,10 +1226,9 @@ const StoreCart = ({ primaryColor = '#1B4332', storeLocation, deliveryRadiusKm =
           className="fixed top-20 left-4 z-50"
         >
           <Button 
-            className="rounded-full shadow-2xl h-14 w-14 p-0 relative"
-            style={{ backgroundColor: primaryColor }}
+            className="rounded-full shadow-2xl h-14 w-14 p-0 relative bg-gradient-to-br from-violet-500 to-fuchsia-500 hover:from-violet-600 hover:to-fuchsia-600"
           >
-            <ShoppingCart className="h-6 w-6" />
+            <ShoppingCart className="h-6 w-6 text-white" />
             <AnimatePresence>
               {totalItems > 0 && (
                 <motion.span
