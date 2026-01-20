@@ -32,7 +32,7 @@ import { ProviderInvoiceSettings } from './ProviderInvoiceSettings';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { ServiceProvider } from '@/hooks/useProviderData';
-import { StoreLocationPicker } from './StoreLocationPicker';
+import { SimpleLocationPicker } from './SimpleLocationPicker';
 
 interface ProviderSettingsManagerProps {
   provider: ServiceProvider;
@@ -421,11 +421,10 @@ const ProviderSettingsManager = ({ provider, onUpdate }: ProviderSettingsManager
               </div>
             </div>
 
-            {/* Store Location Picker */}
-            <StoreLocationPicker 
+            {/* Store Location Picker - Simplified */}
+            <SimpleLocationPicker 
               location={formData.store_lat && formData.store_lng ? { lat: formData.store_lat, lng: formData.store_lng } : null}
               onLocationChange={(location) => setFormData({ ...formData, store_lat: location.lat, store_lng: location.lng })}
-              deliveryRadiusKm={formData.delivery_radius_km}
             />
 
             {/* Delivery Radius Setting - Compact */}
