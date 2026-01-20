@@ -41,7 +41,8 @@ import {
   Map,
   Navigation,
   CreditCard,
-  Banknote
+  Banknote,
+  Bike
 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { toast } from 'sonner';
@@ -381,7 +382,7 @@ const StoreCart = ({ primaryColor = '#1B4332', storeLocation, deliveryRadiusKm =
   const [deliveryAddress, setDeliveryAddress] = useState('');
   const [notes, setNotes] = useState('');
 
-  // Calculate distance between two points using Haversine formula
+  // Calculate distance between two points using Haversine formula (returns km)
   const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2: number): number => {
     const R = 6371; // Earth's radius in km
     const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -392,6 +393,25 @@ const StoreCart = ({ primaryColor = '#1B4332', storeLocation, deliveryRadiusKm =
       Math.sin(dLng / 2) * Math.sin(dLng / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c;
+  };
+
+  // Calculate delivery ETA based on distance
+  const calculateDeliveryETA = (distanceKm: number): { etaMinutes: number; etaText: string } => {
+    const AVERAGE_SPEED = 25; // km/h urban delivery
+    const PREPARATION_TIME = 5; // minutes
+    const travelTime = (distanceKm / AVERAGE_SPEED) * 60;
+    const totalMinutes = Math.ceil(PREPARATION_TIME + travelTime);
+    
+    let etaText: string;
+    if (totalMinutes < 60) {
+      etaText = `${totalMinutes} دقيقة`;
+    } else {
+      const hours = Math.floor(totalMinutes / 60);
+      const mins = totalMinutes % 60;
+      etaText = mins > 0 ? `${hours} ساعة و ${mins} دقيقة` : `${hours} ساعة`;
+    }
+    
+    return { etaMinutes: totalMinutes, etaText };
   };
 
   // Check delivery range when order type is delivery
@@ -1084,12 +1104,30 @@ const StoreCart = ({ primaryColor = '#1B4332', storeLocation, deliveryRadiusKm =
                   <motion.div
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-950/30 rounded-xl border border-green-200 dark:border-green-800"
+                    className="p-3 bg-green-50 dark:bg-green-950/30 rounded-xl border border-green-200 dark:border-green-800 space-y-2"
                   >
-                    <CheckCircle2 className="h-4 w-4 text-green-600" />
-                    <span className="text-sm text-green-700 dark:text-green-400">
-                      موقعك ضمن نطاق التوصيل ({distanceToStore?.toFixed(1)} كم)
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="h-4 w-4 text-green-600" />
+                      <span className="text-sm text-green-700 dark:text-green-400 font-medium">
+                        موقعك ضمن نطاق التوصيل
+                      </span>
+                    </div>
+                    
+                    {/* Delivery ETA Estimate */}
+                    <div className="flex items-center justify-between pt-2 border-t border-green-200 dark:border-green-800">
+                      <div className="flex items-center gap-1.5 text-green-700 dark:text-green-400">
+                        <Bike className="h-3.5 w-3.5" />
+                        <span className="text-xs font-arabic">
+                          {distanceToStore?.toFixed(1)} كم
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1.5 text-green-700 dark:text-green-400">
+                        <Clock className="h-3.5 w-3.5" />
+                        <span className="text-xs font-medium font-arabic">
+                          الوقت المتوقع: {calculateDeliveryETA(distanceToStore || 0).etaText}
+                        </span>
+                      </div>
+                    </div>
                   </motion.div>
                 )}
               </AnimatePresence>
