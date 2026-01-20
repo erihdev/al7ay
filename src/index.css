@@ -6,98 +6,109 @@
 
 @layer base {
   :root {
-    /* Vibrant Teal & Gold Coffee Theme */
-    --background: 40 25% 97%;
-    --foreground: 175 40% 15%;
+    /* Golden Desert & Teal Connection Theme - Inspired by Al-Hayy */
+    --background: 38 30% 97%;
+    --foreground: 30 25% 12%;
     
-    --card: 40 20% 99%;
-    --card-foreground: 175 40% 15%;
+    --card: 38 25% 99%;
+    --card-foreground: 30 25% 12%;
     
-    --popover: 40 20% 99%;
-    --popover-foreground: 175 40% 15%;
+    --popover: 38 25% 99%;
+    --popover-foreground: 30 25% 12%;
     
-    --primary: 172 66% 40%;
-    --primary-foreground: 0 0% 100%;
+    /* Primary: Warm Golden - from the connection lines */
+    --primary: 43 75% 48%;
+    --primary-foreground: 30 25% 8%;
     
-    --secondary: 45 35% 90%;
-    --secondary-foreground: 175 40% 18%;
+    --secondary: 38 25% 90%;
+    --secondary-foreground: 30 25% 18%;
     
-    --muted: 40 15% 92%;
-    --muted-foreground: 175 20% 45%;
+    --muted: 38 20% 92%;
+    --muted-foreground: 30 15% 45%;
     
-    --accent: 45 85% 55%;
-    --accent-foreground: 175 40% 15%;
+    /* Accent: Teal for contrast */
+    --accent: 180 45% 40%;
+    --accent-foreground: 0 0% 100%;
     
     --destructive: 0 85% 60%;
     --destructive-foreground: 0 0% 100%;
     
-    --border: 40 20% 88%;
-    --input: 40 20% 88%;
-    --ring: 172 66% 40%;
+    --border: 38 20% 88%;
+    --input: 38 20% 88%;
+    --ring: 43 75% 48%;
     
     --radius: 0.75rem;
     
-    /* Custom theme colors */
-    --forest-dark: 175 55% 25%;
-    --forest-medium: 172 60% 38%;
-    --forest-light: 170 50% 50%;
-    --cream: 40 50% 96%;
-    --gold: 45 90% 55%;
-    --gold-light: 45 75% 68%;
+    /* Custom theme colors - Desert & Connection */
+    --forest-dark: 30 35% 20%;
+    --forest-medium: 43 70% 45%;
+    --forest-light: 45 65% 55%;
+    --cream: 38 40% 96%;
+    --gold: 43 85% 52%;
+    --gold-light: 45 75% 62%;
+    --teal: 180 45% 40%;
+    --teal-dark: 185 50% 25%;
+    --sunset-orange: 24 75% 55%;
     
-    --chart-1: 172 66% 40%;
-    --chart-2: 45 85% 55%;
-    --chart-3: 170 50% 50%;
-    --chart-4: 45 90% 55%;
-    --chart-5: 168 55% 45%;
+    --chart-1: 43 75% 48%;
+    --chart-2: 180 45% 40%;
+    --chart-3: 24 75% 55%;
+    --chart-4: 45 85% 52%;
+    --chart-5: 38 60% 50%;
     
-    --sidebar-background: 40 25% 97%;
-    --sidebar-foreground: 175 40% 15%;
-    --sidebar-primary: 172 66% 40%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 45 35% 90%;
-    --sidebar-accent-foreground: 175 40% 18%;
-    --sidebar-border: 40 20% 88%;
-    --sidebar-ring: 172 66% 40%;
+    --sidebar-background: 38 30% 97%;
+    --sidebar-foreground: 30 25% 12%;
+    --sidebar-primary: 43 75% 48%;
+    --sidebar-primary-foreground: 30 25% 8%;
+    --sidebar-accent: 38 25% 90%;
+    --sidebar-accent-foreground: 30 25% 18%;
+    --sidebar-border: 38 20% 88%;
+    --sidebar-ring: 43 75% 48%;
   }
 
   .dark {
-    --background: 175 30% 8%;
-    --foreground: 40 25% 95%;
+    /* Dark mode - Desert Night */
+    --background: 30 25% 8%;
+    --foreground: 38 30% 95%;
     
-    --card: 175 28% 11%;
-    --card-foreground: 40 25% 95%;
+    --card: 30 22% 11%;
+    --card-foreground: 38 30% 95%;
     
-    --popover: 175 28% 11%;
-    --popover-foreground: 40 25% 95%;
+    --popover: 30 22% 11%;
+    --popover-foreground: 38 30% 95%;
     
-    --primary: 172 70% 48%;
-    --primary-foreground: 175 30% 8%;
+    /* Primary: Warm Golden - brighter in dark mode */
+    --primary: 43 80% 55%;
+    --primary-foreground: 30 25% 8%;
     
-    --secondary: 175 25% 18%;
-    --secondary-foreground: 40 25% 90%;
+    --secondary: 30 20% 18%;
+    --secondary-foreground: 38 30% 90%;
     
-    --muted: 175 22% 15%;
-    --muted-foreground: 40 18% 58%;
+    --muted: 30 18% 15%;
+    --muted-foreground: 38 20% 58%;
     
-    --accent: 45 90% 55%;
-    --accent-foreground: 175 30% 8%;
+    /* Accent: Teal - brighter in dark mode */
+    --accent: 180 50% 48%;
+    --accent-foreground: 30 25% 8%;
     
     --destructive: 0 75% 50%;
     --destructive-foreground: 0 0% 100%;
     
-    --border: 175 22% 18%;
-    --input: 175 22% 18%;
-    --ring: 172 70% 48%;
+    --border: 30 18% 18%;
+    --input: 30 18% 18%;
+    --ring: 43 80% 55%;
     
-    --forest-dark: 175 45% 14%;
-    --forest-medium: 172 55% 32%;
-    --forest-light: 170 45% 45%;
-    --cream: 40 20% 85%;
-    --gold: 45 90% 55%;
-    --gold-light: 45 65% 58%;
+    --forest-dark: 30 30% 14%;
+    --forest-medium: 43 65% 40%;
+    --forest-light: 45 60% 50%;
+    --cream: 38 25% 85%;
+    --gold: 43 85% 55%;
+    --gold-light: 45 70% 58%;
+    --teal: 180 50% 48%;
+    --teal-dark: 185 45% 30%;
+    --sunset-orange: 24 70% 50%;
     
-    --chart-1: 172 70% 48%;
+    --chart-1: 43 80% 55%;
     --chart-2: 45 90% 55%;
     --chart-3: 170 45% 45%;
     --chart-4: 168 55% 40%;
