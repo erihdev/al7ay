@@ -13,13 +13,13 @@ import {
   MapPin,
   Loader2,
   Navigation2,
-  
   Store,
   Bell
 } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
+import { InAppNavigationMode } from '@/components/navigation/InAppNavigationMode';
 
 interface OrderItem {
   id: string;
@@ -258,38 +258,29 @@ export function PullUpStyleOrderCard({
     );
   }, [fetchRoute]);
 
-  // Toggle navigation mode - zoom in and follow user location on the map
-  const toggleNavigationMode = useCallback(() => {
+  // Start navigation mode
+  const startNavigation = useCallback(() => {
     if (!map.current || !userLocation) {
       toast.error('يرجى انتظار تحديد موقعك أولاً');
       return;
     }
-    
-    setIsNavigationMode(prev => {
-      const newMode = !prev;
-      if (newMode && map.current) {
-        // Enter navigation mode - zoom in and follow user
-        map.current.flyTo({
-          center: [userLocation.lng, userLocation.lat],
-          zoom: 17,
-          pitch: 60,
-          bearing: heading,
-          duration: 1000
-        });
-        toast.success('وضع الملاحة مفعّل', { description: 'الخريطة تتبع موقعك الآن' });
-      } else if (map.current) {
-        // Exit navigation mode - show full route
-        map.current.flyTo({
-          center: [storeLocation.lng, storeLocation.lat],
-          zoom: 14,
-          pitch: 0,
-          bearing: 0,
-          duration: 1000
-        });
-      }
-      return newMode;
-    });
-  }, [userLocation, heading, storeLocation]);
+    setIsNavigationMode(true);
+  }, [userLocation]);
+
+  // Exit navigation mode
+  const exitNavigation = useCallback(() => {
+    setIsNavigationMode(false);
+    if (map.current) {
+      map.current.flyTo({
+        center: [storeLocation.lng, storeLocation.lat],
+        zoom: 14,
+        pitch: 0,
+        bearing: 0,
+        duration: 1000
+      });
+    }
+  }, [storeLocation]);
+
   // Initialize map
   useEffect(() => {
     if (!mapContainer.current || !mapboxToken) return;
@@ -515,17 +506,20 @@ export function PullUpStyleOrderCard({
         )}
       </div>
 
-      {/* Map Section - Always visible */}
-      <div className="relative">
+      {/* Map Section - Expands in navigation mode */}
+      <div className={`relative transition-all duration-500 ${isNavigationMode ? 'h-[70vh]' : ''}`}>
         {isLoadingToken ? (
-          <div className="h-36 sm:h-48 bg-muted flex items-center justify-center">
+          <div className={`bg-muted flex items-center justify-center ${isNavigationMode ? 'h-full' : 'h-36 sm:h-48'}`}>
             <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
           </div>
         ) : (
-          <div ref={mapContainer} className="h-36 sm:h-48 w-full" />
+          <div 
+            ref={mapContainer} 
+            className={`w-full transition-all duration-500 ${isNavigationMode ? 'h-full' : 'h-36 sm:h-48'}`} 
+          />
         )}
 
-        {isLocating && (
+        {isLocating && !isNavigationMode && (
           <div className="absolute inset-0 bg-background/60 backdrop-blur-sm flex items-center justify-center">
             <div className="text-center">
               <Loader2 className="h-6 w-6 animate-spin mx-auto mb-1.5 text-primary" />
@@ -533,27 +527,44 @@ export function PullUpStyleOrderCard({
             </div>
           </div>
         )}
+
+        {/* In-App Navigation Overlay */}
+        <AnimatePresence>
+          {isNavigationMode && map.current && userLocation && (
+            <InAppNavigationMode
+              map={map.current}
+              userLocation={userLocation}
+              destination={storeLocation}
+              destinationName={order.service_providers?.business_name || 'المتجر'}
+              heading={heading}
+              routeInfo={routeInfo}
+              onExit={exitNavigation}
+            />
+          )}
+        </AnimatePresence>
       </div>
 
-      {/* Footer Actions */}
-      <div className="p-2.5 sm:p-4 border-t flex items-center gap-2">
-        <Button
-          className={`flex-1 gap-1.5 text-xs sm:text-sm h-9 sm:h-10 ${isNavigationMode ? 'bg-green-600 hover:bg-green-700' : 'bg-primary hover:bg-primary/90'}`}
-          onClick={toggleNavigationMode}
-          disabled={!userLocation}
-        >
-          <Navigation2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-          {isNavigationMode ? 'إيقاف الملاحة' : 'ابدأ الملاحة'}
-        </Button>
+      {/* Footer Actions - Hidden in navigation mode */}
+      {!isNavigationMode && (
+        <div className="p-2.5 sm:p-4 border-t flex items-center gap-2">
+          <Button
+            className="flex-1 gap-1.5 bg-primary hover:bg-primary/90 text-xs sm:text-sm h-9 sm:h-10"
+            onClick={startNavigation}
+            disabled={!userLocation}
+          >
+            <Navigation2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+            ابدأ الملاحة
+          </Button>
 
-        <Button
-          variant="outline"
-          className="flex-1 gap-1 text-xs sm:text-sm h-9 sm:h-10"
-          onClick={onDetailsClick}
-        >
-          تفاصيل الطلب
-        </Button>
-      </div>
+          <Button
+            variant="outline"
+            className="flex-1 gap-1 text-xs sm:text-sm h-9 sm:h-10"
+            onClick={onDetailsClick}
+          >
+            تفاصيل الطلب
+          </Button>
+        </div>
+      )}
     </motion.div>
   );
 }
