@@ -14,6 +14,7 @@ import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { InteractiveBackground } from '@/components/ui/InteractiveBackground';
 import { SearchableSelect } from '@/components/ui/searchable-select';
 import { LocationPickerDialog } from '@/components/landing/LocationPickerDialog';
+import { SimpleLocationPicker } from '@/components/provider/SimpleLocationPicker';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useClickSound } from '@/hooks/useClickSound';
 import { 
@@ -104,7 +105,9 @@ const ProviderRegister = () => {
     neighborhood: '',
     customCity: '',
     customNeighborhood: '',
-    paymentMethod: 'platform_managed' as 'platform_managed' | 'direct_gateway'
+    paymentMethod: 'platform_managed' as 'platform_managed' | 'direct_gateway',
+    store_lat: null as number | null,
+    store_lng: null as number | null
   });
   const [useCustomCity, setUseCustomCity] = useState(false);
   const [useCustomNeighborhood, setUseCustomNeighborhood] = useState(false);
@@ -1535,6 +1538,14 @@ const ProviderRegister = () => {
                     {customLocation.address}
                   </div>
                 )}
+
+                {/* Store Location - Simple Picker */}
+                <div className="pt-4 border-t">
+                  <SimpleLocationPicker
+                    location={formData.store_lat && formData.store_lng ? { lat: formData.store_lat, lng: formData.store_lng } : null}
+                    onLocationChange={(location) => setFormData({ ...formData, store_lat: location.lat, store_lng: location.lng })}
+                  />
+                </div>
 
                 {/* Payment Method Selection */}
                 {!selectedPlan.is_trial && (
