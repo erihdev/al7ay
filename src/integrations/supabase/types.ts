@@ -1304,6 +1304,122 @@ export type Database = {
         }
         Relationships: []
       }
+      provider_contracts: {
+        Row: {
+          apple_google_pay_fees: string | null
+          auto_renew: boolean | null
+          bank_name: string | null
+          beneficiary_name: string | null
+          contract_date: string | null
+          contract_file_url: string | null
+          contract_number: string | null
+          contract_type: string
+          cr_flc_number: string | null
+          created_at: string
+          duration_months: number | null
+          end_date: string | null
+          entity_activities: string | null
+          entity_type: string | null
+          iban: string | null
+          id: string
+          merchant_email: string | null
+          merchant_id_number: string | null
+          merchant_name: string
+          merchant_phone: string | null
+          monthly_fees: number | null
+          national_address: string | null
+          notes: string | null
+          provider_id: string | null
+          settlement_fees: number | null
+          setup_fees: number | null
+          start_date: string | null
+          status: string | null
+          transaction_fees_percent: number | null
+          updated_at: string
+          vat_number: string | null
+          vat_percent: number | null
+          visa_mc_fees: string | null
+        }
+        Insert: {
+          apple_google_pay_fees?: string | null
+          auto_renew?: boolean | null
+          bank_name?: string | null
+          beneficiary_name?: string | null
+          contract_date?: string | null
+          contract_file_url?: string | null
+          contract_number?: string | null
+          contract_type?: string
+          cr_flc_number?: string | null
+          created_at?: string
+          duration_months?: number | null
+          end_date?: string | null
+          entity_activities?: string | null
+          entity_type?: string | null
+          iban?: string | null
+          id?: string
+          merchant_email?: string | null
+          merchant_id_number?: string | null
+          merchant_name: string
+          merchant_phone?: string | null
+          monthly_fees?: number | null
+          national_address?: string | null
+          notes?: string | null
+          provider_id?: string | null
+          settlement_fees?: number | null
+          setup_fees?: number | null
+          start_date?: string | null
+          status?: string | null
+          transaction_fees_percent?: number | null
+          updated_at?: string
+          vat_number?: string | null
+          vat_percent?: number | null
+          visa_mc_fees?: string | null
+        }
+        Update: {
+          apple_google_pay_fees?: string | null
+          auto_renew?: boolean | null
+          bank_name?: string | null
+          beneficiary_name?: string | null
+          contract_date?: string | null
+          contract_file_url?: string | null
+          contract_number?: string | null
+          contract_type?: string
+          cr_flc_number?: string | null
+          created_at?: string
+          duration_months?: number | null
+          end_date?: string | null
+          entity_activities?: string | null
+          entity_type?: string | null
+          iban?: string | null
+          id?: string
+          merchant_email?: string | null
+          merchant_id_number?: string | null
+          merchant_name?: string
+          merchant_phone?: string | null
+          monthly_fees?: number | null
+          national_address?: string | null
+          notes?: string | null
+          provider_id?: string | null
+          settlement_fees?: number | null
+          setup_fees?: number | null
+          start_date?: string | null
+          status?: string | null
+          transaction_fees_percent?: number | null
+          updated_at?: string
+          vat_number?: string | null
+          vat_percent?: number | null
+          visa_mc_fees?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "provider_contracts_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "service_providers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       provider_delivery_route_history: {
         Row: {
           id: string
