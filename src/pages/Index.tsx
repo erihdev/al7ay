@@ -340,34 +340,13 @@ const Index = () => {
             <div className="absolute top-0 left-0 w-24 h-24 bg-primary/10 rounded-full blur-3xl" />
             <div className="absolute bottom-0 right-0 w-20 h-20 bg-primary/5 rounded-full blur-2xl" />
             <div className="relative z-10">
-              <div className="flex items-center gap-2 mb-2">
+              <div className="flex items-center gap-2">
                 <div className="bg-primary/20 p-2 rounded-xl">
                   <Store className="h-5 w-5 text-primary" />
                 </div>
                 <div>
                   <h1 className="text-base font-bold">مرحباً بك في الحي! 👋</h1>
                   <p className="text-xs text-muted-foreground">اكتشف مقدمي الخدمات القريبين منك</p>
-                </div>
-              </div>
-              
-              {/* Quick Stats */}
-              <div className="grid grid-cols-3 gap-2 mt-3">
-                <div className="bg-background/60 backdrop-blur-sm rounded-lg p-2 text-center">
-                  <Store className="h-4 w-4 mx-auto mb-0.5 text-primary" />
-                  <p className="text-[10px] text-muted-foreground">مقدم خدمة</p>
-                  <p className="font-bold text-xs">{providers?.length || 0}</p>
-                </div>
-                <div className="bg-background/60 backdrop-blur-sm rounded-lg p-2 text-center">
-                  <Sparkles className="h-4 w-4 mx-auto mb-0.5 text-amber-500" />
-                  <p className="text-[10px] text-muted-foreground">موثق</p>
-                  <p className="font-bold text-xs">{providers?.filter(p => p.is_verified).length || 0}</p>
-                </div>
-                <div className="bg-background/60 backdrop-blur-sm rounded-lg p-2 text-center">
-                  <MapPin className="h-4 w-4 mx-auto mb-0.5 text-green-500" />
-                  <p className="text-[10px] text-muted-foreground">أحياء</p>
-                  <p className="font-bold text-xs">
-                    {new Set(providers?.map(p => p.active_neighborhoods?.id).filter(Boolean)).size}
-                  </p>
                 </div>
               </div>
             </div>
