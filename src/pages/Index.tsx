@@ -36,9 +36,11 @@ import {
   Filter,
   Building2,
   Globe,
-  AlertCircle
+  AlertCircle,
+  MapPinned
 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { CustomerLocationPicker } from '@/components/location/CustomerLocationPicker';
 
 interface ServiceProvider {
   id: string;
@@ -91,6 +93,7 @@ const Index = () => {
   const [isAutoDetecting, setIsAutoDetecting] = useState(false);
   const [detectedLocation, setDetectedLocation] = useState<{ city: string; neighborhood: string; neighborhoodId: string; userCoords?: { lat: number; lng: number }; distance?: number } | null>(null);
   const [userGpsCoords, setUserGpsCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [showLocationPicker, setShowLocationPicker] = useState(false);
   const { requestLocation } = useLocation();
   
   // Enable order status notifications for logged-in customers
@@ -216,6 +219,21 @@ const Index = () => {
         maximumAge: 0
       }
     );
+  };
+
+  // Handle manual location selection from map
+  const handleManualLocationSelected = (coords: { lat: number; lng: number }) => {
+    setUserGpsCoords(coords);
+    setDetectedLocation({
+      city: 'موقع مخصص',
+      neighborhood: 'تم تحديده على الخريطة',
+      neighborhoodId: 'manual',
+      userCoords: coords,
+      distance: 0
+    });
+    // Reset filters since we're using direct coordinates
+    setSelectedCity('all');
+    setSelectedNeighborhood('all');
   };
 
   // Filter and sort providers by filters, distance, and delivery_scope
@@ -384,21 +402,32 @@ const Index = () => {
                 </div>
               </div>
               
-              {/* Auto-detect location button */}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={detectNearestNeighborhood}
-                disabled={isAutoDetecting}
-                className="gap-1.5 text-xs h-8"
-              >
-                {isAutoDetecting ? (
-                  <div className="h-3.5 w-3.5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                ) : (
-                  <Navigation className="h-3.5 w-3.5" />
-                )}
-                {isAutoDetecting ? 'جارٍ التحديد...' : 'موقعي'}
-              </Button>
+              {/* Location buttons */}
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={detectNearestNeighborhood}
+                  disabled={isAutoDetecting}
+                  className="gap-1.5 text-xs h-8"
+                >
+                  {isAutoDetecting ? (
+                    <div className="h-3.5 w-3.5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <Navigation className="h-3.5 w-3.5" />
+                  )}
+                  {isAutoDetecting ? 'جارٍ التحديد...' : 'موقعي'}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowLocationPicker(true)}
+                  className="gap-1.5 text-xs h-8"
+                >
+                  <MapPinned className="h-3.5 w-3.5" />
+                  الخريطة
+                </Button>
+              </div>
             </div>
 
             {/* Detected Location Badge */}
@@ -418,25 +447,46 @@ const Index = () => {
                       {detectedLocation.city}
                     </p>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 px-2 text-[10px] text-green-600 hover:text-green-700"
-                    onClick={() => {
-                      setDetectedLocation(null);
-                      setSelectedCity('all');
-                      setSelectedNeighborhood('all');
-                    }}
-                  >
-                    إلغاء
-                  </Button>
+                  <div className="flex gap-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 px-2 text-[10px] text-primary hover:text-primary/80"
+                      onClick={() => setShowLocationPicker(true)}
+                    >
+                      تعديل
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 px-2 text-[10px] text-green-600 hover:text-green-700"
+                      onClick={() => {
+                        setDetectedLocation(null);
+                        setUserGpsCoords(null);
+                        setSelectedCity('all');
+                        setSelectedNeighborhood('all');
+                      }}
+                    >
+                      إلغاء
+                    </Button>
+                  </div>
                 </div>
-                {detectedLocation.userCoords && detectedLocation.distance && detectedLocation.distance > 500 && (
-                  <div className="flex items-center gap-2 pt-1 border-t border-green-200/50 dark:border-green-800/50">
-                    <AlertCircle className="h-3 w-3 text-amber-500 flex-shrink-0" />
-                    <p className="text-[10px] text-amber-600 dark:text-amber-400">
-                      GPS غير دقيق؟ استخدم الفلاتر أدناه لاختيار موقعك يدوياً
-                    </p>
+                {detectedLocation.userCoords && detectedLocation.distance && detectedLocation.distance > 500 && detectedLocation.neighborhoodId !== 'manual' && (
+                  <div className="flex items-center justify-between gap-2 pt-1 border-t border-green-200/50 dark:border-green-800/50">
+                    <div className="flex items-center gap-2">
+                      <AlertCircle className="h-3 w-3 text-amber-500 flex-shrink-0" />
+                      <p className="text-[10px] text-amber-600 dark:text-amber-400">
+                        GPS غير دقيق؟
+                      </p>
+                    </div>
+                    <Button
+                      variant="link"
+                      size="sm"
+                      className="h-5 px-1 text-[10px] text-amber-600"
+                      onClick={() => setShowLocationPicker(true)}
+                    >
+                      حدد يدوياً
+                    </Button>
                   </div>
                 )}
               </motion.div>
@@ -759,6 +809,14 @@ const Index = () => {
         </main>
 
         <BottomNav />
+
+        {/* Customer Location Picker Dialog */}
+        <CustomerLocationPicker
+          open={showLocationPicker}
+          onOpenChange={setShowLocationPicker}
+          onLocationSelected={handleManualLocationSelected}
+          initialCoords={userGpsCoords}
+        />
       </div>
     </PageTransition>
   );
