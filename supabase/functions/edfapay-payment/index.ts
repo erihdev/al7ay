@@ -1,4 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { crypto } from "https://deno.land/std@0.168.0/crypto/mod.ts";
+import { encode as hexEncode } from "https://deno.land/std@0.168.0/encoding/hex.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -15,19 +17,18 @@ interface PaymentRequest {
   returnUrl: string;
 }
 
-// Helper function to convert ArrayBuffer to hex string
-function toHex(buffer: ArrayBuffer): string {
-  return Array.from(new Uint8Array(buffer))
-    .map(b => b.toString(16).padStart(2, '0'))
-    .join('');
+// Helper function to convert Uint8Array to hex string
+function toHex(buffer: Uint8Array): string {
+  const hexBytes = hexEncode(buffer);
+  return new TextDecoder().decode(hexBytes);
 }
 
-// Helper function to calculate MD5
+// Helper function to calculate MD5 using Deno's crypto
 async function md5(text: string): Promise<string> {
   const encoder = new TextEncoder();
   const data = encoder.encode(text);
   const hashBuffer = await crypto.subtle.digest("MD5", data);
-  return toHex(hashBuffer);
+  return toHex(new Uint8Array(hashBuffer));
 }
 
 // Helper function to calculate SHA1
@@ -35,7 +36,7 @@ async function sha1(text: string): Promise<string> {
   const encoder = new TextEncoder();
   const data = encoder.encode(text);
   const hashBuffer = await crypto.subtle.digest("SHA-1", data);
-  return toHex(hashBuffer);
+  return toHex(new Uint8Array(hashBuffer));
 }
 
 // Calculate EdfaPay hash signature
