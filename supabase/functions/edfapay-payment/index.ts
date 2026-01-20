@@ -15,6 +15,7 @@ interface PaymentRequest {
   customerPhone: string;
   description?: string;
   returnUrl: string;
+  paymentMethod?: 'card' | 'apple_pay';
 }
 
 // Helper function to convert Uint8Array to hex string
@@ -72,7 +73,7 @@ serve(async (req) => {
       );
     }
 
-    const { pendingOrderId, amount, customerEmail, customerName, customerPhone, description, returnUrl }: PaymentRequest = await req.json();
+    const { pendingOrderId, amount, customerEmail, customerName, customerPhone, description, returnUrl, paymentMethod }: PaymentRequest = await req.json();
     
     // Get client IP from request headers
     const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 
@@ -123,6 +124,11 @@ serve(async (req) => {
     formData.append('payer_phone', customerPhone || '0500000000');
     formData.append('payer_ip', clientIp);
     formData.append('term_url_3ds', returnUrl);
+    
+    // Add payment method for Apple Pay
+    if (paymentMethod === 'apple_pay') {
+      formData.append('payment_method', 'APPLEPAY');
+    }
     formData.append('hash', hash);
 
     console.log('Initiating EdfaPay payment:', { 

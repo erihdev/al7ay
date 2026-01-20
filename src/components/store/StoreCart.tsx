@@ -483,6 +483,7 @@ const StoreCart = ({ primaryColor = '#1B4332', storeLocation, deliveryRadiusKm =
           deliveryAddress: orderType === 'delivery' ? deliveryAddress.trim() : undefined,
           notes: notes.trim() || undefined,
           totalAmount: totalPrice,
+          paymentMethod: paymentMethod === 'apple_pay' ? 'apple_pay' : 'card',
           items: items.map(item => ({
             productId: item.productId,
             productName: item.productName,
