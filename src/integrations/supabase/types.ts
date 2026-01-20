@@ -371,6 +371,45 @@ export type Database = {
           },
         ]
       }
+      edfapay_features: {
+        Row: {
+          config: Json | null
+          created_at: string
+          description_ar: string | null
+          description_en: string | null
+          feature_key: string
+          feature_name_ar: string
+          feature_name_en: string | null
+          id: string
+          is_enabled: boolean
+          updated_at: string
+        }
+        Insert: {
+          config?: Json | null
+          created_at?: string
+          description_ar?: string | null
+          description_en?: string | null
+          feature_key: string
+          feature_name_ar: string
+          feature_name_en?: string | null
+          id?: string
+          is_enabled?: boolean
+          updated_at?: string
+        }
+        Update: {
+          config?: Json | null
+          created_at?: string
+          description_ar?: string | null
+          description_en?: string | null
+          feature_key?: string
+          feature_name_ar?: string
+          feature_name_en?: string | null
+          id?: string
+          is_enabled?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
       employee_activity_log: {
         Row: {
           action_description: string
