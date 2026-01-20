@@ -67,6 +67,22 @@ const SAUDI_REGIONS: Record<string, string[]> = {
   'منطقة الجوف': ['سكاكا', 'القريات', 'دومة الجندل', 'طبرجل']
 };
 
+// أنواع المواقع
+const LOCATION_TYPES = [
+  { value: 'all', label: 'الكل' },
+  { value: 'حي', label: 'حي' },
+  { value: 'قرية', label: 'قرية' },
+  { value: 'مركز', label: 'مركز' },
+  { value: 'أخرى', label: 'أخرى' }
+];
+
+const getLocationType = (name: string): string => {
+  if (name.startsWith('قرية ')) return 'قرية';
+  if (name.startsWith('حي ')) return 'حي';
+  if (name.startsWith('مركز ')) return 'مركز';
+  return 'أخرى';
+};
+
 const NeighborhoodsManager = () => {
   const queryClient = useQueryClient();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -74,6 +90,7 @@ const NeighborhoodsManager = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedRegion, setSelectedRegion] = useState<string>('all');
   const [selectedCity, setSelectedCity] = useState<string>('all');
+  const [selectedLocationType, setSelectedLocationType] = useState<string>('all');
   const [showActiveOnly, setShowActiveOnly] = useState(false);
   
   const [formData, setFormData] = useState({
@@ -229,12 +246,16 @@ const NeighborhoodsManager = () => {
       // فلتر المدينة
       const matchesCity = selectedCity === 'all' || n.city === selectedCity;
       
+      // فلتر نوع الموقع
+      const locationType = getLocationType(n.name);
+      const matchesLocationType = selectedLocationType === 'all' || locationType === selectedLocationType;
+      
       // فلتر الحالة النشطة
       const matchesActive = !showActiveOnly || n.is_active;
       
-      return matchesSearch && matchesRegion && matchesCity && matchesActive;
+      return matchesSearch && matchesRegion && matchesCity && matchesLocationType && matchesActive;
     });
-  }, [neighborhoods, searchTerm, selectedRegion, selectedCity, showActiveOnly]);
+  }, [neighborhoods, searchTerm, selectedRegion, selectedCity, selectedLocationType, showActiveOnly]);
 
   // إحصائيات الفلترة
   const filterStats = useMemo(() => {
@@ -250,10 +271,11 @@ const NeighborhoodsManager = () => {
     setSearchTerm('');
     setSelectedRegion('all');
     setSelectedCity('all');
+    setSelectedLocationType('all');
     setShowActiveOnly(false);
   };
 
-  const hasActiveFilters = searchTerm !== '' || selectedRegion !== 'all' || selectedCity !== 'all' || showActiveOnly;
+  const hasActiveFilters = searchTerm !== '' || selectedRegion !== 'all' || selectedCity !== 'all' || selectedLocationType !== 'all' || showActiveOnly;
 
   if (isLoading) {
     return (
@@ -300,7 +322,7 @@ const NeighborhoodsManager = () => {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
             {/* فلتر المنطقة */}
             <div className="space-y-2">
               <Label className="text-sm font-medium">المنطقة الإدارية</Label>
@@ -331,6 +353,21 @@ const NeighborhoodsManager = () => {
                   <SelectItem value="all">جميع المدن</SelectItem>
                   {availableCities.map(city => (
                     <SelectItem key={city} value={city}>{city}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* فلتر نوع الموقع */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">نوع الموقع</Label>
+              <Select value={selectedLocationType} onValueChange={setSelectedLocationType}>
+                <SelectTrigger className="font-arabic">
+                  <SelectValue placeholder="الكل" />
+                </SelectTrigger>
+                <SelectContent>
+                  {LOCATION_TYPES.map(type => (
+                    <SelectItem key={type.value} value={type.value}>{type.label}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
