@@ -580,18 +580,23 @@ const ProviderStoreContent = () => {
                 {provider.business_name}
               </h1>
               
+              {provider.description && (
+                <p className="text-white/90 text-sm mb-2 line-clamp-2">
+                  {provider.description}
+                </p>
+              )}
+              
               {provider.active_neighborhoods && (
-                <p className="text-white/80 text-sm flex items-center gap-1.5 mb-3">
-                  <MapPin className="h-4 w-4" />
+                <p className="text-white/70 text-xs flex items-center gap-1.5 mb-2">
+                  <MapPin className="h-3.5 w-3.5" />
                   {(provider.active_neighborhoods as any).name}، {(provider.active_neighborhoods as any).city}
                 </p>
               )}
               
               {/* Stats Row */}
-              <div className="flex items-center gap-3 flex-wrap">
-                
-                <div className="flex items-center gap-1.5 bg-white/10 backdrop-blur-sm px-3 py-1.5 rounded-full text-white/90 text-sm">
-                  <Package className="h-4 w-4" />
+              <div className="flex items-center gap-2 flex-wrap">
+                <div className="flex items-center gap-1.5 bg-white/10 backdrop-blur-sm px-2.5 py-1 rounded-full text-white/90 text-xs">
+                  <Package className="h-3.5 w-3.5" />
                   <span>{filteredProducts.length} منتج</span>
                 </div>
               </div>
