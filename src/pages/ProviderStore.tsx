@@ -243,9 +243,9 @@ const ProviderStoreContent = () => {
     button_style?: string;
   } || {};
   
-  const primaryColor = storeTheme.primary_color || '#2A9D8F';
-  const secondaryColor = storeTheme.secondary_color || '#1A535C';
-  const accentColor = storeTheme.accent_color || '#FFB703';
+  const primaryColor = storeTheme.primary_color || '#C9A227';
+  const secondaryColor = storeTheme.secondary_color || '#8B6914';
+  const accentColor = storeTheme.accent_color || '#409999';
   const headerStyle = storeTheme.header_style || 'gradient';
   const headerImageUrl = storeTheme.header_image_url || '';
   const headerOverlayOpacity = storeTheme.header_overlay_opacity ?? 50;

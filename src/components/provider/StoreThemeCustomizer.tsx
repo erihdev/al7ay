@@ -41,9 +41,9 @@ interface StoreThemeCustomizerProps {
 }
 
 const defaultTheme: StoreTheme = {
-  primary_color: '#2A9D8F',
-  secondary_color: '#1A535C',
-  accent_color: '#FFB703',
+  primary_color: '#C9A227',
+  secondary_color: '#8B6914',
+  accent_color: '#409999',
   background_color: '#FFFFFF',
   text_color: '#1A1A1A',
   header_style: 'gradient',
