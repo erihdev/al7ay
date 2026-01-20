@@ -3,7 +3,6 @@ import { useProviderCart } from '@/contexts/ProviderCartContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useMapboxToken } from '@/hooks/useMapboxToken';
 import { useEdfaPayment } from '@/hooks/useEdfaPayment';
-import { useApplePay } from '@/hooks/useApplePay';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { supabase } from '@/integrations/supabase/client';
@@ -296,8 +295,7 @@ const StoreCart = ({ primaryColor = '#1B4332', storeLocation, deliveryRadiusKm =
   const navigate = useNavigate();
   const { items, providerId, providerName, totalItems, totalPrice, updateQuantity, removeItem, clearCart } = useProviderCart();
   const { user } = useAuth();
-  const { initiatePayment, isProcessing: isPaymentProcessing } = useEdfaPayment();
-  const { isApplePayAvailable, initiateApplePayPayment, isProcessing: isApplePayProcessing } = useApplePay();
+  const { initiatePayment } = useEdfaPayment();
   const [isOpen, setIsOpen] = useState(false);
   const [viewState, setViewState] = useState<ViewState>('cart');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -472,48 +470,8 @@ const StoreCart = ({ primaryColor = '#1B4332', storeLocation, deliveryRadiusKm =
     try {
       // Order number will come from database
 
-      // If Apple Pay is selected and available, use native Apple Pay
-      if (paymentMethod === 'apple_pay' && isApplePayAvailable) {
-        const applePayResult = await initiateApplePayPayment({
-          providerId: providerId || undefined,
-          customerId: user?.id,
-          customerName: customerName.trim(),
-          customerPhone: customerPhone.trim(),
-          customerEmail: customerEmail.trim() || undefined,
-          orderType: orderType,
-          deliveryAddress: orderType === 'delivery' ? deliveryAddress.trim() : undefined,
-          notes: notes.trim() || undefined,
-          totalAmount: totalPrice,
-          items: items.map(item => ({
-            productId: item.productId,
-            productName: item.productName,
-            quantity: item.quantity,
-            unitPrice: item.price,
-            totalPrice: item.price * item.quantity,
-            selectedOptions: null
-          })),
-        });
-
-        if (applePayResult.success) {
-          // Apple Pay successful, show success view
-          clearCart();
-          setOrderResult({
-            orderId: applePayResult.orderId!,
-            orderNumber: applePayResult.orderNumber!,
-            invoiceNumber: `INV-${applePayResult.orderNumber}`,
-            paymentMethod: 'apple_pay',
-            createdAt: new Date(),
-          });
-          setViewState('success');
-        } else if (applePayResult.error !== 'Payment cancelled') {
-          toast.error('فشل في معالجة Apple Pay');
-        }
-        setIsSubmitting(false);
-        return;
-      }
-
-      // If online payment (card), use EdfaPay redirect flow
-      if (paymentMethod === 'online') {
+      // If online payment (card or Apple Pay), use EdfaPay redirect flow
+      if (paymentMethod === 'online' || paymentMethod === 'apple_pay') {
         const paymentResult = await initiatePayment({
           providerId: providerId || undefined,
           customerId: user?.id,
@@ -524,7 +482,7 @@ const StoreCart = ({ primaryColor = '#1B4332', storeLocation, deliveryRadiusKm =
           deliveryAddress: orderType === 'delivery' ? deliveryAddress.trim() : undefined,
           notes: notes.trim() || undefined,
           totalAmount: totalPrice,
-          paymentMethod: 'card',
+          paymentMethod: paymentMethod === 'apple_pay' ? 'apple_pay' : 'card',
           items: items.map(item => ({
             productId: item.productId,
             productName: item.productName,
