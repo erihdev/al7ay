@@ -188,6 +188,69 @@ serve(async (req) => {
         }
       }
 
+      // Award loyalty points to customer if they are logged in
+      if (pendingOrder.customer_id) {
+        try {
+          // Fetch loyalty settings
+          const { data: loyaltySettings } = await supabase
+            .from('loyalty_settings')
+            .select('loyalty_enabled, points_per_riyal')
+            .single();
+
+          if (loyaltySettings?.loyalty_enabled) {
+            const pointsPerRiyal = loyaltySettings.points_per_riyal || 1;
+            const pointsEarned = Math.floor(pendingOrder.total_amount * pointsPerRiyal);
+
+            if (pointsEarned > 0) {
+              // Check if user has loyalty record
+              const { data: existingPoints } = await supabase
+                .from('loyalty_points')
+                .select('id, total_points, lifetime_points')
+                .eq('user_id', pendingOrder.customer_id)
+                .single();
+
+              if (existingPoints) {
+                // Update existing points
+                await supabase
+                  .from('loyalty_points')
+                  .update({
+                    total_points: existingPoints.total_points + pointsEarned,
+                    lifetime_points: existingPoints.lifetime_points + pointsEarned,
+                    updated_at: new Date().toISOString()
+                  })
+                  .eq('user_id', pendingOrder.customer_id);
+              } else {
+                // Create new loyalty record
+                await supabase
+                  .from('loyalty_points')
+                  .insert({
+                    user_id: pendingOrder.customer_id,
+                    total_points: pointsEarned,
+                    lifetime_points: pointsEarned,
+                    tier: 'bronze'
+                  });
+              }
+
+              // Add points history record
+              await supabase
+                .from('points_history')
+                .insert({
+                  user_id: pendingOrder.customer_id,
+                  points_change: pointsEarned,
+                  transaction_type: 'earned',
+                  order_id: isProviderOrder ? null : createdOrderId,
+                  description: `نقاط مكتسبة من طلب #${createdOrderNumber}`
+                });
+
+              console.log(`Awarded ${pointsEarned} loyalty points to customer ${pendingOrder.customer_id}`);
+            }
+          }
+        } catch (pointsError) {
+          console.error('Error awarding loyalty points:', pointsError);
+          // Don't fail the order if points fail
+        }
+      }
+
       // Delete the pending order after successful creation
       await supabase
         .from('pending_orders')
