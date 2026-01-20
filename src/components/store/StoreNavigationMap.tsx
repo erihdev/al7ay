@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { toast } from 'sonner';
+import { AnimatePresence } from 'framer-motion';
+import { InAppNavigationMode } from '@/components/navigation/InAppNavigationMode';
 
 interface StoreNavigationMapProps {
   storeLocation: { lat: number; lng: number };
@@ -169,38 +171,28 @@ export function StoreNavigationMap({
     }
   }, [userLocation]);
 
-  // Toggle navigation mode - zoom in and follow user location on the map
-  const toggleNavigationMode = useCallback(() => {
+  // Start navigation mode
+  const startNavigation = useCallback(() => {
     if (!map.current || !userLocation) {
       toast.error('يرجى انتظار تحديد موقعك أولاً');
       return;
     }
-    
-    setIsNavigationMode(prev => {
-      const newMode = !prev;
-      if (newMode && map.current) {
-        // Enter navigation mode - zoom in and follow user with 3D perspective
-        map.current.flyTo({
-          center: [userLocation.lng, userLocation.lat],
-          zoom: 17,
-          pitch: 60,
-          bearing: heading,
-          duration: 1000
-        });
-        toast.success('وضع الملاحة مفعّل', { description: 'الخريطة تتبع موقعك الآن' });
-      } else if (map.current) {
-        // Exit navigation mode - show full route
-        map.current.flyTo({
-          center: [storeLocation.lng, storeLocation.lat],
-          zoom: 14,
-          pitch: 0,
-          bearing: 0,
-          duration: 1000
-        });
-      }
-      return newMode;
-    });
-  }, [userLocation, heading, storeLocation]);
+    setIsNavigationMode(true);
+  }, [userLocation]);
+
+  // Exit navigation mode
+  const exitNavigation = useCallback(() => {
+    setIsNavigationMode(false);
+    if (map.current) {
+      map.current.flyTo({
+        center: [storeLocation.lng, storeLocation.lat],
+        zoom: 14,
+        pitch: 0,
+        bearing: 0,
+        duration: 1000
+      });
+    }
+  }, [storeLocation]);
 
   // Initialize map
   useEffect(() => {
@@ -389,14 +381,17 @@ export function StoreNavigationMap({
   }
 
   return (
-    <Card className="overflow-hidden">
-      <CardContent className="p-0">
-        <div className="relative">
+    <Card className={`overflow-hidden ${isNavigationMode ? 'fixed inset-0 z-50 rounded-none' : ''}`}>
+      <CardContent className="p-0 h-full">
+        <div className={`relative ${isNavigationMode ? 'h-full' : ''}`}>
           {/* Map */}
-          <div ref={mapContainer} className="h-72 w-full" />
+          <div 
+            ref={mapContainer} 
+            className={`w-full transition-all duration-500 ${isNavigationMode ? 'h-full' : 'h-72'}`} 
+          />
 
-          {/* Loading overlay */}
-          {isLocating && (
+          {/* Loading overlay - hidden in nav mode */}
+          {isLocating && !isNavigationMode && (
             <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center">
               <div className="text-center space-y-2">
                 <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto" />
@@ -406,7 +401,7 @@ export function StoreNavigationMap({
           )}
 
           {/* Location error */}
-          {locationError && (
+          {locationError && !isNavigationMode && (
             <div className="absolute top-2 left-2 right-2 bg-destructive/90 text-destructive-foreground px-3 py-2 rounded-lg text-xs font-arabic flex items-center justify-between">
               <span>{locationError}</span>
               <Button
@@ -420,70 +415,89 @@ export function StoreNavigationMap({
             </div>
           )}
 
-          {/* Live tracking badge */}
-          {userLocation && (
+          {/* Live tracking badge - hidden in nav mode */}
+          {userLocation && !isNavigationMode && (
             <div className="absolute top-2 right-2 bg-primary text-primary-foreground px-3 py-1.5 rounded-full text-xs font-arabic flex items-center gap-2 shadow-lg">
               <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
               تتبع مباشر
             </div>
           )}
 
-          {/* Center on user button */}
-          <Button
-            variant="secondary"
-            size="icon"
-            className="absolute bottom-20 right-2 h-10 w-10 rounded-full shadow-lg"
-            onClick={centerOnUser}
-            disabled={!userLocation}
-          >
-            <Locate className="h-5 w-5" />
-          </Button>
-
-          {/* Route info panel */}
-          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-background to-background/90 backdrop-blur-sm p-4 space-y-3">
-            {/* Distance and duration */}
-            {routeInfo ? (
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                    <MapPin className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium">{storeName}</p>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <span>{routeInfo.distance}</span>
-                      <span>•</span>
-                      <span>{routeInfo.duration}</span>
-                    </div>
-                  </div>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8"
-                  onClick={() => userLocation && fetchRoute(userLocation)}
-                  disabled={isLoadingRoute || !userLocation}
-                >
-                  <RotateCw className={`h-4 w-4 ${isLoadingRoute ? 'animate-spin' : ''}`} />
-                </Button>
-              </div>
-            ) : (
-              <div className="flex items-center gap-3">
-                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">جاري حساب المسافة...</span>
-              </div>
-            )}
-
-            {/* Navigation button */}
+          {/* Center on user button - hidden in nav mode */}
+          {!isNavigationMode && (
             <Button
-              className={`w-full gap-2 ${isNavigationMode ? 'bg-green-600 hover:bg-green-700' : ''}`}
-              onClick={toggleNavigationMode}
+              variant="secondary"
+              size="icon"
+              className="absolute bottom-20 right-2 h-10 w-10 rounded-full shadow-lg"
+              onClick={centerOnUser}
               disabled={!userLocation}
             >
-              <Navigation2 className="h-4 w-4" />
-              {isNavigationMode ? 'إيقاف الملاحة' : 'ابدأ الملاحة'}
+              <Locate className="h-5 w-5" />
             </Button>
-          </div>
+          )}
+
+          {/* Route info panel - hidden in nav mode */}
+          {!isNavigationMode && (
+            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-background to-background/90 backdrop-blur-sm p-4 space-y-3">
+              {/* Distance and duration */}
+              {routeInfo ? (
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                      <MapPin className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium">{storeName}</p>
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <span>{routeInfo.distance}</span>
+                        <span>•</span>
+                        <span>{routeInfo.duration}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => userLocation && fetchRoute(userLocation)}
+                    disabled={isLoadingRoute || !userLocation}
+                  >
+                    <RotateCw className={`h-4 w-4 ${isLoadingRoute ? 'animate-spin' : ''}`} />
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-3">
+                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                  <span className="text-sm text-muted-foreground">جاري حساب المسافة...</span>
+                </div>
+              )}
+
+              {/* Navigation button */}
+              <Button
+                className="w-full gap-2"
+                onClick={startNavigation}
+                disabled={!userLocation}
+              >
+                <Navigation2 className="h-4 w-4" />
+                ابدأ الملاحة
+              </Button>
+            </div>
+          )}
+
+          {/* In-App Navigation Overlay */}
+          <AnimatePresence>
+            {isNavigationMode && map.current && userLocation && (
+              <InAppNavigationMode
+                map={map.current}
+                userLocation={userLocation}
+                destination={storeLocation}
+                destinationName={storeName}
+                heading={heading}
+                routeInfo={routeInfo}
+                onExit={exitNavigation}
+              />
+            )}
+          </AnimatePresence>
         </div>
       </CardContent>
     </Card>
