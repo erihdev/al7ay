@@ -309,7 +309,7 @@ const StoreCart = ({ primaryColor = '#1B4332', storeLocation, deliveryRadiusKm =
   const [showMapPicker, setShowMapPicker] = useState(false);
   
   const [orderType, setOrderType] = useState<'pickup' | 'delivery'>('pickup');
-  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'online'>('cash');
+  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'online' | 'apple_pay'>('cash');
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
   const [customerEmail, setCustomerEmail] = useState('');
@@ -471,8 +471,8 @@ const StoreCart = ({ primaryColor = '#1B4332', storeLocation, deliveryRadiusKm =
     try {
       // Order number will come from database
 
-      // If online payment, use Payment First policy
-      if (paymentMethod === 'online') {
+      // If online payment or Apple Pay, use Payment First policy
+      if (paymentMethod === 'online' || paymentMethod === 'apple_pay') {
         const paymentResult = await initiatePayment({
           providerId: providerId || undefined,
           customerId: user?.id,
@@ -1004,40 +1004,58 @@ const StoreCart = ({ primaryColor = '#1B4332', storeLocation, deliveryRadiusKm =
           </Label>
           <RadioGroup 
             value={paymentMethod} 
-            onValueChange={(v) => setPaymentMethod(v as 'cash' | 'online')}
-            className="grid grid-cols-2 gap-3"
+            onValueChange={(v) => setPaymentMethod(v as 'cash' | 'online' | 'apple_pay')}
+            className="grid grid-cols-3 gap-2"
           >
             <Label 
               htmlFor="cash" 
-              className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 cursor-pointer transition-all ${
+              className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 cursor-pointer transition-all ${
                 paymentMethod === 'cash' 
                   ? 'border-primary bg-primary/5 shadow-md' 
                   : 'border-muted hover:border-muted-foreground/30'
               }`}
               style={paymentMethod === 'cash' ? { borderColor: primaryColor } : {}}
             >
-              <Banknote className="h-6 w-6" style={paymentMethod === 'cash' ? { color: primaryColor } : {}} />
-              <span className="text-sm font-medium">نقداً</span>
-              <span className="text-[10px] text-muted-foreground">عند الاستلام</span>
+              <Banknote className="h-5 w-5" style={paymentMethod === 'cash' ? { color: primaryColor } : {}} />
+              <span className="text-xs font-medium">نقداً</span>
+              <span className="text-[9px] text-muted-foreground">عند الاستلام</span>
               <RadioGroupItem value="cash" id="cash" className="sr-only" />
             </Label>
             <Label 
               htmlFor="online" 
-              className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 cursor-pointer transition-all ${
+              className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 cursor-pointer transition-all ${
                 paymentMethod === 'online' 
                   ? 'border-primary bg-primary/5 shadow-md' 
                   : 'border-muted hover:border-muted-foreground/30'
               }`}
               style={paymentMethod === 'online' ? { borderColor: primaryColor } : {}}
             >
-              <CreditCard className="h-6 w-6" style={paymentMethod === 'online' ? { color: primaryColor } : {}} />
-              <span className="text-sm font-medium">إلكتروني</span>
-              <span className="text-[10px] text-muted-foreground">بطاقة / Apple Pay</span>
+              <CreditCard className="h-5 w-5" style={paymentMethod === 'online' ? { color: primaryColor } : {}} />
+              <span className="text-xs font-medium">بطاقة</span>
+              <span className="text-[9px] text-muted-foreground">مدى / فيزا</span>
               <RadioGroupItem value="online" id="online" className="sr-only" />
+            </Label>
+            <Label 
+              htmlFor="apple_pay" 
+              className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 cursor-pointer transition-all ${
+                paymentMethod === 'apple_pay' 
+                  ? 'border-primary bg-primary/5 shadow-md' 
+                  : 'border-muted hover:border-muted-foreground/30'
+              }`}
+              style={paymentMethod === 'apple_pay' ? { borderColor: primaryColor } : {}}
+            >
+              <svg className="h-5 w-5" style={paymentMethod === 'apple_pay' ? { color: primaryColor } : {}} viewBox="0 0 24 24" fill="currentColor">
+                <path d="M17.0425 8.60449C16.8625 8.44949 15.5175 7.78449 13.6325 7.78449C11.7475 7.78449 10.9875 8.79449 10.9875 9.59949C10.9875 10.5545 11.9025 11.0345 12.6675 11.3845C13.5325 11.7845 13.8275 12.0095 13.8275 12.4095C13.8275 12.8595 13.4075 13.1345 12.7675 13.1345C11.8025 13.1345 10.6175 12.5345 10.0675 12.1845L9.6475 13.6545C10.3475 14.0795 11.4825 14.5045 12.6675 14.5045C14.7025 14.5045 15.7425 13.4545 15.7425 12.3545C15.7425 11.0045 14.2275 10.4295 13.2375 9.97949C12.5475 9.65449 12.2025 9.42949 12.2025 9.00449C12.2025 8.62949 12.5475 8.35449 13.1375 8.35449C14.0275 8.35449 15.1625 8.85449 15.5325 9.05449L17.0425 8.60449Z"/>
+                <path d="M7.3125 7.85449C6.5475 7.85449 5.7825 8.20449 5.2575 8.82949C4.7825 9.40449 4.3575 10.3795 4.5075 11.3095H4.5325C5.1475 11.2845 5.6975 10.9595 6.0925 10.4295C6.4875 9.89949 6.7875 9.12949 6.5625 8.37449H6.5375C6.7875 8.02449 7.0875 7.85449 7.3125 7.85449Z"/>
+                <path d="M7.5375 11.5095C6.4725 11.5595 5.3075 12.3345 4.7075 13.4345C4.1075 14.5345 4.0825 16.1095 4.9575 17.1845C5.2325 17.5345 5.5825 17.8095 5.9825 17.9845C6.3825 18.1595 6.8075 18.2095 7.2325 18.1345C7.6575 18.0595 8.0575 17.8595 8.3825 17.5595C8.7075 17.2595 8.9325 16.8595 9.0325 16.4345C9.3075 15.2595 9.3325 13.8845 8.6325 12.7345C8.2075 12.0345 7.5375 11.5095 7.5375 11.5095Z"/>
+              </svg>
+              <span className="text-xs font-medium">Apple Pay</span>
+              <span className="text-[9px] text-muted-foreground">دفع سريع</span>
+              <RadioGroupItem value="apple_pay" id="apple_pay" className="sr-only" />
             </Label>
           </RadioGroup>
           
-          {paymentMethod === 'online' && (
+          {(paymentMethod === 'online' || paymentMethod === 'apple_pay') && (
             <div className="flex items-center gap-2 p-2.5 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800">
               <CreditCard className="h-4 w-4 text-blue-600 shrink-0" />
               <p className="text-xs text-blue-700 dark:text-blue-400">
