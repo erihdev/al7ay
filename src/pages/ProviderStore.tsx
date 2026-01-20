@@ -43,6 +43,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
 import { ChatDialog } from '@/components/chat/ChatDialog';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import storeHeaderBg from '@/assets/store-header-bg.png';
 
 interface Product {
   id: string;
@@ -467,34 +468,31 @@ const ProviderStoreContent = () => {
 
       {/* Hero Header */}
       <header className="relative overflow-hidden">
-        {/* Background */}
-        <div 
-          className="absolute inset-0"
-          style={{ background: getHeaderBackground() }}
-        >
-          {hasImageHeader && (
-            <>
-              <img 
-                src={headerImageUrl}
-                alt=""
-                className={cn(
-                  "w-full h-full object-cover",
-                  headerBlur && "blur-sm scale-105"
-                )}
-              />
-              <div 
-                className="absolute inset-0"
-                style={{ 
-                  backgroundColor: primaryColor,
-                  opacity: headerOverlayOpacity / 100
-                }}
-              />
-            </>
-          )}
+        {/* Background - Always use neighborhood image as base with provider color overlay */}
+        <div className="absolute inset-0">
+          {/* Base neighborhood image */}
+          <img 
+            src={hasImageHeader ? headerImageUrl : storeHeaderBg}
+            alt=""
+            className={cn(
+              "w-full h-full object-cover",
+              headerBlur && "blur-sm scale-105"
+            )}
+          />
+          {/* Provider color overlay with gradient */}
+          <div 
+            className="absolute inset-0"
+            style={{ 
+              background: `linear-gradient(135deg, ${primaryColor}cc 0%, ${secondaryColor}dd 50%, ${primaryColor}ee 100%)`,
+            }}
+          />
           {/* Decorative Elements */}
-          <div className="absolute inset-0 opacity-20">
-            <div className="absolute top-10 right-10 w-40 h-40 rounded-full bg-white/10 blur-3xl" />
-            <div className="absolute bottom-10 left-10 w-60 h-60 rounded-full bg-white/5 blur-3xl" />
+          <div className="absolute inset-0 opacity-30">
+            <div className="absolute top-10 right-10 w-40 h-40 rounded-full bg-white/20 blur-3xl animate-pulse" />
+            <div className="absolute bottom-10 left-10 w-60 h-60 rounded-full bg-white/10 blur-3xl" />
+            {/* Golden connection lines inspired by al-hayy identity */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 rounded-full border border-white/10" />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 rounded-full border border-white/5" />
           </div>
         </div>
 
