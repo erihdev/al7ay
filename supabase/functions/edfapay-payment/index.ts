@@ -6,7 +6,7 @@ const corsHeaders = {
 };
 
 interface PaymentRequest {
-  orderId: string;
+  pendingOrderId: string;
   amount: number;
   customerEmail: string;
   customerName: string;
@@ -39,18 +39,18 @@ serve(async (req) => {
       );
     }
 
-    const { orderId, amount, customerEmail, customerName, customerPhone, description, returnUrl }: PaymentRequest = await req.json();
+    const { pendingOrderId, amount, customerEmail, customerName, customerPhone, description, returnUrl }: PaymentRequest = await req.json();
 
     // Validate required fields
-    if (!orderId || !amount || !customerEmail || !returnUrl) {
+    if (!pendingOrderId || !amount || !returnUrl) {
       return new Response(
         JSON.stringify({ error: 'Missing required fields' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Generate unique transaction ID
-    const transactionId = `TXN-${orderId}-${Date.now()}`;
+    // Generate unique transaction ID using pending order ID
+    const transactionId = `TXN-${pendingOrderId}-${Date.now()}`;
 
     // EdfaPay API endpoint (will be updated with actual endpoint from documentation)
     const edfaPayUrl = 'https://api.edfapay.com/payment/initiate';
@@ -62,7 +62,7 @@ serve(async (req) => {
       order_id: transactionId,
       amount: amount.toFixed(2),
       currency: 'SAR',
-      description: description || `طلب رقم ${orderId}`,
+      description: description || `طلب معلق ${pendingOrderId}`,
       customer_email: customerEmail,
       customer_name: customerName,
       customer_phone: customerPhone,
@@ -70,7 +70,7 @@ serve(async (req) => {
       callback_url: `${Deno.env.get('SUPABASE_URL')}/functions/v1/edfapay-webhook`,
     };
 
-    console.log('Initiating EdfaPay payment:', { orderId, amount, transactionId });
+    console.log('Initiating EdfaPay payment:', { pendingOrderId, amount, transactionId });
 
     // Make request to EdfaPay
     const response = await fetch(edfaPayUrl, {
@@ -100,6 +100,7 @@ serve(async (req) => {
       JSON.stringify({
         success: true,
         transactionId,
+        pendingOrderId,
         paymentUrl: result.payment_url || result.redirect_url,
         ...result
       }),

@@ -2,34 +2,79 @@ import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
-interface PaymentData {
-  orderId: string;
-  amount: number;
-  customerEmail: string;
+interface PendingOrderData {
+  providerId?: string;
+  customerId?: string;
   customerName: string;
   customerPhone: string;
-  description?: string;
+  customerEmail?: string;
+  orderType: string;
+  deliveryAddress?: string;
+  deliveryLat?: number;
+  deliveryLng?: number;
+  notes?: string;
+  totalAmount: number;
+  items: Array<{
+    productId: string;
+    productName: string;
+    quantity: number;
+    unitPrice: number;
+    totalPrice: number;
+    selectedOptions?: any;
+  }>;
 }
 
 interface PaymentResult {
   success: boolean;
   paymentUrl?: string;
-  transactionId?: string;
+  pendingOrderId?: string;
   error?: string;
 }
 
 export function useEdfaPayment() {
   const [isProcessing, setIsProcessing] = useState(false);
 
-  const initiatePayment = async (paymentData: PaymentData): Promise<PaymentResult> => {
+  const initiatePayment = async (orderData: PendingOrderData): Promise<PaymentResult> => {
     setIsProcessing(true);
 
     try {
+      // First, create a pending order
+      const { data: pendingOrder, error: pendingError } = await supabase
+        .from('pending_orders')
+        .insert({
+          provider_id: orderData.providerId || null,
+          customer_id: orderData.customerId || null,
+          customer_name: orderData.customerName,
+          customer_phone: orderData.customerPhone,
+          customer_email: orderData.customerEmail || null,
+          order_type: orderData.orderType,
+          delivery_address: orderData.deliveryAddress || null,
+          delivery_lat: orderData.deliveryLat || null,
+          delivery_lng: orderData.deliveryLng || null,
+          notes: orderData.notes || null,
+          total_amount: orderData.totalAmount,
+          payment_method: 'online',
+          items: orderData.items
+        })
+        .select()
+        .single();
+
+      if (pendingError) {
+        console.error('Error creating pending order:', pendingError);
+        toast.error('فشل في إنشاء الطلب المعلق');
+        return { success: false, error: pendingError.message };
+      }
+
       const returnUrl = `${window.location.origin}/payment-result`;
 
       const { data, error } = await supabase.functions.invoke('edfapay-payment', {
         body: {
-          ...paymentData,
+          pendingOrderId: pendingOrder.id,
+          amount: orderData.totalAmount,
+          customerEmail: orderData.customerEmail || '',
+          customerName: orderData.customerName,
+          customerPhone: orderData.customerPhone,
+          description: `طلب من ${orderData.customerName}`,
           returnUrl,
         },
       });
@@ -53,7 +98,7 @@ export function useEdfaPayment() {
       return {
         success: true,
         paymentUrl: data.paymentUrl,
-        transactionId: data.transactionId,
+        pendingOrderId: pendingOrder.id,
       };
 
     } catch (error) {
