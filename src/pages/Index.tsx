@@ -49,6 +49,9 @@ interface ServiceProvider {
   phone: string | null;
   is_verified: boolean;
   delivery_scope: 'neighborhood' | 'city' | null;
+  delivery_radius_km: number | null;
+  store_lat: number | null;
+  store_lng: number | null;
   active_neighborhoods: {
     id: string;
     name: string;
@@ -109,6 +112,9 @@ const Index = () => {
           phone,
           is_verified,
           delivery_scope,
+          delivery_radius_km,
+          store_lat,
+          store_lng,
           active_neighborhoods (
             id,
             name,
@@ -164,22 +170,28 @@ const Index = () => {
     let distance: number | null = null;
     let servesUserLocation = true; // Default to true if no location
     
-    if (userLocation && provider.active_neighborhoods) {
+    // Get provider's coordinates - prefer store_lat/store_lng, fallback to neighborhood
+    const providerLat = provider.store_lat ?? provider.active_neighborhoods?.lat;
+    const providerLng = provider.store_lng ?? provider.active_neighborhoods?.lng;
+    
+    if (userLocation && providerLat && providerLng) {
       distance = calculateDistance(
         userLocation.lat,
         userLocation.lng,
-        provider.active_neighborhoods.lat,
-        provider.active_neighborhoods.lng
+        providerLat,
+        providerLng
       );
       
       // Check if provider serves user's location based on delivery_scope
       const deliveryScope = provider.delivery_scope || 'neighborhood';
+      const deliveryRadiusKm = provider.delivery_radius_km || 2; // Default 2km radius
+      
       if (deliveryScope === 'neighborhood') {
-        // Provider only serves their neighborhood - check if user is within ~2km
-        servesUserLocation = distance <= 2000;
+        // Provider only serves their neighborhood - check if user is within delivery radius
+        servesUserLocation = distance <= (deliveryRadiusKm * 1000);
       } else {
-        // Provider serves entire city - check if user is within reasonable city distance (~30km)
-        servesUserLocation = distance <= 30000;
+        // Provider serves entire city - check if user is within reasonable city distance (~50km)
+        servesUserLocation = distance <= 50000;
       }
     }
     
