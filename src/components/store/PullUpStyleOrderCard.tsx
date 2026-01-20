@@ -257,14 +257,15 @@ export function PullUpStyleOrderCard({
     );
   }, [fetchRoute]);
 
-  // Open external navigation
+  // Open external navigation - using location.href to stay on same page until maps app opens
   const openExternalNavigation = useCallback(() => {
     const destination = `${storeLocation.lat},${storeLocation.lng}`;
     const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${destination}&travelmode=driving`;
     const appleMapsUrl = `http://maps.apple.com/?daddr=${destination}&dirflg=d`;
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
     
-    window.open(isIOS ? appleMapsUrl : googleMapsUrl, '_blank');
+    // Use location.href instead of window.open to stay on same page
+    window.location.href = isIOS ? appleMapsUrl : googleMapsUrl;
   }, [storeLocation]);
 
   // Initialize map
