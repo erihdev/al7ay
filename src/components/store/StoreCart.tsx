@@ -1223,7 +1223,7 @@ const StoreCart = ({ primaryColor = '#1B4332', storeLocation, deliveryRadiusKm =
           animate={{ scale: 1 }}
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
-          className="fixed bottom-6 left-6 z-50"
+          className="fixed top-20 left-4 z-50"
         >
           <Button 
             className="rounded-full shadow-2xl h-14 w-14 p-0 relative"
