@@ -68,6 +68,7 @@ import { EmployeePointsManager } from '@/components/admin/EmployeePointsManager'
 import { ContactSettingsManager } from '@/components/admin/ContactSettingsManager';
 import CommissionSettingsManager from '@/components/admin/CommissionSettingsManager';
 import { PlatformRevenueManager } from '@/components/admin/PlatformRevenueManager';
+import { ProviderContractsManager } from '@/components/admin/ProviderContractsManager';
 import { PasswordChangeForm } from '@/components/admin/PasswordChangeForm';
 import { InteractiveBackground } from '@/components/ui/InteractiveBackground';
 import { useUpdateDeliveryLocation } from '@/hooks/useOrderTracking';
@@ -116,6 +117,7 @@ const TAB_CATEGORIES = [
       { value: 'applications', label: 'طلبات الانضمام', icon: FileText },
       { value: 'registered-providers', label: 'المزودين المسجلين', icon: Users },
       { value: 'provider-verification', label: 'التوثيق', icon: Shield },
+      { value: 'provider-contracts', label: 'العقود', icon: FileText },
       { value: 'neighborhoods', label: 'الأحياء', icon: MapPin },
       { value: 'suggested-neighborhoods', label: 'اقتراحات الأحياء', icon: MapPin },
     ],
@@ -824,6 +826,11 @@ const Admin = () => {
               {/* Provider Verification Tab */}
               <TabsContent value="provider-verification">
                 <ProviderVerificationManager />
+              </TabsContent>
+
+              {/* Provider Contracts Tab */}
+              <TabsContent value="provider-contracts">
+                <ProviderContractsManager />
               </TabsContent>
 
               {/* Neighborhoods Tab */}
