@@ -346,7 +346,16 @@ const Index = () => {
                 </div>
                 <div>
                   <h1 className="text-base font-bold">الحي يحيييييك! 👋</h1>
-                  <p className="text-xs text-muted-foreground">اكتشف مقدمي الخدمات القريبين منك</p>
+                  <p className="text-xs text-muted-foreground">
+                    {detectedLocation ? (
+                      <span className="flex items-center gap-1">
+                        <MapPin className="h-3 w-3" />
+                        أنت في {detectedLocation.neighborhood}، {detectedLocation.city}
+                      </span>
+                    ) : (
+                      'اكتشف مقدمي الخدمات القريبين منك'
+                    )}
+                  </p>
                 </div>
               </div>
             </div>
