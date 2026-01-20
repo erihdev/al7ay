@@ -516,8 +516,28 @@ const ProviderStoreContent = () => {
         <div className="pt-[env(safe-area-inset-top)]" />
 
         {/* Top Navigation */}
-        <div className="relative z-10 px-4 py-4 flex items-center justify-between">
+        <div className="relative z-10 px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
+            {/* Cart Button in Header */}
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="text-white/90 hover:bg-white/20 h-10 w-10 rounded-full relative"
+              onClick={() => {
+                const cartBtn = document.querySelector('[data-cart-trigger]') as HTMLButtonElement;
+                if (cartBtn) cartBtn.click();
+              }}
+            >
+              <ShoppingBag className="h-5 w-5" />
+              {totalItems > 0 && (
+                <span 
+                  className="absolute -top-1 -right-1 w-5 h-5 rounded-full text-[10px] font-bold flex items-center justify-center text-white"
+                  style={{ backgroundColor: accentColor }}
+                >
+                  {totalItems}
+                </span>
+              )}
+            </Button>
             <ThemeToggle />
             {provider.phone && (
               <a href={`tel:${provider.phone}`}>
@@ -714,26 +734,26 @@ const ProviderStoreContent = () => {
                 animate={{ opacity: 1, y: 0 }}
                 className="px-4 pt-4"
               >
-                <div className="flex items-center gap-2 mb-4">
+                <div className="flex items-center gap-2 mb-3">
                   <div 
-                    className="w-10 h-10 rounded-xl flex items-center justify-center"
+                    className="w-8 h-8 rounded-lg flex items-center justify-center"
                     style={{ backgroundColor: `${accentColor}20` }}
                   >
-                    <Award className="h-5 w-5" style={{ color: accentColor }} />
+                    <Award className="h-4 w-4" style={{ color: accentColor }} />
                   </div>
                   <div>
-                    <h2 className="font-bold text-lg">المنتجات المميزة</h2>
-                    <p className="text-xs text-muted-foreground">الأكثر طلباً</p>
+                    <h2 className="font-bold text-base">المنتجات المميزة</h2>
                   </div>
                 </div>
                 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-2">
                   {featuredProducts.map((product, index) => (
                     <motion.div
                       key={product.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.1 }}
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: index * 0.05 }}
+                      className="flex-shrink-0 w-32"
                     >
                       <FeaturedProductCard
                         product={product}
@@ -985,46 +1005,46 @@ interface FeaturedProductCardProps {
 const FeaturedProductCard = ({ product, onAddToCart, onClick, primaryColor, accentColor }: FeaturedProductCardProps) => {
   return (
     <Card
-      className="overflow-hidden border-0 shadow-lg cursor-pointer group hover:shadow-xl transition-all duration-300"
+      className="overflow-hidden border-0 shadow-md cursor-pointer group hover:shadow-lg transition-all duration-300"
       onClick={onClick}
     >
-      <div className="relative aspect-square bg-muted overflow-hidden">
+      <div className="relative aspect-[4/5] bg-muted overflow-hidden">
         {product.image_url ? (
           <img 
             src={product.image_url} 
             alt={product.name_ar}
-            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
-            <Coffee className="h-10 w-10 text-muted-foreground/30" />
+            <Coffee className="h-6 w-6 text-muted-foreground/30" />
           </div>
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
         
-        <Badge 
-          className="absolute top-2 right-2 shadow-lg text-white border-0 text-[10px]"
+        <div 
+          className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full flex items-center justify-center shadow"
           style={{ backgroundColor: accentColor }}
         >
-          <Star className="h-3 w-3 fill-white" />
-        </Badge>
+          <Star className="h-2.5 w-2.5 fill-white text-white" />
+        </div>
         
-        <div className="absolute bottom-0 left-0 right-0 p-3">
-          <h4 className="font-bold text-white text-sm line-clamp-1 mb-1">{product.name_ar}</h4>
+        <div className="absolute bottom-0 left-0 right-0 p-2">
+          <h4 className="font-bold text-white text-xs line-clamp-1 mb-0.5">{product.name_ar}</h4>
           <div className="flex items-center justify-between">
-            <span className="font-bold text-white text-base">
+            <span className="font-bold text-white text-sm">
               {Number(product.price).toFixed(0)} ر.س
             </span>
             <Button
               size="sm"
-              className="h-8 w-8 p-0 rounded-full shadow-lg"
+              className="h-6 w-6 p-0 rounded-full shadow"
               style={{ backgroundColor: primaryColor }}
               onClick={(e) => {
                 e.stopPropagation();
                 onAddToCart();
               }}
             >
-              <Plus className="h-4 w-4" />
+              <Plus className="h-3 w-3" />
             </Button>
           </div>
         </div>
