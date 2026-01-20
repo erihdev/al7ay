@@ -502,7 +502,27 @@ const ProviderStoreContent = () => {
 
         {/* Top Navigation */}
         <div className="relative z-10 px-4 py-3 flex items-center justify-between">
+          <Link to="/">
+            <Button variant="ghost" size="icon" className="text-white/90 hover:bg-white/20 h-10 w-10 rounded-full">
+              <ArrowRight className="h-5 w-5" />
+            </Button>
+          </Link>
+          
           <div className="flex items-center gap-2">
+            {/* Chat Button */}
+            <ChatDialog 
+              providerId={provider.id} 
+              providerName={provider.business_name}
+              primaryColor={primaryColor}
+            />
+            {provider.phone && (
+              <a href={`tel:${provider.phone}`}>
+                <Button variant="ghost" size="icon" className="text-white/90 hover:bg-white/20 h-10 w-10 rounded-full">
+                  <Phone className="h-5 w-5" />
+                </Button>
+              </a>
+            )}
+            <ThemeToggle />
             {/* Cart Button in Header */}
             <Button 
               variant="ghost" 
@@ -523,27 +543,7 @@ const ProviderStoreContent = () => {
                 </span>
               )}
             </Button>
-            <ThemeToggle />
-            {provider.phone && (
-              <a href={`tel:${provider.phone}`}>
-                <Button variant="ghost" size="icon" className="text-white/90 hover:bg-white/20 h-10 w-10 rounded-full">
-                  <Phone className="h-5 w-5" />
-                </Button>
-              </a>
-            )}
-            {/* Chat Button */}
-            <ChatDialog 
-              providerId={provider.id} 
-              providerName={provider.business_name}
-              primaryColor={primaryColor}
-            />
           </div>
-          
-          <Link to="/">
-            <Button variant="ghost" size="icon" className="text-white/90 hover:bg-white/20 h-10 w-10 rounded-full">
-              <ArrowRight className="h-5 w-5" />
-            </Button>
-          </Link>
         </div>
 
         {/* Store Info */}
