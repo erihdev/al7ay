@@ -978,6 +978,75 @@ export type Database = {
         }
         Relationships: []
       }
+      loyalty_settings: {
+        Row: {
+          bronze_discount: number
+          bronze_min_points: number
+          bronze_multiplier: number
+          created_at: string
+          gold_discount: number
+          gold_min_points: number
+          gold_multiplier: number
+          id: string
+          loyalty_enabled: boolean
+          points_per_riyal: number
+          points_value_in_riyals: number
+          program_description_ar: string | null
+          referral_description_ar: string | null
+          referral_enabled: boolean
+          referred_bonus_points: number
+          referrer_bonus_points: number
+          silver_discount: number
+          silver_min_points: number
+          silver_multiplier: number
+          updated_at: string
+        }
+        Insert: {
+          bronze_discount?: number
+          bronze_min_points?: number
+          bronze_multiplier?: number
+          created_at?: string
+          gold_discount?: number
+          gold_min_points?: number
+          gold_multiplier?: number
+          id?: string
+          loyalty_enabled?: boolean
+          points_per_riyal?: number
+          points_value_in_riyals?: number
+          program_description_ar?: string | null
+          referral_description_ar?: string | null
+          referral_enabled?: boolean
+          referred_bonus_points?: number
+          referrer_bonus_points?: number
+          silver_discount?: number
+          silver_min_points?: number
+          silver_multiplier?: number
+          updated_at?: string
+        }
+        Update: {
+          bronze_discount?: number
+          bronze_min_points?: number
+          bronze_multiplier?: number
+          created_at?: string
+          gold_discount?: number
+          gold_min_points?: number
+          gold_multiplier?: number
+          id?: string
+          loyalty_enabled?: boolean
+          points_per_riyal?: number
+          points_value_in_riyals?: number
+          program_description_ar?: string | null
+          referral_description_ar?: string | null
+          referral_enabled?: boolean
+          referred_bonus_points?: number
+          referrer_bonus_points?: number
+          silver_discount?: number
+          silver_min_points?: number
+          silver_multiplier?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       messages: {
         Row: {
           content: string

@@ -48,6 +48,7 @@ import { ProductStats } from '@/components/admin/ProductStats';
 import { AdvancedStats } from '@/components/admin/AdvancedStats';
 import { OffersManager } from '@/components/admin/OffersManager';
 import { ReferralStats } from '@/components/admin/ReferralStats';
+import LoyaltySettingsManager from '@/components/admin/LoyaltySettingsManager';
 import { PaymentsManager } from '@/components/admin/PaymentsManager';
 import ApplicationsManager from '@/components/admin/ApplicationsManager';
 import NeighborhoodsManager from '@/components/admin/NeighborhoodsManager';
@@ -109,6 +110,7 @@ const TAB_CATEGORIES = [
     tabs: [
       { value: 'offers', label: 'العروض', icon: Ticket },
       { value: 'referrals', label: 'الإحالات', icon: UserPlus },
+      { value: 'loyalty-settings', label: 'إعدادات الولاء', icon: Settings },
       { value: 'coupons', label: 'الكوبونات', icon: Ticket },
     ],
   },
@@ -715,6 +717,11 @@ const Admin = () => {
               {/* Referrals Tab */}
               <TabsContent value="referrals">
                 <ReferralStats />
+              </TabsContent>
+
+              {/* Loyalty Settings Tab */}
+              <TabsContent value="loyalty-settings">
+                <LoyaltySettingsManager />
               </TabsContent>
 
               {/* Coupons Tab */}
