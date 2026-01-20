@@ -8,6 +8,7 @@ import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { useProviderOrderNotifications } from '@/hooks/useProviderOrderNotifications';
 import { useProviderAimtellTag } from '@/hooks/useAimtellTags';
 import { useAutoNotificationPermission } from '@/hooks/useAutoNotificationPermission';
+import { useAutoReRegisterPush } from '@/hooks/useAutoReRegisterPush';
 import ProviderProductsManager from '@/components/provider/ProviderProductsManager';
 import KitchenDisplaySystem from '@/components/provider/KitchenDisplaySystem';
 import ProviderSettingsManager from '@/components/provider/ProviderSettingsManager';
@@ -134,6 +135,9 @@ const ProviderDashboard = () => {
 
   // Auto-request notification permission and register provider for targeted notifications
   useAutoNotificationPermission({ providerId: provider?.id });
+
+  // Auto re-register push if subscription is invalid or missing
+  useAutoReRegisterPush();
 
   useProviderOrderNotifications(provider?.id, soundEnabled);
 

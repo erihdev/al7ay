@@ -296,10 +296,18 @@ serve(async (req) => {
             const errorText = await response.text();
             console.error('❌ Push failed:', response.status, errorText);
             
+            // Remove subscription for expired, not found, or VAPID mismatch errors
             if (response.status === 410 || response.status === 404) {
               console.log('🗑️ Removing expired subscription:', sub.id);
               await supabase.from('push_subscriptions').delete().eq('id', sub.id);
-              return { success: false, subscriptionId: sub.id, removed: true };
+              return { success: false, subscriptionId: sub.id, removed: true, reason: 'expired' };
+            }
+            
+            // Handle VapidPkHashMismatch - delete the invalid subscription
+            if (response.status === 400 && errorText.includes('VapidPkHashMismatch')) {
+              console.log('🗑️ Removing subscription with VAPID mismatch:', sub.id);
+              await supabase.from('push_subscriptions').delete().eq('id', sub.id);
+              return { success: false, subscriptionId: sub.id, removed: true, reason: 'vapid_mismatch' };
             }
             
             return { success: false, subscriptionId: sub.id, error: `${response.status}: ${errorText}` };
