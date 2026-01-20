@@ -242,9 +242,9 @@ const ProviderStoreContent = () => {
     button_style?: string;
   } || {};
   
-  const primaryColor = storeTheme.primary_color || '#1B4332';
-  const secondaryColor = storeTheme.secondary_color || '#2D6A4F';
-  const accentColor = storeTheme.accent_color || '#D4AF37';
+  const primaryColor = storeTheme.primary_color || '#2A9D8F';
+  const secondaryColor = storeTheme.secondary_color || '#264653';
+  const accentColor = storeTheme.accent_color || '#E9C46A';
   const headerStyle = storeTheme.header_style || 'gradient';
   const headerImageUrl = storeTheme.header_image_url || '';
   const headerOverlayOpacity = storeTheme.header_overlay_opacity ?? 50;

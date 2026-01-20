@@ -41,12 +41,12 @@ interface StoreThemeCustomizerProps {
 }
 
 const defaultTheme: StoreTheme = {
-  primary_color: '#1B4332',
-  secondary_color: '#2D6A4F',
-  accent_color: '#D4AF37',
+  primary_color: '#2A9D8F',
+  secondary_color: '#264653',
+  accent_color: '#E9C46A',
   background_color: '#FFFFFF',
   text_color: '#1A1A1A',
-  header_style: 'solid',
+  header_style: 'gradient',
   header_image_url: '',
   header_overlay_opacity: 50,
   header_blur: false,
