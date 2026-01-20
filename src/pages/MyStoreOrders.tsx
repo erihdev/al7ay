@@ -13,6 +13,7 @@ import { AuthForm } from '@/components/auth/AuthForm';
 import { StoreNavigationMap } from '@/components/store/StoreNavigationMap';
 import { ProviderOrderTrackingMap } from '@/components/store/ProviderOrderTrackingMap';
 import { PullUpStyleOrderCard } from '@/components/store/PullUpStyleOrderCard';
+import ProviderReviewDialog from '@/components/reviews/ProviderReviewDialog';
 import { 
   Package, 
   Clock, 
@@ -27,7 +28,9 @@ import {
   Loader2,
   ShoppingBag,
   Navigation2,
-  RefreshCw
+  RefreshCw,
+  Star,
+  MessageSquare
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
@@ -287,6 +290,7 @@ const MyStoreOrders = () => {
                 {completedOrders.slice(0, 5).map((order, index) => {
                   const status = statusConfig[order.status] || statusConfig.completed;
                   const StatusIcon = status.icon;
+                  const isCompleted = order.status === 'completed';
                   
                   return (
                     <motion.div
@@ -323,6 +327,30 @@ const MyStoreOrders = () => {
                               <p className="text-xs sm:text-sm font-semibold mt-0.5">{order.total_amount} ر.س</p>
                             </div>
                           </div>
+                          
+                          {/* Review Button for Completed Orders */}
+                          {isCompleted && order.service_providers && (
+                            <div className="mt-3 pt-3 border-t flex items-center justify-between">
+                              <p className="text-xs text-muted-foreground flex items-center gap-1">
+                                <MessageSquare className="h-3 w-3" />
+                                شاركنا رأيك في تجربتك
+                              </p>
+                              <ProviderReviewDialog 
+                                providerId={order.service_providers.id}
+                                providerName={order.service_providers.business_name}
+                                trigger={
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="h-7 text-xs gap-1 rounded-full"
+                                  >
+                                    <Star className="h-3 w-3" />
+                                    قيّم المتجر
+                                  </Button>
+                                }
+                              />
+                            </div>
+                          )}
                         </CardContent>
                       </Card>
                     </motion.div>

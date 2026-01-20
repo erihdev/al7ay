@@ -9,12 +9,6 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import StoreCart from '@/components/store/StoreCart';
-import ProductReviews from '@/components/store/ProductReviews';
-import ProviderReviewDialog from '@/components/reviews/ProviderReviewDialog';
-import ProviderReviewsList from '@/components/reviews/ProviderReviewsList';
-import ProviderRatingBadge from '@/components/reviews/ProviderRatingBadge';
-import { useProviderRatingSummary } from '@/hooks/useProviderReviews';
-import { useAuth } from '@/contexts/AuthContext';
 import { useLocation } from '@/contexts/LocationContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -28,7 +22,6 @@ import {
   Package,
   Plus,
   Minus,
-  MessageSquare,
   Sparkles,
   IceCream,
   Cake,
@@ -36,23 +29,18 @@ import {
   Search,
   AlertTriangle,
   Globe,
-  Navigation,
-  Clock,
-  Heart,
   CheckCircle2,
-  TrendingUp,
   Award
 } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
 } from '@/components/ui/dialog';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface Product {
   id: string;
@@ -69,20 +57,16 @@ interface Product {
 const ProviderStoreContent = () => {
   const { providerId } = useParams<{ providerId: string }>();
   const { addItem, totalItems } = useProviderCart();
-  const { user } = useAuth();
   const { userLocation } = useLocation();
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [activeCategory, setActiveCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const [showReviews, setShowReviews] = useState(false);
   const [showCoverageAlert, setShowCoverageAlert] = useState(false);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const categoryScrollRef = useRef<HTMLDivElement>(null);
   const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
   
-  // Provider rating summary
-  const ratingSummary = useProviderRatingSummary(providerId);
 
   // Fetch provider data
   const { data: provider, isLoading: providerLoading } = useQuery({
@@ -598,16 +582,6 @@ const ProviderStoreContent = () => {
               
               {/* Stats Row */}
               <div className="flex items-center gap-3 flex-wrap">
-                {ratingSummary.totalReviews > 0 && (
-                  <button 
-                    onClick={() => setShowReviews(true)}
-                    className="flex items-center gap-1.5 bg-white/20 backdrop-blur-sm px-3 py-1.5 rounded-full text-white text-sm hover:bg-white/30 transition-colors"
-                  >
-                    <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                    <span className="font-medium">{ratingSummary.averageRating.toFixed(1)}</span>
-                    <span className="text-white/70">({ratingSummary.totalReviews})</span>
-                  </button>
-                )}
                 
                 <div className="flex items-center gap-1.5 bg-white/10 backdrop-blur-sm px-3 py-1.5 rounded-full text-white/90 text-sm">
                   <Package className="h-4 w-4" />
@@ -913,14 +887,6 @@ const ProviderStoreContent = () => {
                       </div>
                     </div>
 
-                    {/* Reviews Section */}
-                    <div>
-                      <h3 className="font-bold mb-4 flex items-center gap-2">
-                        <MessageSquare className="h-5 w-5" />
-                        التقييمات والمراجعات
-                      </h3>
-                      <ProductReviews productId={selectedProduct.id} primaryColor={primaryColor} />
-                    </div>
                   </div>
                 </ScrollArea>
 
@@ -948,47 +914,6 @@ const ProviderStoreContent = () => {
         deliveryRadiusKm={provider?.delivery_radius_km ?? 5}
       />
       
-      {/* Reviews Dialog */}
-      <Dialog open={showReviews} onOpenChange={setShowReviews}>
-        <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto rounded-3xl">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-bold">تقييمات {provider.business_name}</h2>
-              {user && providerId && (
-                <ProviderReviewDialog 
-                  providerId={providerId} 
-                  providerName={provider.business_name} 
-                />
-              )}
-            </div>
-            {providerId && <ProviderReviewsList providerId={providerId} />}
-          </div>
-        </DialogContent>
-      </Dialog>
-      
-      {/* Floating Review Button */}
-      {user && providerId && (
-        <motion.div 
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          transition={{ delay: 0.5, type: "spring" }}
-          className="fixed bottom-24 left-4 z-40"
-        >
-          <ProviderReviewDialog 
-            providerId={providerId} 
-            providerName={provider.business_name}
-            trigger={
-              <Button
-                size="icon"
-                className="h-14 w-14 rounded-full shadow-2xl"
-                style={{ backgroundColor: accentColor }}
-              >
-                <Star className="h-6 w-6" />
-              </Button>
-            }
-          />
-        </motion.div>
-      )}
     </div>
   );
 };
