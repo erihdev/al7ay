@@ -99,11 +99,6 @@ const Index = () => {
   // Enable order status notifications for logged-in customers
   useOrderStatusNotifications();
 
-  // Redirect to profile page for login/register if not authenticated
-  if (!loading && !user) {
-    return <Navigate to="/profile" replace />;
-  }
-
   // Fetch all active service providers with their neighborhoods
   const { data: providers, isLoading } = useQuery({
     queryKey: ['service-providers-list'],
@@ -135,7 +130,13 @@ const Index = () => {
       if (error) throw error;
       return data as ServiceProvider[];
     },
+    enabled: !loading,
   });
+
+  // Redirect to profile page for login/register if not authenticated
+  if (!loading && !user) {
+    return <Navigate to="/profile" replace />;
+  }
 
   // Extract unique cities and neighborhoods for filters
   const cities = [...new Set(providers?.map(p => p.active_neighborhoods?.city).filter(Boolean) as string[])].sort();
