@@ -79,6 +79,48 @@ function ManualLocationPicker({ storeLocation, deliveryRadiusKm, onLocationSelec
   const { data: mapboxToken, isLoading: isLoadingToken } = useMapboxToken();
   const [selectedLocation, setSelectedLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [address, setAddress] = useState('');
+  const [googleMapsLink, setGoogleMapsLink] = useState('');
+
+  // Parse Google Maps link to extract coordinates
+  const parseGoogleMapsLink = (link: string): { lat: number; lng: number } | null => {
+    try {
+      const atPattern = /@(-?\d+\.?\d*),(-?\d+\.?\d*)/;
+      const atMatch = link.match(atPattern);
+      if (atMatch) return { lat: parseFloat(atMatch[1]), lng: parseFloat(atMatch[2]) };
+
+      const qPattern = /[?&]q=(-?\d+\.?\d*),(-?\d+\.?\d*)/;
+      const qMatch = link.match(qPattern);
+      if (qMatch) return { lat: parseFloat(qMatch[1]), lng: parseFloat(qMatch[2]) };
+
+      const directPattern = /^(-?\d+\.?\d*)\s*,\s*(-?\d+\.?\d*)$/;
+      const directMatch = link.trim().match(directPattern);
+      if (directMatch) return { lat: parseFloat(directMatch[1]), lng: parseFloat(directMatch[2]) };
+
+      return null;
+    } catch {
+      return null;
+    }
+  };
+
+  const handleGoogleMapsLink = () => {
+    const coords = parseGoogleMapsLink(googleMapsLink);
+    if (coords) {
+      if (map.current && marker.current) {
+        map.current.flyTo({ center: [coords.lng, coords.lat], zoom: 15 });
+        marker.current.setLngLat([coords.lng, coords.lat]);
+        setSelectedLocation(coords);
+        reverseGeocode(coords.lat, coords.lng);
+        setGoogleMapsLink('');
+        toast.success('تم تحديد الموقع من الرابط! 📍');
+      }
+    } else {
+      if (googleMapsLink.includes('goo.gl')) {
+        toast.error('رابط مختصر - افتحه أولاً ثم انسخ الرابط الكامل');
+      } else {
+        toast.error('تعذر استخراج الموقع من الرابط');
+      }
+    }
+  };
 
   // Create circle GeoJSON
   const createCircleGeoJSON = (lng: number, lat: number, radiusKm: number) => {
@@ -252,8 +294,34 @@ function ManualLocationPicker({ storeLocation, deliveryRadiusKm, onLocationSelec
 
   return (
     <div className="space-y-3">
+      {/* Google Maps Link Input */}
+      <div className="flex gap-2">
+        <input
+          type="text"
+          value={googleMapsLink}
+          onChange={(e) => setGoogleMapsLink(e.target.value)}
+          placeholder="الصق رابط Google Maps أو الإحداثيات..."
+          className="flex-1 h-9 px-3 text-sm rounded-lg border bg-background"
+          dir="ltr"
+          onKeyDown={(e) => e.key === 'Enter' && handleGoogleMapsLink()}
+        />
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          className="h-9 px-3"
+          onClick={handleGoogleMapsLink}
+          disabled={!googleMapsLink.trim()}
+        >
+          <CheckCircle2 className="h-4 w-4" />
+        </Button>
+      </div>
+      <p className="text-[10px] text-muted-foreground text-center">
+        💡 يمكنك لصق رابط من Google Maps أو إحداثيات مباشرة (مثال: 24.7136, 46.6753)
+      </p>
+
       <div className="relative rounded-xl overflow-hidden border">
-        <div ref={mapContainer} className="h-48 w-full" />
+        <div ref={mapContainer} className="h-40 w-full" />
         
         <Button
           type="button"
@@ -284,10 +352,6 @@ function ManualLocationPicker({ storeLocation, deliveryRadiusKm, onLocationSelec
         <CheckCircle2 className="h-4 w-4" />
         تأكيد الموقع
       </Button>
-
-      <p className="text-[10px] text-muted-foreground text-center">
-        اضغط على الخريطة أو اسحب العلامة الزرقاء لتحديد موقع التوصيل
-      </p>
     </div>
   );
 }

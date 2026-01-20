@@ -13,6 +13,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { DeliveryMapPicker } from '@/components/map/DeliveryMapPicker';
+import { SimpleDeliveryPicker } from '@/components/location/SimpleDeliveryPicker';
 import { OrderScheduler } from '@/components/scheduling/OrderScheduler';
 import { LoyaltyTierBadge, tierConfigs } from '@/components/loyalty/LoyaltyTierBadge';
 import { Minus, Plus, Trash2, ShoppingBag, MapPin, Truck, Star, Map, CheckCircle2, Ticket, Loader2, X, Crown, CreditCard, Banknote, Sparkles, Gift, Clock, User, Phone, Mail, FileText } from 'lucide-react';
@@ -427,60 +428,10 @@ const Cart = () => {
                 </h3>
               </div>
               <CardContent className="p-4">
-                {deliveryLocation ? (
-                  <div className="space-y-3">
-                    <div className="flex items-start gap-3 p-4 bg-gradient-to-r from-green-500/10 to-transparent rounded-xl border border-green-500/20">
-                      <CheckCircle2 className="h-5 w-5 text-green-600 shrink-0 mt-0.5" />
-                      <div className="flex-1">
-                        <p className="text-sm font-bold text-green-700">تم تحديد الموقع</p>
-                        <p className="text-sm text-muted-foreground mt-1">{deliveryLocation.address}</p>
-                      </div>
-                    </div>
-                    <Dialog open={isMapOpen} onOpenChange={setIsMapOpen}>
-                      <DialogTrigger asChild>
-                        <Button variant="outline" className="w-full font-arabic rounded-xl">
-                          <Map className="h-4 w-4 ml-2" />
-                          تغيير الموقع
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className="sm:max-w-lg">
-                        <DialogHeader>
-                          <DialogTitle className="font-arabic">تحديد موقع التوصيل</DialogTitle>
-                        </DialogHeader>
-                        <DeliveryMapPicker
-                          initialLocation={deliveryLocation}
-                          onLocationSelect={(location) => {
-                            setDeliveryLocation(location);
-                            setIsMapOpen(false);
-                          }}
-                        />
-                      </DialogContent>
-                    </Dialog>
-                  </div>
-                ) : (
-                  <Dialog open={isMapOpen} onOpenChange={setIsMapOpen}>
-                    <DialogTrigger asChild>
-                      <Button variant="outline" className="w-full font-arabic h-20 rounded-xl border-dashed border-2 hover:border-primary hover:bg-primary/5">
-                        <div className="flex flex-col items-center gap-2">
-                          <Map className="h-6 w-6" />
-                          <span>تحديد الموقع على الخريطة</span>
-                        </div>
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="sm:max-w-lg">
-                      <DialogHeader>
-                        <DialogTitle className="font-arabic">تحديد موقع التوصيل</DialogTitle>
-                      </DialogHeader>
-                      <DeliveryMapPicker
-                        initialLocation={userLocation || undefined}
-                        onLocationSelect={(location) => {
-                          setDeliveryLocation(location);
-                          setIsMapOpen(false);
-                        }}
-                      />
-                    </DialogContent>
-                  </Dialog>
-                )}
+                <SimpleDeliveryPicker
+                  location={deliveryLocation}
+                  onLocationChange={setDeliveryLocation}
+                />
               </CardContent>
             </Card>
           </motion.div>
