@@ -25,7 +25,7 @@ serve(async (req) => {
     
     console.log('EdfaPay webhook received:', webhookData);
 
-    // Extract payment information (field names will be updated based on EdfaPay documentation)
+    // Extract payment information
     const {
       order_id,
       transaction_id,
@@ -36,91 +36,172 @@ serve(async (req) => {
       error_message
     } = webhookData;
 
-    // Extract original order ID from transaction ID
-    const orderIdMatch = order_id?.match(/TXN-(.+?)-\d+/);
-    const originalOrderId = orderIdMatch ? orderIdMatch[1] : order_id;
+    // Extract pending order ID from transaction ID (format: TXN-{pendingOrderId}-{timestamp})
+    const pendingOrderIdMatch = order_id?.match(/TXN-(.+?)-\d+$/);
+    const pendingOrderId = pendingOrderIdMatch ? pendingOrderIdMatch[1] : null;
 
-    if (!originalOrderId) {
-      console.error('Could not extract order ID from webhook');
+    if (!pendingOrderId) {
+      console.error('Could not extract pending order ID from webhook:', order_id);
       return new Response(
-        JSON.stringify({ error: 'Invalid order ID' }),
+        JSON.stringify({ error: 'Invalid order ID format' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Map EdfaPay status to our order status
-    let orderStatus: string;
+    // Map EdfaPay status to payment status
     let paymentStatus: string;
+    let shouldCreateOrder = false;
 
     switch (status?.toLowerCase()) {
       case 'success':
       case 'approved':
       case 'completed':
-        orderStatus = 'preparing'; // Move to preparing after successful payment
         paymentStatus = 'paid';
+        shouldCreateOrder = true;
         break;
       case 'pending':
       case 'processing':
-        orderStatus = 'pending';
         paymentStatus = 'pending';
         break;
       case 'failed':
       case 'declined':
       case 'error':
-        orderStatus = 'pending'; // Keep pending for retry
         paymentStatus = 'failed';
         break;
       case 'cancelled':
-        orderStatus = 'cancelled';
         paymentStatus = 'cancelled';
         break;
       default:
-        orderStatus = 'pending';
         paymentStatus = 'unknown';
     }
 
-    console.log(`Updating order ${originalOrderId} - Payment: ${paymentStatus}, Order: ${orderStatus}`);
+    console.log(`Processing payment for pending order ${pendingOrderId} - Status: ${paymentStatus}`);
 
-    // Fetch the order to get customer info
-    const { data: order, error: fetchError } = await supabase
-      .from('orders')
+    // Fetch pending order data
+    const { data: pendingOrder, error: fetchError } = await supabase
+      .from('pending_orders')
       .select('*')
-      .eq('id', originalOrderId)
+      .eq('id', pendingOrderId)
       .single();
 
-    if (fetchError) {
-      console.error('Error fetching order:', fetchError);
+    if (fetchError || !pendingOrder) {
+      console.error('Error fetching pending order:', fetchError);
+      return new Response(
+        JSON.stringify({ error: 'Pending order not found' }),
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
-    // Update order status and payment info
-    const { error: updateError } = await supabase
-      .from('orders')
-      .update({ 
-        status: paymentStatus === 'paid' ? orderStatus : order?.status,
-        payment_status: paymentStatus,
-        payment_transaction_id: transaction_id,
-        payment_completed_at: paymentStatus === 'paid' ? new Date().toISOString() : null,
-        notes: paymentStatus === 'paid' 
-          ? `تم الدفع بنجاح - معرف المعاملة: ${transaction_id}`
-          : paymentStatus === 'failed'
-          ? `فشل الدفع: ${error_message || 'سبب غير محدد'}`
-          : order?.notes
-      })
-      .eq('id', originalOrderId);
+    let createdOrderId: string | null = null;
 
-    if (updateError) {
-      console.error('Error updating order:', updateError);
-    } else {
-      console.log(`Order ${originalOrderId} updated - payment: ${paymentStatus}`);
+    // Only create order if payment was successful
+    if (shouldCreateOrder) {
+      console.log('Payment successful - Creating actual order...');
+
+      // Determine which orders table to use based on provider_id
+      const isProviderOrder = !!pendingOrder.provider_id;
+      const ordersTable = isProviderOrder ? 'provider_orders' : 'orders';
+      const orderItemsTable = isProviderOrder ? 'provider_order_items' : 'order_items';
+
+      // Create the actual order
+      const orderData: any = {
+        customer_id: pendingOrder.customer_id,
+        customer_name: pendingOrder.customer_name,
+        customer_phone: pendingOrder.customer_phone,
+        customer_email: pendingOrder.customer_email,
+        order_type: pendingOrder.order_type,
+        delivery_address: pendingOrder.delivery_address,
+        delivery_lat: pendingOrder.delivery_lat,
+        delivery_lng: pendingOrder.delivery_lng,
+        notes: pendingOrder.notes,
+        total_amount: pendingOrder.total_amount,
+        status: 'preparing', // Start preparing immediately after payment
+      };
+
+      // Add provider_id for provider orders
+      if (isProviderOrder) {
+        orderData.provider_id = pendingOrder.provider_id;
+      } else {
+        // For platform orders, add payment fields
+        orderData.payment_method = 'online';
+        orderData.payment_status = 'paid';
+        orderData.payment_transaction_id = transaction_id;
+        orderData.payment_completed_at = new Date().toISOString();
+      }
+
+      const { data: createdOrder, error: orderError } = await supabase
+        .from(ordersTable)
+        .insert(orderData)
+        .select()
+        .single();
+
+      if (orderError) {
+        console.error('Error creating order:', orderError);
+        return new Response(
+          JSON.stringify({ error: 'Failed to create order' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      createdOrderId = createdOrder.id;
+      console.log(`Order created successfully: ${createdOrderId}`);
+
+      // Create order items from pending order items
+      const items = pendingOrder.items as any[];
+      if (items && items.length > 0) {
+        const orderItems = items.map((item: any) => ({
+          order_id: createdOrderId,
+          product_id: item.productId,
+          product_name: item.productName,
+          quantity: item.quantity,
+          unit_price: item.unitPrice,
+          total_price: item.totalPrice,
+          selected_options: item.selectedOptions || null
+        }));
+
+        const { error: itemsError } = await supabase
+          .from(orderItemsTable)
+          .insert(orderItems);
+
+        if (itemsError) {
+          console.error('Error creating order items:', itemsError);
+        }
+      }
+
+      // Send notification to provider for new order
+      if (isProviderOrder) {
+        try {
+          await supabase.functions.invoke('send-notification', {
+            body: {
+              type: 'new_order',
+              orderId: createdOrderId,
+              providerId: pendingOrder.provider_id,
+              customerName: pendingOrder.customer_name,
+              totalAmount: pendingOrder.total_amount,
+              orderType: pendingOrder.order_type
+            }
+          });
+        } catch (notifError) {
+          console.error('Failed to send provider notification:', notifError);
+        }
+      }
+
+      // Delete the pending order after successful creation
+      await supabase
+        .from('pending_orders')
+        .delete()
+        .eq('id', pendingOrderId);
+
+      console.log('Pending order deleted after successful processing');
     }
 
     // Insert payment record
     const { error: paymentInsertError } = await supabase
       .from('payments')
       .insert({
-        order_id: originalOrderId,
-        customer_id: order?.customer_id,
-        amount: parseFloat(amount) || order?.total_amount,
+        order_id: createdOrderId,
+        customer_id: pendingOrder.customer_id,
+        amount: parseFloat(amount) || pendingOrder.total_amount,
         payment_method: 'edfapay',
         status: paymentStatus,
         transaction_id: transaction_id,
@@ -131,14 +212,14 @@ serve(async (req) => {
       console.error('Error inserting payment record:', paymentInsertError);
     }
 
-    // Send email notification based on payment status
-    if (order?.customer_email) {
+    // Send email notification
+    if (pendingOrder.customer_email) {
       try {
-        let emailSubject: string;
-        let emailHtml: string;
+        let emailSubject: string = '';
+        let emailHtml: string = '';
 
-        if (paymentStatus === 'paid') {
-          emailSubject = `✅ تم استلام الدفع - طلب #${originalOrderId.slice(-6)}`;
+        if (paymentStatus === 'paid' && createdOrderId) {
+          emailSubject = `✅ تم الدفع وإنشاء الطلب - طلب #${createdOrderId.slice(-6)}`;
           emailHtml = `
             <!DOCTYPE html>
             <html dir="rtl" lang="ar">
@@ -161,20 +242,20 @@ serve(async (req) => {
               <div class="container">
                 <div class="header">
                   <div class="success-icon">✅</div>
-                  <h1>تم الدفع بنجاح!</h1>
+                  <h1>تم الدفع وإنشاء الطلب بنجاح!</h1>
                 </div>
                 <div class="content">
-                  <p>مرحباً ${order.customer_name}،</p>
-                  <p>تم استلام الدفع الخاص بطلبك بنجاح. سنبدأ في تحضير طلبك الآن.</p>
+                  <p>مرحباً ${pendingOrder.customer_name}،</p>
+                  <p>تم استلام الدفع بنجاح وتم إنشاء طلبك. سنبدأ في تحضيره الآن.</p>
                   
                   <div class="amount">
                     <div>المبلغ المدفوع</div>
-                    <div class="amount-value">${order.total_amount} ر.س</div>
+                    <div class="amount-value">${pendingOrder.total_amount} ر.س</div>
                   </div>
                   
                   <div class="info-row">
                     <span>رقم الطلب:</span>
-                    <strong>#${originalOrderId.slice(-6)}</strong>
+                    <strong>#${createdOrderId.slice(-6)}</strong>
                   </div>
                   <div class="info-row">
                     <span>رقم العملية:</span>
@@ -182,7 +263,7 @@ serve(async (req) => {
                   </div>
                   <div class="info-row">
                     <span>طريقة الاستلام:</span>
-                    <strong>${order.order_type === 'delivery' ? 'توصيل' : 'استلام من المتجر'}</strong>
+                    <strong>${pendingOrder.order_type === 'delivery' ? 'توصيل' : 'استلام من المتجر'}</strong>
                   </div>
                 </div>
                 <div class="footer">
@@ -193,7 +274,7 @@ serve(async (req) => {
             </html>
           `;
         } else if (paymentStatus === 'failed') {
-          emailSubject = `❌ فشل الدفع - طلب #${originalOrderId.slice(-6)}`;
+          emailSubject = `❌ فشل الدفع - لم يتم إنشاء الطلب`;
           emailHtml = `
             <!DOCTYPE html>
             <html dir="rtl" lang="ar">
@@ -207,7 +288,6 @@ serve(async (req) => {
                 .content { padding: 30px; }
                 .error-icon { font-size: 48px; margin-bottom: 15px; }
                 .error-box { background: #FEF2F2; border: 1px solid #FECACA; border-radius: 12px; padding: 20px; margin: 20px 0; }
-                .retry-btn { display: inline-block; background: #3B82F6; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; margin-top: 15px; }
                 .footer { background: #f9fafb; padding: 20px; text-align: center; color: #6b7280; font-size: 14px; }
               </style>
             </head>
@@ -218,8 +298,8 @@ serve(async (req) => {
                   <h1>فشل الدفع</h1>
                 </div>
                 <div class="content">
-                  <p>مرحباً ${order.customer_name}،</p>
-                  <p>للأسف، لم نتمكن من إتمام عملية الدفع لطلبك.</p>
+                  <p>مرحباً ${pendingOrder.customer_name}،</p>
+                  <p>للأسف، فشلت عملية الدفع ولم يتم إنشاء الطلب.</p>
                   
                   <div class="error-box">
                     <strong>سبب الفشل:</strong><br>
@@ -235,16 +315,12 @@ serve(async (req) => {
             </body>
             </html>
           `;
-        } else {
-          // Don't send email for other statuses
-          emailSubject = '';
-          emailHtml = '';
         }
 
         if (emailSubject && emailHtml) {
           const emailResponse = await resend.emails.send({
             from: "الطلبات <onboarding@resend.dev>",
-            to: [order.customer_email],
+            to: [pendingOrder.customer_email],
             subject: emailSubject,
             html: emailHtml,
           });
@@ -258,7 +334,9 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         success: true,
-        message: 'Webhook processed successfully' 
+        message: 'Webhook processed successfully',
+        orderId: createdOrderId,
+        paymentStatus
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

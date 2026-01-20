@@ -108,6 +108,38 @@ const Cart = () => {
     }
 
     try {
+      // If online payment, redirect to payment first (Payment First Policy)
+      if (paymentMethod === 'online') {
+        const paymentResult = await initiatePayment({
+          customerId: user?.id,
+          customerName: customerName,
+          customerPhone: customerPhone,
+          customerEmail: customerEmail || `${customerPhone}@temp.local`,
+          orderType: orderType,
+          deliveryAddress: deliveryLocation?.address || undefined,
+          deliveryLat: deliveryLocation?.lat,
+          deliveryLng: deliveryLocation?.lng,
+          notes: notes,
+          totalAmount: finalAmount,
+          items: items.map((item) => ({
+            productId: item.id.split('-')[0],
+            productName: item.name_ar,
+            quantity: item.quantity,
+            unitPrice: item.price,
+            totalPrice: item.price * item.quantity,
+            selectedOptions: item.selected_options || [],
+          })),
+        });
+
+        if (!paymentResult.success) {
+          toast.error('فشل بدء عملية الدفع، يمكنك الدفع عند الاستلام');
+        }
+        // Payment redirect happens in useEdfaPayment
+        // Order will be created after successful payment via webhook
+        return;
+      }
+
+      // For cash payment, create order immediately
       const orderResult = await createOrder.mutateAsync({
         customer_name: customerName,
         customer_phone: customerPhone,
@@ -124,7 +156,7 @@ const Cart = () => {
         coupon_discount: couponDiscount,
         scheduled_for: scheduledFor?.toISOString() || null,
         payment_method: paymentMethod,
-        payment_status: paymentMethod === 'cash' ? 'pending' : 'pending',
+        payment_status: 'pending',
         items: items.map((item) => ({
           product_id: item.id.split('-')[0],
           product_name: item.name_ar,
@@ -141,24 +173,6 @@ const Cart = () => {
           couponId: appliedCoupon.coupon.id,
           orderId: orderResult.id,
         });
-      }
-
-      // If online payment, redirect to payment page
-      if (paymentMethod === 'online') {
-        const paymentResult = await initiatePayment({
-          orderId: orderResult.id,
-          amount: finalAmount,
-          customerEmail: customerEmail || `${customerPhone}@temp.local`,
-          customerName: customerName,
-          customerPhone: customerPhone,
-          description: `طلب رقم ${orderResult.id.slice(-6)}`,
-        });
-
-        if (!paymentResult.success) {
-          toast.error('فشل بدء عملية الدفع، يمكنك الدفع عند الاستلام');
-        }
-        // Payment redirect happens in useEdfaPayment
-        return;
       }
 
       toast.success('تم إرسال طلبك بنجاح!');

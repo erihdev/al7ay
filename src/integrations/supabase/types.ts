@@ -1128,6 +1128,71 @@ export type Database = {
           },
         ]
       }
+      pending_orders: {
+        Row: {
+          created_at: string
+          customer_email: string | null
+          customer_id: string | null
+          customer_name: string
+          customer_phone: string
+          delivery_address: string | null
+          delivery_lat: number | null
+          delivery_lng: number | null
+          expires_at: string
+          id: string
+          items: Json
+          notes: string | null
+          order_type: string
+          payment_method: string | null
+          provider_id: string | null
+          total_amount: number
+        }
+        Insert: {
+          created_at?: string
+          customer_email?: string | null
+          customer_id?: string | null
+          customer_name: string
+          customer_phone: string
+          delivery_address?: string | null
+          delivery_lat?: number | null
+          delivery_lng?: number | null
+          expires_at?: string
+          id?: string
+          items: Json
+          notes?: string | null
+          order_type?: string
+          payment_method?: string | null
+          provider_id?: string | null
+          total_amount: number
+        }
+        Update: {
+          created_at?: string
+          customer_email?: string | null
+          customer_id?: string | null
+          customer_name?: string
+          customer_phone?: string
+          delivery_address?: string | null
+          delivery_lat?: number | null
+          delivery_lng?: number | null
+          expires_at?: string
+          id?: string
+          items?: Json
+          notes?: string | null
+          order_type?: string
+          payment_method?: string | null
+          provider_id?: string | null
+          total_amount?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pending_orders_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "service_providers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       points_history: {
         Row: {
           created_at: string

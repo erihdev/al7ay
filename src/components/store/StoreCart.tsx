@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useProviderCart } from '@/contexts/ProviderCartContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useMapboxToken } from '@/hooks/useMapboxToken';
+import { useEdfaPayment } from '@/hooks/useEdfaPayment';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { supabase } from '@/integrations/supabase/client';
@@ -294,6 +295,7 @@ const StoreCart = ({ primaryColor = '#1B4332', storeLocation, deliveryRadiusKm =
   const navigate = useNavigate();
   const { items, providerId, providerName, totalItems, totalPrice, updateQuantity, removeItem, clearCart } = useProviderCart();
   const { user } = useAuth();
+  const { initiatePayment, isProcessing: isPaymentProcessing } = useEdfaPayment();
   
   const [isOpen, setIsOpen] = useState(false);
   const [viewState, setViewState] = useState<ViewState>('cart');
@@ -475,8 +477,43 @@ const StoreCart = ({ primaryColor = '#1B4332', storeLocation, deliveryRadiusKm =
 
     try {
       const orderNumber = generateOrderNumber();
-      
-      // Create order
+
+      // If online payment, use Payment First policy
+      if (paymentMethod === 'online') {
+        const paymentResult = await initiatePayment({
+          providerId: providerId || undefined,
+          customerId: user?.id,
+          customerName: customerName.trim(),
+          customerPhone: customerPhone.trim(),
+          customerEmail: customerEmail.trim() || undefined,
+          orderType: orderType,
+          deliveryAddress: orderType === 'delivery' ? deliveryAddress.trim() : undefined,
+          notes: notes.trim() || undefined,
+          totalAmount: totalPrice,
+          items: items.map(item => ({
+            productId: item.productId,
+            productName: item.productName,
+            quantity: item.quantity,
+            unitPrice: item.price,
+            totalPrice: item.price * item.quantity,
+            selectedOptions: null
+          })),
+        });
+
+        if (!paymentResult.success) {
+          toast.error('فشل بدء عملية الدفع، يمكنك الدفع عند الاستلام');
+          setIsSubmitting(false);
+          return;
+        }
+        
+        // Payment redirect happens in useEdfaPayment
+        // Order will be created after successful payment via webhook
+        // Clear cart before redirect
+        clearCart();
+        return;
+      }
+
+      // For cash payment, create order immediately
       const { data: order, error: orderError } = await supabase
         .from('provider_orders')
         .insert({
@@ -535,7 +572,7 @@ const StoreCart = ({ primaryColor = '#1B4332', storeLocation, deliveryRadiusKm =
         orderId: order.id,
         orderNumber: orderNumber,
         invoiceNumber: generateInvoiceNumber(),
-        paymentMethod: paymentMethod === 'cash' ? 'الدفع عند الاستلام' : 'الدفع الإلكتروني',
+        paymentMethod: 'الدفع عند الاستلام',
         createdAt: new Date()
       });
       setViewState('success');
