@@ -67,6 +67,7 @@ import { EmployeePerformanceStats } from '@/components/admin/EmployeePerformance
 import { EmployeePointsManager } from '@/components/admin/EmployeePointsManager';
 import { ContactSettingsManager } from '@/components/admin/ContactSettingsManager';
 import CommissionSettingsManager from '@/components/admin/CommissionSettingsManager';
+import { PlatformRevenueManager } from '@/components/admin/PlatformRevenueManager';
 import { PasswordChangeForm } from '@/components/admin/PasswordChangeForm';
 import { InteractiveBackground } from '@/components/ui/InteractiveBackground';
 import { useUpdateDeliveryLocation } from '@/hooks/useOrderTracking';
@@ -124,6 +125,7 @@ const TAB_CATEGORIES = [
     label: 'المالية',
     icon: Wallet,
     tabs: [
+      { value: 'platform-revenue', label: 'إيرادات المنصة', icon: Wallet },
       { value: 'payments', label: 'المدفوعات', icon: CreditCard },
       { value: 'subscriptions', label: 'الاشتراكات', icon: CreditCard },
       { value: 'commissions', label: 'العمولات', icon: CreditCard },
@@ -716,6 +718,11 @@ const Admin = () => {
               {/* Reports Tab */}
               <TabsContent value="reports">
                 <SalesReports />
+              </TabsContent>
+
+              {/* Platform Revenue Tab */}
+              <TabsContent value="platform-revenue">
+                <PlatformRevenueManager />
               </TabsContent>
 
               {/* Settings Tab */}
