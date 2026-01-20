@@ -52,6 +52,9 @@ export interface ServiceProvider {
   payout_frequency: 'weekly' | 'monthly';
   last_payout_date: string | null;
   pending_payout: number;
+  edfapay_credentials_verified: boolean | null;
+  edfapay_merchant_id_encrypted: string | null;
+  edfapay_verified_at: string | null;
   created_at: string;
   updated_at: string;
 }
