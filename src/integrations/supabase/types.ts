@@ -763,6 +763,63 @@ export type Database = {
         }
         Relationships: []
       }
+      invoice_settings: {
+        Row: {
+          address: string | null
+          business_name: string | null
+          business_name_en: string | null
+          cr_number: string | null
+          created_at: string
+          email: string | null
+          footer_text: string | null
+          id: string
+          logo_url: string | null
+          phone: string | null
+          primary_color: string | null
+          show_qr_code: boolean | null
+          show_vat_number: boolean | null
+          slogan: string | null
+          updated_at: string
+          vat_number: string | null
+        }
+        Insert: {
+          address?: string | null
+          business_name?: string | null
+          business_name_en?: string | null
+          cr_number?: string | null
+          created_at?: string
+          email?: string | null
+          footer_text?: string | null
+          id?: string
+          logo_url?: string | null
+          phone?: string | null
+          primary_color?: string | null
+          show_qr_code?: boolean | null
+          show_vat_number?: boolean | null
+          slogan?: string | null
+          updated_at?: string
+          vat_number?: string | null
+        }
+        Update: {
+          address?: string | null
+          business_name?: string | null
+          business_name_en?: string | null
+          cr_number?: string | null
+          created_at?: string
+          email?: string | null
+          footer_text?: string | null
+          id?: string
+          logo_url?: string | null
+          phone?: string | null
+          primary_color?: string | null
+          show_qr_code?: boolean | null
+          show_vat_number?: boolean | null
+          slogan?: string | null
+          updated_at?: string
+          vat_number?: string | null
+        }
+        Relationships: []
+      }
       job_positions: {
         Row: {
           created_at: string | null
