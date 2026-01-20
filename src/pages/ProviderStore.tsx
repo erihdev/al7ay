@@ -479,11 +479,11 @@ const ProviderStoreContent = () => {
               headerBlur && "blur-sm scale-105"
             )}
           />
-          {/* Provider color overlay with gradient */}
+          {/* Provider color overlay with gradient - reduced opacity for clearer image */}
           <div 
             className="absolute inset-0"
             style={{ 
-              background: `linear-gradient(135deg, ${primaryColor}cc 0%, ${secondaryColor}dd 50%, ${primaryColor}ee 100%)`,
+              background: `linear-gradient(135deg, ${primaryColor}88 0%, ${secondaryColor}99 50%, ${primaryColor}88 100%)`,
             }}
           />
           {/* Decorative Elements */}
