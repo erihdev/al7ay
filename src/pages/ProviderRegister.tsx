@@ -1408,6 +1408,8 @@ const ProviderRegister = () => {
                       </Link>
                     </div>
                     
+                    {/* Check if plan is yearly (365 days or more) */}
+                    {selectedPlan.duration_days >= 365 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {/* Platform Managed Option */}
                       <motion.div
@@ -1548,8 +1550,107 @@ const ProviderRegister = () => {
                         </div>
                       </motion.div>
                     </div>
+                    ) : (
+                      /* Non-yearly plans: Only platform managed option */
+                      <div className="space-y-4">
+                        <motion.div
+                          whileHover={{ scale: 1.01 }}
+                          className="relative rounded-xl border-2 border-primary bg-primary/5 p-4"
+                        >
+                          <motion.div
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            className="absolute -top-2 -right-2 w-6 h-6 bg-primary rounded-full flex items-center justify-center"
+                          >
+                            <Check className="h-4 w-4 text-primary-foreground" />
+                          </motion.div>
+                          <div className="flex items-start gap-3">
+                            <div className="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center shrink-0">
+                              <Building className="h-6 w-6 text-blue-600" />
+                            </div>
+                            <div className="flex-1">
+                              <h4 className="font-bold mb-2">استلام الأرباح عبر المنصة</h4>
+                              <p className="text-xs text-muted-foreground leading-relaxed mb-3">
+                                نستلم المدفوعات من العملاء ونحول لك أرباحك أسبوعياً عبر التحويل البنكي
+                              </p>
+                              
+                              <div className="space-y-1.5 mb-3">
+                                <div className="flex items-center gap-1.5 text-xs text-green-600">
+                                  <Check className="h-3 w-3" />
+                                  <span>لا حاجة لإجراءات إضافية</span>
+                                </div>
+                                <div className="flex items-center gap-1.5 text-xs text-green-600">
+                                  <Check className="h-3 w-3" />
+                                  <span>دعم فني كامل من المنصة</span>
+                                </div>
+                                <div className="flex items-center gap-1.5 text-xs text-green-600">
+                                  <Check className="h-3 w-3" />
+                                  <span>تقارير مالية مفصلة</span>
+                                </div>
+                              </div>
+                              
+                              <div className="flex gap-2">
+                                <Badge variant="secondary" className="text-[10px]">
+                                  <Wallet className="h-3 w-3 ml-1" />
+                                  تحويل أسبوعي
+                                </Badge>
+                              </div>
+                            </div>
+                          </div>
+                        </motion.div>
+                        
+                        {/* Upgrade notice for direct payment */}
+                        <motion.div
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="p-4 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 border border-amber-200 dark:border-amber-800 rounded-xl"
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className="w-10 h-10 rounded-full bg-gradient-to-r from-amber-400 to-orange-400 flex items-center justify-center shrink-0">
+                              <CreditCard className="h-5 w-5 text-white" />
+                            </div>
+                            <div className="flex-1">
+                              <h4 className="font-bold text-sm text-amber-800 dark:text-amber-200 mb-1">
+                                🚀 ترغب في استلام أرباحك مباشرة؟
+                              </h4>
+                              <p className="text-xs text-amber-700 dark:text-amber-300 leading-relaxed mb-3">
+                                اشترك في <span className="font-bold">الخطة السنوية</span> للحصول على ميزة الربط المباشر مع EdfaPay واستلام أرباحك فوراً في حسابك!
+                              </p>
+                              <div className="flex flex-wrap gap-2 mb-3">
+                                <Badge variant="outline" className="text-[10px] border-green-500 text-green-600">
+                                  <Check className="h-2.5 w-2.5 ml-1" />
+                                  استلام فوري للأرباح
+                                </Badge>
+                                <Badge variant="outline" className="text-[10px] border-green-500 text-green-600">
+                                  <Check className="h-2.5 w-2.5 ml-1" />
+                                  تحكم كامل بالمدفوعات
+                                </Badge>
+                                <Badge variant="outline" className="text-[10px] border-green-500 text-green-600">
+                                  <Check className="h-2.5 w-2.5 ml-1" />
+                                  فاتورة مخصصة بهويتك
+                                </Badge>
+                              </div>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="text-xs border-amber-400 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/50"
+                                onClick={() => {
+                                  const yearlyPlan = plans.find(p => p.duration_days >= 365);
+                                  if (yearlyPlan) {
+                                    setSelectedPlan(yearlyPlan);
+                                  }
+                                }}
+                              >
+                                <Sparkles className="h-3 w-3 ml-1" />
+                                الترقية للخطة السنوية
+                              </Button>
+                            </div>
+                          </div>
+                        </motion.div>
+                      </div>
+                    )}
 
-                    {formData.paymentMethod === 'direct_gateway' && (
+                    {formData.paymentMethod === 'direct_gateway' && selectedPlan.duration_days >= 365 && (
                       <motion.div
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: 'auto' }}
@@ -1579,7 +1680,8 @@ const ProviderRegister = () => {
                       </motion.div>
                     )}
 
-                    {/* Comparison Table */}
+                    {/* Comparison Table - Only show for yearly plans */}
+                    {selectedPlan.duration_days >= 365 && (
                     <motion.div
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
@@ -1636,6 +1738,7 @@ const ProviderRegister = () => {
                         </div>
                       </details>
                     </motion.div>
+                    )}
                   </div>
                 )}
 
