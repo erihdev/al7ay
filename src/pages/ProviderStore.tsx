@@ -41,6 +41,7 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
+import { ChatDialog } from '@/components/chat/ChatDialog';
 
 interface Product {
   id: string;
@@ -530,6 +531,12 @@ const ProviderStoreContent = () => {
                 </Button>
               </a>
             )}
+            {/* Chat Button */}
+            <ChatDialog 
+              providerId={provider.id} 
+              providerName={provider.business_name}
+              primaryColor={primaryColor}
+            />
           </div>
           
           <Link to="/">
@@ -772,16 +779,16 @@ const ProviderStoreContent = () => {
                     </div>
                   </div>
 
-                  {/* Products Grid */}
-                  <div className="space-y-3">
+                  {/* Products Grid - Same style as Featured */}
+                  <div className="grid grid-cols-3 gap-2">
                     {categoryProducts.map((product: Product, index: number) => (
                       <motion.div
                         key={product.id}
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: index * 0.05 }}
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: index * 0.03 }}
                       >
-                        <ProductCard
+                        <CompactProductCard
                           product={product}
                           onAddToCart={() => handleAddToCart(product, 1)}
                           onClick={() => setSelectedProduct(product)}
@@ -978,8 +985,8 @@ const FeaturedProductCard = ({ product, onAddToCart, onClick, primaryColor, acce
   );
 };
 
-// Product Card Component
-interface ProductCardProps {
+// Compact Product Card Component (Grid Style - Same as Featured)
+interface CompactProductCardProps {
   product: Product;
   onAddToCart: () => void;
   onClick: () => void;
@@ -987,65 +994,51 @@ interface ProductCardProps {
   accentColor: string;
 }
 
-const ProductCard = ({ product, onAddToCart, onClick, primaryColor, accentColor }: ProductCardProps) => {
+const CompactProductCard = ({ product, onAddToCart, onClick, primaryColor, accentColor }: CompactProductCardProps) => {
   return (
     <Card
-      className="overflow-hidden border-0 shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer group"
+      className="overflow-hidden border-0 shadow-md cursor-pointer group hover:shadow-lg transition-all duration-300"
       onClick={onClick}
     >
-      <div className="flex gap-4 p-4">
-        {/* Product Image */}
-        <div className="w-24 h-24 rounded-2xl bg-muted overflow-hidden flex-shrink-0 relative">
-          {product.image_url ? (
-            <img 
-              src={product.image_url} 
-              alt={product.name_ar}
-              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center">
-              <Coffee className="h-8 w-8 text-muted-foreground/30" />
-            </div>
-          )}
-          {product.is_featured && (
-            <div 
-              className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full flex items-center justify-center shadow-lg"
-              style={{ backgroundColor: accentColor }}
-            >
-              <Star className="h-3 w-3 fill-white text-white" />
-            </div>
-          )}
-        </div>
-
-        {/* Product Info */}
-        <div className="flex-1 flex flex-col justify-between min-w-0">
-          <div>
-            <h4 className="font-bold text-base line-clamp-1 mb-0.5">{product.name_ar}</h4>
-            {product.description_ar && (
-              <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed">
-                {product.description_ar}
-              </p>
-            )}
+      <div className="relative aspect-[4/5] bg-muted overflow-hidden">
+        {product.image_url ? (
+          <img 
+            src={product.image_url} 
+            alt={product.name_ar}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center">
+            <Coffee className="h-6 w-6 text-muted-foreground/30" />
           </div>
-          
-          <div className="flex items-center justify-between mt-2">
-            <span 
-              className="font-bold text-lg"
-              style={{ color: primaryColor }}
-            >
+        )}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
+        
+        {product.is_featured && (
+          <div 
+            className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full flex items-center justify-center shadow"
+            style={{ backgroundColor: accentColor }}
+          >
+            <Star className="h-2.5 w-2.5 fill-white text-white" />
+          </div>
+        )}
+        
+        <div className="absolute bottom-0 left-0 right-0 p-2">
+          <h4 className="font-bold text-white text-xs line-clamp-1 mb-0.5">{product.name_ar}</h4>
+          <div className="flex items-center justify-between">
+            <span className="font-bold text-white text-sm">
               {Number(product.price).toFixed(0)} ر.س
             </span>
             <Button
               size="sm"
-              className="h-9 px-4 rounded-xl text-sm gap-1.5 shadow-md"
+              className="h-6 w-6 p-0 rounded-full shadow"
               style={{ backgroundColor: primaryColor }}
               onClick={(e) => {
                 e.stopPropagation();
                 onAddToCart();
               }}
             >
-              <Plus className="h-4 w-4" />
-              أضف
+              <Plus className="h-3 w-3" />
             </Button>
           </div>
         </div>
