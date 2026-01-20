@@ -62,16 +62,23 @@ serve(async (req) => {
 
     // Prepare payment request for EdfaPay (using correct field names per API docs)
     const paymentData = {
+      action: 'SALE',
       merchant_id: merchantId,
       merchant_password: password,
       order_id: transactionId,
       order_amount: amount.toFixed(2),
       order_currency: 'SAR',
-      order_description: description || `طلب معلق ${pendingOrderId}`,
+      order_description: description || `Order ${pendingOrderId}`,
       payer_email: customerEmail || 'customer@example.com',
       payer_first_name: firstName,
       payer_last_name: lastName,
       payer_phone: customerPhone,
+      payer_ip: '127.0.0.1',
+      payer_address: 'Saudi Arabia',
+      payer_city: 'Riyadh',
+      payer_country: 'SA',
+      payer_zip: '12345',
+      term_url_3ds: returnUrl,
       return_url: returnUrl,
       callback_url: `${Deno.env.get('SUPABASE_URL')}/functions/v1/edfapay-webhook`,
     };
