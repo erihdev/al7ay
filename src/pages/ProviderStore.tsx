@@ -727,14 +727,13 @@ const ProviderStoreContent = () => {
                   </div>
                 </div>
                 
-                <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-2">
+                <div className="grid grid-cols-3 gap-2">
                   {featuredProducts.map((product, index) => (
                     <motion.div
                       key={product.id}
-                      initial={{ opacity: 0, x: 20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: index * 0.05 }}
-                      className="flex-shrink-0 w-32"
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: index * 0.03 }}
                     >
                       <FeaturedProductCard
                         product={product}
