@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
@@ -95,9 +95,77 @@ const Index = () => {
   const [userGpsCoords, setUserGpsCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [showLocationPicker, setShowLocationPicker] = useState(false);
   const { requestLocation } = useLocation();
+  const hasAutoDetectedRef = useRef(false);
   
   // Enable order status notifications for logged-in customers
   useOrderStatusNotifications();
+
+  // Auto-detect location once on login (check localStorage)
+  useEffect(() => {
+    if (!user || hasAutoDetectedRef.current) return;
+    
+    const locationDetectedKey = `location_detected_${user.id}`;
+    const hasDetected = localStorage.getItem(locationDetectedKey);
+    
+    if (!hasDetected && navigator.geolocation) {
+      hasAutoDetectedRef.current = true;
+      
+      // Small delay to ensure page is ready
+      const timer = setTimeout(() => {
+        navigator.geolocation.getCurrentPosition(
+          async (position) => {
+            const userLat = position.coords.latitude;
+            const userLng = position.coords.longitude;
+
+            const { data: neighborhoodsWithCoords } = await supabase
+              .from('active_neighborhoods')
+              .select('id, name, city, lat, lng')
+              .eq('is_active', true);
+
+            if (neighborhoodsWithCoords) {
+              let nearest: { id: string; name: string; city: string; distance: number } | null = null;
+              
+              for (const neighborhood of neighborhoodsWithCoords) {
+                if (neighborhood.lat && neighborhood.lng) {
+                  const distance = calculateDistance(userLat, userLng, neighborhood.lat, neighborhood.lng);
+                  if (!nearest || distance < nearest.distance) {
+                    nearest = {
+                      id: neighborhood.id,
+                      name: neighborhood.name,
+                      city: neighborhood.city,
+                      distance
+                    };
+                  }
+                }
+              }
+
+              if (nearest) {
+                setDetectedLocation({
+                  city: nearest.city,
+                  neighborhood: nearest.name,
+                  neighborhoodId: nearest.id,
+                  userCoords: { lat: userLat, lng: userLng },
+                  distance: nearest.distance
+                });
+                setUserGpsCoords({ lat: userLat, lng: userLng });
+                setSelectedCity(nearest.city);
+                setSelectedNeighborhood(nearest.id);
+                
+                // Mark as detected for this user
+                localStorage.setItem(locationDetectedKey, 'true');
+              }
+            }
+          },
+          () => {
+            // Silently fail on first auto-detect
+          },
+          { enableHighAccuracy: true, timeout: 10000, maximumAge: 300000 }
+        );
+      }, 500);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [user]);
 
   // Fetch all active service providers with their neighborhoods
   const { data: providers, isLoading } = useQuery({
