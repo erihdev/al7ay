@@ -60,18 +60,18 @@ serve(async (req) => {
     const firstName = nameParts[0] || 'Customer';
     const lastName = nameParts.slice(1).join(' ') || firstName;
 
-    // Prepare payment request for EdfaPay
+    // Prepare payment request for EdfaPay (using correct field names per API docs)
     const paymentData = {
       merchant_id: merchantId,
-      password: password,
+      merchant_password: password,
       order_id: transactionId,
-      amount: amount.toFixed(2),
-      currency: 'SAR',
-      description: description || `طلب معلق ${pendingOrderId}`,
-      customer_email: customerEmail || 'customer@example.com',
-      customer_first_name: firstName,
-      customer_last_name: lastName,
-      customer_phone: customerPhone,
+      order_amount: amount.toFixed(2),
+      order_currency: 'SAR',
+      order_description: description || `طلب معلق ${pendingOrderId}`,
+      payer_email: customerEmail || 'customer@example.com',
+      payer_first_name: firstName,
+      payer_last_name: lastName,
+      payer_phone: customerPhone,
       return_url: returnUrl,
       callback_url: `${Deno.env.get('SUPABASE_URL')}/functions/v1/edfapay-webhook`,
     };
