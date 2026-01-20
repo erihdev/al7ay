@@ -1,6 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
 import { LoyaltyTier, tierConfigs, getPointsToNextTier, getNextTier } from '@/components/loyalty/LoyaltyTierBadge';
 
 interface LoyaltyData {
@@ -14,18 +13,16 @@ interface LoyaltyData {
   progressToNextTier: number; // percentage
 }
 
-export function useLoyaltyTier() {
-  const { user } = useAuth();
-
+export function useLoyaltyTier(userId: string | undefined) {
   return useQuery({
-    queryKey: ['loyalty-tier', user?.id],
+    queryKey: ['loyalty-tier', userId],
     queryFn: async (): Promise<LoyaltyData | null> => {
-      if (!user) return null;
+      if (!userId) return null;
 
       const { data, error } = await supabase
         .from('loyalty_points')
         .select('total_points, lifetime_points, tier')
-        .eq('user_id', user.id)
+        .eq('user_id', userId)
         .maybeSingle();
 
       if (error) throw error;
@@ -68,6 +65,6 @@ export function useLoyaltyTier() {
         progressToNextTier,
       };
     },
-    enabled: !!user,
+    enabled: !!userId,
   });
 }
