@@ -90,7 +90,7 @@ export function ProviderDeliveryTracker({
     };
   }, []);
 
-  // Open navigation app
+  // Open navigation app - using location.href to stay on same page until maps app opens
   const openNavigation = useCallback(() => {
     if (!deliveryAddress) {
       toast.error('عنوان التوصيل غير متوفر');
@@ -100,11 +100,10 @@ export function ProviderDeliveryTracker({
     const encodedAddress = encodeURIComponent(deliveryAddress);
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
     
-    if (isIOS) {
-      window.open(`http://maps.apple.com/?daddr=${encodedAddress}&dirflg=d`, '_blank');
-    } else {
-      window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodedAddress}&travelmode=driving`, '_blank');
-    }
+    // Use location.href instead of window.open to stay on same page
+    window.location.href = isIOS 
+      ? `http://maps.apple.com/?daddr=${encodedAddress}&dirflg=d`
+      : `https://www.google.com/maps/dir/?api=1&destination=${encodedAddress}&travelmode=driving`;
   }, [deliveryAddress]);
 
   return (

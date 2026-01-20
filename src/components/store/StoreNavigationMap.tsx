@@ -167,7 +167,7 @@ export function StoreNavigationMap({
     }
   }, [userLocation]);
 
-  // Open external navigation
+  // Open external navigation - using location.href to stay on same page until maps app opens
   const openExternalNavigation = useCallback(() => {
     const destination = `${storeLocation.lat},${storeLocation.lng}`;
     
@@ -180,13 +180,8 @@ export function StoreNavigationMap({
     // Check if we're on iOS
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
     
-    if (isIOS) {
-      // Open Apple Maps on iOS
-      window.open(appleMapsUrl, '_blank');
-    } else {
-      // Open Google Maps on other platforms
-      window.open(googleMapsUrl, '_blank');
-    }
+    // Use location.href instead of window.open to stay on same page
+    window.location.href = isIOS ? appleMapsUrl : googleMapsUrl;
   }, [storeLocation]);
 
   // Initialize map
