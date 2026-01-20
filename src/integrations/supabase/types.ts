@@ -18,34 +18,40 @@ export type Database = {
         Row: {
           city: string
           created_at: string
+          governorate: string | null
           id: string
           is_active: boolean
           lat: number
           lng: number
           name: string
           provider_count: number
+          region: string | null
           updated_at: string
         }
         Insert: {
           city?: string
           created_at?: string
+          governorate?: string | null
           id?: string
           is_active?: boolean
           lat: number
           lng: number
           name: string
           provider_count?: number
+          region?: string | null
           updated_at?: string
         }
         Update: {
           city?: string
           created_at?: string
+          governorate?: string | null
           id?: string
           is_active?: boolean
           lat?: number
           lng?: number
           name?: string
           provider_count?: number
+          region?: string | null
           updated_at?: string
         }
         Relationships: []
