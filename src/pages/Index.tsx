@@ -90,7 +90,8 @@ const Index = () => {
   const [deliveryScopeFilter, setDeliveryScopeFilter] = useState<'all' | 'neighborhood' | 'city'>('all');
   const [isAutoDetecting, setIsAutoDetecting] = useState(false);
   const [detectedLocation, setDetectedLocation] = useState<{ city: string; neighborhood: string; neighborhoodId: string; userCoords?: { lat: number; lng: number }; distance?: number } | null>(null);
-  const { userLocation, requestLocation } = useLocation();
+  const [userGpsCoords, setUserGpsCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const { requestLocation } = useLocation();
   
   // Enable order status notifications for logged-in customers
   useOrderStatusNotifications();
@@ -197,6 +198,7 @@ const Index = () => {
             userCoords: { lat: userLat, lng: userLng },
             distance: nearest.distance
           });
+          setUserGpsCoords({ lat: userLat, lng: userLng });
           setSelectedCity(nearest.city);
           setSelectedNeighborhood(nearest.id);
         }
@@ -259,10 +261,10 @@ const Index = () => {
     const providerLat = provider.store_lat ?? provider.active_neighborhoods?.lat;
     const providerLng = provider.store_lng ?? provider.active_neighborhoods?.lng;
     
-    if (userLocation && providerLat && providerLng) {
+    if (userGpsCoords && providerLat && providerLng) {
       distance = calculateDistance(
-        userLocation.lat,
-        userLocation.lng,
+        userGpsCoords.lat,
+        userGpsCoords.lng,
         providerLat,
         providerLng
       );
@@ -293,7 +295,7 @@ const Index = () => {
 
   // Split providers into those serving user and those not
   const servingProviders = providersWithDistance.filter(p => p.servesUserLocation);
-  const notServingProviders = providersWithDistance.filter(p => !p.servesUserLocation && userLocation);
+  const notServingProviders = providersWithDistance.filter(p => !p.servesUserLocation && userGpsCoords);
 
   // Format distance for display
   const formatDistance = (meters: number | null) => {
@@ -377,7 +379,7 @@ const Index = () => {
                 <div>
                   <h2 className="text-sm font-bold">مقدمو الخدمات</h2>
                   <p className="text-[10px] text-muted-foreground">
-                    {providersWithDistance.length} مقدم خدمة {userLocation ? 'قريب منك' : 'متاح'}
+                    {providersWithDistance.length} مقدم خدمة {userGpsCoords ? 'قريب منك' : 'متاح'}
                   </p>
                 </div>
               </div>
