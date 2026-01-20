@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { 
   MapPin, Loader2, Navigation2, CheckCircle, Link2, 
-  MapPinned, Sparkles, Truck
+  MapPinned, Sparkles, Truck, Clock, Bike
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { GoogleMapsGuide } from '@/components/provider/GoogleMapsGuide';
@@ -18,6 +18,9 @@ interface SimpleDeliveryPickerProps {
   storeLocation?: { lat: number; lng: number } | null;
   deliveryRadius?: number; // in meters
 }
+
+// Average delivery speed in km/h (urban driving)
+const AVERAGE_DELIVERY_SPEED = 25;
 
 export function SimpleDeliveryPicker({ 
   location, 
@@ -33,7 +36,7 @@ export function SimpleDeliveryPicker({
   const [manualLat, setManualLat] = useState('');
   const [manualLng, setManualLng] = useState('');
 
-  // Calculate distance between two points
+  // Calculate distance between two points (returns meters)
   const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2: number): number => {
     const R = 6371000; // Earth's radius in meters
     const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -46,10 +49,51 @@ export function SimpleDeliveryPicker({
     return R * c;
   };
 
+  // Calculate delivery ETA
+  const deliveryEstimate = useMemo(() => {
+    if (!location || !storeLocation) return null;
+    
+    const distanceMeters = calculateDistance(
+      storeLocation.lat, storeLocation.lng,
+      location.lat, location.lng
+    );
+    
+    const distanceKm = distanceMeters / 1000;
+    
+    // Calculate ETA: distance / speed * 60 (to get minutes)
+    // Add 5 minutes for preparation
+    const preparationTime = 5;
+    const travelTime = (distanceKm / AVERAGE_DELIVERY_SPEED) * 60;
+    const totalMinutes = Math.ceil(preparationTime + travelTime);
+    
+    // Format distance
+    const distanceText = distanceKm >= 1 
+      ? `${distanceKm.toFixed(1)} كم`
+      : `${Math.round(distanceMeters)} م`;
+    
+    // Format ETA
+    let etaText: string;
+    if (totalMinutes < 60) {
+      etaText = `${totalMinutes} دقيقة`;
+    } else {
+      const hours = Math.floor(totalMinutes / 60);
+      const mins = totalMinutes % 60;
+      etaText = mins > 0 ? `${hours} ساعة و ${mins} دقيقة` : `${hours} ساعة`;
+    }
+    
+    return {
+      distanceMeters,
+      distanceKm,
+      distanceText,
+      totalMinutes,
+      etaText
+    };
+  }, [location, storeLocation]);
+
   // Check if location is within delivery zone
   const isWithinDeliveryZone = (lat: number, lng: number): boolean => {
     if (!storeLocation) return true;
-    const distance = calculateDistance(lat, lng, storeLocation.lat, storeLocation.lng);
+    const distance = calculateDistance(storeLocation.lat, storeLocation.lng, lat, lng);
     return distance <= deliveryRadius;
   };
 
@@ -368,10 +412,10 @@ export function SimpleDeliveryPicker({
         </Card>
       )}
 
-      {/* Selected Location Display */}
+      {/* Selected Location Display with ETA */}
       {location && (
         <Card className="bg-green-50/50 dark:bg-green-950/20 border-green-200 dark:border-green-800/50">
-          <CardContent className="p-3">
+          <CardContent className="p-3 space-y-2">
             <div className="flex items-start gap-2">
               <MapPinned className="h-4 w-4 text-green-600 mt-0.5 shrink-0" />
               <div className="flex-1 min-w-0">
@@ -383,6 +427,24 @@ export function SimpleDeliveryPicker({
                 </p>
               </div>
             </div>
+            
+            {/* Delivery ETA Estimate */}
+            {deliveryEstimate && (
+              <div className="flex items-center gap-3 pt-2 border-t border-green-200 dark:border-green-800/50">
+                <div className="flex items-center gap-1.5 text-green-700 dark:text-green-400">
+                  <Clock className="h-3.5 w-3.5" />
+                  <span className="text-xs font-medium font-arabic">
+                    الوقت المتوقع: {deliveryEstimate.etaText}
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5 text-muted-foreground">
+                  <Bike className="h-3.5 w-3.5" />
+                  <span className="text-xs font-arabic">
+                    {deliveryEstimate.distanceText}
+                  </span>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       )}
