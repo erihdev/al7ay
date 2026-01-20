@@ -6,8 +6,7 @@ import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
+import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -29,9 +28,6 @@ import {
   MapPin,
   Store,
   CheckCircle2,
-  Phone,
-  User,
-  Mail,
   FileText,
   ArrowRight,
   Package,
@@ -59,6 +55,9 @@ type ViewState = 'cart' | 'checkout' | 'success';
 interface OrderResult {
   orderId: string;
   orderNumber: string;
+  invoiceNumber: string;
+  paymentMethod: string;
+  createdAt: Date;
 }
 
 // Manual Location Picker Component
@@ -306,6 +305,7 @@ const StoreCart = ({ primaryColor = '#1B4332', storeLocation, deliveryRadiusKm =
   const [showMapPicker, setShowMapPicker] = useState(false);
   
   const [orderType, setOrderType] = useState<'pickup' | 'delivery'>('pickup');
+  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'online'>('cash');
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
   const [customerEmail, setCustomerEmail] = useState('');
@@ -423,6 +423,15 @@ const StoreCart = ({ primaryColor = '#1B4332', storeLocation, deliveryRadiusKm =
     return `ORD-${timestamp}-${random}`;
   };
 
+  const generateInvoiceNumber = () => {
+    const date = new Date();
+    const year = date.getFullYear().toString().slice(-2);
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const day = date.getDate().toString().padStart(2, '0');
+    const random = Math.random().toString(36).substring(2, 6).toUpperCase();
+    return `INV-${year}${month}${day}-${random}`;
+  };
+
   const handleSubmitOrder = async () => {
     if (!customerName.trim()) {
       toast.error('يرجى إدخال الاسم');
@@ -522,7 +531,10 @@ const StoreCart = ({ primaryColor = '#1B4332', storeLocation, deliveryRadiusKm =
       // Set success state
       setOrderResult({
         orderId: order.id,
-        orderNumber: orderNumber
+        orderNumber: orderNumber,
+        invoiceNumber: generateInvoiceNumber(),
+        paymentMethod: paymentMethod === 'cash' ? 'الدفع عند الاستلام' : 'الدفع الإلكتروني',
+        createdAt: new Date()
       });
       setViewState('success');
       
@@ -974,7 +986,7 @@ const StoreCart = ({ primaryColor = '#1B4332', storeLocation, deliveryRadiusKm =
         </p>
       </motion.div>
 
-      {/* Professional Receipt */}
+      {/* Professional Invoice */}
       {orderResult && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -982,66 +994,104 @@ const StoreCart = ({ primaryColor = '#1B4332', storeLocation, deliveryRadiusKm =
           transition={{ delay: 0.4 }}
           className="mt-4 w-full"
         >
-          <div className="bg-background rounded-2xl border shadow-sm overflow-hidden">
-            {/* Receipt Header */}
-            <div className="p-4 border-b text-center" style={{ background: `linear-gradient(135deg, ${primaryColor}10 0%, transparent 100%)` }}>
-              <div className="flex items-center justify-center gap-2 mb-2">
-                <Store className="h-5 w-5" style={{ color: primaryColor }} />
-                <span className="font-semibold">{providerName || 'المتجر'}</span>
-              </div>
-              <div className="text-xs text-muted-foreground">
-                {new Date().toLocaleDateString('ar-SA', { 
-                  year: 'numeric', 
-                  month: 'long', 
-                  day: 'numeric',
-                  hour: '2-digit',
-                  minute: '2-digit'
-                })}
+          <div className="bg-background rounded-2xl border shadow-lg overflow-hidden">
+            {/* Invoice Header */}
+            <div className="p-4 border-b text-center relative overflow-hidden" style={{ background: `linear-gradient(135deg, ${primaryColor}15 0%, ${primaryColor}05 100%)` }}>
+              <div className="absolute top-0 left-0 w-16 h-16 rounded-full opacity-20" style={{ background: primaryColor, transform: 'translate(-30%, -30%)' }} />
+              <div className="absolute bottom-0 right-0 w-20 h-20 rounded-full opacity-10" style={{ background: primaryColor, transform: 'translate(30%, 30%)' }} />
+              
+              <div className="relative">
+                <div className="text-[10px] font-medium text-muted-foreground mb-1">فاتورة ضريبية مبسطة</div>
+                <div className="flex items-center justify-center gap-2 mb-2">
+                  <Store className="h-5 w-5" style={{ color: primaryColor }} />
+                  <span className="font-bold text-lg">{providerName || 'المتجر'}</span>
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  {orderResult.createdAt.toLocaleDateString('ar-SA', { 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  })}
+                </div>
               </div>
             </div>
 
-            {/* Order Number */}
-            <div className="p-4 border-b bg-muted/30">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Clock className="h-4 w-4" />
-                  <span>رقم الطلب</span>
-                </div>
-                <p className="font-mono text-base font-bold" style={{ color: primaryColor }}>
+            {/* Invoice & Order Numbers */}
+            <div className="grid grid-cols-2 divide-x divide-x-reverse border-b">
+              <div className="p-3 text-center">
+                <div className="text-[10px] text-muted-foreground mb-1">رقم الفاتورة</div>
+                <p className="font-mono text-xs font-bold" style={{ color: primaryColor }}>
+                  {orderResult.invoiceNumber}
+                </p>
+              </div>
+              <div className="p-3 text-center">
+                <div className="text-[10px] text-muted-foreground mb-1">رقم الطلب</div>
+                <p className="font-mono text-xs font-bold" style={{ color: primaryColor }}>
                   {orderResult.orderNumber}
                 </p>
               </div>
             </div>
 
-            {/* Order Type */}
-            <div className="p-4 border-b">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">نوع الطلب</span>
-                <div className="flex items-center gap-2">
+            {/* Order Details */}
+            <div className="p-3 border-b space-y-2">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">نوع الطلب</span>
+                <div className="flex items-center gap-1.5">
                   {orderType === 'pickup' ? (
                     <>
-                      <Store className="h-4 w-4" style={{ color: primaryColor }} />
-                      <span className="text-sm font-medium">استلام من المتجر</span>
+                      <Store className="h-3.5 w-3.5" style={{ color: primaryColor }} />
+                      <span className="font-medium">استلام من المتجر</span>
                     </>
                   ) : (
                     <>
-                      <MapPin className="h-4 w-4" style={{ color: primaryColor }} />
-                      <span className="text-sm font-medium">توصيل</span>
+                      <MapPin className="h-3.5 w-3.5" style={{ color: primaryColor }} />
+                      <span className="font-medium">توصيل</span>
                     </>
                   )}
                 </div>
               </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">طريقة الدفع</span>
+                <span className="font-medium">{orderResult.paymentMethod}</span>
+              </div>
+            </div>
+
+            {/* Items Summary */}
+            <div className="p-3 border-b bg-muted/20">
+              <div className="text-[10px] font-medium text-muted-foreground mb-2">تفاصيل الطلب</div>
+              <div className="space-y-1.5">
+                {items.length > 0 ? items.map((item, index) => (
+                  <div key={item.id} className="flex justify-between text-xs">
+                    <span className="text-muted-foreground">{index + 1}. {item.productName} × {item.quantity}</span>
+                    <span className="font-medium">{(item.price * item.quantity).toFixed(0)} ر.س</span>
+                  </div>
+                )) : (
+                  <div className="text-xs text-muted-foreground text-center">تم تأكيد المنتجات</div>
+                )}
+              </div>
             </div>
 
             {/* Total */}
-            <div className="p-4" style={{ background: `${primaryColor}08` }}>
+            <div className="p-4" style={{ background: `${primaryColor}10` }}>
               <div className="flex items-center justify-between">
-                <span className="font-semibold">المبلغ الإجمالي</span>
+                <div>
+                  <span className="font-bold">المبلغ الإجمالي</span>
+                  <div className="text-[10px] text-muted-foreground">شامل الضريبة</div>
+                </div>
                 <div className="text-left">
-                  <span className="text-xl font-bold" style={{ color: primaryColor }}>{totalPrice.toFixed(0)}</span>
-                  <span className="text-sm mr-1">ر.س</span>
+                  <span className="text-2xl font-bold" style={{ color: primaryColor }}>{totalPrice.toFixed(0)}</span>
+                  <span className="text-sm mr-1 font-medium">ر.س</span>
                 </div>
               </div>
+            </div>
+
+            {/* Footer */}
+            <div className="p-2 border-t bg-muted/30 text-center">
+              <p className="text-[9px] text-muted-foreground">
+                شكراً لتعاملكم معنا • نتمنى لكم تجربة ممتعة
+              </p>
             </div>
           </div>
         </motion.div>
