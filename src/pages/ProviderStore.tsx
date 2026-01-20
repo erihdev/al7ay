@@ -16,6 +16,7 @@ import ProviderRatingBadge from '@/components/reviews/ProviderRatingBadge';
 import { useProviderRatingSummary } from '@/hooks/useProviderReviews';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLocation } from '@/contexts/LocationContext';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ArrowRight, 
   Store, 
@@ -35,7 +36,12 @@ import {
   Search,
   AlertTriangle,
   Globe,
-  Navigation
+  Navigation,
+  Clock,
+  Heart,
+  CheckCircle2,
+  TrendingUp,
+  Award
 } from 'lucide-react';
 import {
   Dialog,
@@ -71,6 +77,7 @@ const ProviderStoreContent = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [showReviews, setShowReviews] = useState(false);
   const [showCoverageAlert, setShowCoverageAlert] = useState(false);
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
   const categoryScrollRef = useRef<HTMLDivElement>(null);
   const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
   
@@ -200,6 +207,7 @@ const ProviderStoreContent = () => {
       setShowCoverageAlert(true);
     }
   }, [isOutsideCoverage, userLocation]);
+  
   const filteredProducts = products?.filter(p => {
     if (!searchQuery.trim()) return true;
     const query = searchQuery.toLowerCase();
@@ -217,6 +225,9 @@ const ProviderStoreContent = () => {
     acc[category].push(product);
     return acc;
   }, {} as Record<string, Product[]>);
+
+  // Get featured products
+  const featuredProducts = filteredProducts.filter(p => p.is_featured).slice(0, 4);
 
   // Get categories with counts
   const categories = [
@@ -248,7 +259,7 @@ const ProviderStoreContent = () => {
   const primaryColor = storeTheme.primary_color || '#1B4332';
   const secondaryColor = storeTheme.secondary_color || '#2D6A4F';
   const accentColor = storeTheme.accent_color || '#D4AF37';
-  const headerStyle = storeTheme.header_style || 'solid';
+  const headerStyle = storeTheme.header_style || 'gradient';
   const headerImageUrl = storeTheme.header_image_url || '';
   const headerOverlayOpacity = storeTheme.header_overlay_opacity ?? 50;
   const headerBlur = storeTheme.header_blur || false;
@@ -260,11 +271,11 @@ const ProviderStoreContent = () => {
   // Get header background based on style
   const getHeaderBackground = () => {
     if (hasImageHeader) {
-      return 'transparent'; // We'll use the image as background
+      return 'transparent';
     }
     switch (headerStyle) {
       case 'gradient':
-        return `linear-gradient(135deg, ${primaryColor}, ${secondaryColor})`;
+        return `linear-gradient(135deg, ${primaryColor} 0%, ${secondaryColor} 50%, ${primaryColor}dd 100%)`;
       case 'transparent':
         return 'transparent';
       default:
@@ -302,7 +313,7 @@ const ProviderStoreContent = () => {
     }
     const section = sectionRefs.current[categoryId];
     if (section) {
-      const headerOffset = 180;
+      const headerOffset = 200;
       const elementPosition = section.getBoundingClientRect().top;
       const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
       window.scrollTo({ top: offsetPosition, behavior: 'smooth' });
@@ -322,6 +333,7 @@ const ProviderStoreContent = () => {
     
     toast.success('تمت الإضافة للسلة', {
       description: `${product.name_ar} × ${qty}`,
+      icon: <ShoppingBag className="h-4 w-4" />,
     });
     setSelectedProduct(null);
     setQuantity(1);
@@ -331,15 +343,16 @@ const ProviderStoreContent = () => {
   if (providerLoading) {
     return (
       <div className="min-h-screen bg-background font-arabic" dir="rtl">
-        <div className="h-16 bg-muted animate-pulse" />
-        <div className="p-4 space-y-4">
-          {[1, 2, 3, 4].map(i => (
-            <div key={i} className="flex gap-3">
-              <Skeleton className="h-20 w-20 rounded-lg flex-shrink-0" />
-              <div className="flex-1 space-y-2">
-                <Skeleton className="h-4 w-3/4" />
-                <Skeleton className="h-3 w-1/2" />
-                <Skeleton className="h-4 w-1/4" />
+        <div className="h-48 bg-gradient-to-br from-primary/20 to-secondary/20 animate-pulse" />
+        <div className="p-4 -mt-8 space-y-4">
+          <Skeleton className="h-24 w-full rounded-2xl" />
+          {[1, 2, 3].map(i => (
+            <div key={i} className="flex gap-4">
+              <Skeleton className="h-28 w-28 rounded-2xl flex-shrink-0" />
+              <div className="flex-1 space-y-3">
+                <Skeleton className="h-5 w-3/4" />
+                <Skeleton className="h-4 w-1/2" />
+                <Skeleton className="h-8 w-24" />
               </div>
             </div>
           ))}
@@ -351,35 +364,43 @@ const ProviderStoreContent = () => {
   // Not found state
   if (!provider) {
     return (
-      <div className="min-h-screen bg-background font-arabic flex items-center justify-center" dir="rtl">
-        <Card className="max-w-md mx-4">
-          <CardContent className="p-8 text-center">
-            <Store className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-            <h2 className="text-2xl font-bold mb-2">المتجر غير موجود</h2>
-            <p className="text-muted-foreground mb-6">
-              عذراً، لم نتمكن من العثور على هذا المتجر
-            </p>
-            <Link to="/">
-              <Button>
-                <ArrowRight className="h-4 w-4 ml-2" />
-                العودة للرئيسية
-              </Button>
-            </Link>
-          </CardContent>
-        </Card>
+      <div className="min-h-screen bg-background font-arabic flex items-center justify-center p-4" dir="rtl">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <Card className="max-w-md w-full border-0 shadow-2xl">
+            <CardContent className="p-10 text-center">
+              <div className="w-20 h-20 rounded-full bg-muted mx-auto mb-6 flex items-center justify-center">
+                <Store className="h-10 w-10 text-muted-foreground" />
+              </div>
+              <h2 className="text-2xl font-bold mb-3">المتجر غير موجود</h2>
+              <p className="text-muted-foreground mb-8">
+                عذراً، لم نتمكن من العثور على هذا المتجر
+              </p>
+              <Link to="/">
+                <Button size="lg" className="rounded-full px-8">
+                  <ArrowRight className="h-5 w-5 ml-2" />
+                  العودة للرئيسية
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+        </motion.div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background" style={{ fontFamily }} dir="rtl">
-      {/* Coverage Alert */}
+    <div className="min-h-screen bg-gradient-to-b from-muted/30 to-background" style={{ fontFamily }} dir="rtl">
+      {/* Coverage Alert Dialog */}
       {showCoverageAlert && isOutsideCoverage && (
         <Dialog open={showCoverageAlert} onOpenChange={setShowCoverageAlert}>
           <DialogContent className="max-w-md font-arabic" dir="rtl">
             <div className="space-y-4">
               <div className="flex items-center gap-3 text-amber-600">
-                <div className="p-2 bg-amber-100 dark:bg-amber-900/30 rounded-full">
+                <div className="p-3 bg-amber-100 dark:bg-amber-900/30 rounded-full">
                   <AlertTriangle className="h-6 w-6" />
                 </div>
                 <div>
@@ -410,20 +431,20 @@ const ProviderStoreContent = () => {
                         key={alt.id} 
                         to={`/store/${alt.id}`}
                         onClick={() => setShowCoverageAlert(false)}
-                        className="flex items-center gap-3 p-3 rounded-lg border hover:bg-muted transition-colors"
+                        className="flex items-center gap-3 p-3 rounded-xl border hover:bg-muted transition-colors"
                       >
-                        <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center overflow-hidden">
+                        <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center overflow-hidden">
                           {alt.logo_url ? (
                             <img src={alt.logo_url} alt={alt.business_name} className="w-full h-full object-cover" />
                           ) : (
-                            <Store className="h-5 w-5 text-muted-foreground" />
+                            <Store className="h-6 w-6 text-muted-foreground" />
                           )}
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="font-medium text-sm truncate flex items-center gap-1">
                             {alt.business_name}
                             {alt.is_verified && (
-                              <Star className="h-3 w-3 fill-amber-500 text-amber-500" />
+                              <CheckCircle2 className="h-4 w-4 text-primary" />
                             )}
                           </p>
                           <p className="text-xs text-muted-foreground truncate">
@@ -439,16 +460,16 @@ const ProviderStoreContent = () => {
                 </div>
               )}
 
-              <div className="flex gap-2 pt-2">
+              <div className="flex gap-3 pt-2">
                 <Button 
                   variant="outline" 
-                  className="flex-1" 
+                  className="flex-1 rounded-xl" 
                   onClick={() => setShowCoverageAlert(false)}
                 >
                   تصفح على أي حال
                 </Button>
                 <Link to="/" className="flex-1">
-                  <Button className="w-full">
+                  <Button className="w-full rounded-xl">
                     العودة للرئيسية
                   </Button>
                 </Link>
@@ -458,115 +479,158 @@ const ProviderStoreContent = () => {
         </Dialog>
       )}
 
-      {/* Fixed Header */}
-      <header 
-        className="fixed top-0 left-0 right-0 z-50 overflow-hidden pt-[env(safe-area-inset-top)]"
-        style={{ background: getHeaderBackground() }}
-      >
-        {/* Background Image with Effects */}
-        {hasImageHeader && (
-          <div className="absolute inset-0">
-            <img 
-              src={headerImageUrl}
-              alt=""
-              className={cn(
-                "w-full h-full object-cover",
-                headerBlur && "blur-sm scale-105"
-              )}
-            />
-            {/* Overlay */}
-            <div 
-              className="absolute inset-0"
-              style={{ 
-                backgroundColor: primaryColor,
-                opacity: headerOverlayOpacity / 100
-              }}
-            />
-            {/* Gradient fade at bottom */}
-            <div 
-              className="absolute bottom-0 left-0 right-0 h-8"
-              style={{
-                background: `linear-gradient(to top, ${primaryColor}40, transparent)`
-              }}
-            />
-          </div>
-        )}
-        {/* Top Bar */}
-        <div className="relative z-10 px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            {/* Logo */}
-            <div 
-              className="w-10 h-10 rounded-full bg-white shadow-lg flex items-center justify-center overflow-hidden"
-            >
-              {provider.logo_url ? (
-                <img 
-                  src={provider.logo_url} 
-                  alt={provider.business_name}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <Store className="h-5 w-5 text-muted-foreground" />
-              )}
-            </div>
-            {/* Store Name */}
-            <div>
-              <h1 className="text-base font-bold text-white leading-tight">
-                {provider.business_name}
-              </h1>
-              <div className="flex items-center gap-2">
-                {provider.active_neighborhoods && (
-                  <p className="text-[11px] text-white/70 flex items-center gap-1">
-                    <MapPin className="h-3 w-3" />
-                    {(provider.active_neighborhoods as any).name}
-                  </p>
+      {/* Hero Header */}
+      <header className="relative overflow-hidden">
+        {/* Background */}
+        <div 
+          className="absolute inset-0"
+          style={{ background: getHeaderBackground() }}
+        >
+          {hasImageHeader && (
+            <>
+              <img 
+                src={headerImageUrl}
+                alt=""
+                className={cn(
+                  "w-full h-full object-cover",
+                  headerBlur && "blur-sm scale-105"
                 )}
-                {ratingSummary.totalReviews > 0 && (
-                  <button 
-                    onClick={() => setShowReviews(true)}
-                    className="text-[11px] text-white/90 flex items-center gap-1 bg-white/20 px-1.5 py-0.5 rounded-full"
-                  >
-                    <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                    {ratingSummary.averageRating.toFixed(1)}
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
-          
-          {/* Actions */}
-          <div className="flex items-center gap-1">
-            {provider.phone && (
-              <a href={`tel:${provider.phone}`}>
-                <Button variant="ghost" size="icon" className="text-white hover:bg-white/20 h-9 w-9">
-                  <Phone className="h-4 w-4" />
-                </Button>
-              </a>
-            )}
-            <ThemeToggle />
-            <Link to="/">
-              <Button variant="ghost" size="icon" className="text-white hover:bg-white/20 h-9 w-9">
-                <ArrowRight className="h-4 w-4" />
-              </Button>
-            </Link>
+              />
+              <div 
+                className="absolute inset-0"
+                style={{ 
+                  backgroundColor: primaryColor,
+                  opacity: headerOverlayOpacity / 100
+                }}
+              />
+            </>
+          )}
+          {/* Decorative Elements */}
+          <div className="absolute inset-0 opacity-20">
+            <div className="absolute top-10 right-10 w-40 h-40 rounded-full bg-white/10 blur-3xl" />
+            <div className="absolute bottom-10 left-10 w-60 h-60 rounded-full bg-white/5 blur-3xl" />
           </div>
         </div>
 
-        {/* Search Bar */}
-        <div className="relative z-10 px-4 pb-3">
+        {/* Safe Area Padding */}
+        <div className="pt-[env(safe-area-inset-top)]" />
+
+        {/* Top Navigation */}
+        <div className="relative z-10 px-4 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            {provider.phone && (
+              <a href={`tel:${provider.phone}`}>
+                <Button variant="ghost" size="icon" className="text-white/90 hover:bg-white/20 h-10 w-10 rounded-full">
+                  <Phone className="h-5 w-5" />
+                </Button>
+              </a>
+            )}
+          </div>
+          
+          <Link to="/">
+            <Button variant="ghost" size="icon" className="text-white/90 hover:bg-white/20 h-10 w-10 rounded-full">
+              <ArrowRight className="h-5 w-5" />
+            </Button>
+          </Link>
+        </div>
+
+        {/* Store Info */}
+        <div className="relative z-10 px-6 pb-8 pt-4">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="flex items-start gap-5"
+          >
+            {/* Logo */}
+            <div className="relative">
+              <div className="w-20 h-20 rounded-2xl bg-white shadow-xl flex items-center justify-center overflow-hidden ring-4 ring-white/30">
+                {provider.logo_url ? (
+                  <img 
+                    src={provider.logo_url} 
+                    alt={provider.business_name}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <Store className="h-8 w-8 text-muted-foreground" />
+                )}
+              </div>
+              {provider.is_verified && (
+                <div className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-primary flex items-center justify-center shadow-lg">
+                  <CheckCircle2 className="h-4 w-4 text-white" />
+                </div>
+              )}
+            </div>
+            
+            {/* Info */}
+            <div className="flex-1 min-w-0">
+              <h1 className="text-2xl font-bold text-white mb-1 line-clamp-1">
+                {provider.business_name}
+              </h1>
+              
+              {provider.active_neighborhoods && (
+                <p className="text-white/80 text-sm flex items-center gap-1.5 mb-3">
+                  <MapPin className="h-4 w-4" />
+                  {(provider.active_neighborhoods as any).name}، {(provider.active_neighborhoods as any).city}
+                </p>
+              )}
+              
+              {/* Stats Row */}
+              <div className="flex items-center gap-3 flex-wrap">
+                {ratingSummary.totalReviews > 0 && (
+                  <button 
+                    onClick={() => setShowReviews(true)}
+                    className="flex items-center gap-1.5 bg-white/20 backdrop-blur-sm px-3 py-1.5 rounded-full text-white text-sm hover:bg-white/30 transition-colors"
+                  >
+                    <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                    <span className="font-medium">{ratingSummary.averageRating.toFixed(1)}</span>
+                    <span className="text-white/70">({ratingSummary.totalReviews})</span>
+                  </button>
+                )}
+                
+                <div className="flex items-center gap-1.5 bg-white/10 backdrop-blur-sm px-3 py-1.5 rounded-full text-white/90 text-sm">
+                  <Package className="h-4 w-4" />
+                  <span>{filteredProducts.length} منتج</span>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+
+        {/* Wave Decoration */}
+        <div className="absolute bottom-0 left-0 right-0">
+          <svg viewBox="0 0 1440 60" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full">
+            <path 
+              d="M0 60L48 55C96 50 192 40 288 35C384 30 480 30 576 33.3C672 36.7 768 43.3 864 45C960 46.7 1056 43.3 1152 38.3C1248 33.3 1344 26.7 1392 23.3L1440 20V60H1392C1344 60 1248 60 1152 60C1056 60 960 60 864 60C768 60 672 60 576 60C480 60 384 60 288 60C192 60 96 60 48 60H0Z" 
+              className="fill-muted/30 dark:fill-background"
+            />
+          </svg>
+        </div>
+      </header>
+
+      {/* Search Bar - Sticky */}
+      <div className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b">
+        <div className="px-4 py-3">
           <div className="relative">
-            <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Search className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
             <Input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
+              onFocus={() => setIsSearchFocused(true)}
+              onBlur={() => setIsSearchFocused(false)}
               placeholder="ابحث عن منتج..."
-              className="pr-10 h-10 bg-white/95 border-0 rounded-full text-sm"
+              className={cn(
+                "pr-12 h-12 bg-muted/50 border-0 rounded-2xl text-base transition-all duration-300",
+                isSearchFocused && "ring-2 ring-primary/30 bg-background"
+              )}
               dir="rtl"
             />
             {searchQuery && (
               <Button
                 variant="ghost"
                 size="icon"
-                className="absolute left-1 top-1/2 -translate-y-1/2 h-8 w-8"
+                className="absolute left-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full"
                 onClick={() => setSearchQuery('')}
               >
                 <X className="h-4 w-4" />
@@ -578,62 +642,113 @@ const ProviderStoreContent = () => {
         {/* Category Tabs */}
         <div 
           ref={categoryScrollRef}
-          className="relative z-10 flex gap-2 px-4 pb-3 overflow-x-auto hide-scrollbar"
+          className="flex gap-2 px-4 pb-3 overflow-x-auto hide-scrollbar"
         >
           {categories.map((cat) => {
             const Icon = cat.icon;
             const isActive = activeCategory === cat.id;
             return (
-              <button
+              <motion.button
                 key={cat.id}
                 onClick={() => scrollToCategory(cat.id)}
+                whileTap={{ scale: 0.95 }}
                 className={cn(
-                  "flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all",
+                  "flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium whitespace-nowrap transition-all duration-300",
                   isActive 
-                    ? "bg-white text-foreground shadow-lg" 
-                    : "bg-white/20 text-white hover:bg-white/30"
+                    ? "text-white shadow-lg" 
+                    : "bg-muted/50 text-muted-foreground hover:bg-muted"
                 )}
+                style={isActive ? { backgroundColor: primaryColor } : {}}
               >
                 <Icon className="h-4 w-4" />
                 <span>{cat.label}</span>
                 <span className={cn(
-                  "text-xs px-1.5 py-0.5 rounded-full",
-                  isActive ? "bg-muted" : "bg-white/20"
+                  "text-xs px-2 py-0.5 rounded-full font-bold",
+                  isActive ? "bg-white/20" : "bg-background"
                 )}>
                   {cat.count}
                 </span>
-              </button>
+              </motion.button>
             );
           })}
         </div>
-      </header>
+      </div>
 
-      {/* Main Content - with top padding for fixed header */}
-      <main className="pt-[180px] pb-32">
+      {/* Main Content */}
+      <main className="pb-32">
         {productsLoading ? (
           <div className="p-4 space-y-4">
-            {[1, 2, 3].map(i => (
-              <Skeleton key={i} className="h-24 w-full rounded-xl" />
+            {[1, 2, 3, 4].map(i => (
+              <Skeleton key={i} className="h-32 w-full rounded-2xl" />
             ))}
           </div>
         ) : filteredProducts.length === 0 ? (
-          <Card className="m-4">
-            <CardContent className="p-12 text-center">
-              <Package className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-xl font-bold mb-2">
-                {searchQuery ? 'لا توجد نتائج' : 'لا توجد منتجات'}
-              </h3>
-              <p className="text-muted-foreground">
-                {searchQuery 
-                  ? 'جرب البحث بكلمات مختلفة' 
-                  : 'لم يقم صاحب المتجر بإضافة منتجات بعد'
-                }
-              </p>
-            </CardContent>
-          </Card>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="p-8"
+          >
+            <Card className="border-0 shadow-lg">
+              <CardContent className="p-12 text-center">
+                <div className="w-20 h-20 rounded-full bg-muted mx-auto mb-6 flex items-center justify-center">
+                  <Package className="h-10 w-10 text-muted-foreground" />
+                </div>
+                <h3 className="text-xl font-bold mb-2">
+                  {searchQuery ? 'لا توجد نتائج' : 'لا توجد منتجات'}
+                </h3>
+                <p className="text-muted-foreground">
+                  {searchQuery 
+                    ? 'جرب البحث بكلمات مختلفة' 
+                    : 'لم يقم صاحب المتجر بإضافة منتجات بعد'
+                  }
+                </p>
+              </CardContent>
+            </Card>
+          </motion.div>
         ) : (
-          <div>
-            {/* All Products or Filtered by Category */}
+          <div className="space-y-6">
+            {/* Featured Products Section */}
+            {featuredProducts.length > 0 && activeCategory === 'all' && !searchQuery && (
+              <motion.section
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="px-4 pt-4"
+              >
+                <div className="flex items-center gap-2 mb-4">
+                  <div 
+                    className="w-10 h-10 rounded-xl flex items-center justify-center"
+                    style={{ backgroundColor: `${accentColor}20` }}
+                  >
+                    <Award className="h-5 w-5" style={{ color: accentColor }} />
+                  </div>
+                  <div>
+                    <h2 className="font-bold text-lg">المنتجات المميزة</h2>
+                    <p className="text-xs text-muted-foreground">الأكثر طلباً</p>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-3">
+                  {featuredProducts.map((product, index) => (
+                    <motion.div
+                      key={product.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.1 }}
+                    >
+                      <FeaturedProductCard
+                        product={product}
+                        onAddToCart={() => handleAddToCart(product, 1)}
+                        onClick={() => setSelectedProduct(product)}
+                        primaryColor={primaryColor}
+                        accentColor={accentColor}
+                      />
+                    </motion.div>
+                  ))}
+                </div>
+              </motion.section>
+            )}
+
+            {/* Products by Category */}
             {(activeCategory === 'all' 
               ? Object.entries(productsByCategory) 
               : [[activeCategory, productsByCategory[activeCategory] || []] as [string, Product[]]]
@@ -642,21 +757,20 @@ const ProviderStoreContent = () => {
               const CategoryIcon = getCategoryIconComponent(category);
               
               return (
-                <div 
+                <motion.div 
                   key={category} 
                   ref={(el) => { sectionRefs.current[category] = el; }}
-                  className="mb-6"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="px-4"
                 >
                   {/* Category Header */}
-                  <div 
-                    className="sticky top-[180px] z-40 px-4 py-3 flex items-center gap-3"
-                    style={{ backgroundColor: `${primaryColor}15` }}
-                  >
+                  <div className="flex items-center gap-3 mb-4">
                     <div 
-                      className="w-8 h-8 rounded-lg flex items-center justify-center text-white"
+                      className="w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-lg"
                       style={{ backgroundColor: primaryColor }}
                     >
-                      <CategoryIcon className="h-4 w-4" />
+                      <CategoryIcon className="h-5 w-5" />
                     </div>
                     <div>
                       <h2 className="font-bold text-lg">{getCategoryLabel(category)}</h2>
@@ -664,132 +778,148 @@ const ProviderStoreContent = () => {
                     </div>
                   </div>
 
-                  {/* Products List */}
-                  <div className="px-4 space-y-3">
-                    {categoryProducts.map((product: Product) => (
-                      <ProductCard
+                  {/* Products Grid */}
+                  <div className="space-y-3">
+                    {categoryProducts.map((product: Product, index: number) => (
+                      <motion.div
                         key={product.id}
-                        product={product}
-                        onAddToCart={() => handleAddToCart(product, 1)}
-                        onClick={() => setSelectedProduct(product)}
-                        primaryColor={primaryColor}
-                        accentColor={accentColor}
-                      />
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: index * 0.05 }}
+                      >
+                        <ProductCard
+                          product={product}
+                          onAddToCart={() => handleAddToCart(product, 1)}
+                          onClick={() => setSelectedProduct(product)}
+                          primaryColor={primaryColor}
+                          accentColor={accentColor}
+                        />
+                      </motion.div>
                     ))}
                   </div>
-                </div>
+                </motion.div>
               );
             })}
           </div>
         )}
       </main>
 
-      {/* Product Detail Sheet */}
-      <Dialog open={!!selectedProduct} onOpenChange={() => { setSelectedProduct(null); setQuantity(1); }}>
-        <DialogContent dir="rtl" className="font-arabic max-w-lg p-0 overflow-hidden gap-0">
-          {selectedProduct && (
-            <div className="flex flex-col max-h-[85vh]">
-              {/* Product Image */}
-              <div className="relative aspect-[16/10] bg-muted flex-shrink-0">
-                {selectedProduct.image_url ? (
-                  <img 
-                    src={selectedProduct.image_url} 
-                    alt={selectedProduct.name_ar}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-muted to-muted/50">
-                    <Coffee className="h-16 w-16 text-muted-foreground/30" />
-                  </div>
-                )}
-                {selectedProduct.is_featured && (
-                  <Badge 
-                    className="absolute top-3 right-3 shadow-lg"
-                    style={{ backgroundColor: accentColor }}
+      {/* Product Detail Dialog */}
+      <AnimatePresence>
+        {selectedProduct && (
+          <Dialog open={!!selectedProduct} onOpenChange={() => { setSelectedProduct(null); setQuantity(1); }}>
+            <DialogContent dir="rtl" className="font-arabic max-w-lg p-0 overflow-hidden gap-0 rounded-3xl">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                className="flex flex-col max-h-[85vh]"
+              >
+                {/* Product Image */}
+                <div className="relative aspect-[4/3] bg-muted flex-shrink-0 overflow-hidden">
+                  {selectedProduct.image_url ? (
+                    <img 
+                      src={selectedProduct.image_url} 
+                      alt={selectedProduct.name_ar}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-muted to-muted/50">
+                      <Coffee className="h-20 w-20 text-muted-foreground/20" />
+                    </div>
+                  )}
+                  {/* Gradient Overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
+                  
+                  {selectedProduct.is_featured && (
+                    <Badge 
+                      className="absolute top-4 right-4 shadow-lg text-white border-0"
+                      style={{ backgroundColor: accentColor }}
+                    >
+                      <Star className="h-3 w-3 ml-1 fill-white" />
+                      مميز
+                    </Badge>
+                  )}
+                  
+                  {/* Price Badge */}
+                  <div 
+                    className="absolute bottom-4 left-4 px-4 py-2 rounded-xl text-white font-bold text-lg shadow-lg backdrop-blur-sm"
+                    style={{ backgroundColor: `${primaryColor}dd` }}
                   >
-                    <Star className="h-3 w-3 ml-1 fill-white" />
-                    مميز
-                  </Badge>
-                )}
-              </div>
+                    {Number(selectedProduct.price).toFixed(0)} ر.س
+                  </div>
+                </div>
 
-              {/* Product Info */}
-              <ScrollArea className="flex-1">
-                <div className="p-5 space-y-4">
-                  {/* Name and Price */}
-                  <div className="flex items-start justify-between gap-4">
+                {/* Product Info */}
+                <ScrollArea className="flex-1">
+                  <div className="p-6 space-y-5">
+                    {/* Name */}
                     <div>
-                      <h2 className="text-xl font-bold">{selectedProduct.name_ar}</h2>
+                      <h2 className="text-2xl font-bold mb-1">{selectedProduct.name_ar}</h2>
                       {selectedProduct.name_en && (
                         <p className="text-sm text-muted-foreground" dir="ltr">
                           {selectedProduct.name_en}
                         </p>
                       )}
                     </div>
-                    <div 
-                      className="text-xl font-bold whitespace-nowrap"
-                      style={{ color: primaryColor }}
-                    >
-                      {Number(selectedProduct.price).toFixed(0)} ر.س
+
+                    {selectedProduct.description_ar && (
+                      <p className="text-muted-foreground leading-relaxed">
+                        {selectedProduct.description_ar}
+                      </p>
+                    )}
+
+                    {/* Quantity Selector */}
+                    <div className="flex items-center justify-between py-4 px-5 bg-muted/50 rounded-2xl">
+                      <span className="font-medium">الكمية</span>
+                      <div className="flex items-center gap-4">
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="h-10 w-10 rounded-xl"
+                          onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                        >
+                          <Minus className="h-4 w-4" />
+                        </Button>
+                        <span className="font-bold text-2xl w-10 text-center">{quantity}</span>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="h-10 w-10 rounded-xl"
+                          onClick={() => setQuantity(quantity + 1)}
+                        >
+                          <Plus className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* Reviews Section */}
+                    <div>
+                      <h3 className="font-bold mb-4 flex items-center gap-2">
+                        <MessageSquare className="h-5 w-5" />
+                        التقييمات والمراجعات
+                      </h3>
+                      <ProductReviews productId={selectedProduct.id} primaryColor={primaryColor} />
                     </div>
                   </div>
+                </ScrollArea>
 
-                  {selectedProduct.description_ar && (
-                    <p className="text-muted-foreground text-sm leading-relaxed">
-                      {selectedProduct.description_ar}
-                    </p>
-                  )}
-
-                  {/* Quantity Selector */}
-                  <div className="flex items-center justify-between py-4 border-y">
-                    <span className="font-medium">الكمية</span>
-                    <div className="flex items-center gap-4">
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        className="h-9 w-9 rounded-full"
-                        onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                      >
-                        <Minus className="h-4 w-4" />
-                      </Button>
-                      <span className="font-bold text-xl w-8 text-center">{quantity}</span>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        className="h-9 w-9 rounded-full"
-                        onClick={() => setQuantity(quantity + 1)}
-                      >
-                        <Plus className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-
-                  {/* Reviews Section */}
-                  <div>
-                    <h3 className="font-bold mb-3 flex items-center gap-2 text-sm">
-                      <MessageSquare className="h-4 w-4" />
-                      التقييمات والمراجعات
-                    </h3>
-                    <ProductReviews productId={selectedProduct.id} primaryColor={primaryColor} />
-                  </div>
+                {/* Add to Cart Button */}
+                <div className="p-4 border-t bg-background flex-shrink-0">
+                  <Button 
+                    className="w-full h-14 text-lg font-bold rounded-2xl shadow-xl"
+                    style={{ backgroundColor: primaryColor }}
+                    onClick={() => handleAddToCart(selectedProduct, quantity)}
+                  >
+                    <ShoppingBag className="h-5 w-5 ml-2" />
+                    إضافة للسلة - {(Number(selectedProduct.price) * quantity).toFixed(0)} ر.س
+                  </Button>
                 </div>
-              </ScrollArea>
-
-              {/* Add to Cart Button */}
-              <div className="p-4 border-t bg-background flex-shrink-0">
-                <Button 
-                  className="w-full h-12 text-base font-bold rounded-xl shadow-lg"
-                  style={{ backgroundColor: primaryColor }}
-                  onClick={() => handleAddToCart(selectedProduct, quantity)}
-                >
-                  <ShoppingBag className="h-5 w-5 ml-2" />
-                  إضافة للسلة - {(Number(selectedProduct.price) * quantity).toFixed(0)} ر.س
-                </Button>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+              </motion.div>
+            </DialogContent>
+          </Dialog>
+        )}
+      </AnimatePresence>
 
       {/* Floating Cart */}
       <StoreCart 
@@ -800,7 +930,7 @@ const ProviderStoreContent = () => {
       
       {/* Reviews Dialog */}
       <Dialog open={showReviews} onOpenChange={setShowReviews}>
-        <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto rounded-3xl">
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-bold">تقييمات {provider.business_name}</h2>
@@ -818,23 +948,88 @@ const ProviderStoreContent = () => {
       
       {/* Floating Review Button */}
       {user && providerId && (
-        <div className="fixed bottom-24 left-4 z-40">
+        <motion.div 
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          transition={{ delay: 0.5, type: "spring" }}
+          className="fixed bottom-24 left-4 z-40"
+        >
           <ProviderReviewDialog 
             providerId={providerId} 
             providerName={provider.business_name}
             trigger={
               <Button
                 size="icon"
-                className="h-12 w-12 rounded-full shadow-lg"
+                className="h-14 w-14 rounded-full shadow-2xl"
                 style={{ backgroundColor: accentColor }}
               >
-                <Star className="h-5 w-5" />
+                <Star className="h-6 w-6" />
               </Button>
             }
           />
-        </div>
+        </motion.div>
       )}
     </div>
+  );
+};
+
+// Featured Product Card Component
+interface FeaturedProductCardProps {
+  product: Product;
+  onAddToCart: () => void;
+  onClick: () => void;
+  primaryColor: string;
+  accentColor: string;
+}
+
+const FeaturedProductCard = ({ product, onAddToCart, onClick, primaryColor, accentColor }: FeaturedProductCardProps) => {
+  return (
+    <Card
+      className="overflow-hidden border-0 shadow-lg cursor-pointer group hover:shadow-xl transition-all duration-300"
+      onClick={onClick}
+    >
+      <div className="relative aspect-square bg-muted overflow-hidden">
+        {product.image_url ? (
+          <img 
+            src={product.image_url} 
+            alt={product.name_ar}
+            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center">
+            <Coffee className="h-10 w-10 text-muted-foreground/30" />
+          </div>
+        )}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+        
+        <Badge 
+          className="absolute top-2 right-2 shadow-lg text-white border-0 text-[10px]"
+          style={{ backgroundColor: accentColor }}
+        >
+          <Star className="h-3 w-3 fill-white" />
+        </Badge>
+        
+        <div className="absolute bottom-0 left-0 right-0 p-3">
+          <h4 className="font-bold text-white text-sm line-clamp-1 mb-1">{product.name_ar}</h4>
+          <div className="flex items-center justify-between">
+            <span className="font-bold text-white text-base">
+              {Number(product.price).toFixed(0)} ر.س
+            </span>
+            <Button
+              size="sm"
+              className="h-8 w-8 p-0 rounded-full shadow-lg"
+              style={{ backgroundColor: primaryColor }}
+              onClick={(e) => {
+                e.stopPropagation();
+                onAddToCart();
+              }}
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      </div>
+    </Card>
   );
 };
 
@@ -849,66 +1044,68 @@ interface ProductCardProps {
 
 const ProductCard = ({ product, onAddToCart, onClick, primaryColor, accentColor }: ProductCardProps) => {
   return (
-    <div
-      className="flex gap-3 p-3 bg-card rounded-xl border shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer active:scale-[0.99]"
+    <Card
+      className="overflow-hidden border-0 shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer group"
       onClick={onClick}
     >
-      {/* Product Image */}
-      <div className="w-20 h-20 rounded-lg bg-muted overflow-hidden flex-shrink-0 relative">
-        {product.image_url ? (
-          <img 
-            src={product.image_url} 
-            alt={product.name_ar}
-            className="w-full h-full object-cover"
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <Coffee className="h-6 w-6 text-muted-foreground/40" />
-          </div>
-        )}
-        {product.is_featured && (
-          <div 
-            className="absolute top-1 right-1 w-5 h-5 rounded-full flex items-center justify-center"
-            style={{ backgroundColor: accentColor }}
-          >
-            <Star className="h-3 w-3 fill-white text-white" />
-          </div>
-        )}
-      </div>
-
-      {/* Product Info */}
-      <div className="flex-1 flex flex-col justify-between min-w-0 py-0.5">
-        <div>
-          <h4 className="font-bold text-sm line-clamp-1">{product.name_ar}</h4>
-          {product.description_ar && (
-            <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5 leading-relaxed">
-              {product.description_ar}
-            </p>
+      <div className="flex gap-4 p-4">
+        {/* Product Image */}
+        <div className="w-24 h-24 rounded-2xl bg-muted overflow-hidden flex-shrink-0 relative">
+          {product.image_url ? (
+            <img 
+              src={product.image_url} 
+              alt={product.name_ar}
+              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center">
+              <Coffee className="h-8 w-8 text-muted-foreground/30" />
+            </div>
+          )}
+          {product.is_featured && (
+            <div 
+              className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full flex items-center justify-center shadow-lg"
+              style={{ backgroundColor: accentColor }}
+            >
+              <Star className="h-3 w-3 fill-white text-white" />
+            </div>
           )}
         </div>
-        
-        <div className="flex items-center justify-between mt-1">
-          <span 
-            className="font-bold text-base"
-            style={{ color: primaryColor }}
-          >
-            {Number(product.price).toFixed(0)} ر.س
-          </span>
-          <Button
-            size="sm"
-            className="h-7 px-3 rounded-full text-xs gap-1"
-            style={{ backgroundColor: primaryColor }}
-            onClick={(e) => {
-              e.stopPropagation();
-              onAddToCart();
-            }}
-          >
-            <Plus className="h-3 w-3" />
-            أضف
-          </Button>
+
+        {/* Product Info */}
+        <div className="flex-1 flex flex-col justify-between min-w-0">
+          <div>
+            <h4 className="font-bold text-base line-clamp-1 mb-0.5">{product.name_ar}</h4>
+            {product.description_ar && (
+              <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed">
+                {product.description_ar}
+              </p>
+            )}
+          </div>
+          
+          <div className="flex items-center justify-between mt-2">
+            <span 
+              className="font-bold text-lg"
+              style={{ color: primaryColor }}
+            >
+              {Number(product.price).toFixed(0)} ر.س
+            </span>
+            <Button
+              size="sm"
+              className="h-9 px-4 rounded-xl text-sm gap-1.5 shadow-md"
+              style={{ backgroundColor: primaryColor }}
+              onClick={(e) => {
+                e.stopPropagation();
+                onAddToCart();
+              }}
+            >
+              <Plus className="h-4 w-4" />
+              أضف
+            </Button>
+          </div>
         </div>
       </div>
-    </div>
+    </Card>
   );
 };
 
