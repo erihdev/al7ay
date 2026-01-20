@@ -1,13 +1,16 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Coffee, ShoppingBag, User, Heart, Store } from 'lucide-react';
+import { Coffee, ShoppingBag, User, Heart, Store, Award } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { useFavorites } from '@/hooks/useFavorites';
+import { useLoyaltyTier } from '@/hooks/useLoyaltyTier';
+import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 
 const navItems = [
   { path: '/app', icon: Coffee, label: 'القائمة' },
   { path: '/favorites', icon: Heart, label: 'المفضلة' },
+  { path: '/loyalty', icon: Award, label: 'نقاطي' },
   { path: '/cart', icon: ShoppingBag, label: 'السلة' },
   { path: '/my-store-orders', icon: Store, label: 'طلباتي' },
   { path: '/profile', icon: User, label: 'حسابي' },
@@ -17,6 +20,8 @@ export function BottomNav() {
   const location = useLocation();
   const { totalItems } = useCart();
   const { data: favorites } = useFavorites();
+  const { user } = useAuth();
+  const { data: loyaltyData } = useLoyaltyTier(user?.id);
   const favoritesCount = favorites?.length || 0;
 
   return (
@@ -31,6 +36,7 @@ export function BottomNav() {
             const isActive = location.pathname === path;
             const isCart = path === '/cart';
             const isFavorites = path === '/favorites';
+            const isLoyalty = path === '/loyalty';
 
             return (
               <Link
@@ -88,6 +94,17 @@ export function BottomNav() {
                       className="absolute -top-1 -right-2 min-w-[18px] h-[18px] px-1 bg-gradient-to-br from-rose-500 to-rose-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center shadow-lg shadow-rose-500/30"
                     >
                       {favoritesCount > 99 ? '99+' : favoritesCount}
+                    </motion.span>
+                  )}
+
+                  {/* Loyalty points badge */}
+                  {isLoyalty && loyaltyData && loyaltyData.totalPoints > 0 && (
+                    <motion.span 
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      className="absolute -top-1 -right-2 min-w-[18px] h-[18px] px-1 bg-gradient-to-br from-amber-500 to-amber-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center shadow-lg shadow-amber-500/30"
+                    >
+                      {loyaltyData.totalPoints > 999 ? '999+' : loyaltyData.totalPoints}
                     </motion.span>
                   )}
                 </motion.div>
