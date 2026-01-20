@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
@@ -87,7 +87,10 @@ const Index = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCity, setSelectedCity] = useState<string>('all');
   const [selectedNeighborhood, setSelectedNeighborhood] = useState<string>('all');
-  const { userLocation, locationPermission } = useLocation();
+  const [deliveryScopeFilter, setDeliveryScopeFilter] = useState<'all' | 'neighborhood' | 'city'>('all');
+  const [isAutoDetecting, setIsAutoDetecting] = useState(false);
+  const [detectedLocation, setDetectedLocation] = useState<{ city: string; neighborhood: string; neighborhoodId: string } | null>(null);
+  const { userLocation, requestLocation } = useLocation();
   
   // Enable order status notifications for logged-in customers
   useOrderStatusNotifications();
@@ -142,17 +145,97 @@ const Index = () => {
   const handleCityChange = (city: string) => {
     setSelectedCity(city);
     setSelectedNeighborhood('all');
+    setDetectedLocation(null);
+  };
+
+  // Auto-detect nearest neighborhood from GPS
+  const detectNearestNeighborhood = async () => {
+    if (!navigator.geolocation) {
+      return;
+    }
+
+    setIsAutoDetecting(true);
+    
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const userLat = position.coords.latitude;
+        const userLng = position.coords.longitude;
+
+        // Fetch all neighborhoods with coordinates
+        const { data: neighborhoodsWithCoords, error } = await supabase
+          .from('active_neighborhoods')
+          .select('id, name, city, lat, lng')
+          .eq('is_active', true);
+
+        if (error || !neighborhoodsWithCoords) {
+          setIsAutoDetecting(false);
+          return;
+        }
+
+        // Find nearest neighborhood
+        let nearest: { id: string; name: string; city: string; distance: number } | null = null;
+        
+        for (const neighborhood of neighborhoodsWithCoords) {
+          if (neighborhood.lat && neighborhood.lng) {
+            const distance = calculateDistance(userLat, userLng, neighborhood.lat, neighborhood.lng);
+            if (!nearest || distance < nearest.distance) {
+              nearest = {
+                id: neighborhood.id,
+                name: neighborhood.name,
+                city: neighborhood.city,
+                distance
+              };
+            }
+          }
+        }
+
+        if (nearest) {
+          setDetectedLocation({
+            city: nearest.city,
+            neighborhood: nearest.name,
+            neighborhoodId: nearest.id
+          });
+          setSelectedCity(nearest.city);
+          setSelectedNeighborhood(nearest.id);
+        }
+
+        setIsAutoDetecting(false);
+      },
+      () => {
+        setIsAutoDetecting(false);
+        // Will trigger location permission request
+        requestLocation();
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 15000,
+        maximumAge: 0
+      }
+    );
   };
 
   // Filter and sort providers by filters, distance, and delivery_scope
   const filteredProviders = providers?.filter(provider => {
+    // Delivery scope filter
+    if (deliveryScopeFilter !== 'all') {
+      const providerScope = provider.delivery_scope || 'neighborhood';
+      if (providerScope !== deliveryScopeFilter) {
+        return false;
+      }
+    }
     // City filter
     if (selectedCity !== 'all' && provider.active_neighborhoods?.city !== selectedCity) {
-      return false;
+      // Also include providers that serve the whole city
+      if (provider.delivery_scope !== 'city') {
+        return false;
+      }
     }
     // Neighborhood filter
     if (selectedNeighborhood !== 'all' && provider.active_neighborhoods?.id !== selectedNeighborhood) {
-      return false;
+      // Include providers that serve the whole city even if neighborhood filter is active
+      if (provider.delivery_scope !== 'city') {
+        return false;
+      }
     }
     // Search query filter
     if (!searchQuery.trim()) return true;
@@ -284,17 +367,66 @@ const Index = () => {
 
           {/* Search Section */}
           <motion.div variants={fadeInUp} className="space-y-3">
-            <div className="flex items-center gap-2">
-              <div className="bg-primary/10 p-2 rounded-lg">
-                <Store className="h-4 w-4 text-primary" />
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="bg-primary/10 p-2 rounded-lg">
+                  <Store className="h-4 w-4 text-primary" />
+                </div>
+                <div>
+                  <h2 className="text-sm font-bold">مقدمو الخدمات</h2>
+                  <p className="text-[10px] text-muted-foreground">
+                    {providersWithDistance.length} مقدم خدمة {userLocation ? 'قريب منك' : 'متاح'}
+                  </p>
+                </div>
               </div>
-              <div>
-                <h2 className="text-sm font-bold">مقدمو الخدمات</h2>
-                <p className="text-[10px] text-muted-foreground">
-                  {providersWithDistance.length} مقدم خدمة {userLocation ? 'قريب منك' : 'متاح'}
-                </p>
-              </div>
+              
+              {/* Auto-detect location button */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={detectNearestNeighborhood}
+                disabled={isAutoDetecting}
+                className="gap-1.5 text-xs h-8"
+              >
+                {isAutoDetecting ? (
+                  <div className="h-3.5 w-3.5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <Navigation className="h-3.5 w-3.5" />
+                )}
+                {isAutoDetecting ? 'جارٍ التحديد...' : 'موقعي'}
+              </Button>
             </div>
+
+            {/* Detected Location Badge */}
+            {detectedLocation && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex items-center gap-2 p-2.5 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg"
+              >
+                <Navigation className="h-4 w-4 text-green-600 flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-medium text-green-700 dark:text-green-400 truncate">
+                    تم تحديد موقعك: {detectedLocation.neighborhood}
+                  </p>
+                  <p className="text-[10px] text-green-600/80 dark:text-green-500/80">
+                    {detectedLocation.city}
+                  </p>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 px-2 text-[10px] text-green-600 hover:text-green-700"
+                  onClick={() => {
+                    setDetectedLocation(null);
+                    setSelectedCity('all');
+                    setSelectedNeighborhood('all');
+                  }}
+                >
+                  إلغاء
+                </Button>
+              </motion.div>
+            )}
 
             {/* Search Input */}
             <div className="relative">
@@ -311,7 +443,7 @@ const Index = () => {
             {/* Filters */}
             <div className="flex gap-2 flex-wrap">
               {/* City Filter */}
-              <div className="flex-1 min-w-[120px]">
+              <div className="flex-1 min-w-[100px]">
                 <Select value={selectedCity} onValueChange={handleCityChange}>
                   <SelectTrigger className="h-9 rounded-lg text-xs">
                     <Building2 className="h-3.5 w-3.5 ml-1.5 text-muted-foreground" />
@@ -327,7 +459,7 @@ const Index = () => {
               </div>
 
               {/* Neighborhood Filter */}
-              <div className="flex-1 min-w-[120px]">
+              <div className="flex-1 min-w-[100px]">
                 <Select value={selectedNeighborhood} onValueChange={setSelectedNeighborhood}>
                   <SelectTrigger className="h-9 rounded-lg text-xs">
                     <MapPin className="h-3.5 w-3.5 ml-1.5 text-muted-foreground" />
@@ -343,10 +475,25 @@ const Index = () => {
                   </SelectContent>
                 </Select>
               </div>
+
+              {/* Delivery Scope Filter */}
+              <div className="flex-1 min-w-[100px]">
+                <Select value={deliveryScopeFilter} onValueChange={(val) => setDeliveryScopeFilter(val as 'all' | 'neighborhood' | 'city')}>
+                  <SelectTrigger className="h-9 rounded-lg text-xs">
+                    <Globe className="h-3.5 w-3.5 ml-1.5 text-muted-foreground" />
+                    <SelectValue placeholder="نطاق الخدمة" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">الكل</SelectItem>
+                    <SelectItem value="neighborhood">الحي فقط</SelectItem>
+                    <SelectItem value="city">المدينة كاملة</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
             {/* Active Filters Badge */}
-            {(selectedCity !== 'all' || selectedNeighborhood !== 'all') && (
+            {(selectedCity !== 'all' || selectedNeighborhood !== 'all' || deliveryScopeFilter !== 'all') && (
               <div className="flex items-center gap-1.5 flex-wrap">
                 <Filter className="h-3 w-3 text-primary" />
                 {selectedCity !== 'all' && (
@@ -359,6 +506,21 @@ const Index = () => {
                     {uniqueNeighborhoods.find(n => n?.id === selectedNeighborhood)?.name}
                   </Badge>
                 )}
+                {deliveryScopeFilter !== 'all' && (
+                  <Badge variant="secondary" className="text-[10px] py-0 px-1.5 h-5 gap-1">
+                    {deliveryScopeFilter === 'city' ? (
+                      <>
+                        <Globe className="h-2.5 w-2.5" />
+                        المدينة كاملة
+                      </>
+                    ) : (
+                      <>
+                        <MapPin className="h-2.5 w-2.5" />
+                        الحي فقط
+                      </>
+                    )}
+                  </Badge>
+                )}
                 <Button
                   variant="ghost"
                   size="sm"
@@ -366,6 +528,8 @@ const Index = () => {
                   onClick={() => {
                     setSelectedCity('all');
                     setSelectedNeighborhood('all');
+                    setDeliveryScopeFilter('all');
+                    setDetectedLocation(null);
                   }}
                 >
                   مسح الفلاتر
