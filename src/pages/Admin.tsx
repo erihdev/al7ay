@@ -39,7 +39,8 @@ import {
   Building,
   Wallet,
   Cog,
-  Lock
+  Lock,
+  Receipt
 } from 'lucide-react';
 import { CouponManager } from '@/components/admin/CouponManager';
 import { SalesReports } from '@/components/admin/SalesReports';
@@ -71,6 +72,7 @@ import { PlatformRevenueManager } from '@/components/admin/PlatformRevenueManage
 import { ProviderContractsManager } from '@/components/admin/ProviderContractsManager';
 import EdfaPayFeaturesManager from '@/components/admin/EdfaPayFeaturesManager';
 import { PasswordChangeForm } from '@/components/admin/PasswordChangeForm';
+import InvoiceSettingsManager from '@/components/admin/InvoiceSettingsManager';
 import { InteractiveBackground } from '@/components/ui/InteractiveBackground';
 import { useUpdateDeliveryLocation } from '@/hooks/useOrderTracking';
 import { useOrderNotifications } from '@/hooks/useOrderNotifications';
@@ -147,6 +149,7 @@ const TAB_CATEGORIES = [
       { value: 'employee-performance', label: 'أداء الموظفين', icon: BarChart3 },
       { value: 'employee-points', label: 'نقاط الموظفين', icon: UserPlus },
       { value: 'activity-log', label: 'سجل النشاطات', icon: FileText },
+      { value: 'invoice-settings', label: 'إعدادات الفاتورة', icon: Receipt },
       { value: 'contact-settings', label: 'معلومات التواصل', icon: MapPin },
       { value: 'commission-settings', label: 'إعدادات العمولة', icon: CreditCard },
       { value: 'password-change', label: 'تغيير كلمة المرور', icon: Lock },
@@ -894,6 +897,11 @@ const Admin = () => {
               {/* Employee Points Tab */}
               <TabsContent value="employee-points">
                 <EmployeePointsManager />
+              </TabsContent>
+
+              {/* Invoice Settings Tab */}
+              <TabsContent value="invoice-settings">
+                <InvoiceSettingsManager />
               </TabsContent>
 
               {/* Contact Settings Tab */}
