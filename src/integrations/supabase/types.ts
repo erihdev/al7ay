@@ -1657,6 +1657,74 @@ export type Database = {
           },
         ]
       }
+      provider_invoice_settings: {
+        Row: {
+          address: string | null
+          business_name: string | null
+          business_name_en: string | null
+          cr_number: string | null
+          created_at: string
+          email: string | null
+          footer_text: string | null
+          id: string
+          logo_url: string | null
+          phone: string | null
+          primary_color: string | null
+          provider_id: string
+          show_qr_code: boolean | null
+          show_vat_number: boolean | null
+          slogan: string | null
+          updated_at: string
+          vat_number: string | null
+        }
+        Insert: {
+          address?: string | null
+          business_name?: string | null
+          business_name_en?: string | null
+          cr_number?: string | null
+          created_at?: string
+          email?: string | null
+          footer_text?: string | null
+          id?: string
+          logo_url?: string | null
+          phone?: string | null
+          primary_color?: string | null
+          provider_id: string
+          show_qr_code?: boolean | null
+          show_vat_number?: boolean | null
+          slogan?: string | null
+          updated_at?: string
+          vat_number?: string | null
+        }
+        Update: {
+          address?: string | null
+          business_name?: string | null
+          business_name_en?: string | null
+          cr_number?: string | null
+          created_at?: string
+          email?: string | null
+          footer_text?: string | null
+          id?: string
+          logo_url?: string | null
+          phone?: string | null
+          primary_color?: string | null
+          provider_id?: string
+          show_qr_code?: boolean | null
+          show_vat_number?: boolean | null
+          slogan?: string | null
+          updated_at?: string
+          vat_number?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "provider_invoice_settings_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: true
+            referencedRelation: "service_providers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       provider_order_items: {
         Row: {
           created_at: string

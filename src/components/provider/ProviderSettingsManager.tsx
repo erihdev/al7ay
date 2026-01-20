@@ -24,9 +24,11 @@ import {
   Info,
   Globe,
   MapPinned,
-  Bell
+  Bell,
+  Receipt
 } from 'lucide-react';
 import { VolumeControl } from '@/components/notifications/VolumeControl';
+import { ProviderInvoiceSettings } from './ProviderInvoiceSettings';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { ServiceProvider } from '@/hooks/useProviderData';
@@ -908,6 +910,14 @@ const ProviderSettingsManager = ({ provider, onUpdate }: ProviderSettingsManager
           <VolumeControl />
         </CardContent>
       </Card>
+
+      {/* Invoice Settings - Only show for EdfaPay verified providers */}
+      {provider.edfapay_credentials_verified && (
+        <ProviderInvoiceSettings 
+          providerId={provider.id} 
+          providerName={provider.business_name}
+        />
+      )}
     </div>
   );
 };
