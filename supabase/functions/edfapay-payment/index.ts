@@ -40,6 +40,11 @@ serve(async (req) => {
     }
 
     const { pendingOrderId, amount, customerEmail, customerName, customerPhone, description, returnUrl }: PaymentRequest = await req.json();
+    
+    // Get client IP from request headers
+    const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 
+                     req.headers.get('x-real-ip') || 
+                     '127.0.0.1';
 
     // Validate required fields
     if (!pendingOrderId || !amount || !returnUrl) {
@@ -73,7 +78,7 @@ serve(async (req) => {
       payer_first_name: firstName,
       payer_last_name: lastName,
       payer_phone: customerPhone,
-      payer_ip: '127.0.0.1',
+      payer_ip: clientIp,
       payer_address: 'Saudi Arabia',
       payer_city: 'Riyadh',
       payer_country: 'SA',
