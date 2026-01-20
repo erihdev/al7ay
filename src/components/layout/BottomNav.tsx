@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Coffee, ShoppingBag, ClipboardList, User, Heart, Store } from 'lucide-react';
+import { Coffee, ShoppingBag, User, Heart, Store } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { useFavorites } from '@/hooks/useFavorites';
 import { cn } from '@/lib/utils';
@@ -20,87 +20,102 @@ export function BottomNav() {
   const favoritesCount = favorites?.length || 0;
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-md border-t border-border safe-area-inset-bottom">
-      <div className="flex items-center justify-around h-14">
-        {navItems.map(({ path, icon: Icon, label }) => {
-          const isActive = location.pathname === path;
-          const isCart = path === '/cart';
-          const isFavorites = path === '/favorites';
+    <nav className="fixed bottom-0 left-0 right-0 z-50 safe-area-inset-bottom">
+      {/* Frosted glass background with gradient border */}
+      <div className="relative bg-background/80 backdrop-blur-xl border-t border-border/50">
+        {/* Subtle gradient glow at top */}
+        <div className="absolute inset-x-0 -top-px h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
+        
+        <div className="flex items-center justify-around h-16 px-2">
+          {navItems.map(({ path, icon: Icon, label }) => {
+            const isActive = location.pathname === path;
+            const isCart = path === '/cart';
+            const isFavorites = path === '/favorites';
 
-          return (
-            <Link
-              key={path}
-              to={path}
-              className={cn(
-                'flex flex-col items-center justify-center flex-1 h-full transition-all duration-300 relative group',
-                isActive
-                  ? 'text-primary'
-                  : 'text-muted-foreground hover:text-foreground'
-              )}
-            >
-              <motion.div 
-                className="relative"
-                whileTap={{ scale: 0.9 }}
-                transition={{ type: "spring", stiffness: 400, damping: 17 }}
-              >
-                <motion.div
-                  animate={isActive ? { scale: [1, 1.2, 1] } : {}}
-                  transition={{ duration: 0.3 }}
-                >
-                  <Icon className={cn(
-                    "h-5 w-5 transition-all duration-300",
-                    isActive && "drop-shadow-[0_0_8px_hsl(var(--primary)/0.5)]",
-                    !isActive && "group-hover:scale-110"
-                  )} />
-                </motion.div>
-                {isCart && totalItems > 0 && (
-                  <motion.span 
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    className="absolute -top-1.5 -right-1.5 bg-accent text-accent-foreground text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center shadow-lg"
-                  >
-                    {totalItems}
-                  </motion.span>
-                )}
-                {isFavorites && favoritesCount > 0 && (
-                  <motion.span 
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center shadow-lg"
-                  >
-                    {favoritesCount}
-                  </motion.span>
-                )}
-              </motion.div>
-              <motion.span 
+            return (
+              <Link
+                key={path}
+                to={path}
                 className={cn(
-                  "text-[10px] mt-0.5 font-arabic transition-all duration-300",
-                  isActive && "font-semibold"
+                  'relative flex flex-col items-center justify-center flex-1 h-full py-2 transition-all duration-300 group',
+                  isActive ? 'text-primary' : 'text-muted-foreground'
                 )}
-                animate={isActive ? { y: [0, -2, 0] } : {}}
-                transition={{ duration: 0.3 }}
               >
-                {label}
-              </motion.span>
-              
-              {/* Active indicator */}
-              {isActive && (
+                {/* Active background pill */}
+                {isActive && (
+                  <motion.div
+                    layoutId="navPill"
+                    className="absolute inset-x-2 inset-y-1.5 bg-primary/10 rounded-xl"
+                    initial={false}
+                    transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                  />
+                )}
+
                 <motion.div 
-                  layoutId="activeTab"
-                  className="absolute top-0 left-1/2 -translate-x-1/2 w-12 h-0.5 bg-primary rounded-full"
-                  initial={false}
-                  transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                />
-              )}
-              
-              {/* Hover glow effect */}
-              <div className={cn(
-                "absolute inset-0 bg-primary/0 transition-all duration-300 rounded-lg",
-                "group-hover:bg-primary/5"
-              )} />
-            </Link>
-          );
-        })}
+                  className="relative z-10"
+                  whileTap={{ scale: 0.85 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 17 }}
+                >
+                  <motion.div
+                    animate={isActive ? { y: -2 } : { y: 0 }}
+                    transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                  >
+                    <Icon 
+                      className={cn(
+                        "h-[22px] w-[22px] transition-all duration-300",
+                        isActive && "stroke-[2.5px]",
+                        !isActive && "stroke-[1.5px] group-hover:text-foreground group-hover:scale-110"
+                      )} 
+                    />
+                  </motion.div>
+
+                  {/* Cart badge */}
+                  {isCart && totalItems > 0 && (
+                    <motion.span 
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      className="absolute -top-1 -right-2 min-w-[18px] h-[18px] px-1 bg-gradient-to-br from-accent to-accent/80 text-accent-foreground text-[10px] font-bold rounded-full flex items-center justify-center shadow-lg shadow-accent/30"
+                    >
+                      {totalItems > 99 ? '99+' : totalItems}
+                    </motion.span>
+                  )}
+
+                  {/* Favorites badge */}
+                  {isFavorites && favoritesCount > 0 && (
+                    <motion.span 
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      className="absolute -top-1 -right-2 min-w-[18px] h-[18px] px-1 bg-gradient-to-br from-rose-500 to-rose-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center shadow-lg shadow-rose-500/30"
+                    >
+                      {favoritesCount > 99 ? '99+' : favoritesCount}
+                    </motion.span>
+                  )}
+                </motion.div>
+
+                <motion.span 
+                  className={cn(
+                    "relative z-10 text-[11px] mt-1 font-arabic transition-all duration-300",
+                    isActive ? "font-bold" : "font-medium group-hover:text-foreground"
+                  )}
+                  animate={isActive ? { y: -1 } : { y: 0 }}
+                  transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                >
+                  {label}
+                </motion.span>
+
+                {/* Active dot indicator */}
+                {isActive && (
+                  <motion.div 
+                    layoutId="activeDot"
+                    className="absolute bottom-1 w-1 h-1 bg-primary rounded-full"
+                    initial={false}
+                    transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                  />
+                )}
+              </Link>
+            );
+          })}
+        </div>
       </div>
     </nav>
   );
