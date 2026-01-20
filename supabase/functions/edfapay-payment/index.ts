@@ -15,6 +15,38 @@ interface PaymentRequest {
   returnUrl: string;
 }
 
+// Helper function to convert ArrayBuffer to hex string
+function toHex(buffer: ArrayBuffer): string {
+  return Array.from(new Uint8Array(buffer))
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('');
+}
+
+// Helper function to calculate MD5
+async function md5(text: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(text);
+  const hashBuffer = await crypto.subtle.digest("MD5", data);
+  return toHex(hashBuffer);
+}
+
+// Helper function to calculate SHA1
+async function sha1(text: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(text);
+  const hashBuffer = await crypto.subtle.digest("SHA-1", data);
+  return toHex(hashBuffer);
+}
+
+// Calculate EdfaPay hash signature
+async function calculateHash(orderId: string, amount: string, currency: string, description: string, password: string): Promise<string> {
+  const concatenated = orderId + amount + currency + description + password;
+  const upperCase = concatenated.toUpperCase();
+  const md5Hash = await md5(upperCase);
+  const sha1Hash = await sha1(md5Hash);
+  return sha1Hash;
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -44,7 +76,8 @@ serve(async (req) => {
     // Get client IP from request headers
     const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 
                      req.headers.get('x-real-ip') || 
-                     '127.0.0.1';
+                     req.headers.get('cf-connecting-ip') ||
+                     '1.1.1.1';
 
     // Validate required fields
     if (!pendingOrderId || !amount || !returnUrl) {
@@ -55,58 +88,68 @@ serve(async (req) => {
     }
 
     // Generate unique transaction ID using pending order ID
-    const transactionId = `TXN-${pendingOrderId}-${Date.now()}`;
-
-    // EdfaPay API endpoint
-    const edfaPayUrl = 'https://api.edfapay.com/payment/initiate';
+    const transactionId = `TXN${Date.now()}`;
+    const orderAmount = amount.toFixed(2);
+    const orderCurrency = 'SAR';
+    const orderDescription = description || `Order ${pendingOrderId}`;
 
     // Split customer name into first and last name
     const nameParts = customerName.trim().split(/\s+/);
     const firstName = nameParts[0] || 'Customer';
-    const lastName = nameParts.slice(1).join(' ') || firstName;
+    const lastName = nameParts.slice(1).join(' ') || 'Customer';
 
-    // Prepare payment request for EdfaPay (using correct field names per API docs)
-    const paymentData = {
-      action: 'SALE',
-      merchant_id: merchantId,
-      merchant_password: password,
-      order_id: transactionId,
-      order_amount: amount.toFixed(2),
-      order_currency: 'SAR',
-      order_description: description || `Order ${pendingOrderId}`,
-      payer_email: customerEmail || 'customer@example.com',
-      payer_first_name: firstName,
-      payer_last_name: lastName,
-      payer_phone: customerPhone,
-      payer_ip: clientIp,
-      payer_address: 'Saudi Arabia',
-      payer_city: 'Riyadh',
-      payer_country: 'SA',
-      payer_zip: '12345',
-      term_url_3ds: returnUrl,
-      return_url: returnUrl,
-      callback_url: `${Deno.env.get('SUPABASE_URL')}/functions/v1/edfapay-webhook`,
-    };
+    // Calculate hash signature
+    const hash = await calculateHash(transactionId, orderAmount, orderCurrency, orderDescription, password);
 
-    console.log('Initiating EdfaPay payment:', { pendingOrderId, amount, transactionId });
+    // EdfaPay API endpoint
+    const edfaPayUrl = 'https://api.edfapay.com/payment/initiate';
+
+    // Prepare form data (EdfaPay requires form-data, not JSON)
+    const formData = new FormData();
+    formData.append('action', 'SALE');
+    formData.append('edfa_merchant_id', merchantId);
+    formData.append('order_id', transactionId);
+    formData.append('order_amount', orderAmount);
+    formData.append('order_currency', orderCurrency);
+    formData.append('order_description', orderDescription);
+    formData.append('payer_first_name', firstName);
+    formData.append('payer_last_name', lastName);
+    formData.append('payer_address', 'Saudi Arabia');
+    formData.append('payer_city', 'Riyadh');
+    formData.append('payer_country', 'SA');
+    formData.append('payer_zip', '12345');
+    formData.append('payer_email', customerEmail || 'customer@example.com');
+    formData.append('payer_phone', customerPhone || '0500000000');
+    formData.append('payer_ip', clientIp);
+    formData.append('term_url_3ds', returnUrl);
+    formData.append('hash', hash);
+
+    console.log('Initiating EdfaPay payment:', { 
+      pendingOrderId, 
+      amount: orderAmount, 
+      transactionId,
+      firstName,
+      lastName,
+      clientIp 
+    });
 
     // Make request to EdfaPay
     const response = await fetch(edfaPayUrl, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(paymentData),
+      body: formData,
     });
 
     const result = await response.json();
 
-    if (!response.ok) {
+    console.log('EdfaPay response:', result);
+
+    if (result.result === 'ERROR' || !response.ok) {
       console.error('EdfaPay error:', result);
       return new Response(
         JSON.stringify({ 
           error: 'Payment initiation failed',
-          message: 'فشل في بدء عملية الدفع' 
+          message: 'فشل في بدء عملية الدفع',
+          details: result.errors || result.error_message
         }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
@@ -119,7 +162,7 @@ serve(async (req) => {
         success: true,
         transactionId,
         pendingOrderId,
-        paymentUrl: result.payment_url || result.redirect_url,
+        paymentUrl: result.redirect_url || result.payment_url,
         ...result
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
