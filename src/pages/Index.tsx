@@ -404,7 +404,7 @@ const Index = () => {
               <motion.div
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="flex flex-col gap-1 p-2.5 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg"
+                className="flex flex-col gap-1.5 p-2.5 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg"
               >
                 <div className="flex items-center gap-2">
                   <Navigation className="h-4 w-4 text-green-600 flex-shrink-0" />
@@ -429,11 +429,13 @@ const Index = () => {
                     إلغاء
                   </Button>
                 </div>
-                {detectedLocation.userCoords && (
-                  <p className="text-[9px] text-green-600/60 dark:text-green-500/60 font-mono" dir="ltr">
-                    GPS: {detectedLocation.userCoords.lat.toFixed(6)}, {detectedLocation.userCoords.lng.toFixed(6)} 
-                    {detectedLocation.distance && ` (${(detectedLocation.distance / 1000).toFixed(2)} كم)`}
-                  </p>
+                {detectedLocation.userCoords && detectedLocation.distance && detectedLocation.distance > 500 && (
+                  <div className="flex items-center gap-2 pt-1 border-t border-green-200/50 dark:border-green-800/50">
+                    <AlertCircle className="h-3 w-3 text-amber-500 flex-shrink-0" />
+                    <p className="text-[10px] text-amber-600 dark:text-amber-400">
+                      GPS غير دقيق؟ استخدم الفلاتر أدناه لاختيار موقعك يدوياً
+                    </p>
+                  </div>
                 )}
               </motion.div>
             )}
