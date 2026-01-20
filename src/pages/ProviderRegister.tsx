@@ -33,7 +33,8 @@ import {
   ArrowLeftRight,
   Info,
   Building,
-  Wallet
+  Wallet,
+  Navigation
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -89,6 +90,8 @@ const ProviderRegister = () => {
     platform_managed: 15,
     direct_gateway: 10
   });
+  const [isDetectingLocation, setIsDetectingLocation] = useState(false);
+  const [detectedNeighborhood, setDetectedNeighborhood] = useState<{ id: string; name: string; city: string; distance: number } | null>(null);
   
   const [formData, setFormData] = useState({
     fullName: '',
@@ -355,6 +358,100 @@ const ProviderRegister = () => {
       setUseCustomNeighborhood(false);
       setFormData(prev => ({ ...prev, neighborhood: value }));
     }
+  };
+
+  // Calculate distance between two coordinates using Haversine formula
+  const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2: number): number => {
+    const R = 6371000; // Earth's radius in meters
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLng = (lng2 - lng1) * Math.PI / 180;
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+      Math.sin(dLng / 2) * Math.sin(dLng / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  };
+
+  // Auto-detect nearest neighborhood from GPS
+  const detectNearestNeighborhood = async () => {
+    if (!navigator.geolocation) {
+      toast.error('المتصفح لا يدعم تحديد الموقع');
+      return;
+    }
+
+    setIsDetectingLocation(true);
+    setDetectedNeighborhood(null);
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const userLat = position.coords.latitude;
+        const userLng = position.coords.longitude;
+
+        // Fetch neighborhoods with coordinates
+        const { data: neighborhoodsWithCoords, error } = await supabase
+          .from('active_neighborhoods')
+          .select('id, name, city, lat, lng')
+          .eq('is_active', true);
+
+        if (error || !neighborhoodsWithCoords) {
+          toast.error('حدث خطأ في تحميل الأحياء');
+          setIsDetectingLocation(false);
+          return;
+        }
+
+        // Find nearest neighborhood
+        let nearest: { id: string; name: string; city: string; distance: number } | null = null;
+        
+        for (const neighborhood of neighborhoodsWithCoords) {
+          if (neighborhood.lat && neighborhood.lng) {
+            const distance = calculateDistance(userLat, userLng, neighborhood.lat, neighborhood.lng);
+            if (!nearest || distance < nearest.distance) {
+              nearest = {
+                id: neighborhood.id,
+                name: neighborhood.name,
+                city: neighborhood.city,
+                distance
+              };
+            }
+          }
+        }
+
+        if (nearest) {
+          setDetectedNeighborhood(nearest);
+          // Auto-fill city and neighborhood
+          setFormData(prev => ({
+            ...prev,
+            city: nearest!.city,
+            neighborhood: nearest!.id
+          }));
+          setUseCustomCity(false);
+          setUseCustomNeighborhood(false);
+          
+          const distanceKm = (nearest.distance / 1000).toFixed(1);
+          toast.success(`تم تحديد موقعك: ${nearest.name}، ${nearest.city} (${distanceKm} كم)`);
+        } else {
+          toast.error('لم نتمكن من تحديد الحي الأقرب');
+        }
+
+        setIsDetectingLocation(false);
+      },
+      (error) => {
+        console.error('Geolocation error:', error);
+        if (error.code === 1) {
+          toast.error('يرجى السماح بالوصول للموقع لتحديد الحي تلقائياً');
+        } else if (error.code === 2) {
+          toast.error('تعذر تحديد الموقع، يرجى المحاولة مرة أخرى');
+        } else {
+          toast.error('انتهت مهلة تحديد الموقع، يرجى المحاولة مرة أخرى');
+        }
+        setIsDetectingLocation(false);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 15000,
+        maximumAge: 0
+      }
+    );
   };
 
   const handleSelectPlan = (plan: SubscriptionPlan) => {
@@ -1309,6 +1406,48 @@ const ProviderRegister = () => {
                     />
                   </div>
                 </div>
+
+                {/* GPS Auto-Detect Button */}
+                <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-primary/10 to-primary/5 rounded-xl border border-primary/20">
+                  <div className="flex-1">
+                    <p className="text-sm font-medium">تحديد الموقع تلقائياً</p>
+                    <p className="text-xs text-muted-foreground">اضغط لتحديد الحي الأقرب من موقعك الحالي</p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="default"
+                    size="sm"
+                    onClick={detectNearestNeighborhood}
+                    disabled={isDetectingLocation}
+                    className="gap-2"
+                  >
+                    {isDetectingLocation ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Navigation className="h-4 w-4" />
+                    )}
+                    {isDetectingLocation ? 'جارٍ التحديد...' : 'حدد موقعي'}
+                  </Button>
+                </div>
+
+                {/* Show detected neighborhood result */}
+                {detectedNeighborhood && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Check className="h-4 w-4 text-green-600" />
+                      <span className="text-sm font-medium text-green-700 dark:text-green-400">
+                        تم تحديد موقعك: {detectedNeighborhood.name}، {detectedNeighborhood.city}
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      المسافة: {(detectedNeighborhood.distance / 1000).toFixed(1)} كم من الحي المسجل
+                    </p>
+                  </motion.div>
+                )}
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
