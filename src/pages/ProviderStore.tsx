@@ -578,10 +578,10 @@ const ProviderStoreContent = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="flex items-start gap-5"
+            className="flex flex-col items-center text-center"
           >
             {/* Logo */}
-            <div className="relative">
+            <div className="relative mb-3">
               <div className="w-20 h-20 rounded-2xl bg-white shadow-xl flex items-center justify-center overflow-hidden ring-4 ring-white/30">
                 {provider.logo_url ? (
                   <img 
@@ -601,26 +601,26 @@ const ProviderStoreContent = () => {
             </div>
             
             {/* Info */}
-            <div className="flex-1 min-w-0">
-              <h1 className="text-2xl font-bold text-white mb-1 line-clamp-1">
+            <div>
+              <h1 className="text-2xl font-bold text-white mb-1">
                 {provider.business_name}
               </h1>
               
               {provider.description && (
-                <p className="text-white/90 text-sm mb-2 line-clamp-2">
+                <p className="text-white/90 text-sm mb-2 max-w-xs mx-auto line-clamp-2">
                   {provider.description}
                 </p>
               )}
               
               {provider.active_neighborhoods && (
-                <p className="text-white/70 text-xs flex items-center gap-1.5 mb-2">
+                <p className="text-white/70 text-xs flex items-center justify-center gap-1.5 mb-2">
                   <MapPin className="h-3.5 w-3.5" />
                   {(provider.active_neighborhoods as any).name}، {(provider.active_neighborhoods as any).city}
                 </p>
               )}
               
               {/* Stats Row */}
-              <div className="flex items-center gap-2 flex-wrap">
+              <div className="flex items-center justify-center gap-2 flex-wrap">
                 <div className="flex items-center gap-1.5 bg-white/10 backdrop-blur-sm px-2.5 py-1 rounded-full text-white/90 text-xs">
                   <Package className="h-3.5 w-3.5" />
                   <span>{filteredProducts.length} منتج</span>
