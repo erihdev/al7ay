@@ -91,13 +91,14 @@ export function useEdfaPayment() {
       }
 
       // Redirect to payment page
-      if (data.paymentUrl) {
-        window.location.href = data.paymentUrl;
+      const redirectUrl = data.paymentUrl || data.redirect_url;
+      if (redirectUrl) {
+        window.location.href = redirectUrl;
       }
 
       return {
         success: true,
-        paymentUrl: data.paymentUrl,
+        paymentUrl: redirectUrl,
         pendingOrderId: pendingOrder.id,
       };
 
