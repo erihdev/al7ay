@@ -37,7 +37,9 @@ import {
   AlertTriangle,
   RefreshCw,
   Map,
-  Navigation
+  Navigation,
+  CreditCard,
+  Banknote
 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { toast } from 'sonner';
@@ -898,6 +900,57 @@ const StoreCart = ({ primaryColor = '#1B4332', storeLocation, deliveryRadiusKm =
                   className="min-h-[70px] rounded-xl resize-none text-sm"
                 />
               </div>
+            </div>
+          )}
+        </div>
+
+        {/* Payment Method Selection */}
+        <div className="space-y-3">
+          <Label className="text-sm font-semibold flex items-center gap-2">
+            <CreditCard className="h-4 w-4" />
+            طريقة الدفع
+          </Label>
+          <RadioGroup 
+            value={paymentMethod} 
+            onValueChange={(v) => setPaymentMethod(v as 'cash' | 'online')}
+            className="grid grid-cols-2 gap-3"
+          >
+            <Label 
+              htmlFor="cash" 
+              className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                paymentMethod === 'cash' 
+                  ? 'border-primary bg-primary/5 shadow-md' 
+                  : 'border-muted hover:border-muted-foreground/30'
+              }`}
+              style={paymentMethod === 'cash' ? { borderColor: primaryColor } : {}}
+            >
+              <Banknote className="h-6 w-6" style={paymentMethod === 'cash' ? { color: primaryColor } : {}} />
+              <span className="text-sm font-medium">نقداً</span>
+              <span className="text-[10px] text-muted-foreground">عند الاستلام</span>
+              <RadioGroupItem value="cash" id="cash" className="sr-only" />
+            </Label>
+            <Label 
+              htmlFor="online" 
+              className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                paymentMethod === 'online' 
+                  ? 'border-primary bg-primary/5 shadow-md' 
+                  : 'border-muted hover:border-muted-foreground/30'
+              }`}
+              style={paymentMethod === 'online' ? { borderColor: primaryColor } : {}}
+            >
+              <CreditCard className="h-6 w-6" style={paymentMethod === 'online' ? { color: primaryColor } : {}} />
+              <span className="text-sm font-medium">إلكتروني</span>
+              <span className="text-[10px] text-muted-foreground">بطاقة / Apple Pay</span>
+              <RadioGroupItem value="online" id="online" className="sr-only" />
+            </Label>
+          </RadioGroup>
+          
+          {paymentMethod === 'online' && (
+            <div className="flex items-center gap-2 p-2.5 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800">
+              <CreditCard className="h-4 w-4 text-blue-600 shrink-0" />
+              <p className="text-xs text-blue-700 dark:text-blue-400">
+                سيتم توجيهك لصفحة الدفع الآمنة بعد تأكيد الطلب
+              </p>
             </div>
           )}
         </div>
