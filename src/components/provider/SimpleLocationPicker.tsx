@@ -9,6 +9,7 @@ import {
   MapPinned, Copy, ExternalLink, Sparkles
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { GoogleMapsGuide } from './GoogleMapsGuide';
 
 interface SimpleLocationPickerProps {
   location: { lat: number; lng: number } | null;
@@ -271,12 +272,13 @@ export function SimpleLocationPicker({ location, onLocationChange, className = '
               <Link2 className="h-5 w-5" />
             </div>
             <div className="flex-1 min-w-0 space-y-3">
-              <div>
+              <div className="flex items-center justify-between">
                 <h3 className="font-semibold font-arabic text-sm">لصق رابط Google Maps</h3>
-                <p className="text-xs text-muted-foreground font-arabic">
-                  افتح Google Maps وابحث عن موقعك ثم انسخ الرابط والصقه هنا
-                </p>
+                <GoogleMapsGuide />
               </div>
+              <p className="text-xs text-muted-foreground font-arabic">
+                افتح Google Maps وابحث عن موقعك ثم انسخ الرابط والصقه هنا
+              </p>
               <div className="flex gap-2">
                 <Input
                   value={googleMapsLink}
