@@ -253,7 +253,7 @@ const Landing = () => {
               </div>
               <div className="flex items-center gap-1.5">
                 <CheckCircle2 className="h-4 w-4 text-blue-500" />
-                <span>30 يوم مجاناً</span>
+                <span>14 يوم مجاناً</span>
               </div>
             </div>
           </div>

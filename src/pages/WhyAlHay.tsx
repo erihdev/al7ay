@@ -552,7 +552,7 @@ const WhyAlHay = () => {
                   <Button className="bg-accent hover:bg-accent/90 text-base sm:text-lg px-6 sm:px-8 h-11 sm:h-14 shadow-lg shadow-accent/25" size={isMobile ? "default" : "lg"} asChild>
                     <Link to="/provider-register">
                       <Zap className="h-4 w-4 sm:h-5 sm:w-5 ml-2" />
-                      ابدأ مجاناً - 30 يوم
+                      ابدأ مجاناً - 14 يوم
                     </Link>
                   </Button>
                   <Button variant="outline" size={isMobile ? "default" : "lg"} className="text-base sm:text-lg h-11 sm:h-14" asChild>
@@ -756,7 +756,7 @@ const WhyAlHay = () => {
               {[
                 { icon: Shield, text: 'دفع آمن 100%', color: 'text-green-500' },
                 { icon: Truck, text: 'توصيل سريع', color: 'text-primary' },
-                { icon: CheckCircle2, text: '30 يوم تجربة', color: 'text-blue-500' },
+                { icon: CheckCircle2, text: '14 يوم تجربة', color: 'text-blue-500' },
                 { icon: Star, text: '+50K عميل', color: 'text-yellow-500' },
               ].map((badge, index) => (
                 <div 
