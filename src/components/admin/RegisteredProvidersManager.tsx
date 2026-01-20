@@ -19,6 +19,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { 
   CheckCircle2, 
   Clock, 
@@ -32,7 +42,9 @@ import {
   ShoppingCart,
   TrendingUp,
   Eye,
-  BarChart3
+  BarChart3,
+  Trash2,
+  AlertTriangle
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -68,6 +80,8 @@ const RegisteredProvidersManager = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedProvider, setSelectedProvider] = useState<RegisteredProvider | null>(null);
   const [activatingId, setActivatingId] = useState<string | null>(null);
+  const [providerToDelete, setProviderToDelete] = useState<RegisteredProvider | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   // Fetch service providers with detailed stats
   const { data: providers, isLoading, refetch } = useQuery({
@@ -236,6 +250,34 @@ const RegisteredProvidersManager = () => {
       console.error('Activation error:', error);
       toast.error('حدث خطأ أثناء تفعيل الحساب');
       setActivatingId(null);
+    }
+  });
+
+  const deleteProviderMutation = useMutation({
+    mutationFn: async (provider: RegisteredProvider) => {
+      setDeletingId(provider.id);
+      
+      const { data, error } = await supabase.functions.invoke('delete-provider', {
+        body: {
+          userId: provider.id,
+          providerId: provider.stats?.providerId
+        }
+      });
+
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['registered-providers-with-stats'] });
+      toast.success('تم حذف حساب مقدم الخدمة بنجاح');
+      setProviderToDelete(null);
+      setDeletingId(null);
+    },
+    onError: (error: any) => {
+      console.error('Delete error:', error);
+      toast.error('حدث خطأ أثناء حذف الحساب: ' + error.message);
+      setDeletingId(null);
     }
   });
 
@@ -450,6 +492,19 @@ const RegisteredProvidersManager = () => {
                               )}
                             </Button>
                           )}
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            className="font-arabic"
+                            onClick={() => setProviderToDelete(provider)}
+                            disabled={deletingId === provider.id}
+                          >
+                            {deletingId === provider.id ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Trash2 className="h-4 w-4" />
+                            )}
+                          </Button>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -557,6 +612,56 @@ const RegisteredProvidersManager = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!providerToDelete} onOpenChange={() => setProviderToDelete(null)}>
+        <AlertDialogContent dir="rtl">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-arabic flex items-center gap-2 text-destructive">
+              <AlertTriangle className="h-5 w-5" />
+              تأكيد حذف حساب مقدم الخدمة
+            </AlertDialogTitle>
+            <AlertDialogDescription className="font-arabic text-right space-y-2">
+              <p>
+                هل أنت متأكد من حذف حساب <strong>{providerToDelete?.businessName}</strong>؟
+              </p>
+              <p className="text-destructive font-medium">
+                سيتم حذف جميع البيانات المرتبطة بهذا الحساب بشكل نهائي:
+              </p>
+              <ul className="list-disc list-inside text-sm space-y-1 text-muted-foreground">
+                <li>جميع المنتجات ({providerToDelete?.stats?.productsCount || 0} منتج)</li>
+                <li>جميع الطلبات ({providerToDelete?.stats?.ordersCount || 0} طلب)</li>
+                <li>جميع التقييمات والمراجعات</li>
+                <li>سجل المدفوعات والعمولات</li>
+                <li>حساب المستخدم بالكامل</li>
+              </ul>
+              <p className="text-destructive text-sm font-bold mt-2">
+                ⚠️ هذا الإجراء لا يمكن التراجع عنه!
+              </p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-row-reverse gap-2">
+            <AlertDialogCancel className="font-arabic">إلغاء</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive hover:bg-destructive/90 font-arabic"
+              onClick={() => providerToDelete && deleteProviderMutation.mutate(providerToDelete)}
+              disabled={deletingId !== null}
+            >
+              {deletingId ? (
+                <>
+                  <Loader2 className="h-4 w-4 ml-2 animate-spin" />
+                  جاري الحذف...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="h-4 w-4 ml-2" />
+                  حذف نهائياً
+                </>
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
