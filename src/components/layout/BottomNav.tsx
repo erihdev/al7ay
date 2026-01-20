@@ -10,6 +10,7 @@ const navItems = [
   { path: '/favorites', icon: Heart, label: 'المفضلة' },
   { path: '/cart', icon: ShoppingBag, label: 'السلة' },
   { path: '/my-store-orders', icon: Store, label: 'طلباتي' },
+  { path: '/profile', icon: User, label: 'حسابي' },
 ];
 
 export function BottomNav() {
