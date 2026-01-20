@@ -502,15 +502,16 @@ const ProviderStoreContent = () => {
         <div className="pt-[env(safe-area-inset-top)]" />
 
         {/* Top Navigation */}
-        <div className="relative z-10 px-4 py-3 flex items-center justify-between">
+        <div className="relative z-10 px-3 py-2 flex items-center justify-between">
           <Link to="/">
-            <Button variant="ghost" size="icon" className="text-white/90 hover:bg-white/20 h-10 w-10 rounded-full">
-              <ArrowRight className="h-5 w-5" />
+            <Button variant="ghost" size="sm" className="text-white/90 hover:bg-white/20 h-8 rounded-full px-3 gap-1.5">
+              <ArrowRight className="h-4 w-4" />
+              <span className="text-xs font-medium">رجوع</span>
             </Button>
           </Link>
           
           <TooltipProvider delayDuration={300}>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
               {/* Chat Button */}
               <ChatDialog 
                 providerId={provider.id} 
@@ -521,8 +522,8 @@ const ProviderStoreContent = () => {
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <a href={`tel:${provider.phone}`}>
-                      <Button variant="ghost" size="icon" className="text-white/90 hover:bg-white/20 h-10 w-10 rounded-full">
-                        <Phone className="h-5 w-5" />
+                      <Button variant="ghost" size="icon" className="text-white/90 hover:bg-white/20 h-8 w-8 rounded-full">
+                        <Phone className="h-4 w-4" />
                       </Button>
                     </a>
                   </TooltipTrigger>
@@ -547,16 +548,16 @@ const ProviderStoreContent = () => {
                   <Button 
                     variant="ghost" 
                     size="icon" 
-                    className="text-white/90 hover:bg-white/20 h-10 w-10 rounded-full relative"
+                    className="text-white/90 hover:bg-white/20 h-8 w-8 rounded-full relative"
                     onClick={() => {
                       const cartBtn = document.querySelector('[data-cart-trigger]') as HTMLButtonElement;
                       if (cartBtn) cartBtn.click();
                     }}
                   >
-                    <ShoppingCart className="h-5 w-5" />
+                    <ShoppingCart className="h-4 w-4" />
                     {totalItems > 0 && (
                       <span 
-                        className="absolute -top-1 -right-1 w-5 h-5 rounded-full text-[10px] font-bold flex items-center justify-center text-white"
+                        className="absolute -top-1 -right-1 w-4 h-4 rounded-full text-[9px] font-bold flex items-center justify-center text-white"
                         style={{ backgroundColor: accentColor }}
                       >
                         {totalItems}
