@@ -52,8 +52,13 @@ serve(async (req) => {
     // Generate unique transaction ID using pending order ID
     const transactionId = `TXN-${pendingOrderId}-${Date.now()}`;
 
-    // EdfaPay API endpoint (will be updated with actual endpoint from documentation)
+    // EdfaPay API endpoint
     const edfaPayUrl = 'https://api.edfapay.com/payment/initiate';
+
+    // Split customer name into first and last name
+    const nameParts = customerName.trim().split(/\s+/);
+    const firstName = nameParts[0] || 'Customer';
+    const lastName = nameParts.slice(1).join(' ') || firstName;
 
     // Prepare payment request for EdfaPay
     const paymentData = {
@@ -63,8 +68,9 @@ serve(async (req) => {
       amount: amount.toFixed(2),
       currency: 'SAR',
       description: description || `طلب معلق ${pendingOrderId}`,
-      customer_email: customerEmail,
-      customer_name: customerName,
+      customer_email: customerEmail || 'customer@example.com',
+      customer_first_name: firstName,
+      customer_last_name: lastName,
       customer_phone: customerPhone,
       return_url: returnUrl,
       callback_url: `${Deno.env.get('SUPABASE_URL')}/functions/v1/edfapay-webhook`,
