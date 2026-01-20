@@ -208,7 +208,7 @@ const KitchenDisplaySystem = ({ providerId }: KitchenDisplaySystemProps) => {
           alertedOrdersRef.current.add(order.id);
           playNotificationSound('urgent');
           toast.warning(`⚠️ تنبيه تأخير!`, {
-            description: `الطلب #${order.id.slice(-4)} متأخر منذ ${Math.round(elapsed)} دقيقة`,
+            description: `الطلب #${order.order_number || order.id.slice(-4)} متأخر منذ ${Math.round(elapsed)} دقيقة`,
             duration: 15000,
           });
         }
@@ -238,7 +238,7 @@ const KitchenDisplaySystem = ({ providerId }: KitchenDisplaySystemProps) => {
       <html dir="rtl" lang="ar">
       <head>
         <meta charset="UTF-8">
-        <title>تذكرة الطلب #${order.id.slice(-4)}</title>
+        <title>تذكرة الطلب #${order.order_number || order.id.slice(-4)}</title>
         <style>
           * { margin: 0; padding: 0; box-sizing: border-box; }
           body { 
@@ -273,7 +273,7 @@ const KitchenDisplaySystem = ({ providerId }: KitchenDisplaySystemProps) => {
       <body>
         <div class="header">
           <h1>🍕 تذكرة طلب</h1>
-          <div class="order-num">#${order.id.slice(-4)}</div>
+          <div class="order-num">#${order.order_number || order.id.slice(-4)}</div>
           <div class="date">${orderDate}</div>
           <span class="badge ${order.order_type === 'delivery' ? 'badge-delivery' : 'badge-pickup'}">${orderTypeLabel}</span>
         </div>
@@ -392,7 +392,7 @@ const KitchenDisplaySystem = ({ providerId }: KitchenDisplaySystemProps) => {
             <span className="font-bold text-sm sm:text-base">{config.label}</span>
           </div>
           <span className="text-white/90 font-mono font-bold text-base sm:text-lg">
-            #{order.id.slice(-4)}
+            #{order.order_number || order.id.slice(-4)}
           </span>
         </div>
 

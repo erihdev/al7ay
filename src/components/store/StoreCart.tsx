@@ -421,19 +421,12 @@ const StoreCart = ({ primaryColor = '#1B4332', storeLocation, deliveryRadiusKm =
     }
   }, [isOpen]);
 
-  const generateOrderNumber = () => {
-    const timestamp = Date.now().toString().slice(-6);
-    const random = Math.random().toString(36).substring(2, 5).toUpperCase();
-    return `ORD-${timestamp}-${random}`;
+  const formatOrderNumber = (orderNumber: number) => {
+    return orderNumber.toString();
   };
 
-  const generateInvoiceNumber = () => {
-    const date = new Date();
-    const year = date.getFullYear().toString().slice(-2);
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    const day = date.getDate().toString().padStart(2, '0');
-    const random = Math.random().toString(36).substring(2, 6).toUpperCase();
-    return `INV-${year}${month}${day}-${random}`;
+  const formatInvoiceNumber = (orderNumber: number) => {
+    return orderNumber.toString();
   };
 
   const handleSubmitOrder = async () => {
@@ -476,7 +469,7 @@ const StoreCart = ({ primaryColor = '#1B4332', storeLocation, deliveryRadiusKm =
     setIsSubmitting(true);
 
     try {
-      const orderNumber = generateOrderNumber();
+      // Order number will come from database
 
       // If online payment, use Payment First policy
       if (paymentMethod === 'online') {
@@ -570,8 +563,8 @@ const StoreCart = ({ primaryColor = '#1B4332', storeLocation, deliveryRadiusKm =
       // Set success state
       setOrderResult({
         orderId: order.id,
-        orderNumber: orderNumber,
-        invoiceNumber: generateInvoiceNumber(),
+        orderNumber: formatOrderNumber(order.order_number),
+        invoiceNumber: formatInvoiceNumber(order.order_number),
         paymentMethod: 'الدفع عند الاستلام',
         createdAt: new Date()
       });

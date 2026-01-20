@@ -146,7 +146,7 @@ export function useCreateOrder() {
             order_id: order.id,
             points_change: pointsEarned,
             transaction_type: 'earned',
-            description: `نقاط مكتسبة من الطلب رقم ${order.id.slice(0, 8)}`,
+            description: `نقاط مكتسبة من الطلب رقم ${order.order_number || order.id.slice(0, 8)}`,
           });
         }
 
@@ -156,7 +156,7 @@ export function useCreateOrder() {
             order_id: order.id,
             points_change: -orderData.points_redeemed,
             transaction_type: 'redeemed',
-            description: `نقاط مستبدلة في الطلب رقم ${order.id.slice(0, 8)}`,
+            description: `نقاط مستبدلة في الطلب رقم ${order.order_number || order.id.slice(0, 8)}`,
           });
         }
       }

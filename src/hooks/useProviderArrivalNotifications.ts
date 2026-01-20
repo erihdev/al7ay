@@ -73,10 +73,10 @@ export function useProviderArrivalNotifications(providerId: string | undefined) 
     soundRef.current.playSound();
   }, [soundEnabled]);
 
-  const showArrivalNotification = useCallback((orderId: string, customerName?: string) => {
+  const showArrivalNotification = useCallback((orderId: string, customerName?: string, orderNumber?: number | null) => {
     playArrivalSound();
     
-    const orderShortId = orderId.slice(-4).toUpperCase();
+    const orderShortId = orderNumber || orderId.slice(-4).toUpperCase();
     
     toast.success('🙋 عميل وصل!', {
       description: `العميل وصل لاستلام الطلب #${orderShortId}`,

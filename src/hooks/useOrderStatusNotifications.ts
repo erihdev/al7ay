@@ -62,7 +62,7 @@ export function useOrderStatusNotifications() {
               
               // Show toast notification
               toast(statusInfo.message, {
-                description: `${statusInfo.emoji} رقم الطلب: #${(payload.new?.id as string)?.slice(0, 8)}`,
+                description: `${statusInfo.emoji} رقم الطلب: #${(payload.new as any)?.order_number || (payload.new?.id as string)?.slice(0, 8)}`,
                 duration: 8000,
               });
             }

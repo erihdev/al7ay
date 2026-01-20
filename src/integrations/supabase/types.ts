@@ -1082,6 +1082,7 @@ export type Database = {
           discount_amount: number
           id: string
           notes: string | null
+          order_number: number
           order_type: Database["public"]["Enums"]["order_type"]
           payment_completed_at: string | null
           payment_method: string | null
@@ -1110,6 +1111,7 @@ export type Database = {
           discount_amount?: number
           id?: string
           notes?: string | null
+          order_number?: number
           order_type: Database["public"]["Enums"]["order_type"]
           payment_completed_at?: string | null
           payment_method?: string | null
@@ -1138,6 +1140,7 @@ export type Database = {
           discount_amount?: number
           id?: string
           notes?: string | null
+          order_number?: number
           order_type?: Database["public"]["Enums"]["order_type"]
           payment_completed_at?: string | null
           payment_method?: string | null
@@ -1876,6 +1879,7 @@ export type Database = {
           delivery_lng: number | null
           id: string
           notes: string | null
+          order_number: number
           order_type: string
           provider_id: string
           status: string
@@ -1893,6 +1897,7 @@ export type Database = {
           delivery_lng?: number | null
           id?: string
           notes?: string | null
+          order_number?: number
           order_type?: string
           provider_id: string
           status?: string
@@ -1910,6 +1915,7 @@ export type Database = {
           delivery_lng?: number | null
           id?: string
           notes?: string | null
+          order_number?: number
           order_type?: string
           provider_id?: string
           status?: string
