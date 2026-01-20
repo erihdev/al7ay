@@ -243,8 +243,8 @@ const ProviderStoreContent = () => {
   } || {};
   
   const primaryColor = storeTheme.primary_color || '#2A9D8F';
-  const secondaryColor = storeTheme.secondary_color || '#264653';
-  const accentColor = storeTheme.accent_color || '#E9C46A';
+  const secondaryColor = storeTheme.secondary_color || '#1A535C';
+  const accentColor = storeTheme.accent_color || '#FFB703';
   const headerStyle = storeTheme.header_style || 'gradient';
   const headerImageUrl = storeTheme.header_image_url || '';
   const headerOverlayOpacity = storeTheme.header_overlay_opacity ?? 50;
