@@ -8,7 +8,7 @@ import { Header } from '@/components/layout/Header';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { LocationPermission } from '@/components/location/LocationPermission';
 import { CustomerNotificationPermission } from '@/components/notifications/CustomerNotificationPermission';
-import { LoyaltyCard } from '@/components/loyalty/LoyaltyCard';
+
 import { FloatingParticles } from '@/components/ui/InteractiveBackground';
 import { PageTransition, fadeInUp } from '@/components/ui/PageTransition';
 import { Card, CardContent } from '@/components/ui/card';
@@ -793,10 +793,6 @@ const Index = () => {
             </motion.div>
           )}
 
-          {/* Loyalty Card - At the bottom */}
-          <motion.div variants={fadeInUp}>
-            <LoyaltyCard />
-          </motion.div>
 
           {/* Bottom Padding for scroll */}
           <div className="h-4" />
