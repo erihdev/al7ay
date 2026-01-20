@@ -17,7 +17,7 @@ import {
   MapPin, 
   Phone, 
   Star,
-  ShoppingBag,
+  ShoppingCart,
   Coffee,
   Package,
   Plus,
@@ -42,6 +42,7 @@ import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
 import { ChatDialog } from '@/components/chat/ChatDialog';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface Product {
   id: string;
@@ -318,7 +319,7 @@ const ProviderStoreContent = () => {
     
     toast.success('تمت الإضافة للسلة', {
       description: `${product.name_ar} × ${qty}`,
-      icon: <ShoppingBag className="h-4 w-4" />,
+      icon: <ShoppingCart className="h-4 w-4" />,
     });
     setSelectedProduct(null);
     setQuantity(1);
@@ -508,42 +509,67 @@ const ProviderStoreContent = () => {
             </Button>
           </Link>
           
-          <div className="flex items-center gap-2">
-            {/* Chat Button */}
-            <ChatDialog 
-              providerId={provider.id} 
-              providerName={provider.business_name}
-              primaryColor={primaryColor}
-            />
-            {provider.phone && (
-              <a href={`tel:${provider.phone}`}>
-                <Button variant="ghost" size="icon" className="text-white/90 hover:bg-white/20 h-10 w-10 rounded-full">
-                  <Phone className="h-5 w-5" />
-                </Button>
-              </a>
-            )}
-            <ThemeToggle />
-            {/* Cart Button in Header */}
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="text-white/90 hover:bg-white/20 h-10 w-10 rounded-full relative"
-              onClick={() => {
-                const cartBtn = document.querySelector('[data-cart-trigger]') as HTMLButtonElement;
-                if (cartBtn) cartBtn.click();
-              }}
-            >
-              <ShoppingBag className="h-5 w-5" />
-              {totalItems > 0 && (
-                <span 
-                  className="absolute -top-1 -right-1 w-5 h-5 rounded-full text-[10px] font-bold flex items-center justify-center text-white"
-                  style={{ backgroundColor: accentColor }}
-                >
-                  {totalItems}
-                </span>
+          <TooltipProvider delayDuration={300}>
+            <div className="flex items-center gap-2">
+              {/* Chat Button */}
+              <ChatDialog 
+                providerId={provider.id} 
+                providerName={provider.business_name}
+                primaryColor={primaryColor}
+              />
+              {provider.phone && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <a href={`tel:${provider.phone}`}>
+                      <Button variant="ghost" size="icon" className="text-white/90 hover:bg-white/20 h-10 w-10 rounded-full">
+                        <Phone className="h-5 w-5" />
+                      </Button>
+                    </a>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="font-arabic">
+                    <p>اتصال</p>
+                  </TooltipContent>
+                </Tooltip>
               )}
-            </Button>
-          </div>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div>
+                    <ThemeToggle />
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="font-arabic">
+                  <p>تغيير المظهر</p>
+                </TooltipContent>
+              </Tooltip>
+              {/* Cart Button in Header */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="text-white/90 hover:bg-white/20 h-10 w-10 rounded-full relative"
+                    onClick={() => {
+                      const cartBtn = document.querySelector('[data-cart-trigger]') as HTMLButtonElement;
+                      if (cartBtn) cartBtn.click();
+                    }}
+                  >
+                    <ShoppingCart className="h-5 w-5" />
+                    {totalItems > 0 && (
+                      <span 
+                        className="absolute -top-1 -right-1 w-5 h-5 rounded-full text-[10px] font-bold flex items-center justify-center text-white"
+                        style={{ backgroundColor: accentColor }}
+                      >
+                        {totalItems}
+                      </span>
+                    )}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="font-arabic">
+                  <p>سلة المشتريات</p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
+          </TooltipProvider>
         </div>
 
         {/* Store Info */}
@@ -908,7 +934,7 @@ const ProviderStoreContent = () => {
                     style={{ backgroundColor: primaryColor }}
                     onClick={() => handleAddToCart(selectedProduct, quantity)}
                   >
-                    <ShoppingBag className="h-5 w-5 ml-2" />
+                    <ShoppingCart className="h-5 w-5 ml-2" />
                     إضافة للسلة - {(Number(selectedProduct.price) * quantity).toFixed(0)} ر.س
                   </Button>
                 </div>
