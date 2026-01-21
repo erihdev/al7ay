@@ -14,10 +14,9 @@ export function useAutoNotificationPermission(options: UseAutoNotificationPermis
 
   // Register Aimtell attributes AND alias for targeted notifications
   const registerAimtellAttributes = useCallback(() => {
-    if (hasRegisteredAttributes.current) return;
+    if (hasRegisteredAttributes.current) return false;
     
     if (typeof window._at?.track !== 'function') {
-      console.log('Aimtell SDK not ready for attribute registration');
       return false;
     }
 
@@ -39,25 +38,18 @@ export function useAutoNotificationPermission(options: UseAutoNotificationPermis
       // Register attributes for segmentation
       window._at.track('attribute', attributes);
       
-      // CRITICAL: Register alias matching exactly what the Push API expects
-      // Format: "provider_id==VALUE" or "customer_id==VALUE"
+      // Register alias matching exactly what the Push API expects
       if (options.providerId) {
-        const aliasValue = `provider_id==${options.providerId}`;
-        window._at.track('alias', aliasValue);
-        console.log('✅ Aimtell alias registered:', aliasValue);
+        window._at.track('alias', `provider_id==${options.providerId}`);
       }
       
       if (options.customerId) {
-        const aliasValue = `customer_id==${options.customerId}`;
-        window._at.track('alias', aliasValue);
-        console.log('✅ Aimtell alias registered:', aliasValue);
+        window._at.track('alias', `customer_id==${options.customerId}`);
       }
       
       hasRegisteredAttributes.current = true;
-      console.log('✅ Aimtell attributes and aliases registered successfully:', attributes);
       return true;
-    } catch (error) {
-      console.error('Error registering Aimtell attributes:', error);
+    } catch {
       return false;
     }
   }, [options.providerId, options.customerId]);
@@ -68,7 +60,6 @@ export function useAutoNotificationPermission(options: UseAutoNotificationPermis
     
     // Check if notifications are supported
     if (!('Notification' in window)) {
-      console.log('Notifications not supported');
       return;
     }
 
@@ -102,19 +93,14 @@ export function useAutoNotificationPermission(options: UseAutoNotificationPermis
           }
         } else if (Notification.permission === 'granted') {
           // Already granted, just register attributes
-          let registered = false;
           for (let attempt = 0; attempt < 5; attempt++) {
-            registered = registerAimtellAttributes();
+            const registered = registerAimtellAttributes();
             if (registered) break;
             await new Promise(resolve => setTimeout(resolve, 1000));
           }
-          
-          if (registered) {
-            console.log('✅ Notification system ready - attributes registered');
-          }
         }
-      } catch (error) {
-        console.error('Error in notification setup:', error);
+      } catch {
+        // Silent fail for notification setup
       }
     };
 

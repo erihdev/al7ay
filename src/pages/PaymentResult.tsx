@@ -17,9 +17,6 @@ export default function PaymentResult() {
     // Parse payment result from URL parameters
     const statusParam = searchParams.get('status');
     const orderIdParam = searchParams.get('order_id');
-    const transactionId = searchParams.get('transaction_id');
-
-    console.log('Payment result params:', { statusParam, orderIdParam, transactionId });
 
     setOrderId(orderIdParam);
 

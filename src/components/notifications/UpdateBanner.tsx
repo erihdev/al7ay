@@ -34,8 +34,8 @@ const playNotificationSound = () => {
     playNote(659.25, 0.12, 0.15);   // E5
     playNote(783.99, 0.24, 0.25);   // G5
     
-  } catch (error) {
-    console.log('Audio playback not supported');
+  } catch {
+    // Audio playback not supported - silent fail
   }
 };
 
