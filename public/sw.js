@@ -1,6 +1,6 @@
 /// <reference lib="webworker" />
 
-const CACHE_NAME = 'al-hayy-v4';
+const CACHE_NAME = 'al-hayy-v5';
 
 // Install event - skip waiting to activate immediately
 self.addEventListener('install', (event) => {
