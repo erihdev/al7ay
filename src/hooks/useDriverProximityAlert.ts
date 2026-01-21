@@ -1,5 +1,6 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { toast } from 'sonner';
+import { playProximitySound as playSound } from '@/utils/audioContext';
 
 interface UseDriverProximityAlertOptions {
   isNearby: boolean;
@@ -10,9 +11,9 @@ interface UseDriverProximityAlertOptions {
 
 // Proximity thresholds in meters
 const PROXIMITY_THRESHOLDS = {
-  VERY_CLOSE: 100,    // 100m - "السائق وصل تقريباً"
-  CLOSE: 300,         // 300m - "السائق على بعد دقائق"
-  NEARBY: 500,        // 500m - "السائق اقترب من موقعك"
+  VERY_CLOSE: 100,
+  CLOSE: 300,
+  NEARBY: 500,
 };
 
 export function useDriverProximityAlert({
@@ -21,67 +22,16 @@ export function useDriverProximityAlert({
   enabled = true,
   onNearby
 }: UseDriverProximityAlertOptions) {
-  const audioContextRef = useRef<AudioContext | null>(null);
   const hasAlertedNearbyRef = useRef(false);
   const hasAlertedCloseRef = useRef(false);
   const hasAlertedVeryCloseRef = useRef(false);
   const soundEnabledRef = useRef(true);
 
-  // Initialize audio context
-  const getAudioContext = useCallback(() => {
-    if (!audioContextRef.current) {
-      audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
-    }
-    return audioContextRef.current;
-  }, []);
-
-  // Play notification sound
+  // Play notification sound using centralized audio utility
   const playProximitySound = useCallback((type: 'nearby' | 'close' | 'arrived') => {
     if (!soundEnabledRef.current) return;
-
-    try {
-      const audioContext = getAudioContext();
-      const oscillator = audioContext.createOscillator();
-      const gainNode = audioContext.createGain();
-
-      oscillator.connect(gainNode);
-      gainNode.connect(audioContext.destination);
-
-      // Different sounds for different proximity levels
-      switch (type) {
-        case 'arrived':
-          // Celebratory sound - higher pitch, longer
-          oscillator.frequency.setValueAtTime(880, audioContext.currentTime); // A5
-          oscillator.frequency.setValueAtTime(1047, audioContext.currentTime + 0.1); // C6
-          oscillator.frequency.setValueAtTime(1319, audioContext.currentTime + 0.2); // E6
-          gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-          gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
-          oscillator.start(audioContext.currentTime);
-          oscillator.stop(audioContext.currentTime + 0.5);
-          break;
-        case 'close':
-          // Alert sound - two beeps
-          oscillator.frequency.setValueAtTime(659, audioContext.currentTime); // E5
-          gainNode.gain.setValueAtTime(0.25, audioContext.currentTime);
-          gainNode.gain.setValueAtTime(0.01, audioContext.currentTime + 0.1);
-          gainNode.gain.setValueAtTime(0.25, audioContext.currentTime + 0.15);
-          gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
-          oscillator.start(audioContext.currentTime);
-          oscillator.stop(audioContext.currentTime + 0.3);
-          break;
-        case 'nearby':
-        default:
-          // Simple notification - single beep
-          oscillator.frequency.setValueAtTime(523, audioContext.currentTime); // C5
-          gainNode.gain.setValueAtTime(0.2, audioContext.currentTime);
-          gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
-          oscillator.start(audioContext.currentTime);
-          oscillator.stop(audioContext.currentTime + 0.2);
-      }
-    } catch (error) {
-      console.error('Failed to play proximity sound:', error);
-    }
-  }, [getAudioContext]);
+    playSound(type);
+  }, []);
 
   // Show notification with toast
   const showProximityNotification = useCallback((type: 'nearby' | 'close' | 'arrived', distance: number) => {
@@ -144,15 +94,6 @@ export function useDriverProximityAlert({
   // Toggle sound
   const toggleSound = useCallback((enabled: boolean) => {
     soundEnabledRef.current = enabled;
-  }, []);
-
-  // Cleanup
-  useEffect(() => {
-    return () => {
-      if (audioContextRef.current) {
-        audioContextRef.current.close();
-      }
-    };
   }, []);
 
   return {

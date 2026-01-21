@@ -1,6 +1,5 @@
 // Custom notification sounds for each order status using Web Audio API
-
-let audioContext: AudioContext | null = null;
+import { getAudioContext as getSharedAudioContext } from '@/utils/audioContext';
 
 // Sound tone types
 export type SoundTone = 'classic' | 'modern' | 'gentle' | 'retro';
@@ -66,14 +65,9 @@ const getVolumeMultiplier = (): number => {
   return getNotificationVolume() / 100;
 };
 
+// Use centralized audio context
 function getAudioContext(): AudioContext {
-  if (!audioContext) {
-    audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-  }
-  if (audioContext.state === 'suspended') {
-    audioContext.resume();
-  }
-  return audioContext;
+  return getSharedAudioContext();
 }
 
 // Helper to play a note
