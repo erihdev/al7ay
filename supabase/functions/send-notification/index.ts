@@ -86,7 +86,7 @@ async function sendAimtellNotification(
 
   try {
     // Build payload for notification
-    // Reference: https://documentation.aimtell.com/hc/en-us/articles/tracking-aliases
+    // Reference: https://developers.aimtell.com/reference/api-send-push-notification
     const payload: Record<string, any> = {
       idSite: siteId,
       title: title,
@@ -96,24 +96,24 @@ async function sendAimtellNotification(
       icon: 'https://al7ay.lovable.app/icons/icon-192.png',
     };
     
-    // Add alias for targeting - use raw ID as registered with {"user": ID} in frontend
-    // The alias field should match what was registered via _at.track('alias', {user: ID})
+    // Add alias for targeting - format must be "user==VALUE" as per Aimtell docs
+    // Reference: https://developers.aimtell.com/reference/api-send-push-notification#option-3
     if (attributes) {
       if (attributes.provider_id) {
-        payload.alias = attributes.provider_id;
+        payload.alias = `user==${attributes.provider_id}`;
       } else if (attributes.customer_id) {
-        payload.alias = attributes.customer_id;
+        payload.alias = `user==${attributes.customer_id}`;
       }
     }
     
     console.log('Sending Aimtell notification with payload:', JSON.stringify(payload));
     
-    // Use X-Authorization-Api-Key header and /prod/subscriber/ endpoint for alias-based notifications
-    // Reference: https://documentation.aimtell.com/hc/en-us/articles/tracking-aliases
-    const response = await fetch('https://api.aimtell.com/prod/subscriber/', {
+    // Use X-Authorization header and /prod/push endpoint
+    // Reference: https://developers.aimtell.com/reference/api-send-push-notification
+    const response = await fetch('https://api.aimtell.com/prod/push', {
       method: 'POST',
       headers: {
-        'X-Authorization-Api-Key': apiKey,
+        'X-Authorization': apiKey,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(payload),
