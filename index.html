@@ -43,16 +43,20 @@
     <meta name="twitter:description" content="اكتشف مقدمي الخدمات المحلية في حيك واطلب خدماتهم بسهولة" />
     <meta name="twitter:image" content="/og-image.png" />
     <!-- Aimtell Push Notifications -->
-    <script>
+    <script type='text/javascript'>
       var _at = {};
-      _at.appKey = "cBsidYxAxZRSwfvwOpfLcz0mAQa9BKcl0Qjzmp2W";
+      window._at.track = window._at.track || function(){(window._at.track.q = window._at.track.q || []).push(arguments);};
+      _at.owner = '0564c121c0bd';
+      _at.idSite = '33878';
+      _at.attributes = {};
       (function() {
-        var at = document.createElement("script");
-        at.type = "text/javascript";
-        at.async = true;
-        at.src = "https://cdn.aimtell.com/trackpush/sdk.min.js";
-        var s = document.getElementsByTagName("script")[0];
-        s.parentNode.insertBefore(at, s);
+        var u='//cdn.aimtell.com/trackpush/';
+        var d=document, g=d.createElement('script'), s=d.getElementsByTagName('script')[0];
+        g.type='text/javascript';
+        g.async=true;
+        g.defer=true;
+        g.src=u+'trackpush.min.js';
+        s.parentNode.insertBefore(g,s);
       })();
     </script>
   </head>
