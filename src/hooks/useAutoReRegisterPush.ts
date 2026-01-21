@@ -1,6 +1,5 @@
-import { useEffect, useCallback, useRef } from 'react';
+import { useEffect, useCallback, useRef, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
 
 // VAPID public key for Web Push notifications
 const VAPID_PUBLIC_KEY = 'BLcfxrzMmUMPGMAMOKnw-0nJZ8oe3YkXUjPUW6uvmyFre4K8pNhzjkYZNC0cZIAhXFT4brgG_p7dZuSOPu7vm7U';
@@ -19,16 +18,32 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
 /**
  * This hook automatically checks and re-registers push notifications
  * if the subscription is invalid or missing.
+ * Uses direct Supabase auth instead of useAuth to avoid context issues.
  */
 export function useAutoReRegisterPush() {
-  const { user } = useAuth();
+  const [userId, setUserId] = useState<string | null>(null);
   const hasChecked = useRef(false);
 
+  // Get user ID directly from Supabase session
+  useEffect(() => {
+    const getUser = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user?.id) {
+          setUserId(session.user.id);
+        }
+      } catch (error) {
+        console.error('Error getting session for push:', error);
+      }
+    };
+    getUser();
+  }, []);
+
   const registerWebPush = useCallback(async (): Promise<boolean> => {
-    if (!user) return false;
+    if (!userId) return false;
 
     try {
-      console.log('🔄 Auto re-registering Web Push for user:', user.id);
+      console.log('🔄 Auto re-registering Web Push for user:', userId);
       
       if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
         console.log('❌ Push not supported');
@@ -47,7 +62,7 @@ export function useAutoReRegisterPush() {
       }
 
       // Delete any existing subscriptions for this user
-      await supabase.from('push_subscriptions').delete().eq('user_id', user.id);
+      await supabase.from('push_subscriptions').delete().eq('user_id', userId);
 
       // Create new subscription
       console.log('🔄 Creating new push subscription...');
@@ -61,7 +76,7 @@ export function useAutoReRegisterPush() {
       
       // Save to database
       const { error } = await supabase.from('push_subscriptions').upsert({
-        user_id: user.id,
+        user_id: userId,
         endpoint: subscriptionJson.endpoint!,
         p256dh: subscriptionJson.keys!.p256dh,
         auth: subscriptionJson.keys!.auth,
@@ -80,10 +95,10 @@ export function useAutoReRegisterPush() {
       console.error('❌ Auto re-registration failed:', error);
       return false;
     }
-  }, [user]);
+  }, [userId]);
 
   const checkAndReRegister = useCallback(async () => {
-    if (!user || hasChecked.current) return;
+    if (!userId || hasChecked.current) return;
     hasChecked.current = true;
 
     // Only proceed if notifications are granted
@@ -96,7 +111,7 @@ export function useAutoReRegisterPush() {
       const { data: subscriptions } = await supabase
         .from('push_subscriptions')
         .select('id, endpoint')
-        .eq('user_id', user.id);
+        .eq('user_id', userId);
 
       // If no subscriptions exist, register
       if (!subscriptions || subscriptions.length === 0) {
@@ -128,7 +143,7 @@ export function useAutoReRegisterPush() {
     } catch (error) {
       console.error('Error checking subscriptions:', error);
     }
-  }, [user, registerWebPush]);
+  }, [userId, registerWebPush]);
 
   useEffect(() => {
     // Delay check to ensure page is fully loaded
