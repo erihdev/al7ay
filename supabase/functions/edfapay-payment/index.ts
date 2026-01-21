@@ -131,17 +131,6 @@ serve(async (req) => {
     }
     formData.append('hash', hash);
 
-    console.log('Initiating EdfaPay payment:', { 
-      pendingOrderId, 
-      amount: orderAmount, 
-      transactionId,
-      firstName,
-      lastName,
-      clientIp,
-      paymentMethod: paymentMethod || 'not specified',
-      sendingApplePay: paymentMethod === 'apple_pay'
-    });
-
     // Make request to EdfaPay
     const response = await fetch(edfaPayUrl, {
       method: 'POST',
@@ -150,10 +139,7 @@ serve(async (req) => {
 
     const result = await response.json();
 
-    console.log('EdfaPay response:', result);
-
     if (result.result === 'ERROR' || !response.ok) {
-      console.error('EdfaPay error:', result);
       return new Response(
         JSON.stringify({ 
           error: 'Payment initiation failed',
@@ -163,8 +149,6 @@ serve(async (req) => {
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
-
-    console.log('EdfaPay payment initiated successfully:', result);
 
     return new Response(
       JSON.stringify({
@@ -177,8 +161,7 @@ serve(async (req) => {
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
-  } catch (error) {
-    console.error('Payment error:', error);
+  } catch {
     return new Response(
       JSON.stringify({ 
         error: 'Internal server error',

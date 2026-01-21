@@ -29,20 +29,16 @@ export function CustomerNotificationPermission({ customerId }: CustomerNotificat
 
   const registerAimtellAttributes = () => {
     if (typeof window._at?.track !== 'function') {
-      console.log('Aimtell SDK not ready');
       return false;
     }
 
     try {
       if (customerId) {
         window._at.track('attribute', { customer_id: customerId });
-        // Use {"user": ID} format as per Aimtell documentation
         window._at.track('alias', { user: customerId });
-        console.log('✅ Customer registered for notifications:', customerId);
       }
       return true;
-    } catch (error) {
-      console.error('Error registering Aimtell:', error);
+    } catch {
       return false;
     }
   };

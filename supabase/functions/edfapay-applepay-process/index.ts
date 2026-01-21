@@ -128,14 +128,6 @@ serve(async (req) => {
     formData.append('apple_pay_token', applePayToken);
     formData.append('hash', hash);
 
-    console.log('Processing Apple Pay payment:', { 
-      pendingOrderId, 
-      amount: orderAmount, 
-      transactionId,
-      firstName,
-      lastName
-    });
-
     // Make request to EdfaPay
     const response = await fetch(edfaPayUrl, {
       method: 'POST',
@@ -144,10 +136,7 @@ serve(async (req) => {
 
     const result = await response.json();
 
-    console.log('EdfaPay Apple Pay response:', result);
-
     if (result.result === 'ERROR' || !response.ok) {
-      console.error('EdfaPay Apple Pay error:', result);
       return new Response(
         JSON.stringify({ 
           success: false,

@@ -43,10 +43,7 @@ export function useAutoReRegisterPush() {
     if (!userId) return false;
 
     try {
-      console.log('🔄 Auto re-registering Web Push for user:', userId);
-      
       if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-        console.log('❌ Push not supported');
         return false;
       }
 
@@ -57,7 +54,6 @@ export function useAutoReRegisterPush() {
       let subscription = await registration.pushManager.getSubscription();
       
       if (subscription) {
-        console.log('🔄 Unsubscribing old subscription...');
         await subscription.unsubscribe();
       }
 
@@ -65,7 +61,6 @@ export function useAutoReRegisterPush() {
       await supabase.from('push_subscriptions').delete().eq('user_id', userId);
 
       // Create new subscription
-      console.log('🔄 Creating new push subscription...');
       const applicationServerKey = urlBase64ToUint8Array(VAPID_PUBLIC_KEY);
       subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
@@ -84,15 +79,8 @@ export function useAutoReRegisterPush() {
         onConflict: 'user_id,endpoint',
       });
 
-      if (error) {
-        console.error('❌ Error saving subscription:', error);
-        return false;
-      }
-
-      console.log('✅ Auto re-registration complete');
-      return true;
-    } catch (error) {
-      console.error('❌ Auto re-registration failed:', error);
+      return !error;
+    } catch {
       return false;
     }
   }, [userId]);
@@ -115,7 +103,6 @@ export function useAutoReRegisterPush() {
 
       // If no subscriptions exist, register
       if (!subscriptions || subscriptions.length === 0) {
-        console.log('📭 No subscriptions found, auto-registering...');
         await registerWebPush();
         return;
       }
@@ -126,7 +113,6 @@ export function useAutoReRegisterPush() {
         const browserSub = await registration.pushManager.getSubscription();
         
         if (!browserSub) {
-          console.log('📭 No browser subscription, auto-registering...');
           await registerWebPush();
           return;
         }
@@ -136,12 +122,11 @@ export function useAutoReRegisterPush() {
         const hasMatch = subscriptions.some(s => s.endpoint === browserEndpoint);
         
         if (!hasMatch) {
-          console.log('⚠️ Browser subscription mismatch, auto-registering...');
           await registerWebPush();
         }
       }
-    } catch (error) {
-      console.error('Error checking subscriptions:', error);
+    } catch {
+      // Silent fail
     }
   }, [userId, registerWebPush]);
 

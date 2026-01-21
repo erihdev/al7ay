@@ -42,24 +42,15 @@ export function useAimtellAttributes(attributes: Record<string, string>) {
             // Register attributes using Aimtell SDK
             window._at.track('attribute', newAttributes);
             
-            // CRITICAL: Register alias using "user" field as per Aimtell documentation
-            // Reference: https://documentation.aimtell.com/hc/en-us/articles/tracking-aliases
-            // The alias should be the raw ID, used with {"user": "ID"} format
+            // Register alias using "user" field as per Aimtell documentation
             for (const [key, value] of Object.entries(newAttributes)) {
-              // Use the format that Aimtell expects: {"user": "ID"}
               window._at.track('alias', { user: value });
-              console.log('✅ Aimtell alias registered with user:', value);
               registeredRef.current.add(`${key}:${value}`);
             }
-            
-            console.log('✅ Aimtell attributes registered:', newAttributes);
-          } catch (error) {
-            console.error('Error registering Aimtell attributes:', error);
+          } catch {
+            // Silent fail - SDK may not be ready
           }
         }
-      } else {
-        // SDK not loaded yet, retry after a delay
-        console.log('Aimtell SDK not ready, will retry...');
       }
     };
 
@@ -102,7 +93,6 @@ export function useAimtellTags(tags: string[]) {
         if (newTags.length > 0) {
           try {
             // Convert tags to attributes format for Aimtell
-            // e.g., "provider:abc123" becomes { provider_id: "abc123" }
             const attributes: Record<string, string> = {};
             newTags.forEach(tag => {
               const [type, id] = tag.split(':');
@@ -116,14 +106,10 @@ export function useAimtellTags(tags: string[]) {
             }
             
             newTags.forEach(tag => registeredRef.current.add(tag));
-            console.log('Aimtell tags registered as attributes:', attributes);
-          } catch (error) {
-            console.error('Error registering Aimtell tags:', error);
+          } catch {
+            // Silent fail - SDK may not be ready
           }
         }
-      } else {
-        // SDK not loaded yet, retry after a delay
-        console.log('Aimtell SDK not ready, retrying...');
       }
     };
 
