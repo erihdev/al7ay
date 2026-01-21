@@ -107,11 +107,12 @@ async function sendAimtellNotification(
     
     console.log('Sending Aimtell notification with payload:', JSON.stringify(payload));
     
-    // Use X-Authorization-Api-Key header as per Aimtell documentation
+    // Use X-Authorization header as per official Aimtell documentation
+    // Reference: https://developers.aimtell.com/reference/api-send-push-notification
     const response = await fetch('https://api.aimtell.com/prod/push', {
       method: 'POST',
       headers: {
-        'X-Authorization-Api-Key': apiKey,
+        'X-Authorization': apiKey,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(payload),
