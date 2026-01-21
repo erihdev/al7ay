@@ -138,7 +138,9 @@ export function ProviderNotificationPermission({ providerId }: ProviderNotificat
 
     try {
       window._at.track('attribute', { provider_id: providerId });
-      window._at.track('alias', `provider_id==${providerId}`);
+      // Use {user: ID} format as per Aimtell documentation
+      // Backend will target with "user==ID" format
+      window._at.track('alias', { user: providerId });
       console.log('✅ Aimtell registered for provider:', providerId);
       return true;
     } catch (error) {
