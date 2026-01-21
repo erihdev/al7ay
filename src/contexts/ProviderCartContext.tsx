@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import { createContext, useContext, useState, ReactNode, useEffect, useMemo, useCallback } from 'react';
 
 export interface CartItem {
   id: string;
@@ -37,8 +37,8 @@ export function ProviderCartProvider({ children }: { children: ReactNode }) {
         setItems(parsed.items || []);
         setProviderId(parsed.providerId || null);
         setProviderName(parsed.providerName || null);
-      } catch (e) {
-        console.error('Error loading cart:', e);
+      } catch {
+        // Silent fail for parse errors
       }
     }
   }, []);
@@ -52,13 +52,15 @@ export function ProviderCartProvider({ children }: { children: ReactNode }) {
     }));
   }, [items, providerId, providerName]);
 
-  const addItem = (item: Omit<CartItem, 'id'>, newProviderId: string, newProviderName: string) => {
+  const addItem = useCallback((item: Omit<CartItem, 'id'>, newProviderId: string, newProviderName: string) => {
     // If cart has items from different provider, clear it first
-    if (providerId && providerId !== newProviderId) {
-      setItems([]);
-    }
+    setProviderId((currentProviderId) => {
+      if (currentProviderId && currentProviderId !== newProviderId) {
+        setItems([]);
+      }
+      return newProviderId;
+    });
     
-    setProviderId(newProviderId);
     setProviderName(newProviderName);
 
     setItems(prev => {
@@ -72,9 +74,9 @@ export function ProviderCartProvider({ children }: { children: ReactNode }) {
       }
       return [...prev, { ...item, id: crypto.randomUUID() }];
     });
-  };
+  }, []);
 
-  const removeItem = (id: string) => {
+  const removeItem = useCallback((id: string) => {
     setItems(prev => {
       const newItems = prev.filter(i => i.id !== id);
       if (newItems.length === 0) {
@@ -83,27 +85,43 @@ export function ProviderCartProvider({ children }: { children: ReactNode }) {
       }
       return newItems;
     });
-  };
+  }, []);
 
-  const updateQuantity = (id: string, quantity: number) => {
+  const updateQuantity = useCallback((id: string, quantity: number) => {
     if (quantity <= 0) {
-      removeItem(id);
+      setItems(prev => {
+        const newItems = prev.filter(i => i.id !== id);
+        if (newItems.length === 0) {
+          setProviderId(null);
+          setProviderName(null);
+        }
+        return newItems;
+      });
       return;
     }
     setItems(prev => prev.map(i => i.id === id ? { ...i, quantity } : i));
-  };
+  }, []);
 
-  const clearCart = () => {
+  const clearCart = useCallback(() => {
     setItems([]);
     setProviderId(null);
     setProviderName(null);
-  };
+  }, []);
 
-  const totalItems = items.reduce((sum, i) => sum + i.quantity, 0);
-  const totalPrice = items.reduce((sum, i) => sum + (i.price * i.quantity), 0);
+  // Memoize calculated values
+  const totalItems = useMemo(
+    () => items.reduce((sum, i) => sum + i.quantity, 0),
+    [items]
+  );
+  
+  const totalPrice = useMemo(
+    () => items.reduce((sum, i) => sum + (i.price * i.quantity), 0),
+    [items]
+  );
 
-  return (
-    <ProviderCartContext.Provider value={{
+  // Memoize context value to prevent unnecessary re-renders
+  const value = useMemo(
+    () => ({
       items,
       providerId,
       providerName,
@@ -113,7 +131,12 @@ export function ProviderCartProvider({ children }: { children: ReactNode }) {
       clearCart,
       totalItems,
       totalPrice
-    }}>
+    }),
+    [items, providerId, providerName, addItem, removeItem, updateQuantity, clearCart, totalItems, totalPrice]
+  );
+
+  return (
+    <ProviderCartContext.Provider value={value}>
       {children}
     </ProviderCartContext.Provider>
   );

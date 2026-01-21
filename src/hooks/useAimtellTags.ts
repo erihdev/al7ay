@@ -12,17 +12,26 @@ declare global {
   }
 }
 
+// Smart retry intervals with exponential backoff
+const RETRY_INTERVALS = [500, 1500, 4000, 10000];
+
 /**
  * Hook to register Aimtell attributes AND aliases for targeted push notifications
- * The alias format MUST match exactly what send-notification uses: "provider_id==VALUE"
+ * Uses smart retry with exponential backoff instead of fixed intervals
  */
 export function useAimtellAttributes(attributes: Record<string, string>) {
   const registeredRef = useRef<Set<string>>(new Set());
+  const retryCountRef = useRef(0);
 
   useEffect(() => {
     if (!attributes || Object.keys(attributes).length === 0) return;
 
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+    let isUnmounted = false;
+
     const registerAttributes = () => {
+      if (isUnmounted) return;
+
       // Check if Aimtell SDK is loaded
       if (typeof window._at?.track === 'function') {
         // Filter only new attributes that haven't been registered
@@ -47,52 +56,57 @@ export function useAimtellAttributes(attributes: Record<string, string>) {
               window._at.track('alias', { user: value });
               registeredRef.current.add(`${key}:${value}`);
             }
+            // Success - reset retry count
+            retryCountRef.current = 0;
+            return;
           } catch {
             // Silent fail - SDK may not be ready
           }
+        } else {
+          // All attributes already registered
+          return;
         }
+      }
+
+      // Schedule retry with exponential backoff
+      if (retryCountRef.current < RETRY_INTERVALS.length) {
+        const delay = RETRY_INTERVALS[retryCountRef.current];
+        retryCountRef.current++;
+        timeoutId = setTimeout(registerAttributes, delay);
       }
     };
 
     // Try immediately
     registerAttributes();
 
-    // Also retry after SDK might have loaded - multiple times to ensure registration
-    const retryTimeout1 = setTimeout(registerAttributes, 1000);
-    const retryTimeout2 = setTimeout(registerAttributes, 2500);
-    const retryTimeout3 = setTimeout(registerAttributes, 5000);
-    const retryTimeout4 = setTimeout(registerAttributes, 10000);
-    const retryTimeout5 = setTimeout(registerAttributes, 15000);
-
     return () => {
-      clearTimeout(retryTimeout1);
-      clearTimeout(retryTimeout2);
-      clearTimeout(retryTimeout3);
-      clearTimeout(retryTimeout4);
-      clearTimeout(retryTimeout5);
+      isUnmounted = true;
+      if (timeoutId) clearTimeout(timeoutId);
     };
   }, [attributes]);
 }
 
 /**
  * Hook to register Aimtell tags for targeted push notifications (legacy support)
- * Tags are used to send notifications to specific users (providers/customers)
  */
 export function useAimtellTags(tags: string[]) {
   const registeredRef = useRef<Set<string>>(new Set());
+  const retryCountRef = useRef(0);
 
   useEffect(() => {
     if (!tags || tags.length === 0) return;
 
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+    let isUnmounted = false;
+
     const registerTags = () => {
-      // Check if Aimtell SDK is loaded
+      if (isUnmounted) return;
+
       if (typeof window._at?.track === 'function') {
-        // Filter only new tags that haven't been registered
         const newTags = tags.filter(tag => !registeredRef.current.has(tag));
         
         if (newTags.length > 0) {
           try {
-            // Convert tags to attributes format for Aimtell
             const attributes: Record<string, string> = {};
             newTags.forEach(tag => {
               const [type, id] = tag.split(':');
@@ -106,27 +120,29 @@ export function useAimtellTags(tags: string[]) {
             }
             
             newTags.forEach(tag => registeredRef.current.add(tag));
+            retryCountRef.current = 0;
+            return;
           } catch {
-            // Silent fail - SDK may not be ready
+            // Silent fail
           }
+        } else {
+          return;
         }
+      }
+
+      // Retry with backoff
+      if (retryCountRef.current < RETRY_INTERVALS.length) {
+        const delay = RETRY_INTERVALS[retryCountRef.current];
+        retryCountRef.current++;
+        timeoutId = setTimeout(registerTags, delay);
       }
     };
 
-    // Try immediately
     registerTags();
 
-    // Also retry after SDK might have loaded
-    const retryTimeout1 = setTimeout(registerTags, 1000);
-    const retryTimeout2 = setTimeout(registerTags, 2500);
-    const retryTimeout3 = setTimeout(registerTags, 5000);
-    const retryTimeout4 = setTimeout(registerTags, 10000);
-
     return () => {
-      clearTimeout(retryTimeout1);
-      clearTimeout(retryTimeout2);
-      clearTimeout(retryTimeout3);
-      clearTimeout(retryTimeout4);
+      isUnmounted = true;
+      if (timeoutId) clearTimeout(timeoutId);
     };
   }, [tags]);
 }

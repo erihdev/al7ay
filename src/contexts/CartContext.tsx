@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 import { useCartReminder } from '@/hooks/useCartReminder';
 
 export interface SelectedOption {
@@ -36,10 +36,15 @@ function CartProviderInner({ children }: { children: React.ReactNode }) {
     return saved ? JSON.parse(saved) : [];
   });
 
-  const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
-  const totalAmount = items.reduce(
-    (sum, item) => sum + item.price * item.quantity,
-    0
+  // Memoize calculated values
+  const totalItems = useMemo(
+    () => items.reduce((sum, item) => sum + item.quantity, 0),
+    [items]
+  );
+  
+  const totalAmount = useMemo(
+    () => items.reduce((sum, item) => sum + item.price * item.quantity, 0),
+    [items]
   );
 
   // Cart reminder hook
@@ -49,7 +54,7 @@ function CartProviderInner({ children }: { children: React.ReactNode }) {
     localStorage.setItem('cart', JSON.stringify(items));
   }, [items]);
 
-  const addItem = (item: Omit<CartItem, 'quantity'>) => {
+  const addItem = useCallback((item: Omit<CartItem, 'quantity'>) => {
     setItems((prev) => {
       const existing = prev.find((i) => i.id === item.id);
       if (existing) {
@@ -59,39 +64,43 @@ function CartProviderInner({ children }: { children: React.ReactNode }) {
       }
       return [...prev, { ...item, quantity: 1 }];
     });
-  };
+  }, []);
 
-  const removeItem = (id: string) => {
+  const removeItem = useCallback((id: string) => {
     setItems((prev) => prev.filter((i) => i.id !== id));
-  };
+  }, []);
 
-  const updateQuantity = (id: string, quantity: number) => {
+  const updateQuantity = useCallback((id: string, quantity: number) => {
     if (quantity <= 0) {
-      removeItem(id);
+      setItems((prev) => prev.filter((i) => i.id !== id));
       return;
     }
     setItems((prev) =>
       prev.map((i) => (i.id === id ? { ...i, quantity } : i))
     );
-  };
+  }, []);
 
-  const clearCart = () => {
+  const clearCart = useCallback(() => {
     setItems([]);
     resetReminder();
-  };
+  }, [resetReminder]);
+
+  // Memoize context value to prevent unnecessary re-renders
+  const value = useMemo(
+    () => ({
+      items,
+      addItem,
+      removeItem,
+      updateQuantity,
+      clearCart,
+      totalItems,
+      totalAmount,
+    }),
+    [items, addItem, removeItem, updateQuantity, clearCart, totalItems, totalAmount]
+  );
 
   return (
-    <CartContext.Provider
-      value={{
-        items,
-        addItem,
-        removeItem,
-        updateQuantity,
-        clearCart,
-        totalItems,
-        totalAmount,
-      }}
-    >
+    <CartContext.Provider value={value}>
       {children}
     </CartContext.Provider>
   );
