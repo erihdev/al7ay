@@ -216,10 +216,10 @@ const Cart = () => {
             </div>
             <h2 className="text-xl font-bold mb-2">السلة فارغة</h2>
             <p className="text-muted-foreground mb-6">أضف بعض المنتجات للبدء</p>
-            <Link to="/">
+            <Link to="/app">
               <Button size="lg" className="font-arabic gap-2 rounded-full px-8">
                 <Sparkles className="h-5 w-5" />
-                تصفح القائمة
+                تصفح المتاجر
               </Button>
             </Link>
           </motion.div>
