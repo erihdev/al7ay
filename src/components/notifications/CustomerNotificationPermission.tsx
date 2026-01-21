@@ -36,7 +36,8 @@ export function CustomerNotificationPermission({ customerId }: CustomerNotificat
     try {
       if (customerId) {
         window._at.track('attribute', { customer_id: customerId });
-        window._at.track('alias', `customer_id==${customerId}`);
+        // Use {"user": ID} format as per Aimtell documentation
+        window._at.track('alias', { user: customerId });
         console.log('✅ Customer registered for notifications:', customerId);
       }
       return true;

@@ -42,12 +42,13 @@ export function useAimtellAttributes(attributes: Record<string, string>) {
             // Register attributes using Aimtell SDK
             window._at.track('attribute', newAttributes);
             
-            // CRITICAL: Also register alias with EXACT format used in send-notification
-            // Format: "provider_id==VALUE" or "customer_id==VALUE"
+            // CRITICAL: Register alias using "user" field as per Aimtell documentation
+            // Reference: https://documentation.aimtell.com/hc/en-us/articles/tracking-aliases
+            // The alias should be the raw ID, used with {"user": "ID"} format
             for (const [key, value] of Object.entries(newAttributes)) {
-              const aliasValue = `${key}==${value}`;
-              window._at.track('alias', aliasValue);
-              console.log('✅ Aimtell alias registered:', aliasValue);
+              // Use the format that Aimtell expects: {"user": "ID"}
+              window._at.track('alias', { user: value });
+              console.log('✅ Aimtell alias registered with user:', value);
               registeredRef.current.add(`${key}:${value}`);
             }
             
