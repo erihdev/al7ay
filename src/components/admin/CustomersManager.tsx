@@ -50,12 +50,14 @@ import {
   User,
   Plus,
   Minus,
-  Coins
+  Coins,
+  Eye
 } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
+import { CustomerDetailsDialog } from './CustomerDetailsDialog';
 
 interface Customer {
   id: string;
@@ -81,6 +83,7 @@ export const CustomersManager = () => {
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
   const [customerToDelete, setCustomerToDelete] = useState<Customer | null>(null);
   const [pointsCustomer, setPointsCustomer] = useState<Customer | null>(null);
+  const [detailsCustomer, setDetailsCustomer] = useState<Customer | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isSavingPoints, setIsSavingPoints] = useState(false);
@@ -583,11 +586,20 @@ export const CustomersManager = () => {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setDetailsCustomer(customer)}
+                            title="عرض التفاصيل"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
                           <Button
                             variant="ghost"
                             size="sm"
                             onClick={() => handleEdit(customer)}
+                            title="تعديل"
                           >
                             <Edit className="h-4 w-4" />
                           </Button>
@@ -596,6 +608,7 @@ export const CustomersManager = () => {
                             size="sm"
                             className="text-destructive hover:text-destructive"
                             onClick={() => setCustomerToDelete(customer)}
+                            title="حذف"
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -790,6 +803,13 @@ export const CustomersManager = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Customer Details Dialog */}
+      <CustomerDetailsDialog
+        customer={detailsCustomer}
+        open={!!detailsCustomer}
+        onOpenChange={(open) => !open && setDetailsCustomer(null)}
+      />
     </div>
   );
 };
