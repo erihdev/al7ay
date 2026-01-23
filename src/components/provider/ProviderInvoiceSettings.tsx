@@ -545,7 +545,7 @@ export function ProviderInvoiceSettings({ providerId, providerName, isEditable =
               <div className="border-t border-b py-3 my-3 text-sm">
                 <div className="flex justify-between mb-1">
                   <span>رقم الفاتورة:</span>
-                  <span className="font-mono">INV-2025-001234</span>
+                  <span className="font-mono">INV-2026-001234</span>
                 </div>
                 <div className="flex justify-between">
                   <span>التاريخ:</span>

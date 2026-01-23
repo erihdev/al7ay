@@ -9,7 +9,6 @@ import { CartProvider } from "@/contexts/CartContext";
 import { LocationProvider } from "@/contexts/LocationContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
-import { UpdateNotification } from "@/components/notifications/UpdateNotification";
 import { UpdateBanner } from "@/components/notifications/UpdateBanner";
 import { CustomerOrderNotifications } from "@/components/notifications/CustomerOrderNotifications";
 import { AppFooter } from "@/components/layout/AppFooter";

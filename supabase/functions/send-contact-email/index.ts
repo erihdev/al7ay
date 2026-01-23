@@ -168,7 +168,7 @@ const handler = async (req: Request): Promise<Response> => {
               <p>مع تحيات،<br>فريق منصة الحي</p>
             </div>
             <div class="footer">
-              <p>© 2025 منصة الحي. جميع الحقوق محفوظة.</p>
+              <p>© 2026 منصة الحي. جميع الحقوق محفوظة.</p>
             </div>
           </div>
         </body>
