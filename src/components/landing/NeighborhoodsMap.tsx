@@ -34,6 +34,8 @@ const NeighborhoodsMap = () => {
   const map = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
   const [selectedNeighborhood, setSelectedNeighborhood] = useState<Neighborhood | null>(null);
+  const [mapReady, setMapReady] = useState(false);
+  const initialBoundsSet = useRef(false);
 
   const { data: mapboxToken, isLoading: tokenLoading } = useMapboxToken();
   const { data: providerRatings } = useAllProviderRatings();
@@ -78,40 +80,51 @@ const NeighborhoodsMap = () => {
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
       style: 'mapbox://styles/mapbox/light-v11',
-      center: [46.6753, 24.7136], // Riyadh center
-      zoom: 10,
-      attributionControl: false
+      center: [42.55, 17.33], // Al-Aliya village center
+      zoom: 12,
+      attributionControl: false,
+      fadeDuration: 0, // Disable fade animations for smoother loading
     });
 
     map.current.addControl(new mapboxgl.NavigationControl(), 'top-left');
+
+    // Mark map as ready after style loads
+    map.current.on('load', () => {
+      setMapReady(true);
+    });
 
     return () => {
       markersRef.current.forEach(marker => marker.remove());
       map.current?.remove();
       map.current = null;
+      setMapReady(false);
+      initialBoundsSet.current = false;
     };
   }, [mapboxToken]);
 
   useEffect(() => {
-    if (!map.current || !neighborhoods) return;
+    if (!map.current || !mapReady || !neighborhoods) return;
 
     // Clear existing markers
     markersRef.current.forEach(marker => marker.remove());
     markersRef.current = [];
 
-    // Add markers for each neighborhood
-    neighborhoods.forEach((neighborhood) => {
+    // Add markers for each neighborhood with staggered animation
+    neighborhoods.forEach((neighborhood, index) => {
       const el = document.createElement('div');
       el.className = 'neighborhood-marker';
+      el.style.opacity = '0';
+      el.style.transform = 'scale(0.8)';
+      el.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
       el.innerHTML = `
         <div style="
-          background: linear-gradient(135deg, #1B4332, #2D6A4F);
-          color: white;
+          background: linear-gradient(135deg, hsl(43, 75%, 48%), hsl(45, 85%, 52%));
+          color: hsl(30, 25%, 8%);
           padding: 8px 12px;
           border-radius: 20px;
           font-size: 12px;
           font-weight: bold;
-          box-shadow: 0 4px 12px rgba(27, 67, 50, 0.3);
+          box-shadow: 0 4px 12px hsla(43, 75%, 48%, 0.3);
           cursor: pointer;
           display: flex;
           align-items: center;
@@ -122,7 +135,7 @@ const NeighborhoodsMap = () => {
           <span style="font-size: 14px;">📍</span>
           ${neighborhood.name}
           <span style="
-            background: rgba(255,255,255,0.2);
+            background: hsla(0, 0%, 100%, 0.3);
             padding: 2px 6px;
             border-radius: 10px;
             font-size: 10px;
@@ -132,22 +145,43 @@ const NeighborhoodsMap = () => {
 
       el.addEventListener('click', () => {
         setSelectedNeighborhood(neighborhood);
+        map.current?.flyTo({
+          center: [neighborhood.lng, neighborhood.lat],
+          zoom: 14,
+          duration: 800,
+          essential: true
+        });
       });
 
-      const marker = new mapboxgl.Marker(el)
+      const marker = new mapboxgl.Marker({ element: el, anchor: 'center' })
         .setLngLat([neighborhood.lng, neighborhood.lat])
         .addTo(map.current!);
+
+      // Staggered fade-in animation
+      setTimeout(() => {
+        el.style.opacity = '1';
+        el.style.transform = 'scale(1)';
+      }, index * 100);
 
       markersRef.current.push(marker);
     });
 
-    // Fit bounds to show all markers
-    if (neighborhoods.length > 0) {
+    // Fit bounds only once on initial load
+    if (neighborhoods.length > 0 && !initialBoundsSet.current) {
+      initialBoundsSet.current = true;
       const bounds = new mapboxgl.LngLatBounds();
       neighborhoods.forEach(n => bounds.extend([n.lng, n.lat]));
-      map.current.fitBounds(bounds, { padding: 50 });
+      
+      // Use a slight delay to ensure smooth initial render
+      setTimeout(() => {
+        map.current?.fitBounds(bounds, { 
+          padding: 60,
+          duration: 1000,
+          maxZoom: 14
+        });
+      }, 300);
     }
-  }, [neighborhoods]);
+  }, [neighborhoods, mapReady]);
 
   if (tokenLoading || isLoading) {
     return (
@@ -188,7 +222,16 @@ const NeighborhoodsMap = () => {
         <div className="grid lg:grid-cols-3 gap-6">
           {/* Map */}
           <div className="lg:col-span-2">
-            <Card className="overflow-hidden">
+            <Card className="overflow-hidden relative">
+              {/* Loading overlay */}
+              {!mapReady && (
+                <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-10">
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                    <span className="text-sm text-muted-foreground">جاري تحميل الخريطة...</span>
+                  </div>
+                </div>
+              )}
               <div 
                 ref={mapContainer} 
                 className="h-96 lg:h-[500px] w-full"
