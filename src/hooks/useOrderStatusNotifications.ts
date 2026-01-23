@@ -5,13 +5,12 @@ import { toast } from 'sonner';
 import { playStatusSound } from '@/utils/orderSounds';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 
+// Only show toast notifications for actionable statuses to reduce spam
 const statusMessages: Record<string, { message: string; emoji: string }> = {
-  pending: { message: 'تم استلام طلبك', emoji: '📦' },
-  preparing: { message: 'جاري تحضير طلبك', emoji: '☕' },
   ready: { message: 'طلبك جاهز للاستلام!', emoji: '✅' },
-  out_for_delivery: { message: 'طلبك في الطريق إليك', emoji: '🚗' },
-  completed: { message: 'تم إكمال طلبك', emoji: '🎉' },
-  cancelled: { message: 'تم إلغاء طلبك', emoji: '❌' },
+  out_for_delivery: { message: 'طلبك في الطريق', emoji: '🚗' },
+  completed: { message: 'تم التسليم', emoji: '🎉' },
+  cancelled: { message: 'تم إلغاء الطلب', emoji: '❌' },
 };
 
 export function useOrderStatusNotifications() {

@@ -6,13 +6,12 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Status messages for customer notifications
-// Only these statuses will trigger push notifications to reduce notification spam
+// Simplified status messages - short and to the point
 const statusMessages: Record<string, string> = {
-  ready: 'طلبك جاهز للاستلام! ✅',
-  out_for_delivery: 'طلبك في الطريق إليك 🚗',
-  completed: 'تم تسليم طلبك بنجاح 🎉',
-  cancelled: 'تم إلغاء طلبك ❌',
+  ready: 'طلبك جاهز ✅',
+  out_for_delivery: 'طلبك في الطريق 🚗',
+  completed: 'تم التسليم 🎉',
+  cancelled: 'تم الإلغاء ❌',
 };
 
 // Statuses that should NOT trigger push notifications to customers

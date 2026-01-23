@@ -10,13 +10,12 @@ interface StatusInfo {
   emoji: string;
 }
 
+// Only show toast notifications for actionable statuses to reduce notification spam
 const statusMessages: Record<string, StatusInfo> = {
-  pending: { message: 'تم استلام طلبك', emoji: '📦' },
-  preparing: { message: 'جاري تحضير طلبك الآن', emoji: '☕' },
   ready: { message: 'طلبك جاهز للاستلام!', emoji: '✅' },
-  out_for_delivery: { message: 'طلبك في الطريق إليك', emoji: '🚗' },
-  completed: { message: 'تم تسليم طلبك بنجاح', emoji: '🎉' },
-  cancelled: { message: 'تم إلغاء طلبك', emoji: '❌' },
+  out_for_delivery: { message: 'طلبك في الطريق', emoji: '🚗' },
+  completed: { message: 'تم التسليم', emoji: '🎉' },
+  cancelled: { message: 'تم إلغاء الطلب', emoji: '❌' },
 };
 
 export function useProviderOrderStatusNotifications() {
@@ -78,20 +77,11 @@ export function useProviderOrderStatusNotifications() {
               // Play status-specific sound
               playNotificationSound(newStatus);
               
-              // Show toast notification
-              toast.success(statusInfo.message, {
-                description: `${statusInfo.emoji} من ${providerName} - رقم الطلب: #${(payload.new as any)?.order_number || (payload.new?.id as string)?.slice(0, 8)}`,
-                duration: 10000,
+              // Show unified toast notification with provider name
+              toast.success(`${providerName} - ${statusInfo.message}`, {
+                description: `${statusInfo.emoji} طلب #${(payload.new as any)?.order_number || (payload.new?.id as string)?.slice(0, 8)}`,
+                duration: 8000,
               });
-
-              // Try to show browser notification if supported
-              if ('Notification' in window && Notification.permission === 'granted') {
-                new Notification(`${providerName} - ${statusInfo.message}`, {
-                  body: `${statusInfo.emoji} طلبك من ${providerName}`,
-                  icon: '/favicon.png',
-                  tag: `order-${payload.new?.id}`,
-                });
-              }
             }
           }
         }
