@@ -47,8 +47,12 @@ import {
   Crown,
   Loader2,
   AlertTriangle,
-  User
+  User,
+  Plus,
+  Minus,
+  Coins
 } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
@@ -76,13 +80,22 @@ export const CustomersManager = () => {
   const [tierFilter, setTierFilter] = useState<TierFilter>('all');
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
   const [customerToDelete, setCustomerToDelete] = useState<Customer | null>(null);
+  const [pointsCustomer, setPointsCustomer] = useState<Customer | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isSavingPoints, setIsSavingPoints] = useState(false);
   
   // Form state for editing
   const [editForm, setEditForm] = useState({
     full_name: '',
     phone: ''
+  });
+
+  // Form state for points adjustment
+  const [pointsForm, setPointsForm] = useState({
+    amount: 0,
+    operation: 'add' as 'add' | 'subtract',
+    reason: ''
   });
 
   // Fetch customers with their stats
@@ -247,12 +260,91 @@ export const CustomersManager = () => {
     }
   });
 
+  // Adjust points mutation
+  const adjustPointsMutation = useMutation({
+    mutationFn: async ({ userId, amount, operation, reason }: { 
+      userId: string; 
+      amount: number; 
+      operation: 'add' | 'subtract';
+      reason: string;
+    }) => {
+      setIsSavingPoints(true);
+      
+      const pointsChange = operation === 'add' ? amount : -amount;
+      
+      // Get current loyalty points
+      const { data: currentLoyalty, error: fetchError } = await supabase
+        .from('loyalty_points')
+        .select('total_points, lifetime_points')
+        .eq('user_id', userId)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      const newTotal = Math.max(0, (currentLoyalty?.total_points || 0) + pointsChange);
+      const newLifetime = operation === 'add' 
+        ? (currentLoyalty?.lifetime_points || 0) + amount 
+        : currentLoyalty?.lifetime_points || 0;
+
+      // Update loyalty points
+      const { error: updateError } = await supabase
+        .from('loyalty_points')
+        .update({
+          total_points: newTotal,
+          lifetime_points: newLifetime,
+          updated_at: new Date().toISOString()
+        })
+        .eq('user_id', userId);
+
+      if (updateError) throw updateError;
+
+      // Record in points history
+      const { error: historyError } = await supabase
+        .from('points_history')
+        .insert({
+          user_id: userId,
+          points_change: pointsChange,
+          transaction_type: operation === 'add' ? 'admin_add' : 'admin_subtract',
+          description: reason || (operation === 'add' ? 'إضافة نقاط من الإدارة' : 'خصم نقاط من الإدارة')
+        });
+
+      if (historyError) console.error('History error:', historyError);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-customers'] });
+      toast.success('تم تعديل نقاط الولاء بنجاح');
+      setPointsCustomer(null);
+      setPointsForm({ amount: 0, operation: 'add', reason: '' });
+      setIsSavingPoints(false);
+    },
+    onError: (error: any) => {
+      console.error('Points adjustment error:', error);
+      toast.error('حدث خطأ أثناء تعديل النقاط');
+      setIsSavingPoints(false);
+    }
+  });
+
   const handleEdit = (customer: Customer) => {
     setEditForm({
       full_name: customer.full_name || '',
       phone: customer.phone || ''
     });
     setEditingCustomer(customer);
+  };
+
+  const handleOpenPointsDialog = (customer: Customer) => {
+    setPointsForm({ amount: 0, operation: 'add', reason: '' });
+    setPointsCustomer(customer);
+  };
+
+  const handleSavePoints = () => {
+    if (!pointsCustomer || pointsForm.amount <= 0) return;
+    adjustPointsMutation.mutate({
+      userId: pointsCustomer.user_id,
+      amount: pointsForm.amount,
+      operation: pointsForm.operation,
+      reason: pointsForm.reason
+    });
   };
 
   const handleSave = () => {
@@ -475,7 +567,13 @@ export const CustomersManager = () => {
                       <TableCell>
                         <div className="flex flex-col items-start gap-1">
                           {getTierBadge(customer.tier)}
-                          <span className="text-xs text-muted-foreground">{customer.loyalty_points} نقطة</span>
+                          <button 
+                            onClick={() => handleOpenPointsDialog(customer)}
+                            className="text-xs text-primary hover:underline flex items-center gap-1"
+                          >
+                            <Coins className="h-3 w-3" />
+                            {customer.loyalty_points} نقطة
+                          </button>
                         </div>
                       </TableCell>
                       <TableCell>
@@ -549,6 +647,105 @@ export const CustomersManager = () => {
                 </>
               ) : (
                 'حفظ التغييرات'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Points Adjustment Dialog */}
+      <Dialog open={!!pointsCustomer} onOpenChange={() => setPointsCustomer(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Coins className="h-5 w-5 text-primary" />
+              تعديل نقاط الولاء
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="p-3 bg-muted rounded-lg">
+              <p className="text-sm text-muted-foreground">العميل:</p>
+              <p className="font-medium">{pointsCustomer?.full_name || pointsCustomer?.email}</p>
+              <p className="text-sm">النقاط الحالية: <strong className="text-primary">{pointsCustomer?.loyalty_points}</strong></p>
+            </div>
+            
+            <div className="space-y-2">
+              <Label>نوع العملية</Label>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant={pointsForm.operation === 'add' ? 'default' : 'outline'}
+                  className={pointsForm.operation === 'add' ? 'bg-green-600 hover:bg-green-700 flex-1' : 'flex-1'}
+                  onClick={() => setPointsForm({ ...pointsForm, operation: 'add' })}
+                >
+                  <Plus className="h-4 w-4 ml-1" />
+                  إضافة نقاط
+                </Button>
+                <Button
+                  type="button"
+                  variant={pointsForm.operation === 'subtract' ? 'default' : 'outline'}
+                  className={pointsForm.operation === 'subtract' ? 'bg-red-600 hover:bg-red-700 flex-1' : 'flex-1'}
+                  onClick={() => setPointsForm({ ...pointsForm, operation: 'subtract' })}
+                >
+                  <Minus className="h-4 w-4 ml-1" />
+                  خصم نقاط
+                </Button>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>عدد النقاط</Label>
+              <Input
+                type="number"
+                min="1"
+                value={pointsForm.amount || ''}
+                onChange={(e) => setPointsForm({ ...pointsForm, amount: parseInt(e.target.value) || 0 })}
+                placeholder="أدخل عدد النقاط"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>السبب (اختياري)</Label>
+              <Textarea
+                value={pointsForm.reason}
+                onChange={(e) => setPointsForm({ ...pointsForm, reason: e.target.value })}
+                placeholder="سبب التعديل..."
+                rows={2}
+              />
+            </div>
+
+            {pointsForm.amount > 0 && (
+              <div className={`p-3 rounded-lg ${pointsForm.operation === 'add' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
+                <p className="text-sm font-medium">
+                  {pointsForm.operation === 'add' ? 'سيتم إضافة' : 'سيتم خصم'} {pointsForm.amount} نقطة
+                </p>
+                <p className="text-sm">
+                  الرصيد الجديد: {pointsForm.operation === 'add' 
+                    ? (pointsCustomer?.loyalty_points || 0) + pointsForm.amount 
+                    : Math.max(0, (pointsCustomer?.loyalty_points || 0) - pointsForm.amount)} نقطة
+                </p>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPointsCustomer(null)}>
+              إلغاء
+            </Button>
+            <Button 
+              onClick={handleSavePoints} 
+              disabled={isSavingPoints || pointsForm.amount <= 0}
+              className={pointsForm.operation === 'add' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'}
+            >
+              {isSavingPoints ? (
+                <>
+                  <Loader2 className="h-4 w-4 ml-2 animate-spin" />
+                  جاري الحفظ...
+                </>
+              ) : (
+                <>
+                  {pointsForm.operation === 'add' ? <Plus className="h-4 w-4 ml-1" /> : <Minus className="h-4 w-4 ml-1" />}
+                  {pointsForm.operation === 'add' ? 'إضافة النقاط' : 'خصم النقاط'}
+                </>
               )}
             </Button>
           </DialogFooter>
