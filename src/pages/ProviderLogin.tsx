@@ -282,7 +282,7 @@ const ProviderLogin = () => {
 
       {/* Footer */}
       <footer className="py-4 text-center text-sm text-muted-foreground">
-        © 2024 منصة الحي. جميع الحقوق محفوظة.
+        © 2026 منصة الحي. جميع الحقوق محفوظة.
       </footer>
     </div>
   );

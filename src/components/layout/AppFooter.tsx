@@ -1,10 +1,11 @@
+import { forwardRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { CURRENT_APP_VERSION } from '@/hooks/useAppVersion';
 
 // Pages that have BottomNav - don't show footer on these
 const pagesWithBottomNav = ['/app', '/cart', '/orders', '/profile', '/favorites', '/my-store-orders', '/product'];
 
-export function AppFooter() {
+export const AppFooter = forwardRef<HTMLElement>((_, ref) => {
   const location = useLocation();
   
   // Don't render footer on pages with BottomNav to avoid overlap
@@ -15,8 +16,10 @@ export function AppFooter() {
   }
 
   return (
-    <footer className="py-2 text-center text-xs text-muted-foreground/60">
+    <footer ref={ref} className="py-2 text-center text-xs text-muted-foreground/60">
       <span>v{CURRENT_APP_VERSION}</span>
     </footer>
   );
-}
+});
+
+AppFooter.displayName = 'AppFooter';
