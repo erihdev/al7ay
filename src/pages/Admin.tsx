@@ -74,6 +74,7 @@ import { ProviderContractsManager } from '@/components/admin/ProviderContractsMa
 import EdfaPayFeaturesManager from '@/components/admin/EdfaPayFeaturesManager';
 import { PasswordChangeForm } from '@/components/admin/PasswordChangeForm';
 import InvoiceSettingsManager from '@/components/admin/InvoiceSettingsManager';
+import { CustomersManager } from '@/components/admin/CustomersManager';
 import { InteractiveBackground } from '@/components/ui/InteractiveBackground';
 import { useUpdateDeliveryLocation } from '@/hooks/useOrderTracking';
 import { useOrderNotifications } from '@/hooks/useOrderNotifications';
@@ -112,6 +113,14 @@ const TAB_CATEGORIES = [
       { value: 'referrals', label: 'الإحالات', icon: UserPlus },
       { value: 'loyalty-settings', label: 'إعدادات الولاء', icon: Settings },
       { value: 'coupons', label: 'الكوبونات', icon: Ticket },
+    ],
+  },
+  {
+    id: 'customers',
+    label: 'العملاء',
+    icon: Users,
+    tabs: [
+      { value: 'customers', label: 'جميع العملاء', icon: Users },
     ],
   },
   {
@@ -514,6 +523,11 @@ const Admin = () => {
               {/* Employees Tab */}
               <TabsContent value="employees">
                 <EmployeesManager />
+              </TabsContent>
+
+              {/* Customers Tab */}
+              <TabsContent value="customers">
+                <CustomersManager />
               </TabsContent>
 
               {/* Orders Tab */}
