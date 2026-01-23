@@ -2749,6 +2749,7 @@ export type Database = {
           created_at: string
           description_ar: string | null
           description_en: string | null
+          discount_percent: number | null
           duration_days: number
           features: Json | null
           id: string
@@ -2764,6 +2765,7 @@ export type Database = {
           created_at?: string
           description_ar?: string | null
           description_en?: string | null
+          discount_percent?: number | null
           duration_days: number
           features?: Json | null
           id?: string
@@ -2779,6 +2781,7 @@ export type Database = {
           created_at?: string
           description_ar?: string | null
           description_en?: string | null
+          discount_percent?: number | null
           duration_days?: number
           features?: Json | null
           id?: string

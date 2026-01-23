@@ -43,6 +43,7 @@ interface SubscriptionPlan {
   features: string[];
   sort_order: number;
   created_at: string;
+  discount_percent: number;
 }
 
 export function SubscriptionPlansManager() {
@@ -58,6 +59,7 @@ export function SubscriptionPlansManager() {
     price: 0,
     is_trial: false,
     features: '',
+    discount_percent: 0,
   });
 
   // Fetch plans
@@ -71,7 +73,8 @@ export function SubscriptionPlansManager() {
       if (error) throw error;
       return data.map(plan => ({
         ...plan,
-        features: Array.isArray(plan.features) ? plan.features : []
+        features: Array.isArray(plan.features) ? plan.features : [],
+        discount_percent: (plan as any).discount_percent || 0
       })) as SubscriptionPlan[];
     },
   });
@@ -88,6 +91,7 @@ export function SubscriptionPlansManager() {
         price: data.price,
         is_trial: data.is_trial,
         features: data.features.split('\n').filter((f: string) => f.trim()),
+        discount_percent: data.discount_percent || 0,
       };
 
       if (editingPlan) {
@@ -158,6 +162,7 @@ export function SubscriptionPlansManager() {
       price: 0,
       is_trial: false,
       features: '',
+      discount_percent: 0,
     });
   };
 
@@ -172,6 +177,7 @@ export function SubscriptionPlansManager() {
       price: plan.price,
       is_trial: plan.is_trial,
       features: plan.features.join('\n'),
+      discount_percent: plan.discount_percent || 0,
     });
     setIsDialogOpen(true);
   };
@@ -266,12 +272,25 @@ export function SubscriptionPlansManager() {
                 </div>
               </div>
 
-              <div className="flex items-center gap-2">
-                <Switch
-                  checked={formData.is_trial}
-                  onCheckedChange={(checked) => setFormData({ ...formData, is_trial: checked })}
-                />
-                <Label>فترة تجريبية مجانية</Label>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex items-center gap-2">
+                  <Switch
+                    checked={formData.is_trial}
+                    onCheckedChange={(checked) => setFormData({ ...formData, is_trial: checked })}
+                  />
+                  <Label>فترة تجريبية مجانية</Label>
+                </div>
+                <div className="space-y-2">
+                  <Label>نسبة الخصم %</Label>
+                  <Input
+                    type="number"
+                    value={formData.discount_percent}
+                    onChange={(e) => setFormData({ ...formData, discount_percent: parseInt(e.target.value) || 0 })}
+                    min={0}
+                    max={100}
+                    placeholder="0"
+                  />
+                </div>
               </div>
 
               <div className="space-y-2">
@@ -341,6 +360,12 @@ export function SubscriptionPlansManager() {
                     <Badge className="bg-green-500/10 text-green-600 mb-3">
                       <Gift className="h-3 w-3 ml-1" />
                       تجربة مجانية
+                    </Badge>
+                  )}
+
+                  {plan.discount_percent > 0 && (
+                    <Badge className="bg-orange-500/10 text-orange-600 mb-3">
+                      خصم {plan.discount_percent}%
                     </Badge>
                   )}
 
