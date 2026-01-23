@@ -40,7 +40,8 @@ import {
   Wallet,
   Cog,
   Lock,
-  Receipt
+  Receipt,
+  Bell
 } from 'lucide-react';
 import { CouponManager } from '@/components/admin/CouponManager';
 import { SalesReports } from '@/components/admin/SalesReports';
@@ -75,6 +76,7 @@ import EdfaPayFeaturesManager from '@/components/admin/EdfaPayFeaturesManager';
 import { PasswordChangeForm } from '@/components/admin/PasswordChangeForm';
 import InvoiceSettingsManager from '@/components/admin/InvoiceSettingsManager';
 import { CustomersManager } from '@/components/admin/CustomersManager';
+import { NotificationsLogManager } from '@/components/admin/NotificationsLogManager';
 import { InteractiveBackground } from '@/components/ui/InteractiveBackground';
 import { useUpdateDeliveryLocation } from '@/hooks/useOrderTracking';
 import { useOrderNotifications } from '@/hooks/useOrderNotifications';
@@ -121,6 +123,7 @@ const TAB_CATEGORIES = [
     icon: Users,
     tabs: [
       { value: 'customers', label: 'جميع العملاء', icon: Users },
+      { value: 'notifications', label: 'الإشعارات', icon: Bell },
     ],
   },
   {
@@ -528,6 +531,11 @@ const Admin = () => {
               {/* Customers Tab */}
               <TabsContent value="customers">
                 <CustomersManager />
+              </TabsContent>
+
+              {/* Notifications Tab */}
+              <TabsContent value="notifications">
+                <NotificationsLogManager />
               </TabsContent>
 
               {/* Orders Tab */}
