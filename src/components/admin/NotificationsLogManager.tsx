@@ -13,10 +13,11 @@ import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Bell, Users, User, CheckCircle, XCircle, Clock, Filter, CalendarIcon, X, FileText } from 'lucide-react';
+import { Bell, Users, User, CheckCircle, XCircle, Clock, Filter, CalendarIcon, X, FileText, BarChart3, Eye, MousePointerClick } from 'lucide-react';
 import { BulkNotificationDialog } from './BulkNotificationDialog';
 import { NotificationTemplatesManager } from './NotificationTemplatesManager';
 import { ScheduledNotificationsList } from './ScheduledNotificationsList';
+import { NotificationStats } from './NotificationStats';
 import { cn } from '@/lib/utils';
 
 export function NotificationsLogManager() {
@@ -64,7 +65,22 @@ export function NotificationsLogManager() {
       
       const { data, error } = await query;
       if (error) throw error;
-      return data || [];
+      
+      // Cast to include new columns
+      return (data || []) as Array<{
+        id: string;
+        title: string;
+        body: string;
+        notification_type: string;
+        is_bulk: boolean;
+        bulk_recipients_count: number | null;
+        status: string;
+        sent_via: string[] | null;
+        created_at: string;
+        opened_count?: number;
+        clicked_count?: number;
+        delivered_count?: number;
+      }>;
     }
   });
 
@@ -116,8 +132,12 @@ export function NotificationsLogManager() {
         <BulkNotificationDialog totalCustomers={customersCount || 0} />
       </div>
 
-      <Tabs defaultValue="log" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+      <Tabs defaultValue="stats" className="w-full">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="stats" className="gap-2">
+            <BarChart3 className="h-4 w-4" />
+            الإحصائيات
+          </TabsTrigger>
           <TabsTrigger value="log" className="gap-2">
             <Bell className="h-4 w-4" />
             السجل
@@ -131,6 +151,10 @@ export function NotificationsLogManager() {
             القوالب
           </TabsTrigger>
         </TabsList>
+        
+        <TabsContent value="stats" className="mt-4">
+          <NotificationStats />
+        </TabsContent>
 
         <TabsContent value="log" className="mt-4 space-y-4">
           {/* Filters */}
@@ -333,6 +357,19 @@ export function NotificationsLogManager() {
                                     <span>عبر: {log.sent_via.join(', ')}</span>
                                   )}
                                 </div>
+                                {/* Performance metrics */}
+                                {(log.opened_count > 0 || log.clicked_count > 0) && (
+                                  <div className="flex items-center gap-3 mt-1 text-xs">
+                                    <span className="flex items-center gap-1 text-purple-600">
+                                      <Eye className="h-3 w-3" />
+                                      {log.opened_count || 0} فتح
+                                    </span>
+                                    <span className="flex items-center gap-1 text-orange-600">
+                                      <MousePointerClick className="h-3 w-3" />
+                                      {log.clicked_count || 0} نقرة
+                                    </span>
+                                  </div>
+                                )}
                               </div>
                             </div>
                             <div>
