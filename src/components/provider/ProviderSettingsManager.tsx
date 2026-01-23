@@ -474,17 +474,17 @@ const ProviderSettingsManager = ({ provider, onUpdate }: ProviderSettingsManager
         </CardContent>
       </Card>
 
-      {/* Payment & Verification Card */}
-      <Card className="border-primary/20">
+      {/* Bank Information Card - Always shown */}
+      <Card>
         <CardHeader className="py-3 px-4">
           <div className="flex items-center justify-between">
             <div>
               <CardTitle className="font-arabic flex items-center gap-2 text-base">
-                <CreditCard className="h-4 w-4 text-primary" />
-                بيانات الدفع والتوثيق
+                <Building2 className="h-4 w-4" />
+                معلومات الحساب البنكي
               </CardTitle>
               <CardDescription className="font-arabic mt-0.5 text-xs">
-                مطلوبة لربط متجرك بنظام الدفع
+                لاستلام أرباحك الأسبوعية
               </CardDescription>
             </div>
             {provider.is_payment_verified ? (
@@ -495,262 +495,25 @@ const ProviderSettingsManager = ({ provider, onUpdate }: ProviderSettingsManager
             ) : (
               <Badge variant="outline" className="text-amber-600 border-amber-300 gap-1 text-[10px]">
                 <AlertCircle className="h-2.5 w-2.5" />
-                غير موثق
+                في الانتظار
               </Badge>
             )}
           </div>
         </CardHeader>
         <CardContent className="px-4 pb-4 pt-0">
-          <form onSubmit={handlePaymentSubmit} className="space-y-4">
-            {/* Payment Method Selection - Compact */}
+          <form onSubmit={handlePaymentSubmit} className="space-y-3">
+            {/* Freelance Certificate */}
             <div className="space-y-2">
-              <Label className="font-arabic font-medium text-sm">طريقة استقبال المدفوعات *</Label>
-              <div className="grid grid-cols-2 gap-2">
-                <div
-                  className={`p-2.5 border-2 rounded-lg cursor-pointer transition-all ${
-                    paymentData.payment_method === 'platform_managed'
-                      ? 'border-primary bg-primary/5'
-                      : 'border-muted hover:border-primary/50'
-                  }`}
-                  onClick={() => setPaymentData({ ...paymentData, payment_method: 'platform_managed' })}
-                >
-                  <div className="flex items-center gap-2 mb-1">
-                    <div className={`w-3.5 h-3.5 rounded-full border-2 ${
-                      paymentData.payment_method === 'platform_managed' ? 'border-primary bg-primary' : 'border-muted-foreground'
-                    }`}>
-                      {paymentData.payment_method === 'platform_managed' && (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <div className="w-1 h-1 rounded-full bg-white" />
-                        </div>
-                      )}
-                    </div>
-                    <span className="font-medium font-arabic text-xs">من خلال المنصة</span>
-                  </div>
-                  <p className="text-[11px] text-muted-foreground font-arabic pr-5 leading-tight">
-                    تحويل أرباحك أسبوعياً
-                  </p>
-                </div>
-                <div
-                  className={`p-2.5 border-2 rounded-lg cursor-pointer transition-all ${
-                    paymentData.payment_method === 'direct_gateway'
-                      ? 'border-primary bg-primary/5'
-                      : 'border-muted hover:border-primary/50'
-                  }`}
-                  onClick={() => setPaymentData({ ...paymentData, payment_method: 'direct_gateway' })}
-                >
-                  <div className="flex items-center gap-2 mb-1">
-                    <div className={`w-3.5 h-3.5 rounded-full border-2 ${
-                      paymentData.payment_method === 'direct_gateway' ? 'border-primary bg-primary' : 'border-muted-foreground'
-                    }`}>
-                      {paymentData.payment_method === 'direct_gateway' && (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <div className="w-1 h-1 rounded-full bg-white" />
-                        </div>
-                      )}
-                    </div>
-                    <span className="font-medium font-arabic text-xs">ادفع باي مباشر</span>
-                  </div>
-                  <p className="text-[11px] text-muted-foreground font-arabic pr-5 leading-tight">
-                    ربط حسابك مباشرة
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Direct Gateway Instructions - Compact */}
-            {paymentData.payment_method === 'direct_gateway' && (
-              <div className="space-y-3 p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-900">
-                <div className="flex items-center justify-between">
-                  <h4 className="font-medium font-arabic text-blue-800 dark:text-blue-300 text-sm">إعدادات ربط ادفع باي:</h4>
-                  <Link 
-                    to="/edfapay-guide" 
-                    className="text-[10px] text-primary hover:underline flex items-center gap-0.5"
-                  >
-                    <ExternalLink className="h-2.5 w-2.5" />
-                    دليل التسجيل
-                  </Link>
-                </div>
-                
-                {/* Merchant ID & Secret Key for testing - Compact */}
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="space-y-1">
-                    <Label className="font-arabic text-xs flex items-center gap-1">
-                      <CreditCard className="h-2.5 w-2.5" />
-                      Merchant ID
-                    </Label>
-                    <Input
-                      value={paymentData.merchant_id}
-                      onChange={(e) => setPaymentData({ ...paymentData, merchant_id: e.target.value })}
-                      placeholder="معرف التاجر"
-                      dir="ltr"
-                      className="font-mono text-xs h-8"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="font-arabic text-xs flex items-center gap-1">
-                      <CreditCard className="h-2.5 w-2.5" />
-                      Secret Key
-                    </Label>
-                    <Input
-                      type="password"
-                      value={paymentData.secret_key}
-                      onChange={(e) => setPaymentData({ ...paymentData, secret_key: e.target.value })}
-                      placeholder="المفتاح السري"
-                      dir="ltr"
-                      className="font-mono text-xs h-8"
-                    />
-                  </div>
-                </div>
-
-                {/* Test Connection Button - Compact */}
-                <div className="space-y-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full font-arabic h-8 text-xs"
-                    onClick={async () => {
-                      if (!paymentData.merchant_id || !paymentData.secret_key) {
-                        toast.error('يرجى إدخال Merchant ID و Secret Key');
-                        return;
-                      }
-                      
-                      setIsTesting(true);
-                      setTestResult(null);
-                      
-                      try {
-                        const response = await fetch(
-                          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/verify-edfapay-credentials`,
-                          {
-                            method: 'POST',
-                            headers: {
-                              'Content-Type': 'application/json',
-                              'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`
-                            },
-                            body: JSON.stringify({
-                              providerId: provider.id,
-                              merchantId: paymentData.merchant_id,
-                              secretKey: paymentData.secret_key,
-                              providerEmail: provider.email,
-                              providerName: provider.business_name
-                            })
-                          }
-                        );
-                        
-                        const result = await response.json();
-                        
-                        if (result.success) {
-                          setTestResult({
-                            success: true,
-                            message: result.message || 'تم التحقق والحفظ بنجاح!',
-                            merchantName: result.merchantName || provider.business_name,
-                            status: 'active'
-                          });
-                          toast.success('تم التحقق والحفظ بنجاح!');
-                        } else {
-                          setTestResult({
-                            success: false,
-                            message: result.message || 'بيانات الربط غير صحيحة'
-                          });
-                          toast.error('فشل التحقق');
-                        }
-                      } catch (error) {
-                        console.error('Error verifying EdfaPay:', error);
-                        setTestResult({
-                          success: false,
-                          message: 'خطأ في الاتصال'
-                        });
-                        toast.error('خطأ في الاختبار');
-                      } finally {
-                        setIsTesting(false);
-                      }
-                    }}
-                    disabled={isTesting || !paymentData.merchant_id || !paymentData.secret_key}
-                  >
-                    {isTesting ? (
-                      <>
-                        <Loader2 className="h-3 w-3 animate-spin ml-1" />
-                        جاري الاختبار...
-                      </>
-                    ) : (
-                      <>
-                        <Zap className="h-3 w-3 ml-1" />
-                        اختبار وحفظ
-                      </>
-                    )}
-                  </Button>
-
-                  {/* Test Result Display - Compact */}
-                  {testResult && (
-                    <div className={`p-2 rounded-lg border text-xs ${
-                      testResult.success 
-                        ? 'bg-green-50 dark:bg-green-950/30 border-green-200' 
-                        : 'bg-red-50 dark:bg-red-950/30 border-red-200'
-                    }`}>
-                      <div className="flex items-center gap-1.5">
-                        {testResult.success ? (
-                          <CheckCircle className="h-3.5 w-3.5 text-green-600" />
-                        ) : (
-                          <AlertCircle className="h-3.5 w-3.5 text-red-600" />
-                        )}
-                        <span className={testResult.success ? 'text-green-700' : 'text-red-700'}>
-                          {testResult.message}
-                        </span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                <div className="space-y-1 pt-2 border-t border-blue-200 dark:border-blue-800">
-                  <Label className="font-arabic text-xs">رابط موافقة ادفع باي (اختياري)</Label>
-                  <Input
-                    value={paymentData.gateway_approval_url}
-                    onChange={(e) => setPaymentData({ ...paymentData, gateway_approval_url: e.target.value })}
-                    placeholder="رابط أو رقم الحساب"
-                    dir="ltr"
-                    className="h-8 text-xs"
-                  />
-                </div>
-              </div>
-            )}
-
-            {/* Commission Rate Display - Compact */}
-            <div className="bg-muted/50 rounded-lg p-3 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                  <Percent className="h-4 w-4 text-primary" />
-                </div>
-                <div>
-                  <p className="font-medium font-arabic text-sm">نسبة المنصة</p>
-                  <p className="text-[11px] text-muted-foreground font-arabic">
-                    {paymentData.payment_method === 'platform_managed' ? 'تخصم أسبوعياً' : 'تحول بعد كل طلب'}
-                  </p>
-                </div>
-              </div>
-              <span className="text-xl font-bold text-primary">{provider.commission_rate}%</span>
-            </div>
-
-            {/* Freelance Certificate Upload */}
-            <div className="space-y-3">
-              <Label className="font-arabic flex items-center gap-2">
-                <FileText className="h-4 w-4" />
+              <Label className="font-arabic flex items-center gap-2 text-sm">
+                <FileText className="h-3.5 w-3.5" />
                 شهادة العمل الحر *
               </Label>
-              <div className="border-2 border-dashed rounded-lg p-4 text-center">
+              <div className="border-2 border-dashed rounded-lg p-3 text-center">
                 {certificatePreview ? (
-                  <div className="space-y-3">
-                    <div className="relative inline-block">
-                      {certificatePreview.includes('data:image') || certificatePreview.includes('.jpg') || certificatePreview.includes('.png') || certificatePreview.includes('.jpeg') ? (
-                        <img 
-                          src={certificatePreview} 
-                          alt="شهادة العمل الحر" 
-                          className="max-h-40 rounded-lg mx-auto"
-                        />
-                      ) : (
-                        <div className="flex items-center gap-2 bg-muted rounded-lg p-3">
-                          <FileText className="h-8 w-8 text-primary" />
-                          <span className="font-arabic text-sm">تم رفع الشهادة</span>
-                        </div>
-                      )}
+                  <div className="flex items-center justify-center gap-3">
+                    <div className="flex items-center gap-2 bg-muted rounded-lg p-2">
+                      <FileText className="h-5 w-5 text-primary" />
+                      <span className="font-arabic text-xs">تم رفع الشهادة</span>
                     </div>
                     <input
                       type="file"
@@ -760,21 +523,19 @@ const ProviderSettingsManager = ({ provider, onUpdate }: ProviderSettingsManager
                       className="hidden"
                     />
                     <label htmlFor="certificate-upload">
-                      <Button type="button" variant="outline" size="sm" asChild>
+                      <Button type="button" variant="outline" size="sm" className="text-xs h-8" asChild>
                         <span className="cursor-pointer font-arabic">
-                          <Upload className="h-4 w-4 ml-2" />
-                          تغيير الشهادة
+                          <Upload className="h-3 w-3 ml-1" />
+                          تغيير
                         </span>
                       </Button>
                     </label>
                   </div>
                 ) : (
-                  <div className="space-y-3">
-                    <div className="w-16 h-16 rounded-full bg-muted mx-auto flex items-center justify-center">
-                      <FileText className="h-8 w-8 text-muted-foreground" />
-                    </div>
-                    <p className="text-sm text-muted-foreground font-arabic">
-                      ارفق صورة شهادة العمل الحر الصادرة من منصة العمل الحر
+                  <div className="space-y-2">
+                    <FileText className="h-8 w-8 text-muted-foreground mx-auto" />
+                    <p className="text-xs text-muted-foreground font-arabic">
+                      ارفق صورة شهادة العمل الحر
                     </p>
                     <input
                       type="file"
@@ -784,9 +545,9 @@ const ProviderSettingsManager = ({ provider, onUpdate }: ProviderSettingsManager
                       className="hidden"
                     />
                     <label htmlFor="certificate-upload">
-                      <Button type="button" variant="outline" asChild>
+                      <Button type="button" variant="outline" size="sm" className="text-xs h-8" asChild>
                         <span className="cursor-pointer font-arabic">
-                          <Upload className="h-4 w-4 ml-2" />
+                          <Upload className="h-3 w-3 ml-1" />
                           رفع الشهادة
                         </span>
                       </Button>
@@ -796,69 +557,268 @@ const ProviderSettingsManager = ({ provider, onUpdate }: ProviderSettingsManager
               </div>
             </div>
 
-            {/* Bank Information */}
-            <div className="space-y-4">
-              <Label className="font-arabic flex items-center gap-2">
-                <Building2 className="h-4 w-4" />
-                معلومات الحساب البنكي
-              </Label>
-              <div className="grid md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label className="font-arabic text-sm text-muted-foreground">اسم البنك *</Label>
-                  <Input
-                    value={paymentData.bank_name}
-                    onChange={(e) => setPaymentData({ ...paymentData, bank_name: e.target.value })}
-                    placeholder="مثال: البنك الأهلي"
-                    className="font-arabic"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="font-arabic text-sm text-muted-foreground">رقم الآيبان (IBAN) *</Label>
-                  <Input
-                    value={paymentData.iban}
-                    onChange={(e) => setPaymentData({ ...paymentData, iban: e.target.value })}
-                    placeholder="SA0000000000000000000000"
-                    dir="ltr"
-                    className="font-mono"
-                  />
-                </div>
+            {/* Bank Details */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="font-arabic text-xs">اسم البنك *</Label>
+                <Input
+                  value={paymentData.bank_name}
+                  onChange={(e) => setPaymentData({ ...paymentData, bank_name: e.target.value })}
+                  placeholder="البنك الأهلي"
+                  className="font-arabic h-9 text-sm"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="font-arabic text-xs">رقم الآيبان *</Label>
+                <Input
+                  value={paymentData.iban}
+                  onChange={(e) => setPaymentData({ ...paymentData, iban: e.target.value })}
+                  placeholder="SA..."
+                  dir="ltr"
+                  className="font-mono h-9 text-sm"
+                />
               </div>
             </div>
 
             {/* National Address */}
-            <div className="space-y-2">
-              <Label className="font-arabic flex items-center gap-2">
-                <MapPin className="h-4 w-4" />
+            <div className="space-y-1.5">
+              <Label className="font-arabic flex items-center gap-1.5 text-xs">
+                <MapPin className="h-3 w-3" />
                 العنوان الوطني *
               </Label>
-              <Textarea
+              <Input
                 value={paymentData.national_address}
                 onChange={(e) => setPaymentData({ ...paymentData, national_address: e.target.value })}
-                placeholder="أدخل العنوان الوطني الكامل (الرمز البريدي، المدينة، الحي، رقم المبنى)"
-                className="font-arabic"
-                rows={2}
+                placeholder="الرمز البريدي، المدينة، الحي"
+                className="font-arabic h-9 text-sm"
               />
             </div>
 
             <Button 
               type="submit" 
-              className="w-full font-arabic bg-gradient-to-l from-primary to-primary/80"
+              className="w-full font-arabic h-9 text-sm"
               disabled={isPaymentLoading}
             >
               {isPaymentLoading ? (
-                <Loader2 className="h-4 w-4 animate-spin ml-2" />
+                <Loader2 className="h-3.5 w-3.5 animate-spin ml-1.5" />
               ) : (
-                <Save className="h-4 w-4 ml-2" />
+                <Save className="h-3.5 w-3.5 ml-1.5" />
               )}
-              حفظ بيانات الدفع
+              حفظ البيانات البنكية
             </Button>
-
-            {!provider.is_payment_verified && (
-              <p className="text-xs text-center text-muted-foreground font-arabic">
-                بعد إكمال البيانات، سيتم مراجعتها من قبل إدارة المنصة وتفعيل حسابك للدفع الإلكتروني
-              </p>
-            )}
           </form>
+        </CardContent>
+      </Card>
+
+      {/* EdfaPay Direct Integration - Upgrade Section */}
+      <Card className="border-amber-200 dark:border-amber-800 bg-gradient-to-br from-amber-50/50 to-orange-50/30 dark:from-amber-950/20 dark:to-orange-950/10">
+        <CardHeader className="py-3 px-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="font-arabic flex items-center gap-2 text-base">
+                <Zap className="h-4 w-4 text-amber-600" />
+                ترقية - ربط EdfaPay مباشر
+              </CardTitle>
+              <CardDescription className="font-arabic mt-0.5 text-xs">
+                استلم أرباحك فوراً بدلاً من التحويل الأسبوعي
+              </CardDescription>
+            </div>
+            {provider.edfapay_credentials_verified ? (
+              <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 gap-1 text-[10px]">
+                <CheckCircle className="h-2.5 w-2.5" />
+                مفعّل
+              </Badge>
+            ) : paymentData.payment_method === 'direct_gateway' ? (
+              <Badge variant="outline" className="text-blue-600 border-blue-300 gap-1 text-[10px]">
+                <RefreshCw className="h-2.5 w-2.5" />
+                قيد الإعداد
+              </Badge>
+            ) : null}
+          </div>
+        </CardHeader>
+        <CardContent className="px-4 pb-4 pt-0">
+          {paymentData.payment_method !== 'direct_gateway' ? (
+            /* Show upgrade benefits */
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-2">
+                <div className="flex items-center gap-2 p-2 bg-white/60 dark:bg-white/5 rounded-lg">
+                  <CheckCircle className="h-4 w-4 text-green-600 shrink-0" />
+                  <span className="text-xs font-arabic">استلام فوري للأرباح</span>
+                </div>
+                <div className="flex items-center gap-2 p-2 bg-white/60 dark:bg-white/5 rounded-lg">
+                  <CheckCircle className="h-4 w-4 text-green-600 shrink-0" />
+                  <span className="text-xs font-arabic">تحكم كامل بالمدفوعات</span>
+                </div>
+                <div className="flex items-center gap-2 p-2 bg-white/60 dark:bg-white/5 rounded-lg">
+                  <CheckCircle className="h-4 w-4 text-green-600 shrink-0" />
+                  <span className="text-xs font-arabic">فاتورة بهويتك التجارية</span>
+                </div>
+                <div className="flex items-center gap-2 p-2 bg-white/60 dark:bg-white/5 rounded-lg">
+                  <CheckCircle className="h-4 w-4 text-green-600 shrink-0" />
+                  <span className="text-xs font-arabic">Apple Pay & مدى</span>
+                </div>
+              </div>
+              
+              <Button
+                onClick={() => setPaymentData({ ...paymentData, payment_method: 'direct_gateway' })}
+                className="w-full font-arabic h-9 text-sm bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600"
+              >
+                <Zap className="h-4 w-4 ml-1.5" />
+                تفعيل الربط المباشر
+              </Button>
+              
+              <Link 
+                to="/edfapay-guide" 
+                className="flex items-center justify-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <Info className="h-3 w-3" />
+                اقرأ دليل التسجيل في EdfaPay
+              </Link>
+            </div>
+          ) : (
+            /* Show EdfaPay configuration */
+            <div className="space-y-3">
+              <div className="flex items-center justify-between p-2 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800">
+                <div className="flex items-center gap-2">
+                  <CreditCard className="h-4 w-4 text-blue-600" />
+                  <span className="text-xs font-arabic font-medium">الربط المباشر مفعّل</span>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 text-xs"
+                  onClick={() => setPaymentData({ ...paymentData, payment_method: 'platform_managed' })}
+                >
+                  إلغاء
+                </Button>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-1">
+                  <Label className="font-arabic text-xs">Merchant ID *</Label>
+                  <Input
+                    value={paymentData.merchant_id}
+                    onChange={(e) => setPaymentData({ ...paymentData, merchant_id: e.target.value })}
+                    placeholder="معرف التاجر"
+                    dir="ltr"
+                    className="font-mono text-xs h-8"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="font-arabic text-xs">Secret Key *</Label>
+                  <Input
+                    type="password"
+                    value={paymentData.secret_key}
+                    onChange={(e) => setPaymentData({ ...paymentData, secret_key: e.target.value })}
+                    placeholder="المفتاح السري"
+                    dir="ltr"
+                    className="font-mono text-xs h-8"
+                  />
+                </div>
+              </div>
+
+              <Button
+                type="button"
+                className="w-full font-arabic h-9 text-sm"
+                onClick={async () => {
+                  if (!paymentData.merchant_id || !paymentData.secret_key) {
+                    toast.error('يرجى إدخال Merchant ID و Secret Key');
+                    return;
+                  }
+                  
+                  setIsTesting(true);
+                  setTestResult(null);
+                  
+                  try {
+                    const response = await fetch(
+                      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/verify-edfapay-credentials`,
+                      {
+                        method: 'POST',
+                        headers: {
+                          'Content-Type': 'application/json',
+                          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`
+                        },
+                        body: JSON.stringify({
+                          providerId: provider.id,
+                          merchantId: paymentData.merchant_id,
+                          secretKey: paymentData.secret_key,
+                          providerEmail: provider.email,
+                          providerName: provider.business_name
+                        })
+                      }
+                    );
+                    
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                      setTestResult({
+                        success: true,
+                        message: 'تم التحقق والحفظ بنجاح!',
+                        merchantName: result.merchantName || provider.business_name,
+                        status: 'active'
+                      });
+                      toast.success('تم تفعيل EdfaPay بنجاح!');
+                    } else {
+                      setTestResult({
+                        success: false,
+                        message: result.message || 'بيانات الربط غير صحيحة'
+                      });
+                      toast.error('فشل التحقق');
+                    }
+                  } catch (error) {
+                    console.error('Error verifying EdfaPay:', error);
+                    setTestResult({
+                      success: false,
+                      message: 'خطأ في الاتصال'
+                    });
+                    toast.error('خطأ في الاختبار');
+                  } finally {
+                    setIsTesting(false);
+                  }
+                }}
+                disabled={isTesting || !paymentData.merchant_id || !paymentData.secret_key}
+              >
+                {isTesting ? (
+                  <>
+                    <Loader2 className="h-3.5 w-3.5 animate-spin ml-1.5" />
+                    جاري التحقق...
+                  </>
+                ) : (
+                  <>
+                    <Zap className="h-3.5 w-3.5 ml-1.5" />
+                    اختبار وتفعيل
+                  </>
+                )}
+              </Button>
+
+              {testResult && (
+                <div className={`p-2.5 rounded-lg border text-xs ${
+                  testResult.success 
+                    ? 'bg-green-50 dark:bg-green-950/30 border-green-200' 
+                    : 'bg-red-50 dark:bg-red-950/30 border-red-200'
+                }`}>
+                  <div className="flex items-center gap-2">
+                    {testResult.success ? (
+                      <CheckCircle className="h-4 w-4 text-green-600" />
+                    ) : (
+                      <AlertCircle className="h-4 w-4 text-red-600" />
+                    )}
+                    <span className={testResult.success ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400'}>
+                      {testResult.message}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              <Link 
+                to="/edfapay-guide" 
+                className="flex items-center justify-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors pt-1"
+              >
+                <ExternalLink className="h-3 w-3" />
+                دليل التسجيل في EdfaPay
+              </Link>
+            </div>
+          )}
         </CardContent>
       </Card>
 
