@@ -134,7 +134,10 @@ const ProviderDashboard = () => {
   useProviderAimtellTag(provider?.id);
 
   // Auto-request notification permission and register provider for targeted notifications
-  useAutoNotificationPermission({ providerId: provider?.id });
+  useAutoNotificationPermission({ 
+    providerId: provider?.id, 
+    userId: provider?.user_id 
+  });
 
   // Auto re-register push if subscription is invalid or missing
   useAutoReRegisterPush();
