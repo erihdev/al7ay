@@ -116,7 +116,7 @@ const ProviderRegister = () => {
           .order('sort_order');
         
         if (error || !data || data.length === 0) {
-          // Use default plans
+          // Use default plans with comprehensive features
           setPlans([
             {
               id: 'default-trial',
@@ -126,7 +126,13 @@ const ProviderRegister = () => {
               duration_days: 14,
               price: 0,
               is_trial: true,
-              features: ['إدارة المنتجات', 'استقبال الطلبات', 'لوحة إحصائيات']
+              features: [
+                'إدارة المنتجات',
+                'استقبال الطلبات',
+                'لوحة إحصائيات أساسية',
+                'إشعارات الطلبات الفورية',
+                'صفحة متجر خاصة'
+              ]
             },
             {
               id: 'default-monthly',
@@ -136,7 +142,15 @@ const ProviderRegister = () => {
               duration_days: 30,
               price: 99,
               is_trial: false,
-              features: ['جميع المميزات', 'إدارة غير محدودة', 'دعم فني']
+              features: [
+                'جميع مميزات التجربة',
+                'إدارة غير محدودة للمنتجات',
+                'تقارير مبيعات متقدمة',
+                'إشعارات مجدولة للعملاء',
+                'تخصيص واجهة المتجر',
+                'دعم فني عبر الواتساب',
+                'تتبع التوصيل مباشر'
+              ]
             },
             {
               id: 'default-yearly',
@@ -146,7 +160,15 @@ const ProviderRegister = () => {
               duration_days: 365,
               price: 950,
               is_trial: false,
-              features: ['جميع المميزات', 'خصم 20%', 'أولوية في الدعم']
+              features: [
+                'جميع مميزات الاشتراك الشهري',
+                'خصم 20% على السعر',
+                'أولوية في الدعم الفني',
+                'تقارير أداء شاملة',
+                'إمكانية ربط بوابة دفع مباشر',
+                'إحصائيات متقدمة',
+                'شارة مزود معتمد'
+              ]
             }
           ]);
         } else {
@@ -545,10 +567,10 @@ const ProviderRegister = () => {
                           </div>
 
                           <ul className="space-y-1.5 mb-4">
-                            {plan.features.slice(0, 3).map((feature, i) => (
+                            {plan.features.map((feature, i) => (
                               <li key={i} className="flex items-center gap-1.5 text-xs">
                                 <Check className="h-3 w-3 text-green-500 shrink-0" />
-                                <span className="line-clamp-1">{feature}</span>
+                                <span>{feature}</span>
                               </li>
                             ))}
                           </ul>
