@@ -1,8 +1,12 @@
+import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
@@ -19,9 +23,13 @@ import {
   Clock,
   CheckCircle,
   XCircle,
-  Star
+  Star,
+  Bell,
+  Send,
+  Loader2
 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { toast } from 'sonner';
 
 interface Customer {
   id: string;
@@ -97,6 +105,11 @@ const getPointsTypeLabel = (type: string) => {
 };
 
 export function CustomerDetailsDialog({ customer, open, onOpenChange }: CustomerDetailsDialogProps) {
+  const [showNotificationForm, setShowNotificationForm] = useState(false);
+  const [notificationTitle, setNotificationTitle] = useState('');
+  const [notificationBody, setNotificationBody] = useState('');
+  const [isSending, setIsSending] = useState(false);
+
   // Fetch customer orders
   const { data: orders, isLoading: ordersLoading } = useQuery({
     queryKey: ['customer-orders', customer?.user_id],
@@ -133,36 +146,132 @@ export function CustomerDetailsDialog({ customer, open, onOpenChange }: Customer
     enabled: !!customer?.user_id && open
   });
 
+  const handleSendNotification = async () => {
+    if (!customer?.user_id || !notificationTitle.trim() || !notificationBody.trim()) {
+      toast.error('يرجى ملء جميع الحقول');
+      return;
+    }
+
+    setIsSending(true);
+    try {
+      const { error } = await supabase.functions.invoke('send-notification', {
+        body: {
+          type: 'admin_message',
+          customerId: customer.user_id,
+          title: notificationTitle,
+          message: notificationBody
+        }
+      });
+
+      if (error) throw error;
+
+      toast.success('تم إرسال الإشعار بنجاح');
+      setNotificationTitle('');
+      setNotificationBody('');
+      setShowNotificationForm(false);
+    } catch (error) {
+      console.error('Error sending notification:', error);
+      toast.error('فشل في إرسال الإشعار');
+    } finally {
+      setIsSending(false);
+    }
+  };
+
   if (!customer) return null;
 
   const totalEarned = pointsHistory?.filter(p => p.points_change > 0).reduce((sum, p) => sum + p.points_change, 0) || 0;
   const totalRedeemed = pointsHistory?.filter(p => p.points_change < 0).reduce((sum, p) => sum + Math.abs(p.points_change), 0) || 0;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={(open) => {
+      if (!open) {
+        setShowNotificationForm(false);
+        setNotificationTitle('');
+        setNotificationBody('');
+      }
+      onOpenChange(open);
+    }}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-              <User className="h-6 w-6 text-primary" />
-            </div>
-            <div>
-              <p className="text-xl font-bold">{customer.full_name || 'بدون اسم'}</p>
-              <div className="flex items-center gap-2 mt-1">
-                <Badge className={getTierColor(customer.tier)}>
-                  <Star className="h-3 w-3 ml-1" />
-                  {getTierLabel(customer.tier)}
-                </Badge>
-                {customer.phone && (
-                  <span className="text-sm text-muted-foreground flex items-center gap-1">
-                    <Phone className="h-3 w-3" />
-                    {customer.phone}
-                  </span>
-                )}
+          <DialogTitle className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                <User className="h-6 w-6 text-primary" />
+              </div>
+              <div>
+                <p className="text-xl font-bold">{customer.full_name || 'بدون اسم'}</p>
+                <div className="flex items-center gap-2 mt-1">
+                  <Badge className={getTierColor(customer.tier)}>
+                    <Star className="h-3 w-3 ml-1" />
+                    {getTierLabel(customer.tier)}
+                  </Badge>
+                  {customer.phone && (
+                    <span className="text-sm text-muted-foreground flex items-center gap-1">
+                      <Phone className="h-3 w-3" />
+                      {customer.phone}
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
+            <Button
+              variant={showNotificationForm ? "secondary" : "default"}
+              size="sm"
+              onClick={() => setShowNotificationForm(!showNotificationForm)}
+              className="gap-2"
+            >
+              <Bell className="h-4 w-4" />
+              إرسال إشعار
+            </Button>
           </DialogTitle>
         </DialogHeader>
+
+        {/* Notification Form */}
+        {showNotificationForm && (
+          <Card className="border-primary/20 bg-primary/5">
+            <CardContent className="p-4 space-y-3">
+              <Input
+                placeholder="عنوان الإشعار"
+                value={notificationTitle}
+                onChange={(e) => setNotificationTitle(e.target.value)}
+                className="bg-background"
+              />
+              <Textarea
+                placeholder="محتوى الإشعار..."
+                value={notificationBody}
+                onChange={(e) => setNotificationBody(e.target.value)}
+                rows={3}
+                className="bg-background resize-none"
+              />
+              <div className="flex gap-2 justify-end">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setShowNotificationForm(false);
+                    setNotificationTitle('');
+                    setNotificationBody('');
+                  }}
+                >
+                  إلغاء
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={handleSendNotification}
+                  disabled={isSending || !notificationTitle.trim() || !notificationBody.trim()}
+                  className="gap-2"
+                >
+                  {isSending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Send className="h-4 w-4" />
+                  )}
+                  إرسال
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Stats Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 my-4">

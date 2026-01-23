@@ -345,6 +345,47 @@ serve(async (req) => {
       );
     }
 
+    // Handle admin message notification to customer
+    if (type === 'admin_message') {
+      const { title, message: msgBody } = requestBody;
+      
+      if (!customerId || !title || !msgBody) {
+        return new Response(
+          JSON.stringify({ error: 'Missing required fields: customerId, title, message' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Send Aimtell push notification
+      const aimtellSent = await sendAimtellNotification(
+        title,
+        msgBody,
+        `/app`,
+        { customer_id: customerId }
+      );
+
+      // Also send Web Push for iOS users
+      const webPushSent = await sendWebPushToUser(
+        supabase,
+        customerId,
+        title,
+        msgBody,
+        `/app`
+      );
+
+      console.log('Admin message sent to customer:', customerId, 'aimtellSent:', aimtellSent, 'webPushSent:', webPushSent);
+
+      return new Response(
+        JSON.stringify({ 
+          success: true,
+          message: 'Admin message sent to customer',
+          aimtellSent,
+          webPushSent
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     return new Response(
       JSON.stringify({ error: 'Invalid notification type' }),
       { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
