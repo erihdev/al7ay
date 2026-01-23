@@ -1085,6 +1085,57 @@ export type Database = {
           },
         ]
       }
+      notifications_log: {
+        Row: {
+          body: string
+          bulk_recipients_count: number | null
+          created_at: string
+          error_message: string | null
+          id: string
+          is_bulk: boolean
+          metadata: Json | null
+          notification_type: string
+          recipient_id: string | null
+          recipient_type: string
+          sent_by: string | null
+          sent_via: string[] | null
+          status: string
+          title: string
+        }
+        Insert: {
+          body: string
+          bulk_recipients_count?: number | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          is_bulk?: boolean
+          metadata?: Json | null
+          notification_type?: string
+          recipient_id?: string | null
+          recipient_type?: string
+          sent_by?: string | null
+          sent_via?: string[] | null
+          status?: string
+          title: string
+        }
+        Update: {
+          body?: string
+          bulk_recipients_count?: number | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          is_bulk?: boolean
+          metadata?: Json | null
+          notification_type?: string
+          recipient_id?: string | null
+          recipient_type?: string
+          sent_by?: string | null
+          sent_via?: string[] | null
+          status?: string
+          title?: string
+        }
+        Relationships: []
+      }
       order_items: {
         Row: {
           created_at: string

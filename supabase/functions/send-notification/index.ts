@@ -183,6 +183,37 @@ serve(async (req) => {
     const requestBody = await req.json();
     const { type, orderId, status, customerId, providerId, message, customerName, totalAmount, orderType } = requestBody;
 
+    // Helper function to log notifications
+    async function logNotification(params: {
+      recipientId?: string;
+      recipientType: string;
+      title: string;
+      body: string;
+      notificationType: string;
+      sentVia: string[];
+      isBulk: boolean;
+      bulkRecipientsCount?: number;
+      status: string;
+      errorMessage?: string;
+    }) {
+      try {
+        await supabase.from('notifications_log').insert({
+          recipient_id: params.recipientId || null,
+          recipient_type: params.recipientType,
+          title: params.title,
+          body: params.body,
+          notification_type: params.notificationType,
+          sent_via: params.sentVia,
+          is_bulk: params.isBulk,
+          bulk_recipients_count: params.bulkRecipientsCount || 0,
+          status: params.status,
+          error_message: params.errorMessage
+        });
+      } catch (error) {
+        console.error('Error logging notification:', error);
+      }
+    }
+
     // Handle new order notification to provider
     if (type === 'new_order') {
       if (!orderId || !providerId) {
@@ -373,6 +404,22 @@ serve(async (req) => {
         `/app`
       );
 
+      // Log the notification
+      const sentVia: string[] = [];
+      if (aimtellSent) sentVia.push('aimtell');
+      if (webPushSent) sentVia.push('webpush');
+
+      await logNotification({
+        recipientId: customerId,
+        recipientType: 'customer',
+        title,
+        body: msgBody,
+        notificationType: 'admin_message',
+        sentVia,
+        isBulk: false,
+        status: sentVia.length > 0 ? 'sent' : 'failed'
+      });
+
       console.log('Admin message sent to customer:', customerId, 'aimtellSent:', aimtellSent, 'webPushSent:', webPushSent);
 
       return new Response(
@@ -381,6 +428,84 @@ serve(async (req) => {
           message: 'Admin message sent to customer',
           aimtellSent,
           webPushSent
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Handle bulk notification to all customers
+    if (type === 'bulk_notification') {
+      const { title, message: msgBody } = requestBody;
+      
+      if (!title || !msgBody) {
+        return new Response(
+          JSON.stringify({ error: 'Missing required fields: title, message' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Get all customer user IDs
+      const { data: customers, error: customersError } = await supabase
+        .from('profiles')
+        .select('user_id');
+
+      if (customersError) {
+        console.error('Error fetching customers:', customersError);
+        return new Response(
+          JSON.stringify({ error: 'Failed to fetch customers' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      const customerCount = customers?.length || 0;
+      console.log(`Sending bulk notification to ${customerCount} customers`);
+
+      // Send Aimtell broadcast (no specific target = all subscribers)
+      const aimtellSent = await sendAimtellNotification(
+        title,
+        msgBody,
+        `/app`
+        // No attributes = broadcast to all
+      );
+
+      // Send Web Push to all customers with subscriptions
+      let webPushSuccessCount = 0;
+      for (const customer of customers || []) {
+        const sent = await sendWebPushToUser(
+          supabase,
+          customer.user_id,
+          title,
+          msgBody,
+          `/app`
+        );
+        if (sent) webPushSuccessCount++;
+      }
+
+      // Log the bulk notification
+      const sentVia: string[] = [];
+      if (aimtellSent) sentVia.push('aimtell');
+      if (webPushSuccessCount > 0) sentVia.push('webpush');
+
+      await logNotification({
+        recipientType: 'all',
+        title,
+        body: msgBody,
+        notificationType: 'bulk_notification',
+        sentVia,
+        isBulk: true,
+        bulkRecipientsCount: customerCount,
+        status: 'sent'
+      });
+
+      console.log(`Bulk notification sent: aimtell=${aimtellSent}, webpush=${webPushSuccessCount}/${customerCount}`);
+
+      return new Response(
+        JSON.stringify({ 
+          success: true,
+          message: 'Bulk notification sent',
+          sentCount: customerCount,
+          aimtellSent,
+          webPushSent: webPushSuccessCount
         }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
