@@ -6,14 +6,18 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Status messages for customer notifications
+// Only these statuses will trigger push notifications to reduce notification spam
 const statusMessages: Record<string, string> = {
-  pending: 'تم استلام طلبك',
-  preparing: 'جاري تحضير طلبك ☕',
-  ready: 'طلبك جاهز للاستلام! 🎉',
+  ready: 'طلبك جاهز للاستلام! ✅',
   out_for_delivery: 'طلبك في الطريق إليك 🚗',
-  completed: 'تم إكمال طلبك. شكراً لك! ⭐',
+  completed: 'تم تسليم طلبك بنجاح 🎉',
   cancelled: 'تم إلغاء طلبك ❌',
 };
+
+// Statuses that should NOT trigger push notifications to customers
+// pending and preparing are silent - customer can check in-app
+const silentStatuses = ['pending', 'preparing'];
 
 // Send Web Push notification using VAPID
 async function sendWebPushToUser(
@@ -353,6 +357,21 @@ serve(async (req) => {
         return new Response(
           JSON.stringify({ error: 'Missing required fields: orderId, status, customerId' }),
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Skip push notifications for silent statuses (pending, preparing)
+      // These updates are visible in-app but don't need push notifications
+      if (silentStatuses.includes(status)) {
+        console.log(`Skipping push notification for silent status: ${status}`);
+        return new Response(
+          JSON.stringify({ 
+            success: true,
+            message: 'Status update is silent - no push notification sent',
+            skipped: true,
+            status: status
+          }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
 
