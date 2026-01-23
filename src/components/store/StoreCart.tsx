@@ -63,6 +63,8 @@ interface OrderResult {
   invoiceNumber: string;
   paymentMethod: string;
   createdAt: Date;
+  totalAmount: number;
+  items: Array<{ name: string; quantity: number; price: number }>;
 }
 
 // Manual Location Picker Component
@@ -594,7 +596,9 @@ const StoreCart = ({ primaryColor = '#1B4332', storeLocation, deliveryRadiusKm =
             orderNumber: applePayResult.orderNumber || '',
             invoiceNumber: applePayResult.orderNumber || '',
             paymentMethod: 'Apple Pay',
-            createdAt: new Date()
+            createdAt: new Date(),
+            totalAmount: totalPrice,
+            items: items.map(item => ({ name: item.productName, quantity: item.quantity, price: item.price }))
           });
           setViewState('success');
           clearCart();
@@ -763,7 +767,9 @@ const StoreCart = ({ primaryColor = '#1B4332', storeLocation, deliveryRadiusKm =
         orderNumber: formatOrderNumber(order.order_number),
         invoiceNumber: formatInvoiceNumber(order.order_number),
         paymentMethod: 'الدفع عند الاستلام',
-        createdAt: new Date()
+        createdAt: new Date(),
+        totalAmount: totalPrice,
+        items: items.map(item => ({ name: item.productName, quantity: item.quantity, price: item.price }))
       });
       setViewState('success');
       
@@ -1398,9 +1404,9 @@ const StoreCart = ({ primaryColor = '#1B4332', storeLocation, deliveryRadiusKm =
             <div className="p-3 border-b bg-muted/20">
               <div className="text-[10px] font-medium text-muted-foreground mb-2">تفاصيل الطلب</div>
               <div className="space-y-1.5">
-                {items.length > 0 ? items.map((item, index) => (
-                  <div key={item.id} className="flex justify-between text-xs">
-                    <span className="text-muted-foreground">{index + 1}. {item.productName} × {item.quantity}</span>
+                {orderResult.items.length > 0 ? orderResult.items.map((item, index) => (
+                  <div key={index} className="flex justify-between text-xs">
+                    <span className="text-muted-foreground">{index + 1}. {item.name} × {item.quantity}</span>
                     <span className="font-medium">{(item.price * item.quantity).toFixed(0)} ر.س</span>
                   </div>
                 )) : (
@@ -1417,7 +1423,7 @@ const StoreCart = ({ primaryColor = '#1B4332', storeLocation, deliveryRadiusKm =
                   <div className="text-[10px] text-muted-foreground">شامل الضريبة</div>
                 </div>
                 <div className="text-left">
-                  <span className="text-2xl font-bold" style={{ color: primaryColor }}>{totalPrice.toFixed(0)}</span>
+                  <span className="text-2xl font-bold" style={{ color: primaryColor }}>{orderResult.totalAmount.toFixed(0)}</span>
                   <span className="text-sm mr-1 font-medium">ر.س</span>
                 </div>
               </div>
