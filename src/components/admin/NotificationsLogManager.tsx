@@ -12,8 +12,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { Bell, Users, User, CheckCircle, XCircle, Clock, Filter, CalendarIcon, X } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Bell, Users, User, CheckCircle, XCircle, Clock, Filter, CalendarIcon, X, FileText } from 'lucide-react';
 import { BulkNotificationDialog } from './BulkNotificationDialog';
+import { NotificationTemplatesManager } from './NotificationTemplatesManager';
+import { ScheduledNotificationsList } from './ScheduledNotificationsList';
 import { cn } from '@/lib/utils';
 
 export function NotificationsLogManager() {
@@ -107,241 +110,268 @@ export function NotificationsLogManager() {
       {/* Header with bulk send button */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
-          <h2 className="text-2xl font-bold">سجل الإشعارات</h2>
-          <p className="text-muted-foreground">إدارة وإرسال الإشعارات للعملاء</p>
+          <h2 className="text-2xl font-bold">إدارة الإشعارات</h2>
+          <p className="text-muted-foreground">إرسال وجدولة الإشعارات للعملاء</p>
         </div>
         <BulkNotificationDialog totalCustomers={customersCount || 0} />
       </div>
 
-      {/* Filters */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex items-center gap-2 mb-4">
-            <Filter className="h-4 w-4" />
-            <span className="font-medium">تصفية السجل</span>
-            {hasActiveFilters && (
-              <Button variant="ghost" size="sm" onClick={clearFilters} className="mr-auto gap-1">
-                <X className="h-3 w-3" />
-                مسح الفلاتر
-              </Button>
-            )}
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Type Filter */}
-            <div className="space-y-2">
-              <Label className="text-xs">نوع الإشعار</Label>
-              <Select value={typeFilter} onValueChange={setTypeFilter}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">جميع الأنواع</SelectItem>
-                  <SelectItem value="bulk_notification">إشعار جماعي</SelectItem>
-                  <SelectItem value="admin_message">رسالة إدارية</SelectItem>
-                  <SelectItem value="order_status">حالة طلب</SelectItem>
-                  <SelectItem value="new_order">طلب جديد</SelectItem>
-                  <SelectItem value="customer_arrived">وصول عميل</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+      <Tabs defaultValue="log" className="w-full">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="log" className="gap-2">
+            <Bell className="h-4 w-4" />
+            السجل
+          </TabsTrigger>
+          <TabsTrigger value="scheduled" className="gap-2">
+            <Clock className="h-4 w-4" />
+            المجدولة
+          </TabsTrigger>
+          <TabsTrigger value="templates" className="gap-2">
+            <FileText className="h-4 w-4" />
+            القوالب
+          </TabsTrigger>
+        </TabsList>
 
-            {/* Date Range Filter */}
-            <div className="space-y-2">
-              <Label className="text-xs">من تاريخ</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-right font-normal",
-                      !dateRange.from && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="ml-2 h-4 w-4" />
-                    {dateRange.from ? format(dateRange.from, 'dd/MM/yyyy') : 'اختر التاريخ'}
+        <TabsContent value="log" className="mt-4 space-y-4">
+          {/* Filters */}
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 mb-4">
+                <Filter className="h-4 w-4" />
+                <span className="font-medium">تصفية السجل</span>
+                {hasActiveFilters && (
+                  <Button variant="ghost" size="sm" onClick={clearFilters} className="mr-auto gap-1">
+                    <X className="h-3 w-3" />
+                    مسح الفلاتر
                   </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={dateRange.from}
-                    onSelect={(date) => setDateRange(prev => ({ ...prev, from: date }))}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
+                )}
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Type Filter */}
+                <div className="space-y-2">
+                  <Label className="text-xs">نوع الإشعار</Label>
+                  <Select value={typeFilter} onValueChange={setTypeFilter}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">جميع الأنواع</SelectItem>
+                      <SelectItem value="bulk_notification">إشعار جماعي</SelectItem>
+                      <SelectItem value="admin_message">رسالة إدارية</SelectItem>
+                      <SelectItem value="order_status">حالة طلب</SelectItem>
+                      <SelectItem value="new_order">طلب جديد</SelectItem>
+                      <SelectItem value="customer_arrived">وصول عميل</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
 
-            <div className="space-y-2">
-              <Label className="text-xs">إلى تاريخ</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-right font-normal",
-                      !dateRange.to && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="ml-2 h-4 w-4" />
-                    {dateRange.to ? format(dateRange.to, 'dd/MM/yyyy') : 'اختر التاريخ'}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={dateRange.to}
-                    onSelect={(date) => setDateRange(prev => ({ ...prev, to: date }))}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
+                {/* Date Range Filter */}
+                <div className="space-y-2">
+                  <Label className="text-xs">من تاريخ</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-right font-normal",
+                          !dateRange.from && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="ml-2 h-4 w-4" />
+                        {dateRange.from ? format(dateRange.from, 'dd/MM/yyyy') : 'اختر التاريخ'}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={dateRange.from}
+                        onSelect={(date) => setDateRange(prev => ({ ...prev, from: date }))}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-xs">إلى تاريخ</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-right font-normal",
+                          !dateRange.to && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="ml-2 h-4 w-4" />
+                        {dateRange.to ? format(dateRange.to, 'dd/MM/yyyy') : 'اختر التاريخ'}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={dateRange.to}
+                        onSelect={(date) => setDateRange(prev => ({ ...prev, to: date }))}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              </div>
+
+              {/* Quick Date Filters */}
+              <div className="flex gap-2 mt-3 flex-wrap">
+                <Button variant="outline" size="sm" onClick={() => setQuickDateFilter(1)}>
+                  اليوم
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => setQuickDateFilter(7)}>
+                  آخر 7 أيام
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => setQuickDateFilter(30)}>
+                  آخر 30 يوم
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Stats */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <Card>
+              <CardContent className="p-4 text-center">
+                <Bell className="h-6 w-6 mx-auto text-primary mb-2" />
+                <p className="text-2xl font-bold">{logs?.length || 0}</p>
+                <p className="text-xs text-muted-foreground">
+                  {hasActiveFilters ? 'النتائج' : 'إجمالي الإشعارات'}
+                </p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4 text-center">
+                <Users className="h-6 w-6 mx-auto text-purple-600 mb-2" />
+                <p className="text-2xl font-bold">
+                  {logs?.filter(l => l.is_bulk).length || 0}
+                </p>
+                <p className="text-xs text-muted-foreground">إشعارات جماعية</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4 text-center">
+                <User className="h-6 w-6 mx-auto text-blue-600 mb-2" />
+                <p className="text-2xl font-bold">
+                  {logs?.filter(l => !l.is_bulk).length || 0}
+                </p>
+                <p className="text-xs text-muted-foreground">إشعارات فردية</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4 text-center">
+                <CheckCircle className="h-6 w-6 mx-auto text-green-600 mb-2" />
+                <p className="text-2xl font-bold">
+                  {logs?.filter(l => l.status === 'sent').length || 0}
+                </p>
+                <p className="text-xs text-muted-foreground">تم الإرسال</p>
+              </CardContent>
+            </Card>
           </div>
 
-          {/* Quick Date Filters */}
-          <div className="flex gap-2 mt-3 flex-wrap">
-            <Button variant="outline" size="sm" onClick={() => setQuickDateFilter(1)}>
-              اليوم
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => setQuickDateFilter(7)}>
-              آخر 7 أيام
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => setQuickDateFilter(30)}>
-              آخر 30 يوم
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-4 text-center">
-            <Bell className="h-6 w-6 mx-auto text-primary mb-2" />
-            <p className="text-2xl font-bold">{logs?.length || 0}</p>
-            <p className="text-xs text-muted-foreground">
-              {hasActiveFilters ? 'النتائج' : 'إجمالي الإشعارات'}
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 text-center">
-            <Users className="h-6 w-6 mx-auto text-purple-600 mb-2" />
-            <p className="text-2xl font-bold">
-              {logs?.filter(l => l.is_bulk).length || 0}
-            </p>
-            <p className="text-xs text-muted-foreground">إشعارات جماعية</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 text-center">
-            <User className="h-6 w-6 mx-auto text-blue-600 mb-2" />
-            <p className="text-2xl font-bold">
-              {logs?.filter(l => !l.is_bulk).length || 0}
-            </p>
-            <p className="text-xs text-muted-foreground">إشعارات فردية</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 text-center">
-            <CheckCircle className="h-6 w-6 mx-auto text-green-600 mb-2" />
-            <p className="text-2xl font-bold">
-              {logs?.filter(l => l.status === 'sent').length || 0}
-            </p>
-            <p className="text-xs text-muted-foreground">تم الإرسال</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Logs List */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Clock className="h-5 w-5" />
-            آخر الإشعارات
-            {hasActiveFilters && (
-              <Badge variant="secondary" className="mr-2">مفلتر</Badge>
-            )}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ScrollArea className="h-[500px] pr-4">
-            {isLoading ? (
-              <div className="space-y-3">
-                {[1, 2, 3, 4, 5].map(i => (
-                  <Skeleton key={i} className="h-20 w-full" />
-                ))}
-              </div>
-            ) : logs && logs.length > 0 ? (
-              <div className="space-y-3">
-                {logs.map((log) => (
-                  <Card key={log.id} className="hover:bg-accent/50 transition-colors">
-                    <CardContent className="p-4">
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex items-start gap-3 flex-1">
-                          <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                            log.is_bulk ? 'bg-purple-500/10' : 'bg-blue-500/10'
-                          }`}>
-                            {log.is_bulk ? (
-                              <Users className="h-5 w-5 text-purple-600" />
-                            ) : (
-                              <User className="h-5 w-5 text-blue-600" />
-                            )}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 flex-wrap mb-1">
-                              <p className="font-semibold truncate">{log.title}</p>
-                              <Badge className={getTypeColor(log.notification_type)}>
-                                {getTypeLabel(log.notification_type)}
-                              </Badge>
+          {/* Logs List */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Clock className="h-5 w-5" />
+                آخر الإشعارات
+                {hasActiveFilters && (
+                  <Badge variant="secondary" className="mr-2">مفلتر</Badge>
+                )}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ScrollArea className="h-[400px] pr-4">
+                {isLoading ? (
+                  <div className="space-y-3">
+                    {[1, 2, 3, 4, 5].map(i => (
+                      <Skeleton key={i} className="h-20 w-full" />
+                    ))}
+                  </div>
+                ) : logs && logs.length > 0 ? (
+                  <div className="space-y-3">
+                    {logs.map((log) => (
+                      <Card key={log.id} className="hover:bg-accent/50 transition-colors">
+                        <CardContent className="p-4">
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="flex items-start gap-3 flex-1">
+                              <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                                log.is_bulk ? 'bg-purple-500/10' : 'bg-blue-500/10'
+                              }`}>
+                                {log.is_bulk ? (
+                                  <Users className="h-5 w-5 text-purple-600" />
+                                ) : (
+                                  <User className="h-5 w-5 text-blue-600" />
+                                )}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 flex-wrap mb-1">
+                                  <p className="font-semibold truncate">{log.title}</p>
+                                  <Badge className={getTypeColor(log.notification_type)}>
+                                    {getTypeLabel(log.notification_type)}
+                                  </Badge>
+                                </div>
+                                <p className="text-sm text-muted-foreground line-clamp-2">{log.body}</p>
+                                <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground flex-wrap">
+                                  <span className="flex items-center gap-1">
+                                    <Clock className="h-3 w-3" />
+                                    {format(new Date(log.created_at), 'dd MMM yyyy - HH:mm', { locale: ar })}
+                                  </span>
+                                  {log.is_bulk && log.bulk_recipients_count > 0 && (
+                                    <span className="flex items-center gap-1">
+                                      <Users className="h-3 w-3" />
+                                      {log.bulk_recipients_count} مستلم
+                                    </span>
+                                  )}
+                                  {log.sent_via && log.sent_via.length > 0 && (
+                                    <span>عبر: {log.sent_via.join(', ')}</span>
+                                  )}
+                                </div>
+                              </div>
                             </div>
-                            <p className="text-sm text-muted-foreground line-clamp-2">{log.body}</p>
-                            <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground flex-wrap">
-                              <span className="flex items-center gap-1">
-                                <Clock className="h-3 w-3" />
-                                {format(new Date(log.created_at), 'dd MMM yyyy - HH:mm', { locale: ar })}
-                              </span>
-                              {log.is_bulk && log.bulk_recipients_count > 0 && (
-                                <span className="flex items-center gap-1">
-                                  <Users className="h-3 w-3" />
-                                  {log.bulk_recipients_count} مستلم
-                                </span>
-                              )}
-                              {log.sent_via && log.sent_via.length > 0 && (
-                                <span>عبر: {log.sent_via.join(', ')}</span>
+                            <div>
+                              {log.status === 'sent' ? (
+                                <Badge className="bg-green-500/20 text-green-600">
+                                  <CheckCircle className="h-3 w-3 ml-1" />
+                                  تم الإرسال
+                                </Badge>
+                              ) : (
+                                <Badge className="bg-red-500/20 text-red-600">
+                                  <XCircle className="h-3 w-3 ml-1" />
+                                  فشل
+                                </Badge>
                               )}
                             </div>
                           </div>
-                        </div>
-                        <div>
-                          {log.status === 'sent' ? (
-                            <Badge className="bg-green-500/20 text-green-600">
-                              <CheckCircle className="h-3 w-3 ml-1" />
-                              تم الإرسال
-                            </Badge>
-                          ) : (
-                            <Badge className="bg-red-500/20 text-red-600">
-                              <XCircle className="h-3 w-3 ml-1" />
-                              فشل
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-12 text-muted-foreground">
-                <Bell className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                <p>{hasActiveFilters ? 'لا توجد نتائج للفلاتر المحددة' : 'لا توجد إشعارات مرسلة'}</p>
-              </div>
-            )}
-          </ScrollArea>
-        </CardContent>
-      </Card>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-12 text-muted-foreground">
+                    <Bell className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                    <p>{hasActiveFilters ? 'لا توجد نتائج للفلاتر المحددة' : 'لا توجد إشعارات مرسلة'}</p>
+                  </div>
+                )}
+              </ScrollArea>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="scheduled" className="mt-4">
+          <ScheduledNotificationsList />
+        </TabsContent>
+
+        <TabsContent value="templates" className="mt-4">
+          <NotificationTemplatesManager />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

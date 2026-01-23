@@ -1085,6 +1085,45 @@ export type Database = {
           },
         ]
       }
+      notification_templates: {
+        Row: {
+          body: string
+          category: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          is_active: boolean
+          name: string
+          title: string
+          updated_at: string
+          usage_count: number
+        }
+        Insert: {
+          body: string
+          category?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          title: string
+          updated_at?: string
+          usage_count?: number
+        }
+        Update: {
+          body?: string
+          category?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          title?: string
+          updated_at?: string
+          usage_count?: number
+        }
+        Relationships: []
+      }
       notifications_log: {
         Row: {
           body: string
@@ -2369,6 +2408,75 @@ export type Database = {
           status?: string
         }
         Relationships: []
+      }
+      scheduled_notifications: {
+        Row: {
+          body: string
+          created_at: string
+          created_by: string | null
+          error_message: string | null
+          id: string
+          neighborhood_filter: string | null
+          recipient_type: string
+          recipients_count: number | null
+          scheduled_at: string
+          sent_at: string | null
+          status: string
+          template_id: string | null
+          tier_filter: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          created_by?: string | null
+          error_message?: string | null
+          id?: string
+          neighborhood_filter?: string | null
+          recipient_type?: string
+          recipients_count?: number | null
+          scheduled_at: string
+          sent_at?: string | null
+          status?: string
+          template_id?: string | null
+          tier_filter?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          created_by?: string | null
+          error_message?: string | null
+          id?: string
+          neighborhood_filter?: string | null
+          recipient_type?: string
+          recipients_count?: number | null
+          scheduled_at?: string
+          sent_at?: string | null
+          status?: string
+          template_id?: string | null
+          tier_filter?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scheduled_notifications_neighborhood_filter_fkey"
+            columns: ["neighborhood_filter"]
+            isOneToOne: false
+            referencedRelation: "active_neighborhoods"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scheduled_notifications_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "notification_templates"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       service_provider_applications: {
         Row: {
