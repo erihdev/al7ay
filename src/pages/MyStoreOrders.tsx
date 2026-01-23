@@ -164,8 +164,8 @@ const MyStoreOrders = () => {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-background pb-20 font-arabic" dir="rtl">
-        <div className="max-w-md mx-auto p-4">
+      <div className="min-h-screen bg-background pb-24 font-arabic overflow-x-hidden" dir="rtl">
+        <div className="w-full max-w-md mx-auto px-3 py-3">
           <div className="flex items-center gap-3 mb-6">
             <Link to="/">
               <Button variant="ghost" size="icon">
@@ -193,8 +193,8 @@ const MyStoreOrders = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background pb-20 font-arabic" dir="rtl">
-        <div className="max-w-md mx-auto p-4 space-y-4">
+      <div className="min-h-screen bg-background pb-24 font-arabic overflow-x-hidden" dir="rtl">
+        <div className="w-full max-w-md mx-auto px-3 py-3 space-y-3">
           <Skeleton className="h-8 w-48" />
           {[1, 2, 3].map(i => (
             <Skeleton key={i} className="h-40 w-full rounded-xl" />
@@ -209,8 +209,8 @@ const MyStoreOrders = () => {
   const completedOrders = orders?.filter(o => ['completed', 'cancelled'].includes(o.status)) || [];
 
   return (
-    <div className="min-h-screen bg-background pb-20 font-arabic" dir="rtl">
-      <div className="max-w-md mx-auto p-4">
+    <div className="min-h-screen bg-background pb-24 font-arabic overflow-x-hidden" dir="rtl">
+      <div className="w-full max-w-md mx-auto px-3 py-3">
         {/* Header */}
         <div className="flex items-center gap-2 mb-4">
           <Link to="/">

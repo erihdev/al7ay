@@ -419,7 +419,7 @@ export function PullUpStyleOrderCard({
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="rounded-2xl overflow-hidden shadow-xl bg-card border"
+      className="rounded-2xl overflow-hidden shadow-xl bg-card border w-full max-w-full"
     >
       {/* Header Section */}
       <div className="bg-gradient-to-l from-orange-500 to-amber-500 p-2.5 sm:p-4">

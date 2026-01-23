@@ -186,8 +186,8 @@ const Cart = () => {
 
   if (items.length === 0) {
     return (
-      <div className="min-h-screen bg-background font-arabic pt-[env(safe-area-inset-top)]" dir="rtl">
-        <div className="container mx-auto px-4 py-4 pb-24">
+      <div className="min-h-screen bg-background font-arabic pt-[env(safe-area-inset-top)] overflow-x-hidden" dir="rtl">
+        <div className="w-full max-w-lg mx-auto px-3 py-4 pb-28">
           {/* Empty Cart Header */}
           <motion.div 
             initial={{ opacity: 0, y: -20 }}
@@ -230,8 +230,8 @@ const Cart = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background font-arabic pt-[env(safe-area-inset-top)]" dir="rtl">
-      <div className="container mx-auto px-4 py-4 pb-32">
+    <div className="min-h-screen bg-background font-arabic pt-[env(safe-area-inset-top)] overflow-x-hidden" dir="rtl">
+      <div className="w-full max-w-lg mx-auto px-3 py-4 pb-36">
         {/* Header */}
         <motion.div 
           initial={{ opacity: 0, y: -20 }}

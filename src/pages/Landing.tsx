@@ -51,7 +51,7 @@ const Landing = () => {
 
   return (
     <PageTransition>
-      <div className="min-h-screen bg-background font-arabic relative overflow-hidden" dir="rtl">
+      <div className="min-h-screen bg-background font-arabic relative overflow-x-hidden" dir="rtl">
         <InteractiveBackground variant="particles" intensity="subtle" />
         
         {/* Header */}

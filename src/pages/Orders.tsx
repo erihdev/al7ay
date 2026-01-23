@@ -120,8 +120,8 @@ const Orders = () => {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-background font-arabic" dir="rtl">
-        <div className="container mx-auto px-4 py-8 pb-24">
+      <div className="min-h-screen bg-background font-arabic overflow-x-hidden" dir="rtl">
+        <div className="w-full max-w-lg mx-auto px-3 py-6 pb-28">
           <Skeleton className="h-24 rounded-3xl mb-6" />
           <div className="space-y-4">
             {[1, 2, 3].map((i) => (
@@ -136,8 +136,8 @@ const Orders = () => {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-background font-arabic" dir="rtl">
-        <div className="container mx-auto px-4 py-8 pb-24">
+      <div className="min-h-screen bg-background font-arabic overflow-x-hidden" dir="rtl">
+        <div className="w-full max-w-lg mx-auto px-3 py-6 pb-28">
           {/* Header */}
           <motion.div 
             initial={{ opacity: 0, y: -20 }}
@@ -172,8 +172,8 @@ const Orders = () => {
   const completedOrders = orders?.filter(o => ['completed', 'cancelled'].includes(o.status)) || [];
 
   return (
-    <div className="min-h-screen bg-background font-arabic pt-[env(safe-area-inset-top)]" dir="rtl">
-      <div className="container mx-auto px-4 py-4 pb-24">
+    <div className="min-h-screen bg-background font-arabic pt-[env(safe-area-inset-top)] overflow-x-hidden" dir="rtl">
+      <div className="w-full max-w-lg mx-auto px-3 py-3 pb-28">
         {/* Header */}
         <motion.div 
           initial={{ opacity: 0, y: -20 }}
