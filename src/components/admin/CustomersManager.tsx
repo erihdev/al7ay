@@ -68,9 +68,12 @@ interface Customer {
   tier: string;
 }
 
+type TierFilter = 'all' | 'gold' | 'silver' | 'bronze';
+
 export const CustomersManager = () => {
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
+  const [tierFilter, setTierFilter] = useState<TierFilter>('all');
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
   const [customerToDelete, setCustomerToDelete] = useState<Customer | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -276,11 +279,16 @@ export const CustomersManager = () => {
     }
   };
 
-  const filteredCustomers = customers?.filter(c =>
-    c.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    c.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    c.phone?.includes(searchTerm)
-  );
+  const filteredCustomers = customers?.filter(c => {
+    const matchesSearch = 
+      c.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      c.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      c.phone?.includes(searchTerm);
+    
+    const matchesTier = tierFilter === 'all' || c.tier === tierFilter;
+    
+    return matchesSearch && matchesTier;
+  });
 
   const stats = {
     total: customers?.length || 0,
@@ -336,23 +344,63 @@ export const CustomersManager = () => {
         </Card>
       </div>
 
-      {/* Search and Refresh */}
+      {/* Search, Filter and Refresh */}
       <Card>
         <CardContent className="p-4">
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="البحث بالاسم أو البريد الإلكتروني أو رقم الهاتف..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pr-10"
-              />
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col md:flex-row gap-4">
+              <div className="relative flex-1">
+                <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="البحث بالاسم أو البريد الإلكتروني أو رقم الهاتف..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pr-10"
+                />
+              </div>
+              <Button variant="outline" onClick={() => refetch()}>
+                <RefreshCw className="h-4 w-4 ml-2" />
+                تحديث
+              </Button>
             </div>
-            <Button variant="outline" onClick={() => refetch()}>
-              <RefreshCw className="h-4 w-4 ml-2" />
-              تحديث
-            </Button>
+            
+            {/* Tier Filter Buttons */}
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant={tierFilter === 'all' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setTierFilter('all')}
+              >
+                <Users className="h-4 w-4 ml-1" />
+                الكل ({customers?.length || 0})
+              </Button>
+              <Button
+                variant={tierFilter === 'gold' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setTierFilter('gold')}
+                className={tierFilter === 'gold' ? 'bg-yellow-500 hover:bg-yellow-600' : ''}
+              >
+                <Crown className="h-4 w-4 ml-1" />
+                ذهبي ({customers?.filter(c => c.tier === 'gold').length || 0})
+              </Button>
+              <Button
+                variant={tierFilter === 'silver' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setTierFilter('silver')}
+                className={tierFilter === 'silver' ? 'bg-gray-400 hover:bg-gray-500' : ''}
+              >
+                <Star className="h-4 w-4 ml-1" />
+                فضي ({customers?.filter(c => c.tier === 'silver').length || 0})
+              </Button>
+              <Button
+                variant={tierFilter === 'bronze' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setTierFilter('bronze')}
+              >
+                <Star className="h-4 w-4 ml-1" />
+                برونزي ({customers?.filter(c => c.tier === 'bronze').length || 0})
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
