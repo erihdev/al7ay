@@ -42,6 +42,7 @@ interface SubscriptionPlan {
   price: number;
   is_trial: boolean;
   features: string[];
+  discount_percent?: number;
 }
 
 interface Neighborhood {
@@ -167,13 +168,13 @@ const ProviderRegister = () => {
               id: 'default-yearly',
               name_ar: 'اشتراك سنوي',
               name_en: 'Yearly',
-              description_ar: 'اشتراك سنوي بخصم 20%',
+              description_ar: 'اشتراك سنوي بخصم مميز',
               duration_days: 365,
               price: 950,
               is_trial: false,
+              discount_percent: 20,
               features: [
                 'جميع مميزات الاشتراك الشهري',
-                'خصم 20% على السعر',
                 'التسجيل المباشر في EdfaPay',
                 'استلام الأموال فوراً في حسابك',
                 'تخصيص هوية المتجر (ألوان، شعار، خلفية)',
@@ -190,7 +191,8 @@ const ProviderRegister = () => {
             ...plan,
             features: Array.isArray(plan.features) 
               ? (plan.features as unknown as string[]) 
-              : []
+              : [],
+            discount_percent: (plan as any).discount_percent || 0
           })));
         }
       } catch (err) {
@@ -547,7 +549,12 @@ const ProviderRegister = () => {
                             ✨ ابدأ مجاناً
                           </div>
                         )}
-                        {!plan.is_trial && index === 1 && (
+                        {!plan.is_trial && plan.discount_percent && plan.discount_percent > 0 && (
+                          <div className="bg-gradient-to-r from-orange-500 to-amber-500 text-white text-xs font-bold py-1.5 text-center rounded-t-lg">
+                            🎉 خصم {plan.discount_percent}%
+                          </div>
+                        )}
+                        {!plan.is_trial && !plan.discount_percent && index === 1 && (
                           <div className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground text-xs font-bold py-1.5 text-center rounded-t-lg">
                             🔥 الأكثر شعبية
                           </div>
