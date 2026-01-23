@@ -46,8 +46,8 @@ const Profile = () => {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-background font-arabic" dir="rtl">
-        <div className="container mx-auto px-4 py-8 pb-24">
+      <div className="min-h-screen bg-background font-arabic overflow-x-hidden" dir="rtl">
+        <div className="w-full max-w-lg mx-auto px-3 py-6 pb-28">
           <div className="space-y-4">
             <Skeleton className="h-40 rounded-xl" />
             <Skeleton className="h-32 rounded-xl" />
@@ -66,8 +66,8 @@ const Profile = () => {
   if (!user) {
     return (
       <PageTransition>
-        <div className="min-h-screen bg-gradient-to-b from-primary/5 via-background to-background font-arabic relative" dir="rtl">
-          <div className="container mx-auto px-4 py-8 pb-24">
+        <div className="min-h-screen bg-gradient-to-b from-primary/5 via-background to-background font-arabic relative overflow-x-hidden" dir="rtl">
+          <div className="w-full max-w-lg mx-auto px-3 py-6 pb-28">
             <motion.div 
               className="text-center mb-8"
               initial={{ opacity: 0, y: -20 }}
@@ -95,7 +95,7 @@ const Profile = () => {
 
   return (
     <PageTransition>
-      <div className="min-h-screen bg-gradient-to-b from-primary/5 via-background to-background font-arabic" dir="rtl">
+      <div className="min-h-screen bg-gradient-to-b from-primary/5 via-background to-background font-arabic overflow-x-hidden" dir="rtl">
         {/* Compact Hero Header */}
         <div className="relative pt-[env(safe-area-inset-top)] pb-4 px-4">
           <motion.div 
@@ -167,7 +167,7 @@ const Profile = () => {
           </motion.div>
         </div>
 
-        <div className="container mx-auto px-4 pb-24">
+        <div className="w-full max-w-lg mx-auto px-3 pb-28">
           <motion.div
             variants={staggerContainer}
             initial="initial"

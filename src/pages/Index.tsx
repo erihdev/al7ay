@@ -376,11 +376,11 @@ const Index = () => {
 
   return (
     <PageTransition>
-      <div className="min-h-screen bg-background font-arabic relative" dir="rtl">
+      <div className="min-h-screen bg-background font-arabic relative overflow-x-hidden" dir="rtl">
         <FloatingParticles count={12} />
         <Header />
         
-        <main className="container mx-auto px-3 pb-20 pt-3 space-y-4">
+        <main className="w-full max-w-full mx-auto px-3 pb-24 pt-3 space-y-4 overflow-x-hidden">
           {/* Welcome Section */}
           <motion.div 
             variants={fadeInUp}

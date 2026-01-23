@@ -27,9 +27,9 @@ export default function Favorites() {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-background font-arabic" dir="rtl">
+      <div className="min-h-screen bg-background font-arabic overflow-x-hidden" dir="rtl">
         <Header />
-        <main className="container mx-auto px-4 py-8 pb-24">
+        <main className="w-full max-w-lg mx-auto px-3 py-6 pb-28">
           <PageTransition className="flex flex-col items-center justify-center min-h-[60vh]">
             <Heart className="h-16 w-16 text-muted-foreground mb-4" />
             <h2 className="text-xl font-bold mb-2">سجل الدخول لعرض المفضلة</h2>
@@ -45,10 +45,10 @@ export default function Favorites() {
   }
 
   return (
-    <div className="min-h-screen bg-background font-arabic" dir="rtl">
+    <div className="min-h-screen bg-background font-arabic overflow-x-hidden" dir="rtl">
       <Header />
       
-      <main className="container mx-auto px-4 py-6 pb-24">
+      <main className="w-full max-w-lg mx-auto px-3 py-4 pb-28">
         <PageTransition>
           <div className="flex items-center gap-3 mb-6">
             <div className="h-10 w-10 rounded-full bg-red-500/10 flex items-center justify-center">

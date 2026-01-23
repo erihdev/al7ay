@@ -329,7 +329,7 @@ const ProviderStoreContent = () => {
   // Loading state
   if (providerLoading) {
     return (
-      <div className="min-h-screen bg-background font-arabic" dir="rtl">
+      <div className="min-h-screen bg-background font-arabic overflow-x-hidden" dir="rtl">
         <div className="h-48 bg-gradient-to-br from-primary/20 to-secondary/20 animate-pulse" />
         <div className="p-4 -mt-8 space-y-4">
           <Skeleton className="h-24 w-full rounded-2xl" />
@@ -351,7 +351,7 @@ const ProviderStoreContent = () => {
   // Not found state
   if (!provider) {
     return (
-      <div className="min-h-screen bg-background font-arabic flex items-center justify-center p-4" dir="rtl">
+      <div className="min-h-screen bg-background font-arabic flex items-center justify-center p-4 overflow-x-hidden" dir="rtl">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -380,7 +380,7 @@ const ProviderStoreContent = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-muted/30 to-background" style={{ fontFamily }} dir="rtl">
+    <div className="min-h-screen bg-gradient-to-b from-muted/30 to-background overflow-x-hidden" style={{ fontFamily }} dir="rtl">
       {/* Coverage Alert Dialog */}
       {showCoverageAlert && isOutsideCoverage && (
         <Dialog open={showCoverageAlert} onOpenChange={setShowCoverageAlert}>
