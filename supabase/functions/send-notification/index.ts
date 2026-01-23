@@ -433,9 +433,71 @@ serve(async (req) => {
       );
     }
 
-    // Handle bulk notification to all customers
+    // Handle count recipients (for filtered bulk notifications)
+    if (type === 'count_recipients') {
+      const { tier, neighborhoodId } = requestBody;
+      
+      try {
+        // Build query to count recipients
+        let userIds: string[] = [];
+
+        if (tier) {
+          // Get users by tier from loyalty_points
+          const { data: loyaltyData } = await supabase
+            .from('loyalty_points')
+            .select('user_id')
+            .eq('tier', tier);
+          
+          userIds = loyaltyData?.map(l => l.user_id) || [];
+        } else {
+          // Get all user ids from profiles
+          const { data: profilesData } = await supabase
+            .from('profiles')
+            .select('user_id');
+          
+          userIds = profilesData?.map(p => p.user_id) || [];
+        }
+
+        // If neighborhood filter, further filter by users who ordered from providers in that neighborhood
+        if (neighborhoodId && userIds.length > 0) {
+          // Get providers in this neighborhood
+          const { data: providers } = await supabase
+            .from('service_providers')
+            .select('id')
+            .eq('neighborhood_id', neighborhoodId);
+          
+          const providerIds = providers?.map(p => p.id) || [];
+          
+          if (providerIds.length > 0) {
+            // Get unique customer_ids who ordered from these providers
+            const { data: orders } = await supabase
+              .from('orders')
+              .select('customer_id')
+              .in('provider_id', providerIds);
+            
+            const customerIds = [...new Set(orders?.map(o => o.customer_id) || [])];
+            userIds = userIds.filter(id => customerIds.includes(id));
+          } else {
+            userIds = [];
+          }
+        }
+
+        return new Response(
+          JSON.stringify({ count: userIds.length }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      } catch (error) {
+        console.error('Error counting recipients:', error);
+        return new Response(
+          JSON.stringify({ count: 0 }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    }
+
+    // Handle bulk notification to customers (optionally filtered)
     if (type === 'bulk_notification') {
-      const { title, message: msgBody } = requestBody;
+      const { title, message: msgBody, tier, neighborhoodId } = requestBody;
       
       if (!title || !msgBody) {
         return new Response(
@@ -444,40 +506,84 @@ serve(async (req) => {
         );
       }
 
-      // Get all customer user IDs
-      const { data: customers, error: customersError } = await supabase
-        .from('profiles')
-        .select('user_id');
+      // Build filtered list of customer IDs
+      let customerUserIds: string[] = [];
+      let filterDescription = 'all';
 
-      if (customersError) {
-        console.error('Error fetching customers:', customersError);
+      if (tier) {
+        // Get users by tier from loyalty_points
+        const { data: loyaltyData } = await supabase
+          .from('loyalty_points')
+          .select('user_id')
+          .eq('tier', tier);
+        
+        customerUserIds = loyaltyData?.map(l => l.user_id) || [];
+        filterDescription = `tier:${tier}`;
+      } else {
+        // Get all user ids from profiles
+        const { data: profilesData } = await supabase
+          .from('profiles')
+          .select('user_id');
+        
+        customerUserIds = profilesData?.map(p => p.user_id) || [];
+      }
+
+      // If neighborhood filter, further filter by users who ordered from providers in that neighborhood
+      if (neighborhoodId && customerUserIds.length > 0) {
+        // Get providers in this neighborhood
+        const { data: providers } = await supabase
+          .from('service_providers')
+          .select('id')
+          .eq('neighborhood_id', neighborhoodId);
+        
+        const providerIds = providers?.map(p => p.id) || [];
+        
+        if (providerIds.length > 0) {
+          // Get unique customer_ids who ordered from these providers
+          const { data: orders } = await supabase
+            .from('orders')
+            .select('customer_id')
+            .in('provider_id', providerIds);
+          
+          const orderCustomerIds = [...new Set(orders?.map(o => o.customer_id) || [])];
+          customerUserIds = customerUserIds.filter(id => orderCustomerIds.includes(id));
+        } else {
+          customerUserIds = [];
+        }
+        filterDescription += `,neighborhood:${neighborhoodId}`;
+      }
+
+      const customerCount = customerUserIds.length;
+      console.log(`Sending bulk notification to ${customerCount} customers (filter: ${filterDescription})`);
+
+      if (customerCount === 0) {
         return new Response(
-          JSON.stringify({ error: 'Failed to fetch customers' }),
-          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          JSON.stringify({ 
+            success: true,
+            message: 'No recipients match the filter',
+            sentCount: 0
+          }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
 
-      const customerCount = customers?.length || 0;
-      console.log(`Sending bulk notification to ${customerCount} customers`);
+      // Send Aimtell broadcast (for non-filtered, send to all; for filtered, we need individual sends)
+      let aimtellSent = false;
+      if (!tier && !neighborhoodId) {
+        // Broadcast to all
+        aimtellSent = await sendAimtellNotification(title, msgBody, `/app`);
+      } else {
+        // For filtered, send to each user individually
+        for (const userId of customerUserIds) {
+          await sendAimtellNotification(title, msgBody, `/app`, { customer_id: userId });
+        }
+        aimtellSent = true;
+      }
 
-      // Send Aimtell broadcast (no specific target = all subscribers)
-      const aimtellSent = await sendAimtellNotification(
-        title,
-        msgBody,
-        `/app`
-        // No attributes = broadcast to all
-      );
-
-      // Send Web Push to all customers with subscriptions
+      // Send Web Push to filtered customers
       let webPushSuccessCount = 0;
-      for (const customer of customers || []) {
-        const sent = await sendWebPushToUser(
-          supabase,
-          customer.user_id,
-          title,
-          msgBody,
-          `/app`
-        );
+      for (const userId of customerUserIds) {
+        const sent = await sendWebPushToUser(supabase, userId, title, msgBody, `/app`);
         if (sent) webPushSuccessCount++;
       }
 
@@ -487,7 +593,7 @@ serve(async (req) => {
       if (webPushSuccessCount > 0) sentVia.push('webpush');
 
       await logNotification({
-        recipientType: 'all',
+        recipientType: tier || neighborhoodId ? 'filtered' : 'all',
         title,
         body: msgBody,
         notificationType: 'bulk_notification',

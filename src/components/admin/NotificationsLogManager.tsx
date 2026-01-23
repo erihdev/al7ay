@@ -1,15 +1,28 @@
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { format } from 'date-fns';
+import { format, subDays, startOfDay, endOfDay } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Bell, Users, User, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { Bell, Users, User, CheckCircle, XCircle, Clock, Filter, CalendarIcon, X } from 'lucide-react';
 import { BulkNotificationDialog } from './BulkNotificationDialog';
+import { cn } from '@/lib/utils';
 
 export function NotificationsLogManager() {
+  const [typeFilter, setTypeFilter] = useState<string>('all');
+  const [dateRange, setDateRange] = useState<{ from: Date | undefined; to: Date | undefined }>({
+    from: undefined,
+    to: undefined
+  });
+
   // Fetch total customers count
   const { data: customersCount } = useQuery({
     queryKey: ['customers-count'],
@@ -23,16 +36,30 @@ export function NotificationsLogManager() {
     }
   });
 
-  // Fetch notifications log
+  // Fetch notifications log with filters
   const { data: logs, isLoading } = useQuery({
-    queryKey: ['notifications-log'],
+    queryKey: ['notifications-log', typeFilter, dateRange.from, dateRange.to],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('notifications_log')
         .select('*')
         .order('created_at', { ascending: false })
-        .limit(100);
+        .limit(200);
       
+      // Apply type filter
+      if (typeFilter !== 'all') {
+        query = query.eq('notification_type', typeFilter);
+      }
+
+      // Apply date range filter
+      if (dateRange.from) {
+        query = query.gte('created_at', startOfDay(dateRange.from).toISOString());
+      }
+      if (dateRange.to) {
+        query = query.lte('created_at', endOfDay(dateRange.to).toISOString());
+      }
+      
+      const { data, error } = await query;
       if (error) throw error;
       return data || [];
     }
@@ -43,6 +70,8 @@ export function NotificationsLogManager() {
       case 'admin_message': return 'رسالة إدارية';
       case 'bulk_notification': return 'إشعار جماعي';
       case 'order_status': return 'حالة طلب';
+      case 'new_order': return 'طلب جديد';
+      case 'customer_arrived': return 'وصول عميل';
       default: return type;
     }
   };
@@ -51,14 +80,32 @@ export function NotificationsLogManager() {
     switch (type) {
       case 'bulk_notification': return 'bg-purple-500/20 text-purple-600';
       case 'admin_message': return 'bg-blue-500/20 text-blue-600';
+      case 'order_status': return 'bg-green-500/20 text-green-600';
+      case 'new_order': return 'bg-yellow-500/20 text-yellow-600';
+      case 'customer_arrived': return 'bg-orange-500/20 text-orange-600';
       default: return 'bg-gray-500/20 text-gray-600';
     }
+  };
+
+  const clearFilters = () => {
+    setTypeFilter('all');
+    setDateRange({ from: undefined, to: undefined });
+  };
+
+  const hasActiveFilters = typeFilter !== 'all' || dateRange.from || dateRange.to;
+
+  // Quick date filters
+  const setQuickDateFilter = (days: number) => {
+    setDateRange({
+      from: subDays(new Date(), days),
+      to: new Date()
+    });
   };
 
   return (
     <div className="space-y-6">
       {/* Header with bulk send button */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h2 className="text-2xl font-bold">سجل الإشعارات</h2>
           <p className="text-muted-foreground">إدارة وإرسال الإشعارات للعملاء</p>
@@ -66,13 +113,117 @@ export function NotificationsLogManager() {
         <BulkNotificationDialog totalCustomers={customersCount || 0} />
       </div>
 
+      {/* Filters */}
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex items-center gap-2 mb-4">
+            <Filter className="h-4 w-4" />
+            <span className="font-medium">تصفية السجل</span>
+            {hasActiveFilters && (
+              <Button variant="ghost" size="sm" onClick={clearFilters} className="mr-auto gap-1">
+                <X className="h-3 w-3" />
+                مسح الفلاتر
+              </Button>
+            )}
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Type Filter */}
+            <div className="space-y-2">
+              <Label className="text-xs">نوع الإشعار</Label>
+              <Select value={typeFilter} onValueChange={setTypeFilter}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">جميع الأنواع</SelectItem>
+                  <SelectItem value="bulk_notification">إشعار جماعي</SelectItem>
+                  <SelectItem value="admin_message">رسالة إدارية</SelectItem>
+                  <SelectItem value="order_status">حالة طلب</SelectItem>
+                  <SelectItem value="new_order">طلب جديد</SelectItem>
+                  <SelectItem value="customer_arrived">وصول عميل</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Date Range Filter */}
+            <div className="space-y-2">
+              <Label className="text-xs">من تاريخ</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-right font-normal",
+                      !dateRange.from && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="ml-2 h-4 w-4" />
+                    {dateRange.from ? format(dateRange.from, 'dd/MM/yyyy') : 'اختر التاريخ'}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={dateRange.from}
+                    onSelect={(date) => setDateRange(prev => ({ ...prev, from: date }))}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-xs">إلى تاريخ</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-right font-normal",
+                      !dateRange.to && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="ml-2 h-4 w-4" />
+                    {dateRange.to ? format(dateRange.to, 'dd/MM/yyyy') : 'اختر التاريخ'}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={dateRange.to}
+                    onSelect={(date) => setDateRange(prev => ({ ...prev, to: date }))}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+          </div>
+
+          {/* Quick Date Filters */}
+          <div className="flex gap-2 mt-3 flex-wrap">
+            <Button variant="outline" size="sm" onClick={() => setQuickDateFilter(1)}>
+              اليوم
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => setQuickDateFilter(7)}>
+              آخر 7 أيام
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => setQuickDateFilter(30)}>
+              آخر 30 يوم
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="p-4 text-center">
             <Bell className="h-6 w-6 mx-auto text-primary mb-2" />
             <p className="text-2xl font-bold">{logs?.length || 0}</p>
-            <p className="text-xs text-muted-foreground">إجمالي الإشعارات</p>
+            <p className="text-xs text-muted-foreground">
+              {hasActiveFilters ? 'النتائج' : 'إجمالي الإشعارات'}
+            </p>
           </CardContent>
         </Card>
         <Card>
@@ -110,6 +261,9 @@ export function NotificationsLogManager() {
           <CardTitle className="flex items-center gap-2">
             <Clock className="h-5 w-5" />
             آخر الإشعارات
+            {hasActiveFilters && (
+              <Badge variant="secondary" className="mr-2">مفلتر</Badge>
+            )}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -144,7 +298,7 @@ export function NotificationsLogManager() {
                               </Badge>
                             </div>
                             <p className="text-sm text-muted-foreground line-clamp-2">{log.body}</p>
-                            <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
+                            <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground flex-wrap">
                               <span className="flex items-center gap-1">
                                 <Clock className="h-3 w-3" />
                                 {format(new Date(log.created_at), 'dd MMM yyyy - HH:mm', { locale: ar })}
@@ -182,7 +336,7 @@ export function NotificationsLogManager() {
             ) : (
               <div className="text-center py-12 text-muted-foreground">
                 <Bell className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                <p>لا توجد إشعارات مرسلة</p>
+                <p>{hasActiveFilters ? 'لا توجد نتائج للفلاتر المحددة' : 'لا توجد إشعارات مرسلة'}</p>
               </div>
             )}
           </ScrollArea>
