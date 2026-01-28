@@ -16,6 +16,7 @@ import { toast } from 'sonner';
 import { Loader2, Mail, Lock, User, ArrowLeft, ArrowRight, KeyRound, Phone, Car, Camera, Palette } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
+import { lovable } from '@/integrations/lovable';
 
 // Car brands and models data
 const carBrands: Record<string, string[]> = {
@@ -73,6 +74,7 @@ export function AuthForm({ redirectTo = '/app' }: AuthFormProps) {
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [isAppleLoading, setIsAppleLoading] = useState(false);
   const { signIn, signUp } = useAuth();
   const navigate = useNavigate();
 
@@ -194,16 +196,26 @@ export function AuthForm({ redirectTo = '/app' }: AuthFormProps) {
   const handleGoogleLogin = async () => {
     setIsGoogleLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${window.location.origin}${redirectTo}`,
-        },
+      const { error } = await lovable.auth.signInWithOAuth('google', {
+        redirect_uri: window.location.origin,
       });
       if (error) throw error;
     } catch (error: any) {
       toast.error(error.message || 'حدث خطأ في تسجيل الدخول بـ Google');
       setIsGoogleLoading(false);
+    }
+  };
+
+  const handleAppleLogin = async () => {
+    setIsAppleLoading(true);
+    try {
+      const { error } = await lovable.auth.signInWithOAuth('apple', {
+        redirect_uri: window.location.origin,
+      });
+      if (error) throw error;
+    } catch (error: any) {
+      toast.error(error.message || 'حدث خطأ في تسجيل الدخول بـ Apple');
+      setIsAppleLoading(false);
     }
   };
 
@@ -498,9 +510,9 @@ export function AuthForm({ redirectTo = '/app' }: AuthFormProps) {
                 <Button
                   type="button"
                   variant="outline"
-                  className="w-full h-12 mb-4 rounded-xl gap-3 font-arabic text-base border-2 hover:bg-muted/50 transition-all"
+                  className="w-full h-12 mb-3 rounded-xl gap-3 font-arabic text-base border-2 hover:bg-muted/50 transition-all"
                   onClick={handleGoogleLogin}
-                  disabled={isGoogleLoading}
+                  disabled={isGoogleLoading || isAppleLoading}
                 >
                   {isGoogleLoading ? (
                     <Loader2 className="h-5 w-5 animate-spin" />
@@ -525,6 +537,26 @@ export function AuthForm({ redirectTo = '/app' }: AuthFormProps) {
                         />
                       </svg>
                       {mode === 'login' ? 'تسجيل الدخول بـ Google' : 'التسجيل بـ Google'}
+                    </>
+                  )}
+                </Button>
+
+                {/* Apple Sign In Button */}
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full h-12 mb-4 rounded-xl gap-3 font-arabic text-base border-2 hover:bg-muted/50 transition-all bg-black text-white hover:bg-gray-800 hover:text-white"
+                  onClick={handleAppleLogin}
+                  disabled={isAppleLoading || isGoogleLoading}
+                >
+                  {isAppleLoading ? (
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                  ) : (
+                    <>
+                      <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/>
+                      </svg>
+                      {mode === 'login' ? 'تسجيل الدخول بـ Apple' : 'التسجيل بـ Apple'}
                     </>
                   )}
                 </Button>
