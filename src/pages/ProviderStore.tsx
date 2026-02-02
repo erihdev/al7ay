@@ -43,6 +43,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
 import { ChatDialog } from '@/components/chat/ChatDialog';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { FavoriteButton } from '@/components/favorites/FavoriteButton';
 import storeHeaderBg from '@/assets/store-header-bg.png';
 
 interface Product {
@@ -983,12 +984,21 @@ const FeaturedProductCard = ({ product, onAddToCart, onClick, primaryColor, acce
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
         
+        {/* Featured badge */}
         <div 
           className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full flex items-center justify-center shadow"
           style={{ backgroundColor: accentColor }}
         >
           <Star className="h-2.5 w-2.5 fill-white text-white" />
         </div>
+
+        {/* Favorite button */}
+        <FavoriteButton 
+          productId={product.id} 
+          productType="provider" 
+          variant="badge" 
+          className="!top-1.5 !left-1.5 !p-1 !h-5 !w-5"
+        />
         
         <div className="absolute bottom-0 left-0 right-0 p-2">
           <h4 className="font-bold text-white text-xs line-clamp-1 mb-0.5">{product.name_ar}</h4>
@@ -1043,6 +1053,7 @@ const CompactProductCard = ({ product, onAddToCart, onClick, primaryColor, accen
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
         
+        {/* Featured badge */}
         {product.is_featured && (
           <div 
             className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full flex items-center justify-center shadow"
@@ -1051,6 +1062,14 @@ const CompactProductCard = ({ product, onAddToCart, onClick, primaryColor, accen
             <Star className="h-2.5 w-2.5 fill-white text-white" />
           </div>
         )}
+
+        {/* Favorite button */}
+        <FavoriteButton 
+          productId={product.id} 
+          productType="provider" 
+          variant="badge" 
+          className="!top-1.5 !left-1.5 !p-1 !h-5 !w-5"
+        />
         
         <div className="absolute bottom-0 left-0 right-0 p-2">
           <h4 className="font-bold text-white text-xs line-clamp-1 mb-0.5">{product.name_ar}</h4>
