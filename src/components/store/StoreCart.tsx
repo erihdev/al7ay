@@ -20,6 +20,7 @@ import {
   SheetTrigger,
   SheetFooter,
 } from '@/components/ui/sheet';
+import { Input } from '@/components/ui/input';
 import { 
   ShoppingCart, 
   Minus, 
@@ -42,7 +43,9 @@ import {
   Navigation,
   CreditCard,
   Banknote,
-  Bike
+  Bike,
+  User,
+  Phone
 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { toast } from 'sonner';
@@ -894,7 +897,15 @@ const StoreCart = ({ primaryColor = '#1B4332', storeLocation, deliveryRadiusKm =
             <Button 
               className="w-full h-12 text-base font-semibold rounded-xl shadow-lg"
               style={{ backgroundColor: primaryColor }}
-              onClick={() => setViewState('checkout')}
+              onClick={() => {
+                // Check if phone number is required and missing
+                if (!customerPhone.trim()) {
+                  toast.error('يرجى إدخال رقم الهاتف أولاً', {
+                    description: 'رقم الهاتف مطلوب لإتمام الطلب',
+                  });
+                }
+                setViewState('checkout');
+              }}
             >
               <ArrowRight className="h-5 w-5 ml-2" />
               متابعة الطلب
@@ -957,6 +968,72 @@ const StoreCart = ({ primaryColor = '#1B4332', storeLocation, deliveryRadiusKm =
                 <span className="text-2xl font-bold" style={{ color: primaryColor }}>{totalPrice.toFixed(0)}</span>
                 <span className="text-sm mr-1">ر.س</span>
               </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Customer Information Section */}
+        <div className="bg-background rounded-2xl border shadow-sm overflow-hidden">
+          <div className="p-3 border-b bg-muted/30">
+            <h4 className="text-sm font-semibold flex items-center gap-2">
+              <User className="h-4 w-4" />
+              بيانات العميل
+            </h4>
+          </div>
+          <div className="p-3 space-y-3">
+            {/* Customer Name */}
+            <div className="space-y-1.5">
+              <Label htmlFor="customerName" className="text-xs font-medium flex items-center gap-1.5">
+                <User className="h-3.5 w-3.5 text-muted-foreground" />
+                الاسم *
+              </Label>
+              <Input
+                id="customerName"
+                value={customerName}
+                onChange={(e) => setCustomerName(e.target.value)}
+                placeholder="أدخل اسمك الكامل"
+                className={`h-10 rounded-xl text-sm ${!customerName.trim() ? 'border-amber-400 focus:ring-amber-400' : ''}`}
+              />
+            </div>
+
+            {/* Customer Phone */}
+            <div className="space-y-1.5">
+              <Label htmlFor="customerPhone" className="text-xs font-medium flex items-center gap-1.5">
+                <Phone className="h-3.5 w-3.5 text-muted-foreground" />
+                رقم الهاتف *
+              </Label>
+              <Input
+                id="customerPhone"
+                value={customerPhone}
+                onChange={(e) => setCustomerPhone(e.target.value)}
+                placeholder="05XXXXXXXX"
+                className={`h-10 rounded-xl text-sm ${!customerPhone.trim() ? 'border-amber-400 focus:ring-amber-400' : ''}`}
+                dir="ltr"
+                type="tel"
+                pattern="05[0-9]{8}"
+              />
+              {!customerPhone.trim() && (
+                <p className="text-[10px] text-amber-600 flex items-center gap-1">
+                  <AlertTriangle className="h-3 w-3" />
+                  رقم الهاتف مطلوب للتواصل معك
+                </p>
+              )}
+            </div>
+
+            {/* Customer Email (Optional) */}
+            <div className="space-y-1.5">
+              <Label htmlFor="customerEmail" className="text-xs font-medium flex items-center gap-1.5 text-muted-foreground">
+                البريد الإلكتروني (اختياري)
+              </Label>
+              <Input
+                id="customerEmail"
+                value={customerEmail}
+                onChange={(e) => setCustomerEmail(e.target.value)}
+                placeholder="example@email.com"
+                className="h-10 rounded-xl text-sm"
+                dir="ltr"
+                type="email"
+              />
             </div>
           </div>
         </div>

@@ -204,8 +204,18 @@ export const ChatDialog = ({ providerId, providerName, primaryColor = '#1B4332' 
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-md p-0 font-arabic h-[80vh] flex flex-col gap-0" dir="rtl">
-        <DialogHeader className="p-4 border-b flex-shrink-0">
-          <DialogTitle className="text-right">محادثة مع {providerName}</DialogTitle>
+        <DialogHeader className="p-4 border-b flex-shrink-0 relative">
+          <div className="flex items-center justify-between">
+            <DialogTitle className="text-right flex-1">محادثة مع {providerName}</DialogTitle>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 rounded-full hover:bg-muted"
+              onClick={() => setIsOpen(false)}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
         </DialogHeader>
 
         {conversationLoading || messagesLoading ? (
