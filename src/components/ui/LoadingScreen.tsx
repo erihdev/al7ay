@@ -1,8 +1,8 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import logoImage from '@/assets/logo.png';
 
-// Add cache-busting timestamp to force reload
-const logo = `${logoImage}?v=${Date.now()}`;
+// Static version to avoid re-fetching on every render
+const logo = logoImage;
 
 interface LoadingScreenProps {
   isLoading: boolean;
