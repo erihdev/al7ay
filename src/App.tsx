@@ -57,10 +57,10 @@ const App = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Quick loading - just wait for fonts and initial render
+    // Quick loading - just wait for initial render
     const timer = setTimeout(() => {
       setIsLoading(false);
-    }, 800);
+    }, 500); // Reduced from 800ms to 500ms for faster perceived load
 
     return () => clearTimeout(timer);
   }, []);

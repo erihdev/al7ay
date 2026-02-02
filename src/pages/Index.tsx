@@ -24,7 +24,6 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useLocation } from '@/contexts/LocationContext';
-import { useOrderStatusNotifications } from '@/hooks/useOrderStatusNotifications';
 import { 
   Store, 
   MapPin, 
@@ -92,9 +91,6 @@ const Index = () => {
   const [userGpsCoords, setUserGpsCoords] = useState<{ lat: number; lng: number } | null>(null);
   const { requestLocation } = useLocation();
   const hasAutoDetectedRef = useRef(false);
-  
-  // Enable order status notifications for logged-in customers
-  useOrderStatusNotifications();
 
   // Auto-detect location once on login (check localStorage)
   useEffect(() => {
