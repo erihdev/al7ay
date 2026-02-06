@@ -71,13 +71,20 @@ export function useProviderArrivalNotifications(providerId: string | undefined) 
     });
 
     // Request browser notification permission and show notification
-    if ('Notification' in window && Notification.permission === 'granted') {
-      new Notification('🙋 عميل وصل!', {
-        body: `العميل وصل لاستلام الطلب #${orderShortId}`,
-        icon: '/icons/icon-192.png',
-        tag: `arrival-${orderId}`,
-        requireInteraction: true
-      });
+    // Check if Notification API is available (not all browsers/environments support it)
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      try {
+        if (Notification.permission === 'granted') {
+          new Notification('🙋 عميل وصل!', {
+            body: `العميل وصل لاستلام الطلب #${orderShortId}`,
+            icon: '/icons/icon-192.png',
+            tag: `arrival-${orderId}`,
+            requireInteraction: true
+          });
+        }
+      } catch {
+        // Silent fail - some environments block Notification API
+      }
     }
 
     setArrivals(prev => [...prev, { orderId, customerName, timestamp: new Date() }]);
@@ -97,9 +104,15 @@ export function useProviderArrivalNotifications(providerId: string | undefined) 
       })
       .subscribe();
 
-    // Request notification permission
-    if ('Notification' in window && Notification.permission === 'default') {
-      Notification.requestPermission();
+    // Request notification permission - with safety checks
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      try {
+        if (Notification.permission === 'default') {
+          Notification.requestPermission();
+        }
+      } catch {
+        // Silent fail - some environments don't support Notification API
+      }
     }
 
     return () => {
