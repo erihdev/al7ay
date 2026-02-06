@@ -5,6 +5,21 @@ import { supabase } from '@/integrations/supabase/client';
 // VAPID public key for Web Push notifications
 const VAPID_PUBLIC_KEY = 'BLcfxrzMmUMPGMAMOKnw-0nJZ8oe3YkXUjPUW6uvmyFre4K8pNhzjkYZNC0cZIAhXFT4brgG_p7dZuSOPu7vm7U';
 
+// Safe check for Notification API support
+const isNotificationSupported = (): boolean => {
+  return typeof window !== 'undefined' && 'Notification' in window;
+};
+
+// Safe getter for notification permission
+const getNotificationPermission = (): NotificationPermission => {
+  if (!isNotificationSupported()) return 'default';
+  try {
+    return Notification.permission;
+  } catch {
+    return 'default';
+  }
+};
+
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
   const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
@@ -154,7 +169,7 @@ export function useAutoNotificationPermission(options: UseAutoNotificationPermis
     if (hasRequested.current) return;
     
     // Check if notifications are supported
-    if (!('Notification' in window)) {
+    if (!isNotificationSupported()) {
       return;
     }
 
@@ -163,8 +178,10 @@ export function useAutoNotificationPermission(options: UseAutoNotificationPermis
       hasRequested.current = true;
       
       try {
+        const currentPermission = getNotificationPermission();
+        
         // If permission not granted yet, request it
-        if (Notification.permission === 'default') {
+        if (currentPermission === 'default') {
           const permission = await Notification.requestPermission();
           
           if (permission === 'granted') {
@@ -191,7 +208,7 @@ export function useAutoNotificationPermission(options: UseAutoNotificationPermis
               duration: 7000,
             });
           }
-        } else if (Notification.permission === 'granted') {
+        } else if (currentPermission === 'granted') {
           // Already granted, register both services
           const webPushSuccess = await registerWebPush();
           console.log('Web Push (already granted):', webPushSuccess ? '✅' : '❌');
@@ -216,7 +233,10 @@ export function useAutoNotificationPermission(options: UseAutoNotificationPermis
   // Also try to register when SDK loads (retry mechanism)
   useEffect(() => {
     if (!options.providerId && !options.customerId) return;
-    if (Notification.permission !== 'granted') return;
+    
+    // Safety check for Notification API
+    if (!isNotificationSupported()) return;
+    if (getNotificationPermission() !== 'granted') return;
 
     const retryTimers = [
       setTimeout(registerAimtellAttributes, 2000),
@@ -228,7 +248,7 @@ export function useAutoNotificationPermission(options: UseAutoNotificationPermis
   }, [options.providerId, options.customerId, registerAimtellAttributes]);
 
   return {
-    permission: typeof Notification !== 'undefined' ? Notification.permission : 'default',
+    permission: getNotificationPermission(),
     registerAimtellAttributes,
     registerWebPush,
   };
