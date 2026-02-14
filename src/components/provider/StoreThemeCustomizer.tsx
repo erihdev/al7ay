@@ -211,7 +211,7 @@ const StoreThemeCustomizer = ({ provider, onUpdate }: StoreThemeCustomizerProps)
     setIsLoading(true);
 
     try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
       const { error } = await supabase
         .from('service_providers')
         .update({ store_theme: theme } as any)

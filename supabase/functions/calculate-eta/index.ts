@@ -59,7 +59,7 @@ serve(async (req) => {
     
     // Analyze congestion data from annotations
     let congestionLevel = 'unknown';
-    let congestionSummary = { low: 0, moderate: 0, heavy: 0, severe: 0 };
+    const congestionSummary = { low: 0, moderate: 0, heavy: 0, severe: 0 };
     
     if (route.legs && route.legs[0] && route.legs[0].annotation && route.legs[0].annotation.congestion) {
       const congestionData = route.legs[0].annotation.congestion;

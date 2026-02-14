@@ -235,7 +235,7 @@ export function useUpdateProviderProfile() {
   
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<ServiceProvider> }) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
       const { error } = await supabase
         .from('service_providers')
         .update(data as any)
