@@ -6,8 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Store, 
+import {
+  Store,
   Upload,
   Loader2,
   Save,
@@ -32,7 +32,7 @@ import { ProviderInvoiceSettings } from './ProviderInvoiceSettings';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { ServiceProvider } from '@/hooks/useProviderData';
-import { SimpleLocationPicker } from './SimpleLocationPicker';
+import { UnifiedLocationPicker } from '@/components/location/UnifiedLocationPicker';
 
 interface ProviderSettingsManagerProps {
   provider: ServiceProvider;
@@ -55,7 +55,7 @@ const ProviderSettingsManager = ({ provider, onUpdate }: ProviderSettingsManager
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [certificateFile, setCertificateFile] = useState<File | null>(null);
   const [certificatePreview, setCertificatePreview] = useState<string | null>(null);
-  
+
   const [formData, setFormData] = useState({
     business_name: '',
     business_name_en: '',
@@ -160,7 +160,7 @@ const ProviderSettingsManager = ({ provider, onUpdate }: ProviderSettingsManager
 
     try {
       let logoUrl = provider.logo_url;
-      
+
       if (logoFile) {
         logoUrl = await uploadFile(logoFile, 'provider-logos', 'logo');
       }
@@ -210,7 +210,7 @@ const ProviderSettingsManager = ({ provider, onUpdate }: ProviderSettingsManager
 
     try {
       let certificateUrl = provider.freelance_certificate_url;
-      
+
       if (certificateFile) {
         certificateUrl = await uploadFile(certificateFile, 'provider-certificates', 'certificate');
       }
@@ -274,9 +274,9 @@ const ProviderSettingsManager = ({ provider, onUpdate }: ProviderSettingsManager
             <div className="flex flex-col items-center gap-3">
               <div className="w-24 h-24 rounded-xl border-2 border-dashed border-muted-foreground/30 flex items-center justify-center overflow-hidden bg-muted">
                 {logoPreview ? (
-                  <img 
-                    src={logoPreview} 
-                    alt="Logo" 
+                  <img
+                    src={logoPreview}
+                    alt="Logo"
                     className="w-full h-full object-cover"
                   />
                 ) : (
@@ -369,17 +369,15 @@ const ProviderSettingsManager = ({ provider, onUpdate }: ProviderSettingsManager
               </Label>
               <div className="grid grid-cols-2 gap-2">
                 <div
-                  className={`p-2.5 border-2 rounded-lg cursor-pointer transition-all ${
-                    formData.delivery_scope === 'neighborhood'
+                  className={`p-2.5 border-2 rounded-lg cursor-pointer transition-all ${formData.delivery_scope === 'neighborhood'
                       ? 'border-primary bg-primary/5'
                       : 'border-muted hover:border-primary/50'
-                  }`}
+                    }`}
                   onClick={() => setFormData({ ...formData, delivery_scope: 'neighborhood' })}
                 >
                   <div className="flex items-center gap-2 mb-1">
-                    <div className={`w-3.5 h-3.5 rounded-full border-2 ${
-                      formData.delivery_scope === 'neighborhood' ? 'border-primary bg-primary' : 'border-muted-foreground'
-                    }`}>
+                    <div className={`w-3.5 h-3.5 rounded-full border-2 ${formData.delivery_scope === 'neighborhood' ? 'border-primary bg-primary' : 'border-muted-foreground'
+                      }`}>
                       {formData.delivery_scope === 'neighborhood' && (
                         <div className="w-full h-full flex items-center justify-center">
                           <div className="w-1 h-1 rounded-full bg-white" />
@@ -394,17 +392,15 @@ const ProviderSettingsManager = ({ provider, onUpdate }: ProviderSettingsManager
                   </p>
                 </div>
                 <div
-                  className={`p-2.5 border-2 rounded-lg cursor-pointer transition-all ${
-                    formData.delivery_scope === 'city'
+                  className={`p-2.5 border-2 rounded-lg cursor-pointer transition-all ${formData.delivery_scope === 'city'
                       ? 'border-primary bg-primary/5'
                       : 'border-muted hover:border-primary/50'
-                  }`}
+                    }`}
                   onClick={() => setFormData({ ...formData, delivery_scope: 'city' })}
                 >
                   <div className="flex items-center gap-2 mb-1">
-                    <div className={`w-3.5 h-3.5 rounded-full border-2 ${
-                      formData.delivery_scope === 'city' ? 'border-primary bg-primary' : 'border-muted-foreground'
-                    }`}>
+                    <div className={`w-3.5 h-3.5 rounded-full border-2 ${formData.delivery_scope === 'city' ? 'border-primary bg-primary' : 'border-muted-foreground'
+                      }`}>
                       {formData.delivery_scope === 'city' && (
                         <div className="w-full h-full flex items-center justify-center">
                           <div className="w-1 h-1 rounded-full bg-white" />
@@ -422,10 +418,13 @@ const ProviderSettingsManager = ({ provider, onUpdate }: ProviderSettingsManager
             </div>
 
             {/* Store Location Picker - Simplified */}
-            <SimpleLocationPicker 
-              location={formData.store_lat && formData.store_lng ? { lat: formData.store_lat, lng: formData.store_lng } : null}
-              onLocationChange={(location) => setFormData({ ...formData, store_lat: location.lat, store_lng: location.lng })}
-            />
+            {/* Store Location Picker - Unified */}
+            <div className="h-[300px] w-full rounded-xl overflow-hidden shadow-lg border-2 border-primary/10">
+              <UnifiedLocationPicker
+                initialLocation={formData.store_lat && formData.store_lng ? { lat: formData.store_lat, lng: formData.store_lng } : null}
+                onLocationSelect={(location) => setFormData({ ...formData, store_lat: location.lat, store_lng: location.lng })}
+              />
+            </div>
 
             {/* Delivery Radius Setting - Compact */}
             {formData.store_lat && formData.store_lng && (
@@ -459,7 +458,7 @@ const ProviderSettingsManager = ({ provider, onUpdate }: ProviderSettingsManager
             )}
 
             <Button
-              type="submit" 
+              type="submit"
               className="w-full font-arabic h-9 text-sm"
               disabled={isLoading}
             >
@@ -594,8 +593,8 @@ const ProviderSettingsManager = ({ provider, onUpdate }: ProviderSettingsManager
               />
             </div>
 
-            <Button 
-              type="submit" 
+            <Button
+              type="submit"
               className="w-full font-arabic h-9 text-sm"
               disabled={isPaymentLoading}
             >
@@ -658,7 +657,7 @@ const ProviderSettingsManager = ({ provider, onUpdate }: ProviderSettingsManager
                   <span className="text-xs font-arabic">Apple Pay & مدى</span>
                 </div>
               </div>
-              
+
               <Button
                 onClick={() => setPaymentData({ ...paymentData, payment_method: 'direct_gateway' })}
                 className="w-full font-arabic h-9 text-sm bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600"
@@ -666,9 +665,9 @@ const ProviderSettingsManager = ({ provider, onUpdate }: ProviderSettingsManager
                 <Zap className="h-4 w-4 ml-1.5" />
                 تفعيل الربط المباشر
               </Button>
-              
-              <Link 
-                to="/edfapay-guide" 
+
+              <Link
+                to="/edfapay-guide"
                 className="flex items-center justify-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
               >
                 <Info className="h-3 w-3" />
@@ -692,7 +691,7 @@ const ProviderSettingsManager = ({ provider, onUpdate }: ProviderSettingsManager
                   إلغاء
                 </Button>
               </div>
-              
+
               <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-1">
                   <Label className="font-arabic text-xs">Merchant ID *</Label>
@@ -725,10 +724,10 @@ const ProviderSettingsManager = ({ provider, onUpdate }: ProviderSettingsManager
                     toast.error('يرجى إدخال Merchant ID و Secret Key');
                     return;
                   }
-                  
+
                   setIsTesting(true);
                   setTestResult(null);
-                  
+
                   try {
                     const response = await fetch(
                       `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/verify-edfapay-credentials`,
@@ -747,9 +746,9 @@ const ProviderSettingsManager = ({ provider, onUpdate }: ProviderSettingsManager
                         })
                       }
                     );
-                    
+
                     const result = await response.json();
-                    
+
                     if (result.success) {
                       setTestResult({
                         success: true,
@@ -792,11 +791,10 @@ const ProviderSettingsManager = ({ provider, onUpdate }: ProviderSettingsManager
               </Button>
 
               {testResult && (
-                <div className={`p-2.5 rounded-lg border text-xs ${
-                  testResult.success 
-                    ? 'bg-green-50 dark:bg-green-950/30 border-green-200' 
+                <div className={`p-2.5 rounded-lg border text-xs ${testResult.success
+                    ? 'bg-green-50 dark:bg-green-950/30 border-green-200'
                     : 'bg-red-50 dark:bg-red-950/30 border-red-200'
-                }`}>
+                  }`}>
                   <div className="flex items-center gap-2">
                     {testResult.success ? (
                       <CheckCircle className="h-4 w-4 text-green-600" />
@@ -810,8 +808,8 @@ const ProviderSettingsManager = ({ provider, onUpdate }: ProviderSettingsManager
                 </div>
               )}
 
-              <Link 
-                to="/edfapay-guide" 
+              <Link
+                to="/edfapay-guide"
                 className="flex items-center justify-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors pt-1"
               >
                 <ExternalLink className="h-3 w-3" />
@@ -832,9 +830,9 @@ const ProviderSettingsManager = ({ provider, onUpdate }: ProviderSettingsManager
             <div className="flex items-center gap-4">
               <div className="w-16 h-16 rounded-xl bg-background overflow-hidden flex items-center justify-center">
                 {logoPreview ? (
-                  <img 
-                    src={logoPreview} 
-                    alt="Logo" 
+                  <img
+                    src={logoPreview}
+                    alt="Logo"
                     className="w-full h-full object-cover"
                   />
                 ) : (
@@ -871,8 +869,8 @@ const ProviderSettingsManager = ({ provider, onUpdate }: ProviderSettingsManager
       </Card>
 
       {/* Invoice Settings - Show for all providers, editable only for EdfaPay verified */}
-      <ProviderInvoiceSettings 
-        providerId={provider.id} 
+      <ProviderInvoiceSettings
+        providerId={provider.id}
         providerName={provider.business_name}
         isEditable={provider.edfapay_credentials_verified || false}
       />

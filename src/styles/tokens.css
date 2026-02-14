@@ -3,36 +3,36 @@
     /* Golden Desert & Teal Connection Theme - Inspired by Al-Hayy */
     --background: 38 30% 97%;
     --foreground: 30 25% 12%;
-    
+
     --card: 38 25% 99%;
     --card-foreground: 30 25% 12%;
-    
+
     --popover: 38 25% 99%;
     --popover-foreground: 30 25% 12%;
-    
+
     /* Primary: Warm Golden - from the connection lines */
     --primary: 43 75% 48%;
     --primary-foreground: 30 25% 8%;
-    
+
     --secondary: 38 25% 90%;
     --secondary-foreground: 30 25% 18%;
-    
+
     --muted: 38 20% 92%;
     --muted-foreground: 30 15% 45%;
-    
+
     /* Accent: Teal for contrast */
     --accent: 180 45% 40%;
     --accent-foreground: 0 0% 100%;
-    
+
     --destructive: 0 85% 60%;
     --destructive-foreground: 0 0% 100%;
-    
+
     --border: 38 20% 88%;
     --input: 38 20% 88%;
     --ring: 43 75% 48%;
-    
+
     --radius: 0.75rem;
-    
+
     /* Custom theme colors - Desert & Connection */
     --forest-dark: 30 35% 20%;
     --forest-medium: 43 70% 45%;
@@ -43,13 +43,13 @@
     --teal: 180 45% 40%;
     --teal-dark: 185 50% 25%;
     --sunset-orange: 24 75% 55%;
-    
+
     --chart-1: 43 75% 48%;
     --chart-2: 180 45% 40%;
     --chart-3: 24 75% 55%;
     --chart-4: 45 85% 52%;
     --chart-5: 38 60% 50%;
-    
+
     --sidebar-background: 38 30% 97%;
     --sidebar-foreground: 30 25% 12%;
     --sidebar-primary: 43 75% 48%;
@@ -58,40 +58,68 @@
     --sidebar-accent-foreground: 30 25% 18%;
     --sidebar-border: 38 20% 88%;
     --sidebar-ring: 43 75% 48%;
+
+    /* Premium Brand Colors - Navy & Gold Theme (Alternative) */
+    --navy: 222 47% 11%;
+    --navy-light: 217 33% 17%;
+    --navy-dark: 222 47% 8%;
+    --amber-gold: 38 92% 44%;
+    --amber-light: 38 80% 55%;
+    --amber-dark: 38 95% 35%;
+
+    /* Premium Gradients */
+    --gradient-hero: linear-gradient(135deg, hsl(30 35% 20%) 0%, hsl(43 75% 48%) 50%, hsl(45 85% 52%) 100%);
+    --gradient-card: linear-gradient(180deg, hsl(38 25% 99%) 0%, hsl(38 20% 96%) 100%);
+    --gradient-accent: linear-gradient(135deg, hsl(43 75% 48%) 0%, hsl(45 85% 52%) 100%);
+    --gradient-success: linear-gradient(135deg, hsl(142 50% 45%) 0%, hsl(142 45% 55%) 100%);
+    --gradient-premium: linear-gradient(135deg, hsl(30 35% 20%) 0%, hsl(43 75% 48%) 50%, hsl(45 85% 52%) 100%);
+    --gradient-luxury: linear-gradient(135deg, hsl(38 25% 99%) 0%, hsl(43 75% 48%) 30%, hsl(180 45% 40%) 100%);
+    --gradient-vibrant: linear-gradient(135deg, hsl(43 75% 48%) 0%, hsl(45 85% 52%) 100%);
+    --gradient-sunset: linear-gradient(135deg, hsl(24 75% 55%) 0%, hsl(43 75% 48%) 50%, hsl(45 85% 52%) 100%);
+
+    /* Enhanced Shadows */
+    --shadow-sm: 0 2px 8px 0 hsl(0 0% 0% / 0.08);
+    --shadow-md: 0 4px 16px 0 hsl(0 0% 0% / 0.12);
+    --shadow-lg: 0 8px 24px 0 hsl(0 0% 0% / 0.15);
+    --shadow-xl: 0 16px 48px 0 hsl(0 0% 0% / 0.18);
+
+    /* Glow effects */
+    --glow-gold: 0 0 20px hsl(43 75% 48% / 0.3);
+    --glow-teal: 0 0 20px hsl(180 45% 40% / 0.3);
   }
 
   .dark {
     /* Dark mode - Desert Night */
     --background: 30 25% 8%;
     --foreground: 38 30% 95%;
-    
+
     --card: 30 22% 11%;
     --card-foreground: 38 30% 95%;
-    
+
     --popover: 30 22% 11%;
     --popover-foreground: 38 30% 95%;
-    
+
     /* Primary: Warm Golden - brighter in dark mode */
     --primary: 43 80% 55%;
     --primary-foreground: 30 25% 8%;
-    
+
     --secondary: 30 20% 18%;
     --secondary-foreground: 38 30% 90%;
-    
+
     --muted: 30 18% 15%;
     --muted-foreground: 38 20% 58%;
-    
+
     /* Accent: Teal - brighter in dark mode */
     --accent: 180 50% 48%;
     --accent-foreground: 30 25% 8%;
-    
+
     --destructive: 0 75% 50%;
     --destructive-foreground: 0 0% 100%;
-    
+
     --border: 30 18% 18%;
     --input: 30 18% 18%;
     --ring: 43 80% 55%;
-    
+
     --forest-dark: 30 30% 14%;
     --forest-medium: 43 65% 40%;
     --forest-light: 45 60% 50%;
@@ -101,13 +129,13 @@
     --teal: 180 50% 48%;
     --teal-dark: 185 45% 30%;
     --sunset-orange: 24 70% 50%;
-    
+
     --chart-1: 43 80% 55%;
     --chart-2: 45 90% 55%;
     --chart-3: 170 45% 45%;
     --chart-4: 168 55% 40%;
     --chart-5: 165 50% 50%;
-    
+
     --sidebar-background: 175 30% 8%;
     --sidebar-foreground: 40 25% 95%;
     --sidebar-primary: 172 70% 48%;
@@ -116,5 +144,33 @@
     --sidebar-accent-foreground: 40 25% 90%;
     --sidebar-border: 175 22% 18%;
     --sidebar-ring: 172 70% 48%;
+
+    /* Premium Brand Colors - Navy & Gold Theme (Dark Mode) */
+    --navy: 215 25% 27%;
+    --navy-light: 215 30% 35%;
+    --navy-dark: 222 47% 11%;
+    --amber-gold: 38 92% 44%;
+    --amber-light: 38 80% 55%;
+    --amber-dark: 38 95% 35%;
+
+    /* Premium Gradients - Dark Mode */
+    --gradient-hero: linear-gradient(135deg, hsl(30 30% 14%) 0%, hsl(43 80% 55%) 50%, hsl(45 85% 55%) 100%);
+    --gradient-card: linear-gradient(180deg, hsl(30 22% 11%) 0%, hsl(30 18% 15%) 100%);
+    --gradient-accent: linear-gradient(135deg, hsl(43 80% 55%) 0%, hsl(45 85% 55%) 100%);
+    --gradient-success: linear-gradient(135deg, hsl(142 45% 45%) 0%, hsl(142 40% 50%) 100%);
+    --gradient-premium: linear-gradient(135deg, hsl(30 30% 14%) 0%, hsl(43 80% 55%) 50%, hsl(45 85% 55%) 100%);
+    --gradient-luxury: linear-gradient(135deg, hsl(30 22% 11%) 0%, hsl(43 80% 55%) 30%, hsl(180 50% 48%) 100%);
+    --gradient-vibrant: linear-gradient(135deg, hsl(43 80% 55%) 0%, hsl(45 85% 55%) 100%);
+    --gradient-sunset: linear-gradient(135deg, hsl(24 70% 50%) 0%, hsl(43 80% 55%) 50%, hsl(45 85% 55%) 100%);
+
+    /* Enhanced Shadows - Dark Mode */
+    --shadow-sm: 0 2px 8px 0 hsl(0 0% 0% / 0.15);
+    --shadow-md: 0 4px 16px 0 hsl(0 0% 0% / 0.22);
+    --shadow-lg: 0 8px 24px 0 hsl(0 0% 0% / 0.28);
+    --shadow-xl: 0 16px 48px 0 hsl(0 0% 0% / 0.35);
+
+    /* Glow effects - Dark Mode */
+    --glow-gold: 0 0 30px hsl(43 80% 55% / 0.4);
+    --glow-teal: 0 0 30px hsl(180 50% 48% / 0.4);
   }
 }

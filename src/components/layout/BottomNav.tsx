@@ -25,8 +25,8 @@ export function BottomNav() {
       <div className="relative bg-background/80 backdrop-blur-xl border-t border-border/50">
         {/* Subtle gradient glow at top */}
         <div className="absolute inset-x-0 -top-px h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
-        
-        <div className="flex items-center justify-around h-16 px-2">
+
+        <div className="flex items-center justify-around h-16 px-2 max-w-md mx-auto">
           {navItems.map(({ path, icon: Icon, label }) => {
             const isActive = location.pathname === path;
             const isCart = path === '/cart';
@@ -51,7 +51,7 @@ export function BottomNav() {
                   />
                 )}
 
-                <motion.div 
+                <motion.div
                   className="relative z-10"
                   whileTap={{ scale: 0.85 }}
                   transition={{ type: "spring", stiffness: 400, damping: 17 }}
@@ -60,18 +60,18 @@ export function BottomNav() {
                     animate={isActive ? { y: -2 } : { y: 0 }}
                     transition={{ type: "spring", stiffness: 300, damping: 20 }}
                   >
-                    <Icon 
+                    <Icon
                       className={cn(
                         "h-[22px] w-[22px] transition-all duration-300",
                         isActive && "stroke-[2.5px]",
                         !isActive && "stroke-[1.5px] group-hover:text-foreground group-hover:scale-110"
-                      )} 
+                      )}
                     />
                   </motion.div>
 
                   {/* Cart badge */}
                   {isCart && totalItems > 0 && (
-                    <motion.span 
+                    <motion.span
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
                       className="absolute -top-1 -right-2 min-w-[18px] h-[18px] px-1 bg-gradient-to-br from-primary to-primary/80 text-primary-foreground text-[10px] font-bold rounded-full flex items-center justify-center shadow-lg shadow-primary/30"
@@ -82,7 +82,7 @@ export function BottomNav() {
 
                   {/* Favorites badge */}
                   {isFavorites && favoritesCount > 0 && (
-                    <motion.span 
+                    <motion.span
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
                       className="absolute -top-1 -right-2 min-w-[18px] h-[18px] px-1 bg-gradient-to-br from-rose-500 to-rose-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center shadow-lg shadow-rose-500/30"
@@ -92,7 +92,7 @@ export function BottomNav() {
                   )}
                 </motion.div>
 
-                <motion.span 
+                <motion.span
                   className={cn(
                     "relative z-10 text-[11px] mt-1 font-arabic transition-all duration-300",
                     isActive ? "font-bold" : "font-medium group-hover:text-foreground"
@@ -105,7 +105,7 @@ export function BottomNav() {
 
                 {/* Active dot indicator */}
                 {isActive && (
-                  <motion.div 
+                  <motion.div
                     layoutId="activeDot"
                     className="absolute bottom-1 w-1 h-1 bg-primary rounded-full"
                     initial={false}

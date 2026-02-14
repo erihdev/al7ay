@@ -12,11 +12,11 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { DeliveryMapPicker } from '@/components/map/DeliveryMapPicker';
-import { SimpleDeliveryPicker } from '@/components/location/SimpleDeliveryPicker';
+import { UnifiedLocationPicker } from '@/components/location/UnifiedLocationPicker';
+import { Badge } from '@/components/ui/badge';
 import { OrderScheduler } from '@/components/scheduling/OrderScheduler';
 import { LoyaltyTierBadge, tierConfigs } from '@/components/loyalty/LoyaltyTierBadge';
-import { Minus, Plus, Trash2, ShoppingBag, MapPin, Truck, Star, Map, CheckCircle2, Ticket, Loader2, X, Crown, CreditCard, Banknote, Sparkles, Gift, Clock, User, Phone, Mail, FileText } from 'lucide-react';
+import { Minus, Plus, Trash2, ShoppingBag, MapPin, Truck, Star, Map, CheckCircle2, Ticket, Loader2, X, Crown, CreditCard, Banknote, Sparkles, Gift, Clock, User, Phone, Mail, FileText, Store } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useEdfaPayment } from '@/hooks/useEdfaPayment';
@@ -27,14 +27,14 @@ import { motion, AnimatePresence } from 'framer-motion';
 const Cart = () => {
   const { items, updateQuantity, removeItem, clearCart, totalAmount } = useCart();
   const { user } = useAuth();
-  const { isWithinDeliveryZone, userLocation } = useLocation();
+  const { isWithinDeliveryZone: isUserInZone, userLocation, storeLocation, deliveryRadius } = useLocation();
   const { data: loyaltyPoints } = useLoyaltyPoints();
   const { data: loyaltyTier } = useLoyaltyTier(user?.id);
   const createOrder = useCreateOrder();
   const navigate = useNavigate();
 
   const [orderType, setOrderType] = useState<'pickup' | 'delivery'>(
-    isWithinDeliveryZone ? 'delivery' : 'pickup'
+    isUserInZone ? 'delivery' : 'pickup'
   );
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
@@ -47,25 +47,77 @@ const Cart = () => {
     address: string;
   } | null>(null);
   const [isMapOpen, setIsMapOpen] = useState(false);
-  
+
   // Coupon state
   const [couponCode, setCouponCode] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState<{ coupon: Coupon; discount: number } | null>(null);
   const validateCoupon = useValidateCoupon();
   const recordCouponUsage = useRecordCouponUsage();
-  
+
   // Order scheduling
   const [scheduledFor, setScheduledFor] = useState<Date | null>(null);
-  
+
   // Payment method
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'online'>('cash');
   const { initiatePayment, isProcessing: isPaymentProcessing } = useEdfaPayment();
+
+  // Calculate distance between two points (returns meters)
+  const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2: number): number => {
+    const R = 6371000; // Earth's radius in meters
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lng2 - lng1) * Math.PI / 180;
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  };
+
+  const handleLocationSelect = (location: { lat: number; lng: number; address: string }) => {
+    if (!storeLocation) return;
+
+    const distance = calculateDistance(storeLocation.lat, storeLocation.lng, location.lat, location.lng);
+
+    if (distance > deliveryRadius) {
+      toast.error('الموقع خارج نطاق التوصيل', {
+        description: 'يرجى اختيار موقع داخل منطقة التوصيل أو اختيار الاستلام من المتجر'
+      });
+      return;
+    }
+
+    setDeliveryLocation(location);
+    toast.success('تم تحديد موقع التوصيل', {
+      icon: <CheckCircle2 className="h-4 w-4 text-green-500" />
+    });
+  };
+
+  // Calculate delivery ETA
+  const deliveryEstimate = (() => {
+    if (!deliveryLocation || !storeLocation) return null;
+
+    const distanceMeters = calculateDistance(
+      storeLocation.lat, storeLocation.lng,
+      deliveryLocation.lat, deliveryLocation.lng
+    );
+
+    // Average speed 25km/h
+    const distanceKm = distanceMeters / 1000;
+    const preparationTime = 15; // Increased prep time for realism
+    const travelTime = (distanceKm / 25) * 60;
+    const totalMinutes = Math.ceil(preparationTime + travelTime);
+
+    return {
+      distanceText: distanceKm >= 1 ? `${distanceKm.toFixed(1)} كم` : `${Math.round(distanceMeters)} م`,
+      etaText: totalMinutes < 60 ? `${totalMinutes} دقيقة` : `${Math.floor(totalMinutes / 60)} ساعة و ${totalMinutes % 60} دقيقة`
+    };
+  })();
 
   const availablePoints = loyaltyPoints?.total_points || 0;
   const maxRedeemablePoints = Math.min(availablePoints, Math.floor(totalAmount * 100));
   const pointsDiscount = usePoints ? maxRedeemablePoints / 100 : 0;
   const couponDiscount = appliedCoupon?.discount || 0;
-  
+
   // Tier discount
   const tierDiscount = loyaltyTier?.discount || 0;
   const tierDiscountAmount = (totalAmount * tierDiscount) / 100;
@@ -73,7 +125,7 @@ const Cart = () => {
 
   const handleApplyCoupon = async () => {
     if (!couponCode.trim()) return;
-    
+
     try {
       const result = await validateCoupon.mutateAsync({
         code: couponCode,
@@ -189,7 +241,7 @@ const Cart = () => {
       <div className="min-h-screen bg-background font-arabic pt-[env(safe-area-inset-top)] overflow-x-hidden" dir="rtl">
         <div className="w-full max-w-lg mx-auto px-3 py-4 pb-28">
           {/* Empty Cart Header */}
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary/20 via-primary/10 to-transparent p-8 mb-8"
@@ -201,8 +253,8 @@ const Cart = () => {
               السلة
             </h1>
           </motion.div>
-          
-          <motion.div 
+
+          <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.2 }}
@@ -233,7 +285,7 @@ const Cart = () => {
     <div className="min-h-screen bg-background font-arabic pt-[env(safe-area-inset-top)] overflow-x-hidden" dir="rtl">
       <div className="w-full max-w-lg mx-auto px-3 py-4 pb-36">
         {/* Header */}
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary/20 via-primary/10 to-transparent p-6 mb-6"
@@ -258,7 +310,7 @@ const Cart = () => {
         </motion.div>
 
         {/* Cart Items */}
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
@@ -272,75 +324,76 @@ const Cart = () => {
             {items.map((item, index) => (
               <motion.div
                 key={item.id}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 20, height: 0 }}
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
                 transition={{ delay: index * 0.05 }}
               >
-                <Card className="overflow-hidden border-0 shadow-lg hover:shadow-xl transition-shadow">
-                  <CardContent className="p-0">
-                    <div className="flex items-stretch">
-                      {/* Product Image */}
-                      <div className="w-24 h-24 bg-gradient-to-br from-muted to-muted/50 shrink-0 relative overflow-hidden">
-                        {item.image_url ? (
+                <Card className="overflow-hidden border-white/10 shadow-md bg-card/50 backdrop-blur-sm group hover:shadow-lg transition-all duration-300">
+                  <CardContent className="p-4">
+                    <div className="flex gap-4">
+                      {item.image_url ? (
+                        <div className="relative w-24 h-24 rounded-2xl overflow-hidden shrink-0 shadow-sm group-hover:scale-105 transition-transform duration-500">
                           <img
                             src={item.image_url}
                             alt={item.name_ar}
                             className="w-full h-full object-cover"
                           />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center text-3xl">
-                            ☕
+                          <div className="absolute top-1 right-1 bg-primary/90 backdrop-blur-md text-primary-foreground text-xs font-bold px-2 py-0.5 rounded-full shadow-sm">
+                            x{item.quantity}
                           </div>
-                        )}
-                        <div className="absolute top-1 right-1 bg-primary text-primary-foreground text-xs font-bold px-2 py-0.5 rounded-full">
-                          x{item.quantity}
                         </div>
-                      </div>
-                      
-                      {/* Product Info */}
-                      <div className="flex-1 p-4 flex flex-col justify-between">
+                      ) : (
+                        <div className="w-24 h-24 rounded-2xl bg-muted/50 flex items-center justify-center shrink-0 shadow-inner group-hover:scale-105 transition-transform duration-500">
+                          <div className="text-4xl opacity-50">☕</div>
+                        </div>
+                      )}
+
+                      <div className="flex-1 flex flex-col justify-between py-1">
                         <div>
-                          <h3 className="font-bold text-base line-clamp-1">{item.name_ar}</h3>
+                          <h3 className="font-bold text-lg line-clamp-1 group-hover:text-primary transition-colors">{item.name_ar}</h3>
                           {item.selected_options && item.selected_options.length > 0 && (
-                            <p className="text-xs text-muted-foreground mt-0.5">
+                            <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
                               {item.selected_options.map(o => o.value_name).join(' • ')}
                             </p>
                           )}
                         </div>
-                        <p className="text-primary font-bold text-lg">
-                          {(item.price * item.quantity).toFixed(0)} ر.س
-                        </p>
+
+                        <div className="flex items-end justify-between mt-2">
+                          <p className="text-primary font-bold text-xl">
+                            {(item.price * item.quantity).toFixed(0)} <span className="text-sm font-normal text-muted-foreground">ر.س</span>
+                          </p>
+
+                          <div className="flex items-center gap-1 bg-muted/50 rounded-full p-1 border border-border/50">
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-8 w-8 rounded-full hover:bg-background shadow-sm transition-all"
+                              onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                            >
+                              <Plus className="h-4 w-4" />
+                            </Button>
+                            <span className="w-8 text-center text-sm font-bold">{item.quantity}</span>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-8 w-8 rounded-full hover:bg-background shadow-sm transition-all"
+                              onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                            >
+                              <Minus className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
                       </div>
 
-                      {/* Quantity Controls */}
-                      <div className="flex flex-col items-center justify-center gap-1 p-2 bg-muted/30">
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-8 w-8 rounded-full hover:bg-primary/20"
-                          onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                        >
-                          <Plus className="h-4 w-4" />
-                        </Button>
-                        <span className="text-sm font-bold">{item.quantity}</span>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-8 w-8 rounded-full hover:bg-primary/20"
-                          onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                        >
-                          <Minus className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-8 w-8 rounded-full text-destructive hover:bg-destructive/10 mt-1"
-                          onClick={() => removeItem(item.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-8 w-8 rounded-full text-muted-foreground hover:text-red-500 hover:bg-red-50 absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={() => removeItem(item.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
                   </CardContent>
                 </Card>
@@ -371,44 +424,61 @@ const Cart = () => {
                     setDeliveryLocation(null);
                   }
                 }}
-                className="grid grid-cols-2 gap-3"
+                className="grid grid-cols-2 gap-4"
               >
-                <Label 
-                  htmlFor="pickup" 
-                  className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 cursor-pointer transition-all ${
-                    orderType === 'pickup' 
-                      ? 'border-primary bg-primary/10' 
-                      : 'border-muted hover:border-primary/50'
-                  }`}
+                <Label
+                  htmlFor="pickup"
+                  className={`relative flex flex-col items-center gap-3 p-5 rounded-2xl border-2 cursor-pointer transition-all duration-300 ${orderType === 'pickup'
+                    ? 'border-primary bg-primary/5 shadow-md scale-[1.02]'
+                    : 'border-muted hover:border-primary/30 hover:bg-muted/30'
+                    }`}
                 >
                   <RadioGroupItem value="pickup" id="pickup" className="sr-only" />
-                  <div className={`p-3 rounded-full ${orderType === 'pickup' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
-                    <MapPin className="h-5 w-5" />
+                  <div className={`p-3 rounded-full transition-colors duration-300 ${orderType === 'pickup' ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30' : 'bg-muted text-muted-foreground'}`}>
+                    <Store className="h-6 w-6" />
                   </div>
-                  <span className="font-semibold">استلام</span>
+                  <div className="text-center">
+                    <span className="font-bold block text-base">استلام من المتجر</span>
+                    <span className="text-xs text-muted-foreground mt-1 block">استلم طلبك بنفسك</span>
+                  </div>
+                  {orderType === 'pickup' && (
+                    <motion.div layoutId="orderTypeCheck" className="absolute top-2 right-2">
+                      <div className="bg-primary text-primary-foreground rounded-full p-0.5">
+                        <CheckCircle2 className="h-3.5 w-3.5" />
+                      </div>
+                    </motion.div>
+                  )}
                 </Label>
-                
-                <Label 
-                  htmlFor="delivery" 
-                  className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 cursor-pointer transition-all ${
-                    !isWithinDeliveryZone ? 'opacity-50 cursor-not-allowed' : 
-                    orderType === 'delivery' 
-                      ? 'border-primary bg-primary/10' 
-                      : 'border-muted hover:border-primary/50'
-                  }`}
+
+                <Label
+                  htmlFor="delivery"
+                  className={`relative flex flex-col items-center gap-3 p-5 rounded-2xl border-2 cursor-pointer transition-all duration-300 ${orderType === 'delivery'
+                    ? 'border-primary bg-primary/5 shadow-md scale-[1.02]'
+                    : 'border-muted hover:border-primary/30 hover:bg-muted/30'
+                    }`}
                 >
-                  <RadioGroupItem value="delivery" id="delivery" disabled={!isWithinDeliveryZone} className="sr-only" />
-                  <div className={`p-3 rounded-full ${orderType === 'delivery' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
-                    <Truck className="h-5 w-5" />
+                  <RadioGroupItem value="delivery" id="delivery" className="sr-only" />
+                  <div className={`p-3 rounded-full transition-colors duration-300 ${orderType === 'delivery' ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30' : 'bg-muted text-muted-foreground'}`}>
+                    <Truck className="h-6 w-6" />
                   </div>
-                  <span className="font-semibold">توصيل</span>
+                  <div className="text-center">
+                    <span className="font-bold block text-base">توصيل للمنزل</span>
+                    <span className="text-xs text-muted-foreground mt-1 block">
+                      {(isUserInZone || deliveryLocation)
+                        ? 'توصيل سريع ومباشر'
+                        : 'خارج نطاق التوصيل'
+                      }
+                    </span>
+                  </div>
+                  {orderType === 'delivery' && (
+                    <motion.div layoutId="orderTypeCheck" className="absolute top-2 right-2">
+                      <div className="bg-primary text-primary-foreground rounded-full p-0.5">
+                        <CheckCircle2 className="h-3.5 w-3.5" />
+                      </div>
+                    </motion.div>
+                  )}
                 </Label>
               </RadioGroup>
-              {!isWithinDeliveryZone && (
-                <p className="text-xs text-muted-foreground mt-3 text-center">
-                  التوصيل غير متاح لموقعك الحالي
-                </p>
-              )}
             </CardContent>
           </Card>
         </motion.div>
@@ -428,10 +498,50 @@ const Cart = () => {
                 </h3>
               </div>
               <CardContent className="p-4">
-                <SimpleDeliveryPicker
-                  location={deliveryLocation}
-                  onLocationChange={setDeliveryLocation}
-                />
+                <div className="space-y-4">
+                  <div className="h-[300px] w-full rounded-xl overflow-hidden shadow-lg border-2 border-primary/10">
+                    <UnifiedLocationPicker onLocationSelect={handleLocationSelect} />
+                  </div>
+
+                  {deliveryLocation && (
+                    <Card className="bg-green-50/50 dark:bg-green-950/20 border-green-200 dark:border-green-800/50">
+                      <CardContent className="p-3 space-y-2">
+                        <div className="flex items-start gap-2">
+                          <MapPin className="h-4 w-4 text-green-600 mt-0.5 shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-medium text-green-700 dark:text-green-400 font-arabic mb-0.5">
+                              موقع التوصيل المحدد
+                            </p>
+                            <p className="text-sm text-foreground font-arabic leading-relaxed">
+                              {deliveryLocation.address}
+                            </p>
+                          </div>
+                          <Badge className="bg-green-100 text-green-800 hover:bg-green-100 text-[10px] px-1.5 h-5">
+                            <CheckCircle2 className="h-3 w-3 ml-1" />
+                            مؤكد
+                          </Badge>
+                        </div>
+
+                        {deliveryEstimate && (
+                          <div className="flex items-center gap-3 pt-2 border-t border-green-200 dark:border-green-800/50">
+                            <div className="flex items-center gap-1.5 text-green-700 dark:text-green-400">
+                              <Clock className="h-3.5 w-3.5" />
+                              <span className="text-xs font-medium font-arabic">
+                                وقت التوصيل المتوقع: {deliveryEstimate.etaText}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1.5 text-muted-foreground">
+                              <Truck className="h-3.5 w-3.5" />
+                              <span className="text-xs font-arabic">
+                                {deliveryEstimate.distanceText}
+                              </span>
+                            </div>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
               </CardContent>
             </Card>
           </motion.div>
@@ -597,7 +707,7 @@ const Cart = () => {
                   />
                 </div>
                 {usePoints && (
-                  <motion.p 
+                  <motion.p
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: 'auto' }}
                     className="text-sm text-yellow-700 mt-3 bg-yellow-500/10 p-3 rounded-xl"
@@ -627,42 +737,60 @@ const Cart = () => {
               <RadioGroup
                 value={paymentMethod}
                 onValueChange={(v) => setPaymentMethod(v as 'cash' | 'online')}
-                className="space-y-3"
+                className="grid grid-cols-1 gap-4"
               >
-                <Label 
+                <Label
                   htmlFor="cash-payment"
-                  className={`flex items-center gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all ${
-                    paymentMethod === 'cash' 
-                      ? 'border-green-500 bg-green-500/10' 
-                      : 'border-muted hover:border-green-500/50'
-                  }`}
+                  className={`relative flex items-center gap-4 p-5 rounded-2xl border-2 cursor-pointer transition-all duration-300 ${paymentMethod === 'cash'
+                    ? 'border-green-500 bg-green-500/5 shadow-md scale-[1.02]'
+                    : 'border-muted hover:border-green-500/30 hover:bg-muted/30'
+                    }`}
                 >
                   <RadioGroupItem value="cash" id="cash-payment" className="sr-only" />
-                  <div className={`p-3 rounded-xl ${paymentMethod === 'cash' ? 'bg-green-500 text-white' : 'bg-muted'}`}>
-                    <Banknote className="h-5 w-5" />
+                  <div className={`p-3 rounded-xl transition-colors duration-300 ${paymentMethod === 'cash' ? 'bg-green-500 text-white shadow-lg shadow-green-500/30' : 'bg-muted text-muted-foreground'}`}>
+                    <Banknote className="h-6 w-6" />
                   </div>
                   <div className="flex-1">
-                    <p className="font-bold">الدفع عند الاستلام</p>
-                    <p className="text-xs text-muted-foreground">ادفع نقداً عند استلام طلبك</p>
+                    <p className="font-bold text-base">الدفع عند الاستلام</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">ادفع نقداً عند استلام طلبك</p>
                   </div>
+                  {paymentMethod === 'cash' && (
+                    <motion.div layoutId="paymentCheck" className="absolute top-4 left-4">
+                      <div className="bg-green-500 text-white rounded-full p-0.5">
+                        <CheckCircle2 className="h-4 w-4" />
+                      </div>
+                    </motion.div>
+                  )}
                 </Label>
-                
-                <Label 
+
+                <Label
                   htmlFor="online-payment"
-                  className={`flex items-center gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all ${
-                    paymentMethod === 'online' 
-                      ? 'border-blue-500 bg-blue-500/10' 
-                      : 'border-muted hover:border-blue-500/50'
-                  }`}
+                  className={`relative flex items-center gap-4 p-5 rounded-2xl border-2 cursor-pointer transition-all duration-300 ${paymentMethod === 'online'
+                    ? 'border-blue-500 bg-blue-500/5 shadow-md scale-[1.02]'
+                    : 'border-muted hover:border-blue-500/30 hover:bg-muted/30'
+                    }`}
                 >
                   <RadioGroupItem value="online" id="online-payment" className="sr-only" />
-                  <div className={`p-3 rounded-xl ${paymentMethod === 'online' ? 'bg-blue-500 text-white' : 'bg-muted'}`}>
-                    <CreditCard className="h-5 w-5" />
+                  <div className={`p-3 rounded-xl transition-colors duration-300 ${paymentMethod === 'online' ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/30' : 'bg-muted text-muted-foreground'}`}>
+                    <CreditCard className="h-6 w-6" />
                   </div>
                   <div className="flex-1">
-                    <p className="font-bold">الدفع الإلكتروني</p>
-                    <p className="text-xs text-muted-foreground">بطاقة ائتمان / مدى / Apple Pay</p>
+                    <p className="font-bold text-base">الدفع الإلكتروني</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">بطاقة ائتمان / مدى / Apple Pay</p>
                   </div>
+                  {paymentMethod === 'online' && (
+                    <div className="flex gap-1 absolute bottom-4 left-4 opacity-50">
+                      <div className="w-6 h-4 bg-foreground/20 rounded"></div>
+                      <div className="w-6 h-4 bg-foreground/20 rounded"></div>
+                    </div>
+                  )}
+                  {paymentMethod === 'online' && (
+                    <motion.div layoutId="paymentCheck" className="absolute top-4 left-4">
+                      <div className="bg-blue-500 text-white rounded-full p-0.5">
+                        <CheckCircle2 className="h-4 w-4" />
+                      </div>
+                    </motion.div>
+                  )}
                 </Label>
               </RadioGroup>
             </CardContent>
@@ -684,7 +812,7 @@ const Cart = () => {
             </div>
             <CardContent className="p-4">
               {appliedCoupon ? (
-                <motion.div 
+                <motion.div
                   initial={{ scale: 0.9 }}
                   animate={{ scale: 1 }}
                   className="flex items-center justify-between p-4 bg-gradient-to-r from-primary/10 to-transparent rounded-xl border border-primary/20"
@@ -711,7 +839,7 @@ const Cart = () => {
                     dir="ltr"
                     className="flex-1 rounded-xl"
                   />
-                  <Button 
+                  <Button
                     onClick={handleApplyCoupon}
                     disabled={validateCoupon.isPending || !couponCode.trim()}
                     className="rounded-xl px-6"
@@ -747,9 +875,9 @@ const Cart = () => {
                   <span className="text-muted-foreground">المجموع الفرعي</span>
                   <span className="font-semibold">{totalAmount.toFixed(0)} ر.س</span>
                 </div>
-                
+
                 {usePoints && pointsDiscount > 0 && (
-                  <motion.div 
+                  <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     className="flex justify-between py-2 text-yellow-700 bg-yellow-500/10 px-3 rounded-lg -mx-1"
@@ -761,7 +889,7 @@ const Cart = () => {
                     <span className="font-bold">-{pointsDiscount.toFixed(0)} ر.س</span>
                   </motion.div>
                 )}
-                
+
                 {tierDiscountAmount > 0 && (
                   <div className="flex justify-between py-2 text-amber-700 bg-amber-500/10 px-3 rounded-lg -mx-1">
                     <span className="flex items-center gap-1">
@@ -771,7 +899,7 @@ const Cart = () => {
                     <span className="font-bold">-{tierDiscountAmount.toFixed(0)} ر.س</span>
                   </div>
                 )}
-                
+
                 {couponDiscount > 0 && (
                   <div className="flex justify-between py-2 text-pink-700 bg-pink-500/10 px-3 rounded-lg -mx-1">
                     <span className="flex items-center gap-1">
@@ -781,7 +909,7 @@ const Cart = () => {
                     <span className="font-bold">-{couponDiscount.toFixed(0)} ر.س</span>
                   </div>
                 )}
-                
+
                 <div className="flex justify-between text-xl font-bold pt-4 border-t border-dashed">
                   <span>الإجمالي</span>
                   <span className="text-primary">{finalAmount.toFixed(0)} ر.س</span>
@@ -798,16 +926,16 @@ const Cart = () => {
           transition={{ delay: 0.6 }}
         >
           <Button
-            className="w-full h-14 text-lg font-arabic rounded-2xl shadow-lg shadow-primary/30 hover:shadow-xl hover:shadow-primary/40 transition-all"
+            className="w-full h-16 text-xl font-bold font-arabic rounded-2xl shadow-xl shadow-primary/20 hover:shadow-2xl hover:shadow-primary/30 transition-all transform hover:scale-[1.02] active:scale-[0.98] bg-gradient-to-r from-primary to-primary/90"
             onClick={handleSubmitOrder}
             disabled={createOrder.isPending || isPaymentProcessing}
           >
             {createOrder.isPending || isPaymentProcessing ? (
-              <Loader2 className="h-5 w-5 animate-spin ml-2" />
+              <Loader2 className="h-6 w-6 animate-spin ml-2" />
             ) : (
-              <Sparkles className="h-5 w-5 ml-2" />
+              <Sparkles className="h-6 w-6 ml-2 animate-pulse" />
             )}
-            {createOrder.isPending ? 'جاري الإرسال...' : isPaymentProcessing ? 'جاري التحويل للدفع...' : paymentMethod === 'online' ? 'الدفع الآن' : 'تأكيد الطلب'}
+            {createOrder.isPending ? 'جاري الإرسال...' : isPaymentProcessing ? 'جاري التحويل للدفع...' : paymentMethod === 'online' ? `الدفع الآن • ${finalAmount.toFixed(0)} ر.س` : `تأكيد الطلب • ${finalAmount.toFixed(0)} ر.س`}
           </Button>
 
           <p className="text-center text-sm text-muted-foreground mt-4">

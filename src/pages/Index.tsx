@@ -24,11 +24,11 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useLocation } from '@/contexts/LocationContext';
-import { 
-  Store, 
-  MapPin, 
-  Search, 
-  Star, 
+import {
+  Store,
+  MapPin,
+  Search,
+  Star,
   Navigation,
   ArrowLeft,
   Filter,
@@ -95,13 +95,13 @@ const Index = () => {
   // Auto-detect location once on login (check localStorage)
   useEffect(() => {
     if (!user || hasAutoDetectedRef.current) return;
-    
+
     const locationDetectedKey = `location_detected_${user.id}`;
     const hasDetected = localStorage.getItem(locationDetectedKey);
-    
+
     if (!hasDetected && navigator.geolocation) {
       hasAutoDetectedRef.current = true;
-      
+
       // Small delay to ensure page is ready
       const timer = setTimeout(() => {
         navigator.geolocation.getCurrentPosition(
@@ -116,7 +116,7 @@ const Index = () => {
 
             if (neighborhoodsWithCoords) {
               let nearest: { id: string; name: string; city: string; distance: number } | null = null;
-              
+
               for (const neighborhood of neighborhoodsWithCoords) {
                 if (neighborhood.lat && neighborhood.lng) {
                   const distance = calculateDistance(userLat, userLng, neighborhood.lat, neighborhood.lng);
@@ -142,7 +142,7 @@ const Index = () => {
                 setUserGpsCoords({ lat: userLat, lng: userLng });
                 setSelectedCity(nearest.city);
                 setSelectedNeighborhood(nearest.id);
-                
+
                 // Mark as detected for this user
                 localStorage.setItem(locationDetectedKey, 'true');
               }
@@ -154,7 +154,7 @@ const Index = () => {
           { enableHighAccuracy: true, timeout: 10000, maximumAge: 300000 }
         );
       }, 500);
-      
+
       return () => clearTimeout(timer);
     }
   }, [user]);
@@ -186,7 +186,7 @@ const Index = () => {
           )
         `)
         .eq('is_active', true);
-      
+
       if (error) throw error;
       return data as ServiceProvider[];
     },
@@ -220,7 +220,7 @@ const Index = () => {
     }
 
     setIsAutoDetecting(true);
-    
+
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         const userLat = position.coords.latitude;
@@ -239,7 +239,7 @@ const Index = () => {
 
         // Find nearest neighborhood
         let nearest: { id: string; name: string; city: string; distance: number } | null = null;
-        
+
         for (const neighborhood of neighborhoodsWithCoords) {
           if (neighborhood.lat && neighborhood.lng) {
             const distance = calculateDistance(userLat, userLng, neighborhood.lat, neighborhood.lng);
@@ -320,11 +320,11 @@ const Index = () => {
   const providersWithDistance = filteredProviders.map(provider => {
     let distance: number | null = null;
     let servesUserLocation = true; // Default to true if no location
-    
+
     // Get provider's coordinates - prefer store_lat/store_lng, fallback to neighborhood
     const providerLat = provider.store_lat ?? provider.active_neighborhoods?.lat;
     const providerLng = provider.store_lng ?? provider.active_neighborhoods?.lng;
-    
+
     if (userGpsCoords && providerLat && providerLng) {
       distance = calculateDistance(
         userGpsCoords.lat,
@@ -332,11 +332,11 @@ const Index = () => {
         providerLat,
         providerLng
       );
-      
+
       // Check if provider serves user's location based on delivery_scope
       const deliveryScope = provider.delivery_scope || 'neighborhood';
       const deliveryRadiusKm = provider.delivery_radius_km || 2; // Default 2km radius
-      
+
       if (deliveryScope === 'neighborhood') {
         // Provider only serves their neighborhood - check if user is within delivery radius
         servesUserLocation = distance <= (deliveryRadiusKm * 1000);
@@ -345,7 +345,7 @@ const Index = () => {
         servesUserLocation = distance <= 50000;
       }
     }
-    
+
     return { ...provider, distance, servesUserLocation };
   }).sort((a, b) => {
     // Prioritize providers that serve user's location
@@ -375,10 +375,10 @@ const Index = () => {
       <div className="min-h-screen bg-background font-arabic relative overflow-x-hidden" dir="rtl">
         <FloatingParticles count={12} />
         <Header />
-        
+
         <main className="w-full max-w-full mx-auto px-3 pb-24 pt-3 space-y-4 overflow-x-hidden">
           {/* Welcome Section */}
-          <motion.div 
+          <motion.div
             variants={fadeInUp}
             className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/20 via-primary/10 to-transparent p-4"
           >
@@ -430,7 +430,7 @@ const Index = () => {
                   </p>
                 </div>
               </div>
-              
+
               {/* Location button */}
               <Button
                 variant={detectedLocation ? "default" : "outline"}
@@ -606,7 +606,7 @@ const Index = () => {
               ))}
             </div>
           ) : providersWithDistance.length === 0 ? (
-            <motion.div 
+            <motion.div
               className="text-center py-12"
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -625,8 +625,8 @@ const Index = () => {
               </p>
             </motion.div>
           ) : (
-            <motion.div 
-              className="space-y-3"
+            <motion.div
+              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
             >
@@ -645,8 +645,8 @@ const Index = () => {
                           {/* Logo */}
                           <div className="w-14 h-14 rounded-lg bg-muted flex items-center justify-center overflow-hidden flex-shrink-0">
                             {provider.logo_url ? (
-                              <img 
-                                src={provider.logo_url} 
+                              <img
+                                src={provider.logo_url}
                                 alt={provider.business_name}
                                 className="w-full h-full object-cover"
                               />
@@ -714,7 +714,7 @@ const Index = () => {
                       </AlertDescription>
                     </Alert>
                   </div>
-                  
+
                   {notServingProviders.map((provider, index) => (
                     <motion.div
                       key={provider.id}
@@ -729,8 +729,8 @@ const Index = () => {
                               {/* Logo */}
                               <div className="w-14 h-14 rounded-lg bg-muted flex items-center justify-center overflow-hidden flex-shrink-0">
                                 {provider.logo_url ? (
-                                  <img 
-                                    src={provider.logo_url} 
+                                  <img
+                                    src={provider.logo_url}
                                     alt={provider.business_name}
                                     className="w-full h-full object-cover"
                                   />

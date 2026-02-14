@@ -21,11 +21,11 @@ import {
   SheetFooter,
 } from '@/components/ui/sheet';
 import { Input } from '@/components/ui/input';
-import { 
-  ShoppingCart, 
-  Minus, 
-  Plus, 
-  Trash2, 
+import {
+  ShoppingCart,
+  Minus,
+  Plus,
+  Trash2,
   Send,
   Loader2,
   MapPin,
@@ -133,15 +133,15 @@ function ManualLocationPicker({ storeLocation, deliveryRadiusKm, onLocationSelec
     const points = 64;
     const coords: [number, number][] = [];
     const radiusMeters = radiusKm * 1000;
-    
+
     for (let i = 0; i < points; i++) {
       const angle = (i / points) * 2 * Math.PI;
       const dx = radiusMeters * Math.cos(angle);
       const dy = radiusMeters * Math.sin(angle);
-      
+
       const newLat = lat + (dy / 111320);
       const newLng = lng + (dx / (111320 * Math.cos(lat * Math.PI / 180)));
-      
+
       coords.push([newLng, newLat]);
     }
     coords.push(coords[0]);
@@ -328,7 +328,7 @@ function ManualLocationPicker({ storeLocation, deliveryRadiusKm, onLocationSelec
 
       <div className="relative rounded-xl overflow-hidden border">
         <div ref={mapContainer} className="h-40 w-full" />
-        
+
         <Button
           type="button"
           size="icon"
@@ -378,7 +378,7 @@ const StoreCart = ({ primaryColor = '#1B4332', storeLocation, deliveryRadiusKm =
   const [distanceToStore, setDistanceToStore] = useState<number | null>(null);
   const [useManualLocation, setUseManualLocation] = useState(false);
   const [showMapPicker, setShowMapPicker] = useState(false);
-  
+
   const [orderType, setOrderType] = useState<'pickup' | 'delivery'>('pickup');
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'online' | 'apple_pay'>('cash');
   const [customerName, setCustomerName] = useState('');
@@ -392,7 +392,7 @@ const StoreCart = ({ primaryColor = '#1B4332', storeLocation, deliveryRadiusKm =
     const R = 6371; // Earth's radius in km
     const dLat = (lat2 - lat1) * Math.PI / 180;
     const dLng = (lng2 - lng1) * Math.PI / 180;
-    const a = 
+    const a =
       Math.sin(dLat / 2) * Math.sin(dLat / 2) +
       Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
       Math.sin(dLng / 2) * Math.sin(dLng / 2);
@@ -406,7 +406,7 @@ const StoreCart = ({ primaryColor = '#1B4332', storeLocation, deliveryRadiusKm =
     const PREPARATION_TIME = 5; // minutes
     const travelTime = (distanceKm / AVERAGE_SPEED) * 60;
     const totalMinutes = Math.ceil(PREPARATION_TIME + travelTime);
-    
+
     let etaText: string;
     if (totalMinutes < 60) {
       etaText = `${totalMinutes} دقيقة`;
@@ -415,28 +415,28 @@ const StoreCart = ({ primaryColor = '#1B4332', storeLocation, deliveryRadiusKm =
       const mins = totalMinutes % 60;
       etaText = mins > 0 ? `${hours} ساعة و ${mins} دقيقة` : `${hours} ساعة`;
     }
-    
+
     return { etaMinutes: totalMinutes, etaText };
   };
 
   // Check delivery range when order type is delivery
   const checkDeliveryRange = useCallback(() => {
     if (!storeLocation) return;
-    
+
     setIsCheckingLocation(true);
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const userLat = position.coords.latitude;
         const userLng = position.coords.longitude;
         setCustomerLocation({ lat: userLat, lng: userLng });
-        
+
         const distance = calculateDistance(
           storeLocation.lat,
           storeLocation.lng,
           userLat,
           userLng
         );
-        
+
         setDistanceToStore(distance);
         setIsOutOfRange(distance > deliveryRadiusKm);
         setIsCheckingLocation(false);
@@ -459,16 +459,16 @@ const StoreCart = ({ primaryColor = '#1B4332', storeLocation, deliveryRadiusKm =
   // Handle manual location selection
   const handleManualLocationSelect = (lat: number, lng: number) => {
     if (!storeLocation) return;
-    
+
     setCustomerLocation({ lat, lng });
-    
+
     const distance = calculateDistance(
       storeLocation.lat,
       storeLocation.lng,
       lat,
       lng
     );
-    
+
     setDistanceToStore(distance);
     setIsOutOfRange(distance > deliveryRadiusKm);
     setShowMapPicker(false);
@@ -483,18 +483,18 @@ const StoreCart = ({ primaryColor = '#1B4332', storeLocation, deliveryRadiusKm =
           .select('full_name, phone')
           .eq('user_id', user.id)
           .maybeSingle();
-        
+
         if (profile) {
           if (profile.full_name && !customerName) setCustomerName(profile.full_name);
           if (profile.phone && !customerPhone) setCustomerPhone(profile.phone);
         }
-        
+
         if (user.email && !customerEmail) {
           setCustomerEmail(user.email);
         }
       }
     };
-    
+
     fetchUserProfile();
   }, [user]);
 
@@ -640,7 +640,7 @@ const StoreCart = ({ primaryColor = '#1B4332', storeLocation, deliveryRadiusKm =
           setIsSubmitting(false);
           return;
         }
-        
+
         // Payment redirect happens in useEdfaPayment
         // Order will be created after successful payment via webhook
         // Clear cart before redirect
@@ -775,10 +775,10 @@ const StoreCart = ({ primaryColor = '#1B4332', storeLocation, deliveryRadiusKm =
         items: items.map(item => ({ name: item.productName, quantity: item.quantity, price: item.price }))
       });
       setViewState('success');
-      
+
       // Clear cart
       clearCart();
-      
+
     } catch (error) {
       console.error('Order error:', error);
       toast.error('حدث خطأ أثناء إرسال الطلب. يرجى المحاولة مرة أخرى');
@@ -813,8 +813,8 @@ const StoreCart = ({ primaryColor = '#1B4332', storeLocation, deliveryRadiusKm =
               <span className="text-sm font-medium">{providerName}</span>
             </div>
           )}
-          
-          <div className="flex-1 overflow-y-auto space-y-3 py-2 -mx-2 px-2">
+
+          <div className="flex-1 overflow-y-auto space-y-4 py-4 -mx-2 px-4 scrollbar-hide">
             <AnimatePresence mode="popLayout">
               {items.map((item, index) => (
                 <motion.div
@@ -825,53 +825,57 @@ const StoreCart = ({ primaryColor = '#1B4332', storeLocation, deliveryRadiusKm =
                   exit={{ opacity: 0, x: -100 }}
                   transition={{ delay: index * 0.05 }}
                 >
-                  <Card className="overflow-hidden border-0 shadow-sm">
-                    <CardContent className="p-3">
-                      <div className="flex gap-3">
+                  <Card className="overflow-hidden border-white/10 shadow-md bg-card/50 backdrop-blur-sm group hover:shadow-lg transition-all duration-300">
+                    <CardContent className="p-4">
+                      <div className="flex gap-4">
                         {item.imageUrl ? (
-                          <img 
-                            src={item.imageUrl} 
-                            alt={item.productName}
-                            className="w-16 h-16 rounded-xl object-cover flex-shrink-0"
-                          />
+                          <div className="relative w-20 h-20 rounded-2xl overflow-hidden shrink-0 shadow-sm group-hover:scale-105 transition-transform duration-500">
+                            <img
+                              src={item.imageUrl}
+                              alt={item.productName}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
                         ) : (
-                          <div className="w-16 h-16 rounded-xl bg-muted flex items-center justify-center flex-shrink-0">
-                            <Package className="h-6 w-6 text-muted-foreground" />
+                          <div className="w-20 h-20 rounded-2xl bg-muted/50 flex items-center justify-center shrink-0 shadow-inner">
+                            <Package className="h-8 w-8 text-muted-foreground/50" />
                           </div>
                         )}
-                        <div className="flex-1 min-w-0">
-                          <h4 className="font-medium text-sm line-clamp-1">{item.productName}</h4>
-                          <p className="text-sm font-semibold mt-1" style={{ color: primaryColor }}>
-                            {item.price} ر.س
-                          </p>
-                          
+                        <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5">
+                          <div className="space-y-1">
+                            <h4 className="font-bold text-base line-clamp-1">{item.productName}</h4>
+                            <p className="text-sm font-bold opacity-90" style={{ color: primaryColor }}>
+                              {item.price} ر.س
+                            </p>
+                          </div>
+
                           <div className="flex items-center justify-between mt-2">
-                            <div className="flex items-center gap-1 bg-muted rounded-full p-1">
+                            <div className="flex items-center gap-1 bg-muted/60 rounded-full p-1 border border-border/50">
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                className="h-7 w-7 rounded-full hover:bg-background"
+                                className="h-7 w-7 rounded-full hover:bg-background/80 shadow-sm"
                                 onClick={() => updateQuantity(item.id, item.quantity - 1)}
                               >
-                                <Minus className="h-3 w-3" />
+                                <Minus className="h-3.5 w-3.5" />
                               </Button>
-                              <span className="w-8 text-center font-semibold text-sm">
+                              <span className="w-8 text-center font-bold text-sm">
                                 {item.quantity}
                               </span>
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                className="h-7 w-7 rounded-full hover:bg-background"
+                                className="h-7 w-7 rounded-full hover:bg-background/80 shadow-sm"
                                 onClick={() => updateQuantity(item.id, item.quantity + 1)}
                               >
-                                <Plus className="h-3 w-3" />
+                                <Plus className="h-3.5 w-3.5" />
                               </Button>
                             </div>
-                            
+
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                              className="h-8 w-8 text-red-500/70 hover:text-red-600 hover:bg-red-50/50 rounded-full"
                               onClick={() => removeItem(item.id)}
                             >
                               <Trash2 className="h-4 w-4" />
@@ -893,10 +897,13 @@ const StoreCart = ({ primaryColor = '#1B4332', storeLocation, deliveryRadiusKm =
                 {totalPrice.toFixed(0)} ر.س
               </span>
             </div>
-            
-            <Button 
-              className="w-full h-12 text-base font-semibold rounded-xl shadow-lg"
-              style={{ backgroundColor: primaryColor }}
+
+            <Button
+              className="w-full h-14 text-base font-bold rounded-2xl shadow-lg ring-offset-2 ring-2 ring-transparent hover:ring-primary/20 transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98]"
+              style={{
+                backgroundColor: primaryColor,
+                backgroundImage: `linear-gradient(135deg, ${primaryColor}, ${primaryColor}dd)`
+              }}
               onClick={() => {
                 // Check if phone number is required and missing
                 if (!customerPhone.trim()) {
@@ -908,7 +915,10 @@ const StoreCart = ({ primaryColor = '#1B4332', storeLocation, deliveryRadiusKm =
               }}
             >
               <ArrowRight className="h-5 w-5 ml-2" />
-              متابعة الطلب
+              <span className="flex-1 text-center">متابعة الطلب</span>
+              <span className="bg-black/10 px-3 py-1 rounded-lg text-sm font-mono">
+                {totalPrice.toFixed(0)} ر.س
+              </span>
             </Button>
           </div>
         </>
@@ -919,7 +929,7 @@ const StoreCart = ({ primaryColor = '#1B4332', storeLocation, deliveryRadiusKm =
   const renderCheckoutView = () => (
     <div className="flex flex-col h-full">
       <div className="flex-1 overflow-y-auto py-2 space-y-4 -mx-2 px-2">
-        
+
         {/* Professional Invoice Header */}
         <div className="relative overflow-hidden rounded-2xl p-4" style={{ background: `linear-gradient(135deg, ${primaryColor}15 0%, ${primaryColor}05 100%)` }}>
           <div className="absolute top-0 right-0 w-24 h-24 rounded-full opacity-10" style={{ background: primaryColor, transform: 'translate(30%, -30%)' }} />
@@ -1044,18 +1054,17 @@ const StoreCart = ({ primaryColor = '#1B4332', storeLocation, deliveryRadiusKm =
             <Store className="h-4 w-4" />
             طريقة الاستلام
           </Label>
-          <RadioGroup 
-            value={orderType} 
+          <RadioGroup
+            value={orderType}
             onValueChange={(v) => setOrderType(v as 'pickup' | 'delivery')}
             className="grid grid-cols-2 gap-3"
           >
-            <Label 
-              htmlFor="pickup" 
-              className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 cursor-pointer transition-all ${
-                orderType === 'pickup' 
-                  ? 'border-primary bg-primary/5 shadow-md' 
+            <Label
+              htmlFor="pickup"
+              className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 cursor-pointer transition-all ${orderType === 'pickup'
+                  ? 'border-primary bg-primary/5 shadow-md'
                   : 'border-muted hover:border-muted-foreground/30'
-              }`}
+                }`}
               style={orderType === 'pickup' ? { borderColor: primaryColor } : {}}
             >
               <Store className="h-6 w-6" style={orderType === 'pickup' ? { color: primaryColor } : {}} />
@@ -1063,13 +1072,12 @@ const StoreCart = ({ primaryColor = '#1B4332', storeLocation, deliveryRadiusKm =
               <span className="text-[10px] text-muted-foreground">من المتجر</span>
               <RadioGroupItem value="pickup" id="pickup" className="sr-only" />
             </Label>
-            <Label 
-              htmlFor="delivery" 
-              className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 cursor-pointer transition-all ${
-                orderType === 'delivery' 
-                  ? 'border-primary bg-primary/5 shadow-md' 
+            <Label
+              htmlFor="delivery"
+              className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 cursor-pointer transition-all ${orderType === 'delivery'
+                  ? 'border-primary bg-primary/5 shadow-md'
                   : 'border-muted hover:border-muted-foreground/30'
-              }`}
+                }`}
               style={orderType === 'delivery' ? { borderColor: primaryColor } : {}}
             >
               <MapPin className="h-6 w-6" style={orderType === 'delivery' ? { color: primaryColor } : {}} />
@@ -1195,7 +1203,7 @@ const StoreCart = ({ primaryColor = '#1B4332', storeLocation, deliveryRadiusKm =
                         موقعك ضمن نطاق التوصيل
                       </span>
                     </div>
-                    
+
                     {/* Delivery ETA Estimate */}
                     <div className="flex items-center justify-between pt-2 border-t border-green-200 dark:border-green-800">
                       <div className="flex items-center gap-1.5 text-green-700 dark:text-green-400">
@@ -1238,18 +1246,17 @@ const StoreCart = ({ primaryColor = '#1B4332', storeLocation, deliveryRadiusKm =
             <CreditCard className="h-4 w-4" />
             طريقة الدفع
           </Label>
-          <RadioGroup 
-            value={paymentMethod} 
+          <RadioGroup
+            value={paymentMethod}
             onValueChange={(v) => setPaymentMethod(v as 'cash' | 'online' | 'apple_pay')}
             className="grid grid-cols-3 gap-2"
           >
-            <Label 
-              htmlFor="cash" 
-              className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 cursor-pointer transition-all ${
-                paymentMethod === 'cash' 
-                  ? 'border-primary bg-primary/5 shadow-md' 
+            <Label
+              htmlFor="cash"
+              className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 cursor-pointer transition-all ${paymentMethod === 'cash'
+                  ? 'border-primary bg-primary/5 shadow-md'
                   : 'border-muted hover:border-muted-foreground/30'
-              }`}
+                }`}
               style={paymentMethod === 'cash' ? { borderColor: primaryColor } : {}}
             >
               <Banknote className="h-5 w-5" style={paymentMethod === 'cash' ? { color: primaryColor } : {}} />
@@ -1257,13 +1264,12 @@ const StoreCart = ({ primaryColor = '#1B4332', storeLocation, deliveryRadiusKm =
               <span className="text-[9px] text-muted-foreground">عند الاستلام</span>
               <RadioGroupItem value="cash" id="cash" className="sr-only" />
             </Label>
-            <Label 
-              htmlFor="online" 
-              className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 cursor-pointer transition-all ${
-                paymentMethod === 'online' 
-                  ? 'border-primary bg-primary/5 shadow-md' 
+            <Label
+              htmlFor="online"
+              className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 cursor-pointer transition-all ${paymentMethod === 'online'
+                  ? 'border-primary bg-primary/5 shadow-md'
                   : 'border-muted hover:border-muted-foreground/30'
-              }`}
+                }`}
               style={paymentMethod === 'online' ? { borderColor: primaryColor } : {}}
             >
               <CreditCard className="h-5 w-5" style={paymentMethod === 'online' ? { color: primaryColor } : {}} />
@@ -1271,26 +1277,25 @@ const StoreCart = ({ primaryColor = '#1B4332', storeLocation, deliveryRadiusKm =
               <span className="text-[9px] text-muted-foreground">مدى / فيزا</span>
               <RadioGroupItem value="online" id="online" className="sr-only" />
             </Label>
-            <Label 
-              htmlFor="apple_pay" 
-              className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 cursor-pointer transition-all ${
-                paymentMethod === 'apple_pay' 
-                  ? 'border-primary bg-primary/5 shadow-md' 
+            <Label
+              htmlFor="apple_pay"
+              className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 cursor-pointer transition-all ${paymentMethod === 'apple_pay'
+                  ? 'border-primary bg-primary/5 shadow-md'
                   : 'border-muted hover:border-muted-foreground/30'
-              }`}
+                }`}
               style={paymentMethod === 'apple_pay' ? { borderColor: primaryColor } : {}}
             >
               <svg className="h-5 w-5" style={paymentMethod === 'apple_pay' ? { color: primaryColor } : {}} viewBox="0 0 24 24" fill="currentColor">
-                <path d="M17.0425 8.60449C16.8625 8.44949 15.5175 7.78449 13.6325 7.78449C11.7475 7.78449 10.9875 8.79449 10.9875 9.59949C10.9875 10.5545 11.9025 11.0345 12.6675 11.3845C13.5325 11.7845 13.8275 12.0095 13.8275 12.4095C13.8275 12.8595 13.4075 13.1345 12.7675 13.1345C11.8025 13.1345 10.6175 12.5345 10.0675 12.1845L9.6475 13.6545C10.3475 14.0795 11.4825 14.5045 12.6675 14.5045C14.7025 14.5045 15.7425 13.4545 15.7425 12.3545C15.7425 11.0045 14.2275 10.4295 13.2375 9.97949C12.5475 9.65449 12.2025 9.42949 12.2025 9.00449C12.2025 8.62949 12.5475 8.35449 13.1375 8.35449C14.0275 8.35449 15.1625 8.85449 15.5325 9.05449L17.0425 8.60449Z"/>
-                <path d="M7.3125 7.85449C6.5475 7.85449 5.7825 8.20449 5.2575 8.82949C4.7825 9.40449 4.3575 10.3795 4.5075 11.3095H4.5325C5.1475 11.2845 5.6975 10.9595 6.0925 10.4295C6.4875 9.89949 6.7875 9.12949 6.5625 8.37449H6.5375C6.7875 8.02449 7.0875 7.85449 7.3125 7.85449Z"/>
-                <path d="M7.5375 11.5095C6.4725 11.5595 5.3075 12.3345 4.7075 13.4345C4.1075 14.5345 4.0825 16.1095 4.9575 17.1845C5.2325 17.5345 5.5825 17.8095 5.9825 17.9845C6.3825 18.1595 6.8075 18.2095 7.2325 18.1345C7.6575 18.0595 8.0575 17.8595 8.3825 17.5595C8.7075 17.2595 8.9325 16.8595 9.0325 16.4345C9.3075 15.2595 9.3325 13.8845 8.6325 12.7345C8.2075 12.0345 7.5375 11.5095 7.5375 11.5095Z"/>
+                <path d="M17.0425 8.60449C16.8625 8.44949 15.5175 7.78449 13.6325 7.78449C11.7475 7.78449 10.9875 8.79449 10.9875 9.59949C10.9875 10.5545 11.9025 11.0345 12.6675 11.3845C13.5325 11.7845 13.8275 12.0095 13.8275 12.4095C13.8275 12.8595 13.4075 13.1345 12.7675 13.1345C11.8025 13.1345 10.6175 12.5345 10.0675 12.1845L9.6475 13.6545C10.3475 14.0795 11.4825 14.5045 12.6675 14.5045C14.7025 14.5045 15.7425 13.4545 15.7425 12.3545C15.7425 11.0045 14.2275 10.4295 13.2375 9.97949C12.5475 9.65449 12.2025 9.42949 12.2025 9.00449C12.2025 8.62949 12.5475 8.35449 13.1375 8.35449C14.0275 8.35449 15.1625 8.85449 15.5325 9.05449L17.0425 8.60449Z" />
+                <path d="M7.3125 7.85449C6.5475 7.85449 5.7825 8.20449 5.2575 8.82949C4.7825 9.40449 4.3575 10.3795 4.5075 11.3095H4.5325C5.1475 11.2845 5.6975 10.9595 6.0925 10.4295C6.4875 9.89949 6.7875 9.12949 6.5625 8.37449H6.5375C6.7875 8.02449 7.0875 7.85449 7.3125 7.85449Z" />
+                <path d="M7.5375 11.5095C6.4725 11.5595 5.3075 12.3345 4.7075 13.4345C4.1075 14.5345 4.0825 16.1095 4.9575 17.1845C5.2325 17.5345 5.5825 17.8095 5.9825 17.9845C6.3825 18.1595 6.8075 18.2095 7.2325 18.1345C7.6575 18.0595 8.0575 17.8595 8.3825 17.5595C8.7075 17.2595 8.9325 16.8595 9.0325 16.4345C9.3075 15.2595 9.3325 13.8845 8.6325 12.7345C8.2075 12.0345 7.5375 11.5095 7.5375 11.5095Z" />
               </svg>
               <span className="text-xs font-medium">Apple Pay</span>
               <span className="text-[9px] text-muted-foreground">دفع سريع</span>
               <RadioGroupItem value="apple_pay" id="apple_pay" className="sr-only" />
             </Label>
           </RadioGroup>
-          
+
           {paymentMethod === 'online' && (
             <div className="flex items-center gap-2 p-2.5 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800">
               <CreditCard className="h-4 w-4 text-blue-600 shrink-0" />
@@ -1299,11 +1304,11 @@ const StoreCart = ({ primaryColor = '#1B4332', storeLocation, deliveryRadiusKm =
               </p>
             </div>
           )}
-          
+
           {paymentMethod === 'apple_pay' && (
             <div className="flex items-center gap-2 p-2.5 bg-gray-900 dark:bg-gray-800 rounded-lg border border-gray-700">
               <svg className="h-4 w-4 text-white shrink-0" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M17.0425 8.60449C16.8625 8.44949 15.5175 7.78449 13.6325 7.78449C11.7475 7.78449 10.9875 8.79449 10.9875 9.59949C10.9875 10.5545 11.9025 11.0345 12.6675 11.3845C13.5325 11.7845 13.8275 12.0095 13.8275 12.4095C13.8275 12.8595 13.4075 13.1345 12.7675 13.1345C11.8025 13.1345 10.6175 12.5345 10.0675 12.1845L9.6475 13.6545C10.3475 14.0795 11.4825 14.5045 12.6675 14.5045C14.7025 14.5045 15.7425 13.4545 15.7425 12.3545C15.7425 11.0045 14.2275 10.4295 13.2375 9.97949C12.5475 9.65449 12.2025 9.42949 12.2025 9.00449C12.2025 8.62949 12.5475 8.35449 13.1375 8.35449C14.0275 8.35449 15.1625 8.85449 15.5325 9.05449L17.0425 8.60449Z"/>
+                <path d="M17.0425 8.60449C16.8625 8.44949 15.5175 7.78449 13.6325 7.78449C11.7475 7.78449 10.9875 8.79449 10.9875 9.59949C10.9875 10.5545 11.9025 11.0345 12.6675 11.3845C13.5325 11.7845 13.8275 12.0095 13.8275 12.4095C13.8275 12.8595 13.4075 13.1345 12.7675 13.1345C11.8025 13.1345 10.6175 12.5345 10.0675 12.1845L9.6475 13.6545C10.3475 14.0795 11.4825 14.5045 12.6675 14.5045C14.7025 14.5045 15.7425 13.4545 15.7425 12.3545C15.7425 11.0045 14.2275 10.4295 13.2375 9.97949C12.5475 9.65449 12.2025 9.42949 12.2025 9.00449C12.2025 8.62949 12.5475 8.35449 13.1375 8.35449C14.0275 8.35449 15.1625 8.85449 15.5325 9.05449L17.0425 8.60449Z" />
               </svg>
               <p className="text-xs text-white">
                 اضغط تأكيد لإظهار Apple Pay مباشرة
@@ -1330,9 +1335,8 @@ const StoreCart = ({ primaryColor = '#1B4332', storeLocation, deliveryRadiusKm =
 
       <SheetFooter className="border-t pt-4 flex-col gap-2 mt-2 bg-background">
         <Button
-          className={`w-full h-12 text-base font-semibold rounded-xl shadow-lg ${
-            paymentMethod === 'apple_pay' ? 'bg-black hover:bg-gray-900 text-white' : ''
-          }`}
+          className={`w-full h-12 text-base font-semibold rounded-xl shadow-lg ${paymentMethod === 'apple_pay' ? 'bg-black hover:bg-gray-900 text-white' : ''
+            }`}
           style={paymentMethod !== 'apple_pay' ? { backgroundColor: primaryColor } : {}}
           onClick={handleSubmitOrder}
           disabled={isSubmitting || isApplePayProcessing || (orderType === 'delivery' && isOutOfRange)}
@@ -1345,7 +1349,7 @@ const StoreCart = ({ primaryColor = '#1B4332', storeLocation, deliveryRadiusKm =
           ) : paymentMethod === 'apple_pay' ? (
             <>
               <svg className="h-5 w-5 ml-2" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M17.0425 8.60449C16.8625 8.44949 15.5175 7.78449 13.6325 7.78449C11.7475 7.78449 10.9875 8.79449 10.9875 9.59949C10.9875 10.5545 11.9025 11.0345 12.6675 11.3845C13.5325 11.7845 13.8275 12.0095 13.8275 12.4095C13.8275 12.8595 13.4075 13.1345 12.7675 13.1345C11.8025 13.1345 10.6175 12.5345 10.0675 12.1845L9.6475 13.6545C10.3475 14.0795 11.4825 14.5045 12.6675 14.5045C14.7025 14.5045 15.7425 13.4545 15.7425 12.3545C15.7425 11.0045 14.2275 10.4295 13.2375 9.97949C12.5475 9.65449 12.2025 9.42949 12.2025 9.00449C12.2025 8.62949 12.5475 8.35449 13.1375 8.35449C14.0275 8.35449 15.1625 8.85449 15.5325 9.05449L17.0425 8.60449Z"/>
+                <path d="M17.0425 8.60449C16.8625 8.44949 15.5175 7.78449 13.6325 7.78449C11.7475 7.78449 10.9875 8.79449 10.9875 9.59949C10.9875 10.5545 11.9025 11.0345 12.6675 11.3845C13.5325 11.7845 13.8275 12.0095 13.8275 12.4095C13.8275 12.8595 13.4075 13.1345 12.7675 13.1345C11.8025 13.1345 10.6175 12.5345 10.0675 12.1845L9.6475 13.6545C10.3475 14.0795 11.4825 14.5045 12.6675 14.5045C14.7025 14.5045 15.7425 13.4545 15.7425 12.3545C15.7425 11.0045 14.2275 10.4295 13.2375 9.97949C12.5475 9.65449 12.2025 9.42949 12.2025 9.00449C12.2025 8.62949 12.5475 8.35449 13.1375 8.35449C14.0275 8.35449 15.1625 8.85449 15.5325 9.05449L17.0425 8.60449Z" />
               </svg>
               الدفع بـ Apple Pay • {totalPrice.toFixed(0)} ر.س
             </>
@@ -1377,7 +1381,7 @@ const StoreCart = ({ primaryColor = '#1B4332', storeLocation, deliveryRadiusKm =
         transition={{ type: "spring", stiffness: 200, damping: 15 }}
         className="relative mb-4"
       >
-        <div 
+        <div
           className="w-20 h-20 rounded-full flex items-center justify-center"
           style={{ backgroundColor: `${primaryColor}15` }}
         >
@@ -1392,7 +1396,7 @@ const StoreCart = ({ primaryColor = '#1B4332', storeLocation, deliveryRadiusKm =
           <Sparkles className="h-6 w-6 text-yellow-500" />
         </motion.div>
       </motion.div>
-      
+
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -1418,7 +1422,7 @@ const StoreCart = ({ primaryColor = '#1B4332', storeLocation, deliveryRadiusKm =
             <div className="p-4 border-b text-center relative overflow-hidden" style={{ background: `linear-gradient(135deg, ${primaryColor}15 0%, ${primaryColor}05 100%)` }}>
               <div className="absolute top-0 left-0 w-16 h-16 rounded-full opacity-20" style={{ background: primaryColor, transform: 'translate(-30%, -30%)' }} />
               <div className="absolute bottom-0 right-0 w-20 h-20 rounded-full opacity-10" style={{ background: primaryColor, transform: 'translate(30%, 30%)' }} />
-              
+
               <div className="relative">
                 <div className="text-[10px] font-medium text-muted-foreground mb-1">فاتورة ضريبية مبسطة</div>
                 <div className="flex items-center justify-center gap-2 mb-2">
@@ -1426,9 +1430,9 @@ const StoreCart = ({ primaryColor = '#1B4332', storeLocation, deliveryRadiusKm =
                   <span className="font-bold text-lg">{providerName || 'المتجر'}</span>
                 </div>
                 <div className="text-xs text-muted-foreground">
-                  {orderResult.createdAt.toLocaleDateString('ar-SA', { 
-                    year: 'numeric', 
-                    month: 'long', 
+                  {orderResult.createdAt.toLocaleDateString('ar-SA', {
+                    year: 'numeric',
+                    month: 'long',
                     day: 'numeric',
                     hour: '2-digit',
                     minute: '2-digit'
@@ -1549,8 +1553,8 @@ const StoreCart = ({ primaryColor = '#1B4332', storeLocation, deliveryRadiusKm =
       <SheetTrigger asChild>
         <button data-cart-trigger className="hidden" />
       </SheetTrigger>
-      
-      <SheetContent side="left" className="w-full sm:max-w-md font-arabic p-0" dir="rtl">
+
+      <SheetContent side="left" className="w-full sm:max-w-md font-arabic p-0 border-r-0 bg-background/80 backdrop-blur-xl" dir="rtl">
         <div className="flex flex-col h-full">
           <SheetHeader className="p-6 pb-4 border-b">
             <SheetTitle className="font-arabic text-right text-lg">

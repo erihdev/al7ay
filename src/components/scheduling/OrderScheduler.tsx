@@ -31,7 +31,7 @@ export function OrderScheduler({ scheduledFor, onScheduleChange }: OrderSchedule
 
   // Generate available hours (from current hour + 1 to 23)
   const availableHours = Array.from({ length: 24 }, (_, i) => i.toString().padStart(2, '0'));
-  
+
   // Generate available minutes (00, 15, 30, 45)
   const availableMinutes = ['00', '15', '30', '45'];
 
@@ -46,7 +46,7 @@ export function OrderScheduler({ scheduledFor, onScheduleChange }: OrderSchedule
 
   const updateScheduledTime = (date: Date, hour: string, minute: string) => {
     const scheduledDate = setMinutes(setHours(date, parseInt(hour)), parseInt(minute));
-    
+
     // Ensure the scheduled time is in the future
     if (isBefore(scheduledDate, addHours(now, 1))) {
       const minScheduleTime = startOfHour(addHours(now, 1));
@@ -108,7 +108,7 @@ export function OrderScheduler({ scheduledFor, onScheduleChange }: OrderSchedule
       </RadioGroup>
 
       {scheduleType === 'later' && (
-        <div className="space-y-3 p-4 bg-muted/50 rounded-lg border">
+        <div className="space-y-3 p-4 bg-background/40 backdrop-blur-sm rounded-xl border border-white/10">
           {/* Date Picker */}
           <div className="space-y-2">
             <Label className="text-sm">التاريخ</Label>
@@ -167,7 +167,7 @@ export function OrderScheduler({ scheduledFor, onScheduleChange }: OrderSchedule
 
           {/* Summary */}
           {scheduledFor && (
-            <div className="flex items-center justify-between p-3 bg-primary/10 rounded-lg border border-primary/20">
+            <div className="flex items-center justify-between p-3 bg-gradient-to-r from-primary/10 to-transparent rounded-xl border border-primary/20">
               <div>
                 <p className="text-sm font-medium text-primary">موعد التوصيل</p>
                 <p className="text-xs text-muted-foreground">

@@ -7,17 +7,30 @@ const pagesWithBottomNav = ['/app', '/cart', '/orders', '/profile', '/favorites'
 
 export const AppFooter = forwardRef<HTMLElement>((_, ref) => {
   const location = useLocation();
-  
+
   // Don't render footer on pages with BottomNav to avoid overlap
   const hasBottomNav = pagesWithBottomNav.some(page => location.pathname.startsWith(page));
-  
+
   if (hasBottomNav) {
     return null;
   }
 
   return (
     <footer ref={ref} className="py-2 text-center text-xs text-muted-foreground/60">
-      <span>v{CURRENT_APP_VERSION}</span>
+      <div className="flex flex-col gap-1">
+        <span>v{CURRENT_APP_VERSION}</span>
+        <span className="text-[10px]">
+          صنع بواسطة{' '}
+          <a
+            href="https://divathar.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary/60 hover:text-primary transition-colors font-medium"
+          >
+            divathar.com
+          </a>
+        </span>
+      </div>
     </footer>
   );
 });

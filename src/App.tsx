@@ -3,6 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { CartProvider } from "@/contexts/CartContext";
@@ -43,6 +44,9 @@ const Contact = lazy(() => import("./pages/Contact"));
 const WhyAlHay = lazy(() => import("./pages/WhyAlHay"));
 const SignContract = lazy(() => import("./pages/SignContract"));
 const EmployeeRewards = lazy(() => import("./pages/EmployeeRewards"));
+const DesignShowcase = lazy(() => import("./pages/DesignShowcase"));
+const Analytics = lazy(() => import("./pages/Analytics"));
+const Settings = lazy(() => import("./pages/Settings"));
 
 const queryClient = new QueryClient();
 
@@ -107,6 +111,9 @@ const App = () => {
                       <Route path="/why" element={<WhyAlHay />} />
                       <Route path="/sign-contract" element={<SignContract />} />
                       <Route path="/employee-rewards" element={<EmployeeRewards />} />
+                      <Route path="/analytics" element={<Analytics />} />
+                      <Route path="/settings" element={<Settings />} />
+                      <Route path="/design-showcase" element={<DesignShowcase />} />
                       {/* Redirect old routes to home */}
                       <Route path="/for-providers" element={<Landing />} />
                       <Route path="/welcome" element={<Landing />} />

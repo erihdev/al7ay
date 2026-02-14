@@ -34,7 +34,7 @@ export function OrderTrackingCard({ orderId }: OrderTrackingCardProps) {
   // Calculate accurate ETA using Mapbox Directions
   const { eta, isLoading: isLoadingEta } = useAccurateETA(
     tracking ? { lat: tracking.current_lat, lng: tracking.current_lng } : null,
-    order?.delivery_lat && order?.delivery_lng 
+    order?.delivery_lat && order?.delivery_lng
       ? { lat: order.delivery_lat, lng: order.delivery_lng }
       : null,
     storeLocation
@@ -84,7 +84,12 @@ export function OrderTrackingCard({ orderId }: OrderTrackingCardProps) {
           />
         )}
 
-        <div className="p-4">
+        <motion.div
+          className="p-4"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+        >
           {/* Sound Toggle */}
           {isOutForDelivery && (
             <div className="mb-3 flex items-center justify-between p-2 bg-muted/50 rounded-lg">
@@ -105,7 +110,7 @@ export function OrderTrackingCard({ orderId }: OrderTrackingCardProps) {
 
           {/* ETA Section */}
           {isOutForDelivery && eta && (
-            <motion.div 
+            <motion.div
               className="mb-4 p-3 bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg border border-primary/20"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -131,35 +136,33 @@ export function OrderTrackingCard({ orderId }: OrderTrackingCardProps) {
                   {eta.etaText}
                 </Badge>
               </div>
-              
+
               {/* Traffic Congestion Indicator */}
               {eta.trafficAware && eta.congestionLevel && eta.congestionLevel !== 'unknown' && (
-                <div className="mb-2 p-2 rounded-md flex items-center justify-between" 
+                <div className="mb-2 p-2 rounded-md flex items-center justify-between"
                   style={{
-                    backgroundColor: 
+                    backgroundColor:
                       eta.congestionLevel === 'severe' ? 'rgba(220, 38, 38, 0.15)' :
-                      eta.congestionLevel === 'heavy' ? 'rgba(234, 88, 12, 0.15)' :
-                      eta.congestionLevel === 'moderate' ? 'rgba(202, 138, 4, 0.15)' :
-                      'rgba(34, 197, 94, 0.15)'
+                        eta.congestionLevel === 'heavy' ? 'rgba(234, 88, 12, 0.15)' :
+                          eta.congestionLevel === 'moderate' ? 'rgba(202, 138, 4, 0.15)' :
+                            'rgba(34, 197, 94, 0.15)'
                   }}
                 >
                   <div className="flex items-center gap-2">
-                    <Activity className={`h-4 w-4 ${
-                      eta.congestionLevel === 'severe' ? 'text-red-500' :
+                    <Activity className={`h-4 w-4 ${eta.congestionLevel === 'severe' ? 'text-red-500' :
                       eta.congestionLevel === 'heavy' ? 'text-orange-500' :
-                      eta.congestionLevel === 'moderate' ? 'text-yellow-500' :
-                      'text-green-500'
-                    }`} />
-                    <span className={`text-sm font-medium ${
-                      eta.congestionLevel === 'severe' ? 'text-red-600 dark:text-red-400' :
+                        eta.congestionLevel === 'moderate' ? 'text-yellow-500' :
+                          'text-green-500'
+                      }`} />
+                    <span className={`text-sm font-medium ${eta.congestionLevel === 'severe' ? 'text-red-600 dark:text-red-400' :
                       eta.congestionLevel === 'heavy' ? 'text-orange-600 dark:text-orange-400' :
-                      eta.congestionLevel === 'moderate' ? 'text-yellow-600 dark:text-yellow-400' :
-                      'text-green-600 dark:text-green-400'
-                    }`}>
+                        eta.congestionLevel === 'moderate' ? 'text-yellow-600 dark:text-yellow-400' :
+                          'text-green-600 dark:text-green-400'
+                      }`}>
                       {eta.congestionLevel === 'severe' ? 'ازدحام شديد جداً' :
-                       eta.congestionLevel === 'heavy' ? 'ازدحام شديد' :
-                       eta.congestionLevel === 'moderate' ? 'ازدحام متوسط' :
-                       'حركة سلسة'}
+                        eta.congestionLevel === 'heavy' ? 'ازدحام شديد' :
+                          eta.congestionLevel === 'moderate' ? 'ازدحام متوسط' :
+                            'حركة سلسة'}
                     </span>
                   </div>
                   {eta.averageSpeed && (
@@ -170,7 +173,7 @@ export function OrderTrackingCard({ orderId }: OrderTrackingCardProps) {
                   )}
                 </div>
               )}
-              
+
               {/* Nearby Alert */}
               <AnimatePresence>
                 {eta.isNearby && (
@@ -198,7 +201,7 @@ export function OrderTrackingCard({ orderId }: OrderTrackingCardProps) {
                   <span className="text-muted-foreground">المسافة المتبقية</span>
                   <span className="font-medium">{eta.distanceText}</span>
                 </div>
-                
+
                 <div className="space-y-1">
                   <div className="flex items-center justify-between text-xs text-muted-foreground">
                     <span>التقدم في التوصيل</span>
@@ -211,15 +214,17 @@ export function OrderTrackingCard({ orderId }: OrderTrackingCardProps) {
           )}
 
           {/* Progress Steps */}
-          <div className="mb-4">
+          <div className="mb-6 relative px-2">
             <div className="flex items-center justify-between relative">
               {/* Progress Line */}
-              <div className="absolute top-4 left-4 right-4 h-0.5 bg-muted">
-                <div
-                  className="h-full bg-primary transition-all duration-500"
-                  style={{
-                    width: `${(currentStepIndex / (statusSteps.length - 1)) * 100}%`,
+              <div className="absolute top-4 left-4 right-4 h-1 bg-muted rounded-full overflow-hidden">
+                <motion.div
+                  className="h-full bg-gradient-to-r from-primary to-primary/80"
+                  initial={{ width: 0 }}
+                  animate={{
+                    width: `${(currentStepIndex / (statusSteps.length - 1)) * 100}%`
                   }}
+                  transition={{ duration: 1, ease: "easeInOut" }}
                 />
               </div>
 
@@ -232,26 +237,38 @@ export function OrderTrackingCard({ orderId }: OrderTrackingCardProps) {
                 return (
                   <div
                     key={step.key}
-                    className={`relative z-10 flex flex-col items-center ${
-                      isDelivery || step.key !== 'out_for_delivery' ? '' : 'hidden'
-                    }`}
+                    className={`relative z-10 flex flex-col items-center ${isDelivery || step.key !== 'out_for_delivery' ? '' : 'hidden'
+                      }`}
                   >
-                    <div
-                      className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
-                        isCompleted
-                          ? 'bg-primary text-primary-foreground'
-                          : 'bg-muted text-muted-foreground'
-                      } ${isCurrent ? 'ring-2 ring-primary ring-offset-2' : ''}`}
+                    <motion.div
+                      className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors duration-300 shadow-sm ${isCompleted
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-muted text-muted-foreground border-2 border-background'
+                        } ${isCurrent ? 'ring-2 ring-primary ring-offset-2 ring-offset-background' : ''}`}
+                      initial={false}
+                      animate={isCurrent ? { scale: [1, 1.1, 1] } : { scale: 1 }}
+                      transition={{
+                        scale: { repeat: isCurrent ? Infinity : 0, duration: 2, ease: "easeInOut" }
+                      }}
                     >
                       <StepIcon className="h-4 w-4" />
-                    </div>
-                    <span
-                      className={`text-xs mt-1 ${
-                        isCompleted ? 'text-primary font-medium' : 'text-muted-foreground'
-                      }`}
+                      {isCurrent && (
+                        <motion.div
+                          className="absolute inset-0 rounded-full bg-primary/30"
+                          initial={{ scale: 1, opacity: 0.5 }}
+                          animate={{ scale: 1.5, opacity: 0 }}
+                          transition={{ repeat: Infinity, duration: 1.5 }}
+                        />
+                      )}
+                    </motion.div>
+                    <motion.span
+                      className={`text-[10px] mt-2 font-medium transition-colors duration-300 ${isCompleted ? 'text-primary' : 'text-muted-foreground'
+                        }`}
+                      animate={isCurrent ? { y: [0, -2, 0] } : { y: 0 }}
+                      transition={{ repeat: isCurrent ? Infinity : 0, duration: 2 }}
                     >
                       {step.label}
-                    </span>
+                    </motion.span>
                   </div>
                 );
               })}
@@ -298,7 +315,7 @@ export function OrderTrackingCard({ orderId }: OrderTrackingCardProps) {
               <span>تم تسجيل {routeHistory.length} نقطة في مسار التوصيل</span>
             </div>
           )}
-        </div>
+        </motion.div>
       </CardContent>
     </Card>
   );

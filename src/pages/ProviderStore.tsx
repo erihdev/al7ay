@@ -11,11 +11,11 @@ import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import StoreCart from '@/components/store/StoreCart';
 import { useLocation } from '@/contexts/LocationContext';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  ArrowRight, 
-  Store, 
-  MapPin, 
-  Phone, 
+import {
+  ArrowRight,
+  Store,
+  MapPin,
+  Phone,
   Star,
   ShoppingCart,
   Coffee,
@@ -70,14 +70,14 @@ const ProviderStoreContent = () => {
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const categoryScrollRef = useRef<HTMLDivElement>(null);
   const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
-  
+
 
   // Fetch provider data
   const { data: provider, isLoading: providerLoading } = useQuery({
     queryKey: ['provider-store', providerId],
     queryFn: async () => {
       if (!providerId) return null;
-      
+
       const { data, error } = await supabase
         .from('service_providers')
         .select(`
@@ -87,7 +87,7 @@ const ProviderStoreContent = () => {
         .eq('id', providerId)
         .eq('is_active', true)
         .maybeSingle();
-      
+
       if (error) throw error;
       return data;
     },
@@ -99,7 +99,7 @@ const ProviderStoreContent = () => {
     queryKey: ['provider-store-products', providerId],
     queryFn: async () => {
       if (!providerId) return [];
-      
+
       const { data, error } = await supabase
         .from('provider_products')
         .select('*')
@@ -107,7 +107,7 @@ const ProviderStoreContent = () => {
         .eq('is_available', true)
         .order('is_featured', { ascending: false })
         .order('sort_order');
-      
+
       if (error) throw error;
       return data as Product[];
     },
@@ -119,7 +119,7 @@ const ProviderStoreContent = () => {
     queryKey: ['alternative-providers', provider?.active_neighborhoods?.city],
     queryFn: async () => {
       if (!provider?.active_neighborhoods?.city || !userLocation) return [];
-      
+
       const { data, error } = await supabase
         .from('service_providers')
         .select(`
@@ -132,20 +132,20 @@ const ProviderStoreContent = () => {
         `)
         .eq('is_active', true)
         .neq('id', providerId);
-      
+
       if (error) throw error;
-      
+
       // Filter providers that serve user's location
       return (data || []).filter(p => {
         if (!p.active_neighborhoods || !userLocation) return false;
-        
+
         const distance = calculateDistance(
           userLocation.lat,
           userLocation.lng,
           p.active_neighborhoods.lat,
           p.active_neighborhoods.lng
         );
-        
+
         const deliveryScope = p.delivery_scope || 'neighborhood';
         if (deliveryScope === 'neighborhood') {
           return distance <= 2000;
@@ -165,7 +165,7 @@ const ProviderStoreContent = () => {
     const Δφ = ((lat2 - lat1) * Math.PI) / 180;
     const Δλ = ((lon2 - lon1) * Math.PI) / 180;
     const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
-              Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+      Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c;
   }
@@ -173,14 +173,14 @@ const ProviderStoreContent = () => {
   // Check if provider serves user's location
   const isOutsideCoverage = React.useMemo(() => {
     if (!provider || !userLocation || !provider.active_neighborhoods) return false;
-    
+
     const distance = calculateDistance(
       userLocation.lat,
       userLocation.lng,
       provider.active_neighborhoods.lat,
       provider.active_neighborhoods.lng
     );
-    
+
     const deliveryScope = provider.delivery_scope || 'neighborhood';
     if (deliveryScope === 'neighborhood') {
       return distance > 2000;
@@ -195,7 +195,7 @@ const ProviderStoreContent = () => {
       setShowCoverageAlert(true);
     }
   }, [isOutsideCoverage, userLocation]);
-  
+
   const filteredProducts = products?.filter(p => {
     if (!searchQuery.trim()) return true;
     const query = searchQuery.toLowerCase();
@@ -243,7 +243,7 @@ const ProviderStoreContent = () => {
     border_radius?: string;
     button_style?: string;
   } || {};
-  
+
   const primaryColor = storeTheme.primary_color || '#C9A227';
   const secondaryColor = storeTheme.secondary_color || '#8B6914';
   const accentColor = storeTheme.accent_color || '#409999';
@@ -252,10 +252,10 @@ const ProviderStoreContent = () => {
   const headerOverlayOpacity = storeTheme.header_overlay_opacity ?? 50;
   const headerBlur = storeTheme.header_blur || false;
   const fontFamily = storeTheme.font_family || 'Tajawal';
-  
+
   // Check if header has image background
   const hasImageHeader = headerStyle === 'image' && headerImageUrl;
-  
+
   // Get header background based on style
   const getHeaderBackground = () => {
     if (hasImageHeader) {
@@ -310,7 +310,7 @@ const ProviderStoreContent = () => {
 
   const handleAddToCart = (product: Product, qty: number = 1) => {
     if (!provider) return;
-    
+
     addItem({
       productId: product.id,
       productName: product.name_ar,
@@ -318,7 +318,7 @@ const ProviderStoreContent = () => {
       quantity: qty,
       imageUrl: product.image_url
     }, provider.id, provider.business_name);
-    
+
     toast.success('تمت الإضافة للسلة', {
       description: `${product.name_ar} × ${qty}`,
       icon: <ShoppingCart className="h-4 w-4" />,
@@ -396,7 +396,7 @@ const ProviderStoreContent = () => {
                   <p className="text-sm text-muted-foreground">هذا المتجر لا يخدم منطقتك حالياً</p>
                 </div>
               </div>
-              
+
               <Alert className="border-amber-500/50 bg-amber-50 dark:bg-amber-950/20">
                 <AlertDescription className="font-arabic text-amber-700 dark:text-amber-300 text-sm">
                   {provider.delivery_scope === 'city' ? (
@@ -415,8 +415,8 @@ const ProviderStoreContent = () => {
                   </h4>
                   <div className="space-y-2">
                     {alternativeProviders.map(alt => (
-                      <Link 
-                        key={alt.id} 
+                      <Link
+                        key={alt.id}
                         to={`/store/${alt.id}`}
                         onClick={() => setShowCoverageAlert(false)}
                         className="flex items-center gap-3 p-3 rounded-xl border hover:bg-muted transition-colors"
@@ -449,9 +449,9 @@ const ProviderStoreContent = () => {
               )}
 
               <div className="flex gap-3 pt-2">
-                <Button 
-                  variant="outline" 
-                  className="flex-1 rounded-xl" 
+                <Button
+                  variant="outline"
+                  className="flex-1 rounded-xl"
                   onClick={() => setShowCoverageAlert(false)}
                 >
                   تصفح على أي حال
@@ -472,7 +472,7 @@ const ProviderStoreContent = () => {
         {/* Background - Always use neighborhood image as base with provider color overlay */}
         <div className="absolute inset-0">
           {/* Base neighborhood image */}
-          <img 
+          <img
             src={hasImageHeader ? headerImageUrl : storeHeaderBg}
             alt=""
             className={cn(
@@ -481,9 +481,9 @@ const ProviderStoreContent = () => {
             )}
           />
           {/* Provider color overlay with gradient - reduced opacity for clearer image */}
-          <div 
+          <div
             className="absolute inset-0"
-            style={{ 
+            style={{
               background: `linear-gradient(135deg, ${primaryColor}88 0%, ${secondaryColor}99 50%, ${primaryColor}88 100%)`,
             }}
           />
@@ -508,12 +508,12 @@ const ProviderStoreContent = () => {
               <span className="text-xs font-medium">رجوع</span>
             </Button>
           </Link>
-          
+
           <TooltipProvider delayDuration={300}>
             <div className="flex items-center gap-1">
               {/* Chat Button */}
-              <ChatDialog 
-                providerId={provider.id} 
+              <ChatDialog
+                providerId={provider.id}
                 providerName={provider.business_name}
                 primaryColor={primaryColor}
               />
@@ -544,9 +544,9 @@ const ProviderStoreContent = () => {
               {/* Cart Button in Header */}
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     className="text-white/90 hover:bg-white/20 h-7 w-7 rounded-full relative"
                     onClick={() => {
                       const cartBtn = document.querySelector('[data-cart-trigger]') as HTMLButtonElement;
@@ -555,7 +555,7 @@ const ProviderStoreContent = () => {
                   >
                     <ShoppingCart className="h-5 w-5" />
                     {totalItems > 0 && (
-                      <span 
+                      <span
                         className="absolute -top-1 -right-1 w-4 h-4 rounded-full text-[9px] font-bold flex items-center justify-center text-white"
                         style={{ backgroundColor: accentColor }}
                       >
@@ -584,8 +584,8 @@ const ProviderStoreContent = () => {
             <div className="relative mb-3">
               <div className="w-20 h-20 rounded-2xl bg-white shadow-xl flex items-center justify-center overflow-hidden ring-4 ring-white/30">
                 {provider.logo_url ? (
-                  <img 
-                    src={provider.logo_url} 
+                  <img
+                    src={provider.logo_url}
                     alt={provider.business_name}
                     className="w-full h-full object-cover"
                   />
@@ -599,26 +599,26 @@ const ProviderStoreContent = () => {
                 </div>
               )}
             </div>
-            
+
             {/* Info */}
             <div>
               <h1 className="text-2xl font-bold text-white mb-1">
                 {provider.business_name}
               </h1>
-              
+
               {provider.description && (
                 <p className="text-white/90 text-sm mb-2 max-w-xs mx-auto line-clamp-2">
                   {provider.description}
                 </p>
               )}
-              
+
               {provider.active_neighborhoods && (
                 <p className="text-white/70 text-xs flex items-center justify-center gap-1.5 mb-2">
                   <MapPin className="h-3.5 w-3.5" />
                   {(provider.active_neighborhoods as any).name}، {(provider.active_neighborhoods as any).city}
                 </p>
               )}
-              
+
               {/* Stats Row */}
               <div className="flex items-center justify-center gap-2 flex-wrap">
                 <div className="flex items-center gap-1.5 bg-white/10 backdrop-blur-sm px-2.5 py-1 rounded-full text-white/90 text-xs">
@@ -633,8 +633,8 @@ const ProviderStoreContent = () => {
         {/* Wave Decoration */}
         <div className="absolute bottom-0 left-0 right-0">
           <svg viewBox="0 0 1440 60" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full">
-            <path 
-              d="M0 60L48 55C96 50 192 40 288 35C384 30 480 30 576 33.3C672 36.7 768 43.3 864 45C960 46.7 1056 43.3 1152 38.3C1248 33.3 1344 26.7 1392 23.3L1440 20V60H1392C1344 60 1248 60 1152 60C1056 60 960 60 864 60C768 60 672 60 576 60C480 60 384 60 288 60C192 60 96 60 48 60H0Z" 
+            <path
+              d="M0 60L48 55C96 50 192 40 288 35C384 30 480 30 576 33.3C672 36.7 768 43.3 864 45C960 46.7 1056 43.3 1152 38.3C1248 33.3 1344 26.7 1392 23.3L1440 20V60H1392C1344 60 1248 60 1152 60C1056 60 960 60 864 60C768 60 672 60 576 60C480 60 384 60 288 60C192 60 96 60 48 60H0Z"
               className="fill-muted/30 dark:fill-background"
             />
           </svg>
@@ -672,7 +672,7 @@ const ProviderStoreContent = () => {
         </div>
 
         {/* Category Tabs */}
-        <div 
+        <div
           ref={categoryScrollRef}
           className="flex gap-2 px-4 pb-3 overflow-x-auto hide-scrollbar"
         >
@@ -686,8 +686,8 @@ const ProviderStoreContent = () => {
                 whileTap={{ scale: 0.95 }}
                 className={cn(
                   "flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium whitespace-nowrap transition-all duration-300",
-                  isActive 
-                    ? "text-white shadow-lg" 
+                  isActive
+                    ? "text-white shadow-lg"
                     : "bg-muted/50 text-muted-foreground hover:bg-muted"
                 )}
                 style={isActive ? { backgroundColor: primaryColor } : {}}
@@ -729,8 +729,8 @@ const ProviderStoreContent = () => {
                   {searchQuery ? 'لا توجد نتائج' : 'لا توجد منتجات'}
                 </h3>
                 <p className="text-muted-foreground">
-                  {searchQuery 
-                    ? 'جرب البحث بكلمات مختلفة' 
+                  {searchQuery
+                    ? 'جرب البحث بكلمات مختلفة'
                     : 'لم يقم صاحب المتجر بإضافة منتجات بعد'
                   }
                 </p>
@@ -747,7 +747,7 @@ const ProviderStoreContent = () => {
                 className="px-4 pt-4"
               >
                 <div className="flex items-center gap-2 mb-3">
-                  <div 
+                  <div
                     className="w-8 h-8 rounded-lg flex items-center justify-center"
                     style={{ backgroundColor: `${accentColor}20` }}
                   >
@@ -757,8 +757,8 @@ const ProviderStoreContent = () => {
                     <h2 className="font-bold text-base">المنتجات المميزة</h2>
                   </div>
                 </div>
-                
-                <div className="grid grid-cols-5 gap-1">
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-1 sm:gap-2">
                   {featuredProducts.map((product, index) => (
                     <motion.div
                       key={product.id}
@@ -780,16 +780,16 @@ const ProviderStoreContent = () => {
             )}
 
             {/* Products by Category */}
-            {(activeCategory === 'all' 
-              ? Object.entries(productsByCategory) 
+            {(activeCategory === 'all'
+              ? Object.entries(productsByCategory)
               : [[activeCategory, productsByCategory[activeCategory] || []] as [string, Product[]]]
             ).map(([category, categoryProducts]: [string, Product[]]) => {
               if (!categoryProducts || categoryProducts.length === 0) return null;
               const CategoryIcon = getCategoryIconComponent(category);
-              
+
               return (
-                <motion.div 
-                  key={category} 
+                <motion.div
+                  key={category}
                   ref={(el) => { sectionRefs.current[category] = el; }}
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
@@ -797,7 +797,7 @@ const ProviderStoreContent = () => {
                 >
                   {/* Category Header */}
                   <div className="flex items-center gap-3 mb-4">
-                    <div 
+                    <div
                       className="w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-lg"
                       style={{ backgroundColor: primaryColor }}
                     >
@@ -810,7 +810,7 @@ const ProviderStoreContent = () => {
                   </div>
 
                   {/* Products Grid - Same style as Featured */}
-                  <div className="grid grid-cols-5 gap-1">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-1 sm:gap-2">
                     {categoryProducts.map((product: Product, index: number) => (
                       <motion.div
                         key={product.id}
@@ -849,8 +849,8 @@ const ProviderStoreContent = () => {
                 {/* Product Image */}
                 <div className="relative aspect-[4/3] bg-muted flex-shrink-0 overflow-hidden">
                   {selectedProduct.image_url ? (
-                    <img 
-                      src={selectedProduct.image_url} 
+                    <img
+                      src={selectedProduct.image_url}
                       alt={selectedProduct.name_ar}
                       className="w-full h-full object-cover"
                     />
@@ -861,9 +861,9 @@ const ProviderStoreContent = () => {
                   )}
                   {/* Gradient Overlay */}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
-                  
+
                   {selectedProduct.is_featured && (
-                    <Badge 
+                    <Badge
                       className="absolute top-4 right-4 shadow-lg text-white border-0"
                       style={{ backgroundColor: accentColor }}
                     >
@@ -871,9 +871,9 @@ const ProviderStoreContent = () => {
                       مميز
                     </Badge>
                   )}
-                  
+
                   {/* Price Badge */}
-                  <div 
+                  <div
                     className="absolute bottom-4 left-4 px-4 py-2 rounded-xl text-white font-bold text-lg shadow-lg backdrop-blur-sm"
                     style={{ backgroundColor: `${primaryColor}dd` }}
                   >
@@ -929,7 +929,7 @@ const ProviderStoreContent = () => {
 
                 {/* Add to Cart Button */}
                 <div className="p-4 border-t bg-background flex-shrink-0">
-                  <Button 
+                  <Button
                     className="w-full h-14 text-lg font-bold rounded-2xl shadow-xl"
                     style={{ backgroundColor: primaryColor }}
                     onClick={() => handleAddToCart(selectedProduct, quantity)}
@@ -945,12 +945,12 @@ const ProviderStoreContent = () => {
       </AnimatePresence>
 
       {/* Floating Cart */}
-      <StoreCart 
-        primaryColor={primaryColor} 
+      <StoreCart
+        primaryColor={primaryColor}
         storeLocation={provider?.store_lat && provider?.store_lng ? { lat: provider.store_lat, lng: provider.store_lng } : null}
         deliveryRadiusKm={provider?.delivery_radius_km ?? 5}
       />
-      
+
     </div>
   );
 };
@@ -972,8 +972,8 @@ const FeaturedProductCard = ({ product, onAddToCart, onClick, primaryColor, acce
     >
       <div className="relative aspect-[4/5] bg-muted overflow-hidden">
         {product.image_url ? (
-          <img 
-            src={product.image_url} 
+          <img
+            src={product.image_url}
             alt={product.name_ar}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           />
@@ -983,9 +983,9 @@ const FeaturedProductCard = ({ product, onAddToCart, onClick, primaryColor, acce
           </div>
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
-        
+
         {/* Featured badge */}
-        <div 
+        <div
           className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full flex items-center justify-center shadow"
           style={{ backgroundColor: accentColor }}
         >
@@ -993,13 +993,13 @@ const FeaturedProductCard = ({ product, onAddToCart, onClick, primaryColor, acce
         </div>
 
         {/* Favorite button */}
-        <FavoriteButton 
-          productId={product.id} 
-          productType="provider" 
-          variant="badge" 
+        <FavoriteButton
+          productId={product.id}
+          productType="provider"
+          variant="badge"
           className="!top-1.5 !left-1.5 !p-1 !h-5 !w-5"
         />
-        
+
         <div className="absolute bottom-0 left-0 right-0 p-2">
           <h4 className="font-bold text-white text-xs line-clamp-1 mb-0.5">{product.name_ar}</h4>
           <div className="flex items-center justify-between">
@@ -1041,8 +1041,8 @@ const CompactProductCard = ({ product, onAddToCart, onClick, primaryColor, accen
     >
       <div className="relative aspect-[4/5] bg-muted overflow-hidden">
         {product.image_url ? (
-          <img 
-            src={product.image_url} 
+          <img
+            src={product.image_url}
             alt={product.name_ar}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           />
@@ -1052,10 +1052,10 @@ const CompactProductCard = ({ product, onAddToCart, onClick, primaryColor, accen
           </div>
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
-        
+
         {/* Featured badge */}
         {product.is_featured && (
-          <div 
+          <div
             className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full flex items-center justify-center shadow"
             style={{ backgroundColor: accentColor }}
           >
@@ -1064,13 +1064,13 @@ const CompactProductCard = ({ product, onAddToCart, onClick, primaryColor, accen
         )}
 
         {/* Favorite button */}
-        <FavoriteButton 
-          productId={product.id} 
-          productType="provider" 
-          variant="badge" 
+        <FavoriteButton
+          productId={product.id}
+          productType="provider"
+          variant="badge"
           className="!top-1.5 !left-1.5 !p-1 !h-5 !w-5"
         />
-        
+
         <div className="absolute bottom-0 left-0 right-0 p-2">
           <h4 className="font-bold text-white text-xs line-clamp-1 mb-0.5">{product.name_ar}</h4>
           <div className="flex items-center justify-between">

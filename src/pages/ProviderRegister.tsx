@@ -12,16 +12,15 @@ import { AnimatedLogo } from '@/components/ui/AnimatedLogo';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { InteractiveBackground } from '@/components/ui/InteractiveBackground';
 import { SearchableSelect } from '@/components/ui/searchable-select';
-import { LocationPickerDialog } from '@/components/landing/LocationPickerDialog';
-import { SimpleLocationPicker } from '@/components/provider/SimpleLocationPicker';
+import { UnifiedLocationPicker } from '@/components/location/UnifiedLocationPicker';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useClickSound } from '@/hooks/useClickSound';
-import { 
-  Check, 
-  Gift, 
-  CreditCard, 
-  ArrowRight, 
-  Store, 
+import {
+  Check,
+  Gift,
+  CreditCard,
+  ArrowRight,
+  Store,
   User,
   Mail,
   Phone,
@@ -29,7 +28,8 @@ import {
   MapPin,
   Sparkles,
   Loader2,
-  Navigation
+  Navigation,
+  PartyPopper
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -49,6 +49,8 @@ interface Neighborhood {
   id: string;
   name: string;
   city: string;
+  lat?: number;
+  lng?: number;
 }
 
 const ProviderRegister = () => {
@@ -63,11 +65,8 @@ const ProviderRegister = () => {
   const [neighborhoods, setNeighborhoods] = useState<Neighborhood[]>([]);
   const [cities, setCities] = useState<string[]>([]);
   const [filteredNeighborhoods, setFilteredNeighborhoods] = useState<Neighborhood[]>([]);
-  const [showLocationPicker, setShowLocationPicker] = useState(false);
-  const [customLocation, setCustomLocation] = useState<{ lat: number; lng: number; address: string } | null>(null);
-  const [isDetectingLocation, setIsDetectingLocation] = useState(false);
   const [detectedNeighborhood, setDetectedNeighborhood] = useState<{ id: string; name: string; city: string; distance: number } | null>(null);
-  
+
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -80,7 +79,8 @@ const ProviderRegister = () => {
     customCity: '',
     customNeighborhood: '',
     store_lat: null as number | null,
-    store_lng: null as number | null
+    store_lng: null as number | null,
+    store_address: ''
   });
   const [useCustomCity, setUseCustomCity] = useState(false);
   const [useCustomNeighborhood, setUseCustomNeighborhood] = useState(false);
@@ -99,7 +99,7 @@ const ProviderRegister = () => {
       .select('id')
       .eq('user_id', user.id)
       .maybeSingle();
-    
+
     if (data) {
       navigate('/provider-dashboard');
     }
@@ -115,9 +115,9 @@ const ProviderRegister = () => {
           .select('*')
           .eq('is_active', true)
           .order('sort_order');
-        
+
         if (error || !data || data.length === 0) {
-          // Use default plans with comprehensive features
+          // Use default plans (fallback)
           setPlans([
             {
               id: 'default-trial',
@@ -127,75 +127,13 @@ const ProviderRegister = () => {
               duration_days: 14,
               price: 0,
               is_trial: true,
-              features: [
-                'جميع مميزات الباقات المدفوعة',
-                'إدارة غير محدودة للمنتجات',
-                'الدفع نقداً والإلكتروني',
-                'تحويل الأموال أسبوعياً',
-                'صفحة متجر مخصصة',
-                'تتبع التوصيل المباشر',
-                'ملاحة ثلاثية الأبعاد للتوصيل',
-                'نظام عرض المطبخ (KDS)',
-                'تقارير مبيعات متقدمة',
-                'جدولة الطلبات',
-                'إشعارات مجدولة للعملاء',
-                'الدردشة مع العملاء',
-                'نظام التقييمات والمراجعات',
-                'كوبونات وعروض خاصة',
-                'تخصيص هوية المتجر',
-                'إحصائيات متقدمة',
-                'فواتير احترافية'
-              ]
-            },
-            {
-              id: 'default-monthly',
-              name_ar: 'اشتراك شهري',
-              name_en: 'Monthly',
-              description_ar: 'اشتراك شهري مع جميع المميزات',
-              duration_days: 30,
-              price: 99,
-              is_trial: false,
-              features: [
-                'جميع مميزات التجربة',
-                'إدارة غير محدودة للمنتجات',
-                'تقارير مبيعات متقدمة',
-                'نظام عرض المطبخ (KDS)',
-                'جدولة الطلبات المسبقة',
-                'إشعارات مجدولة للعملاء',
-                'فواتير احترافية',
-                'تنبيهات صوتية للطلبات',
-                'دعم فني عبر الواتساب',
-                'تحويل أسبوعي للأرباح'
-              ]
-            },
-            {
-              id: 'default-yearly',
-              name_ar: 'اشتراك سنوي',
-              name_en: 'Yearly',
-              description_ar: 'اشتراك سنوي بخصم مميز',
-              duration_days: 365,
-              price: 950,
-              is_trial: false,
-              discount_percent: 20,
-              features: [
-                'جميع مميزات الاشتراك الشهري',
-                'التسجيل المباشر في EdfaPay',
-                'استلام الأموال فوراً في حسابك',
-                'تخصيص هوية المتجر (ألوان، شعار، خلفية)',
-                'ملاحة ثلاثية الأبعاد للتوصيل',
-                'تقارير أداء شاملة',
-                'إحصائيات متقدمة',
-                'أولوية في الدعم الفني',
-                'شارة مزود معتمد'
-              ]
+              features: ['تجربة كاملة', 'إدارة المنتجات', 'استقبال الطلبات']
             }
           ]);
         } else {
           setPlans(data.map(plan => ({
             ...plan,
-            features: Array.isArray(plan.features) 
-              ? (plan.features as unknown as string[]) 
-              : [],
+            features: Array.isArray(plan.features) ? (plan.features as any) : [],
             discount_percent: (plan as any).discount_percent || 0
           })));
         }
@@ -213,11 +151,11 @@ const ProviderRegister = () => {
     const fetchNeighborhoods = async () => {
       const { data, error } = await supabase
         .from('active_neighborhoods')
-        .select('id, name, city')
+        .select('id, name, city, lat, lng')
         .eq('is_active', true)
         .order('city')
         .order('name');
-      
+
       if (!error && data) {
         setNeighborhoods(data);
         const uniqueCities = [...new Set(data.map(n => n.city))];
@@ -268,72 +206,55 @@ const ProviderRegister = () => {
     return R * c;
   };
 
-  const detectNearestNeighborhood = async () => {
-    if (!navigator.geolocation) {
-      toast.error('المتصفح لا يدعم تحديد الموقع');
-      return;
-    }
+  // Called when user selects location on map
+  const handleLocationSelect = (location: { lat: number; lng: number; address: string }) => {
+    setFormData(prev => ({
+      ...prev,
+      store_lat: location.lat,
+      store_lng: location.lng,
+      store_address: location.address
+    }));
 
-    setIsDetectingLocation(true);
-    setDetectedNeighborhood(null);
+    // Auto-detect nearest neighborhood
+    if (neighborhoods.length > 0) {
+      let nearest: { id: string; name: string; city: string; distance: number } | null = null;
 
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        const userLat = position.coords.latitude;
-        const userLng = position.coords.longitude;
-
-        const { data: neighborhoodsWithCoords, error } = await supabase
-          .from('active_neighborhoods')
-          .select('id, name, city, lat, lng')
-          .eq('is_active', true);
-
-        if (error || !neighborhoodsWithCoords) {
-          toast.error('حدث خطأ في تحميل الأحياء');
-          setIsDetectingLocation(false);
-          return;
-        }
-
-        let nearest: { id: string; name: string; city: string; distance: number } | null = null;
-        
-        for (const neighborhood of neighborhoodsWithCoords) {
-          if (neighborhood.lat && neighborhood.lng) {
-            const distance = calculateDistance(userLat, userLng, neighborhood.lat, neighborhood.lng);
-            if (!nearest || distance < nearest.distance) {
-              nearest = {
-                id: neighborhood.id,
-                name: neighborhood.name,
-                city: neighborhood.city,
-                distance
-              };
-            }
+      for (const neighborhood of neighborhoods) {
+        if (neighborhood.lat && neighborhood.lng) {
+          const distance = calculateDistance(location.lat, location.lng, neighborhood.lat, neighborhood.lng);
+          // Only consider neighborhoods within 15km
+          if (distance < 15000 && (!nearest || distance < nearest.distance)) {
+            nearest = {
+              id: neighborhood.id,
+              name: neighborhood.name,
+              city: neighborhood.city,
+              distance
+            };
           }
         }
+      }
 
-        if (nearest) {
-          setDetectedNeighborhood(nearest);
-          setFormData(prev => ({
-            ...prev,
-            city: nearest!.city,
-            neighborhood: nearest!.id
-          }));
-          setUseCustomCity(false);
-          setUseCustomNeighborhood(false);
-          
-          const distanceKm = (nearest.distance / 1000).toFixed(1);
-          toast.success(`تم تحديد موقعك: ${nearest.name}، ${nearest.city} (${distanceKm} كم)`);
-        } else {
-          toast.error('لم نتمكن من تحديد الحي الأقرب');
-        }
-
-        setIsDetectingLocation(false);
-      },
-      (error) => {
-        console.error('Geolocation error:', error);
-        toast.error('يرجى السماح بالوصول للموقع');
-        setIsDetectingLocation(false);
-      },
-      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
-    );
+      if (nearest) {
+        setDetectedNeighborhood(nearest);
+        setFormData(prev => ({
+          ...prev,
+          city: nearest!.city,
+          neighborhood: nearest!.id,
+          store_lat: location.lat,
+          store_lng: location.lng,
+          store_address: location.address
+        }));
+        setUseCustomCity(false);
+        setUseCustomNeighborhood(false);
+        toast.success(`تم اختيار ${nearest.name} بناءً على موقعك`, {
+          icon: <Sparkles className="h-4 w-4 text-primary" />
+        });
+      } else {
+        // Reset if far from any supported neighborhood
+        setDetectedNeighborhood(null);
+        toast.info('موقعك بعيد عن الأحياء المدعومة حالياً، يرجى اختيار الحي يدوياً');
+      }
+    }
   };
 
   const handleSelectPlan = (plan: SubscriptionPlan) => {
@@ -361,6 +282,10 @@ const ProviderRegister = () => {
       toast.error('يرجى تحديد المدينة والحي');
       return false;
     }
+    if (!formData.store_lat || !formData.store_lng) {
+      toast.error('يرجى تحديد موقع المتجر على الخريطة');
+      return false;
+    }
     return true;
   };
 
@@ -386,7 +311,7 @@ const ProviderRegister = () => {
       // 2. Create service provider profile (always platform_managed by default)
       const finalCity = useCustomCity ? formData.customCity : formData.city;
       const finalNeighborhood = useCustomNeighborhood ? formData.customNeighborhood : formData.neighborhood;
-      
+
       let neighborhoodId: string | null = null;
       if (!useCustomNeighborhood && formData.neighborhood) {
         neighborhoodId = formData.neighborhood;
@@ -441,9 +366,9 @@ const ProviderRegister = () => {
           .insert({
             name: useCustomNeighborhood ? formData.customNeighborhood : finalNeighborhood,
             city: finalCity,
-            lat: customLocation?.lat || null,
-            lng: customLocation?.lng || null,
-            address: customLocation?.address || null,
+            lat: formData.store_lat || null,
+            lng: formData.store_lng || null,
+            address: formData.store_address || null,
             suggested_by_email: formData.email,
             suggested_by_name: formData.fullName,
             status: 'pending'
@@ -463,7 +388,7 @@ const ProviderRegister = () => {
   return (
     <div className="min-h-screen bg-background font-arabic relative" dir="rtl">
       <InteractiveBackground variant="gradient" intensity="subtle" />
-      
+
       {/* Header */}
       <header className="sticky top-0 z-40 bg-card/95 backdrop-blur-sm border-b border-border pt-[env(safe-area-inset-top)]">
         <div className="container mx-auto px-4 py-2">
@@ -488,11 +413,10 @@ const ProviderRegister = () => {
         <div className="flex items-center justify-center gap-3 mb-6">
           {['plan', 'info'].map((s, i) => (
             <div key={s} className="flex items-center gap-2">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all ${
-                step === s ? 'bg-primary text-primary-foreground scale-110' : 
-                ['plan', 'info'].indexOf(step) > i ? 'bg-green-500 text-white' : 
-                'bg-muted text-muted-foreground'
-              }`}>
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all ${step === s ? 'bg-primary text-primary-foreground scale-110' :
+                ['plan', 'info'].indexOf(step) > i ? 'bg-green-500 text-white' :
+                  'bg-muted text-muted-foreground'
+                }`}>
                 {['plan', 'info'].indexOf(step) > i ? <Check className="h-4 w-4" /> : i + 1}
               </div>
               <span className={`text-sm ${step === s ? 'font-bold' : 'text-muted-foreground'}`}>
@@ -540,12 +464,11 @@ const ProviderRegister = () => {
                       whileHover={{ scale: 1.02, y: -2 }}
                       whileTap={{ scale: 0.98 }}
                     >
-                      <Card 
-                        className={`cursor-pointer transition-all h-full ${
-                          plan.is_trial ? 'border-green-500 ring-1 ring-green-500/30' : 
-                          index === 1 ? 'border-primary ring-1 ring-primary/30' : 
-                          'hover:border-primary/50'
-                        }`}
+                      <Card
+                        className={`cursor-pointer transition-all h-full ${plan.is_trial ? 'border-green-500 ring-1 ring-green-500/30' :
+                          index === 1 ? 'border-primary ring-1 ring-primary/30' :
+                            'hover:border-primary/50'
+                          }`}
                         onClick={() => handleSelectPlan(plan)}
                       >
                         {plan.is_trial && (
@@ -572,7 +495,7 @@ const ProviderRegister = () => {
                             )}
                             <h3 className="font-bold">{plan.name_ar}</h3>
                           </div>
-                          
+
                           <p className="text-xs text-muted-foreground mb-3 line-clamp-2">
                             {plan.description_ar}
                           </p>
@@ -600,8 +523,8 @@ const ProviderRegister = () => {
                             ))}
                           </ul>
 
-                          <Button 
-                            className="w-full" 
+                          <Button
+                            className="w-full"
                             variant={plan.is_trial || index === 1 ? 'default' : 'outline'}
                             size="sm"
                           >
@@ -755,41 +678,32 @@ const ProviderRegister = () => {
                     </div>
                   </div>
 
-                  {/* Location Detection */}
-                  <div className="flex items-center gap-3 p-3 bg-primary/5 rounded-lg border border-primary/20">
-                    <div className="flex-1">
-                      <p className="text-sm font-medium">تحديد الموقع تلقائياً</p>
-                      <p className="text-xs text-muted-foreground">اضغط لتحديد الحي الأقرب</p>
+                  {/* Location Section */}
+                  <div className="pt-3 border-t space-y-4">
+                    <Label className="text-sm font-medium flex items-center gap-2">
+                      <MapPin className="h-4 w-4 text-primary" />
+                      موقع المتجر (مهم التوصيل)
+                    </Label>
+
+                    <div className="h-[300px] w-full rounded-xl overflow-hidden shadow-lg border-2 border-primary/10">
+                      <UnifiedLocationPicker onLocationSelect={handleLocationSelect} />
                     </div>
-                    <Button
-                      type="button"
-                      variant="default"
-                      size="sm"
-                      onClick={detectNearestNeighborhood}
-                      disabled={isDetectingLocation}
-                      className="gap-1.5"
-                    >
-                      {isDetectingLocation ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Navigation className="h-4 w-4" />
-                      )}
-                      {isDetectingLocation ? 'جارٍ...' : 'حدد موقعي'}
-                    </Button>
+
+                    {detectedNeighborhood && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="p-3 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg flex items-center gap-2"
+                      >
+                        <PartyPopper className="h-5 w-5 text-green-600" />
+                        <span className="text-sm text-green-800 dark:text-green-300">
+                          رائع! يقع متجرك في <strong>{detectedNeighborhood.name}</strong>، {detectedNeighborhood.city}
+                        </span>
+                      </motion.div>
+                    )}
                   </div>
 
-                  {detectedNeighborhood && (
-                    <div className="p-2.5 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
-                      <div className="flex items-center gap-2">
-                        <Check className="h-4 w-4 text-green-600" />
-                        <span className="text-sm font-medium text-green-700 dark:text-green-400">
-                          {detectedNeighborhood.name}، {detectedNeighborhood.city}
-                        </span>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* City & Neighborhood */}
+                  {/* City & Neighborhood (Auto-filled) */}
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1.5">
                       <Label className="text-sm">المدينة *</Label>
@@ -801,9 +715,9 @@ const ProviderRegister = () => {
                             placeholder="اسم المدينة"
                             className="h-9 text-sm"
                           />
-                          <Button 
-                            type="button" 
-                            variant="ghost" 
+                          <Button
+                            type="button"
+                            variant="ghost"
                             size="sm"
                             className="text-xs h-7"
                             onClick={() => {
@@ -838,9 +752,9 @@ const ProviderRegister = () => {
                           />
                           <div className="flex gap-1.5">
                             {!useCustomCity && (
-                              <Button 
-                                type="button" 
-                                variant="ghost" 
+                              <Button
+                                type="button"
+                                variant="ghost"
                                 size="sm"
                                 className="text-xs h-7"
                                 onClick={() => setUseCustomNeighborhood(false)}
@@ -848,16 +762,7 @@ const ProviderRegister = () => {
                                 اختر من القائمة
                               </Button>
                             )}
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              className="text-xs h-7"
-                              onClick={() => setShowLocationPicker(true)}
-                            >
-                              <MapPin className="h-3 w-3 ml-1" />
-                              الخريطة
-                            </Button>
+
                           </div>
                         </div>
                       ) : (
@@ -875,18 +780,20 @@ const ProviderRegister = () => {
                     </div>
                   </div>
 
-                  {customLocation && (
-                    <div className="p-2.5 bg-muted rounded-lg text-sm flex items-center gap-2">
-                      <MapPin className="h-4 w-4 text-primary" />
-                      <span className="text-xs">{customLocation.address}</span>
-                    </div>
-                  )}
+
 
                   {/* Store Location */}
-                  <SimpleLocationPicker
-                    location={formData.store_lat && formData.store_lng ? { lat: formData.store_lat, lng: formData.store_lng } : null}
-                    onLocationChange={(location) => setFormData({ ...formData, store_lat: location.lat, store_lng: location.lng })}
-                  />
+                  <div className="pt-3 border-t space-y-4">
+                    <Label className="text-sm font-medium flex items-center gap-2">
+                      <MapPin className="h-4 w-4 text-primary" />
+                      موقع المتجر (مهم التوصيل)
+                    </Label>
+
+                    <div className="h-[300px] w-full rounded-xl overflow-hidden shadow-lg border-2 border-primary/10">
+                      <UnifiedLocationPicker onLocationSelect={handleLocationSelect} />
+                    </div>
+                  </div>
+
 
                   {/* Actions */}
                   <div className="flex gap-3 pt-4">
@@ -922,14 +829,7 @@ const ProviderRegister = () => {
         </AnimatePresence>
       </main>
 
-      <LocationPickerDialog
-        open={showLocationPicker}
-        onOpenChange={setShowLocationPicker}
-        onLocationSelect={(location) => {
-          setCustomLocation(location);
-          setShowLocationPicker(false);
-        }}
-      />
+
     </div>
   );
 };
