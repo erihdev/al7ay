@@ -20,8 +20,8 @@ export default defineConfig(({ mode }) => ({
       registerType: "autoUpdate",
       includeAssets: ["favicon.ico", "robots.txt"],
       manifest: {
-        name: "الحي - منصة الخدمات المحلية",
-        short_name: "الحي",
+        name: "Al7ay - منصة الخدمات المحلية",
+        short_name: "Al7ay",
         description: "منصة الحي - اكتشف مقدمي الخدمات المحلية في حيك واطلب خدماتهم بسهولة",
         theme_color: "#1a3d2e",
         background_color: "#f7f5f0",
