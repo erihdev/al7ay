@@ -62,7 +62,7 @@ const SentryTestButton = () => (
     onClick={() => {
       throw new Error("Sentry Test Error from Al7ay");
     }}
-    style={{ position: 'fixed', bottom: 20, right: 20, zIndex: 9999, background: 'red', color: 'white', padding: '10px', borderRadius: '5px' }}
+    className="fixed bottom-5 right-5 z-[9999] bg-red-500 text-white p-2.5 rounded-md"
   >
     Test Sentry
   </button>
