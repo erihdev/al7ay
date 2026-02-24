@@ -57,6 +57,17 @@ const PageLoader = () => (
   </div>
 );
 
+const SentryTestButton = () => (
+  <button
+    onClick={() => {
+      throw new Error("Sentry Test Error from Al7ay");
+    }}
+    style={{ position: 'fixed', bottom: 20, right: 20, zIndex: 9999, background: 'red', color: 'white', padding: '10px', borderRadius: '5px' }}
+  >
+    Test Sentry
+  </button>
+);
+
 const App = () => {
   const [isLoading, setIsLoading] = useState(true);
 
@@ -121,6 +132,7 @@ const App = () => {
                     </Routes>
                   </Suspense>
                   <AppFooter />
+                  <SentryTestButton />
                 </BrowserRouter>
               </TooltipProvider>
             </LocationProvider>
