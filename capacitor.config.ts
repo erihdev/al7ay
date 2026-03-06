@@ -4,10 +4,6 @@ const config: CapacitorConfig = {
   appId: 'com.erihdev.al7ay',
   appName: 'al7ay',
   webDir: 'dist',
-  server: {
-    url: 'https://c5160f70-0391-456c-a56d-5779caf9872d.lovableproject.com?forceHideBadge=true',
-    cleartext: true
-  },
   ios: {
     contentInset: 'automatic',
     preferredContentMode: 'mobile',

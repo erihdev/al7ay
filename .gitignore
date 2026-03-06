@@ -25,3 +25,13 @@ dist-ssr
 
 # Local Netlify folder
 .netlify
+
+# Environment variables - NEVER commit these
+.env
+.env.*
+!.env.example
+
+# Android signing keys - NEVER commit these
+*.keystore
+*.jks
+android/app/release/
