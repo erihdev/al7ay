@@ -1,0 +1,80 @@
+workflows:
+  android-workflow:
+    name: al7ay Android Build
+    max_build_duration: 60
+    instance_type: linux_x2
+    environment:
+      node: 20
+      groups:
+        - google_play_credentials # Add your Google Play service account key in Codemagic UI
+    scripts:
+      - name: Install dependencies
+        script: |
+          npm install
+      - name: Build web assets
+        script: |
+          npm run build
+      - name: Sync Capacitor
+        script: |
+          npx cap sync android
+      - name: Build Android AAB
+        script: |
+          cd android && ./gradlew bundleRelease
+    artifacts:
+      - android/app/build/outputs/bundle/release/*.aab
+      - android/app/build/outputs/apk/release/*.apk
+    publishing:
+      email:
+        recipients:
+          - support@al7ay.com # Update to your email
+        notify:
+          success: true
+          failure: true
+
+  ios-workflow:
+    name: al7ay iOS Build
+    max_build_duration: 120
+    instance_type: mac_mini_m2
+    environment:
+      node: 20
+      xcode: latest
+      cocoapods: default
+      groups:
+        - appstore_credentials # Add your App Store Connect API Key in Codemagic UI
+    scripts:
+      - name: Install dependencies
+        script: |
+          npm install
+      - name: Build web assets
+        script: |
+          npm run build
+      - name: Sync Capacitor
+        script: |
+          npx cap sync ios
+      - name: Install CocoaPods
+        script: |
+          cd ios/App && pod install
+      - name: Build iOS IPA
+        script: |
+          xcodebuild -workspace ios/App/App.xcworkspace \
+            -scheme App \
+            -configuration Release \
+            -archivePath build/App.xcarchive archive
+          xcodebuild -exportArchive \
+            -archivePath build/App.xcarchive \
+            -exportOptionsPlist ios/App/App/ExportOptions.plist \
+            -exportPath build/ipa
+    artifacts:
+      - build/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+    publishing:
+      email:
+        recipients:
+          - support@al7ay.com # Update to your email
+        notify:
+          success: true
+          failure: true
+#     app_store_connect:
+#       auth:
+#         integration: $APP_STORE_CONNECT_KEY
+#       submit_to_testflight: true

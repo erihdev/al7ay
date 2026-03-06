@@ -31,7 +31,7 @@ export default function Privacy() {
             </CardHeader>
             <CardContent className="prose prose-sm dark:prose-invert max-w-none">
               <p>
-                في منصة "الحي"، نحن ملتزمون بحماية خصوصيتك وبياناتك الشخصية. 
+                في منصة "الحي"، نحن ملتزمون بحماية خصوصيتك وبياناتك الشخصية.
                 توضح هذه السياسة كيفية جمع واستخدام وحماية معلوماتك عند استخدام منصتنا.
               </p>
               <p>
@@ -50,11 +50,11 @@ export default function Privacy() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <h4 className="font-medium mb-2">البيانات الشخصية</h4>
+                <h4 className="font-medium mb-2">البيانات الشخصية والموقع</h4>
                 <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
                   <li>الاسم الكامل ورقم الهاتف</li>
                   <li>البريد الإلكتروني</li>
-                  <li>عنوان التوصيل والموقع الجغرافي</li>
+                  <li>عنوان التوصيل وبيانات الموقع الجغرافي (نستخدم الموقع بدقة فقط لربطك بخدمات الحي، ولا يتم التتبع في الخلفية بدون علمك وإذنك).</li>
                 </ul>
               </div>
               <div>
@@ -171,12 +171,11 @@ export default function Privacy() {
             <CardContent className="space-y-3">
               <p className="text-sm">لديك الحق في:</p>
               <ul className="list-disc list-inside space-y-2 text-sm text-muted-foreground">
-                <li>الوصول لبياناتك الشخصية</li>
-                <li>تصحيح أي بيانات غير دقيقة</li>
-                <li>طلب حذف بياناتك (مع مراعاة المتطلبات القانونية)</li>
-                <li>الاعتراض على معالجة بياناتك</li>
-                <li>نقل بياناتك لمنصة أخرى</li>
-                <li>سحب موافقتك في أي وقت</li>
+                <li>الوصول لبياناتك الشخصية وتعديلها.</li>
+                <li><strong>حذف الحساب نهائياً:</strong> يمكنك محو حسابك وجميع بياناتك المرتبطة به فوراً من خلال إعدادات التطبيق.</li>
+                <li>طلب حذف أو استخراج بياناتك.</li>
+                <li>الاعتراض على معالجة بياناتك.</li>
+                <li>نقل بياناتك لمنصة أخرى أو سحب موافقتك في أي وقت.</li>
               </ul>
             </CardContent>
           </Card>
