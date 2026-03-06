@@ -78,6 +78,23 @@ export function AuthForm({ redirectTo = '/app' }: AuthFormProps) {
   const { signIn, signUp } = useAuth();
   const navigate = useNavigate();
 
+  // Check if user is admin and redirect to /admin, otherwise to redirectTo
+  const checkRoleAndNavigate = async () => {
+    try {
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      if (!currentUser) { navigate(redirectTo); return; }
+      const { data: adminRole } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', currentUser.id)
+        .eq('role', 'admin')
+        .maybeSingle();
+      navigate(adminRole ? '/admin' : redirectTo);
+    } catch {
+      navigate(redirectTo);
+    }
+  };
+
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -92,52 +109,52 @@ export function AuthForm({ redirectTo = '/app' }: AuthFormProps) {
 
   const uploadAvatar = async (userId: string): Promise<string | null> => {
     if (!avatarFile) return null;
-    
+
     const fileExt = avatarFile.name.split('.').pop();
     const fileName = `${userId}/avatar.${fileExt}`;
-    
+
     const { error } = await supabase.storage
       .from('product-images')
       .upload(fileName, avatarFile, { upsert: true });
-    
+
     if (error) {
       console.error('Avatar upload error:', error);
       return null;
     }
-    
+
     const { data: { publicUrl } } = supabase.storage
       .from('product-images')
       .getPublicUrl(fileName);
-    
+
     return publicUrl;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (mode === 'signup' && step === 1) {
       // Move to step 2 for vehicle info
       setStep(2);
       return;
     }
-    
+
     setIsLoading(true);
 
     try {
       if (mode === 'signup') {
         const { error } = await signUp(email, password, fullName);
         if (error) throw error;
-        
+
         // Wait a bit for the user to be created
         await new Promise(resolve => setTimeout(resolve, 1000));
-        
+
         // Get the current user
         const { data: { user } } = await supabase.auth.getUser();
-        
+
         if (user) {
           // Upload avatar if provided
           const avatarUrl = await uploadAvatar(user.id);
-          
+
           // Update profile with additional info
           const { error: profileError } = await supabase
             .from('profiles')
@@ -150,19 +167,19 @@ export function AuthForm({ redirectTo = '/app' }: AuthFormProps) {
               vehicle_year: vehicleYear,
             })
             .eq('user_id', user.id);
-          
+
           if (profileError) {
             console.error('Profile update error:', profileError);
           }
         }
-        
+
         toast.success('تم إنشاء الحساب بنجاح!');
         navigate(redirectTo);
       } else if (mode === 'login') {
         const { error } = await signIn(email, password);
         if (error) throw error;
         toast.success('تم تسجيل الدخول بنجاح!');
-        navigate(redirectTo);
+        await checkRoleAndNavigate();
       }
     } catch (error: any) {
       toast.error(error.message || 'حدث خطأ ما');
@@ -275,7 +292,7 @@ export function AuthForm({ redirectTo = '/app' }: AuthFormProps) {
             </div>
             <h2 className="text-2xl font-bold">{headerConfig.title}</h2>
             <p className="text-white/80 text-sm mt-1">{headerConfig.subtitle}</p>
-            
+
             {/* Step indicator for signup */}
             {mode === 'signup' && (
               <div className="flex items-center justify-center gap-2 mt-4">
@@ -313,9 +330,9 @@ export function AuthForm({ redirectTo = '/app' }: AuthFormProps) {
                     />
                   </div>
 
-                  <Button 
-                    type="submit" 
-                    className="w-full font-arabic h-12 text-base rounded-xl gap-2 shadow-lg bg-gradient-to-r from-amber-500 to-orange-400 hover:from-amber-600 hover:to-orange-500" 
+                  <Button
+                    type="submit"
+                    className="w-full font-arabic h-12 text-base rounded-xl gap-2 shadow-lg bg-gradient-to-r from-amber-500 to-orange-400 hover:from-amber-600 hover:to-orange-500"
                     disabled={isLoading}
                   >
                     {isLoading ? (
@@ -378,8 +395,8 @@ export function AuthForm({ redirectTo = '/app' }: AuthFormProps) {
                         <Car className="h-4 w-4 text-muted-foreground" />
                         ماركة السيارة
                       </Label>
-                      <Select 
-                        value={vehicleBrand} 
+                      <Select
+                        value={vehicleBrand}
                         onValueChange={(value) => {
                           setVehicleBrand(value);
                           setVehicleModel(''); // Reset model when brand changes
@@ -397,13 +414,13 @@ export function AuthForm({ redirectTo = '/app' }: AuthFormProps) {
                         </SelectContent>
                       </Select>
                     </div>
-                    
+
                     <div className="space-y-2">
                       <Label className="font-arabic flex items-center gap-2 text-sm">
                         الموديل
                       </Label>
-                      <Select 
-                        value={vehicleModel} 
+                      <Select
+                        value={vehicleModel}
                         onValueChange={setVehicleModel}
                         disabled={!vehicleBrand}
                       >
@@ -437,7 +454,7 @@ export function AuthForm({ redirectTo = '/app' }: AuthFormProps) {
                         dir="rtl"
                       />
                     </div>
-                    
+
                     <div className="space-y-2">
                       <Label className="font-arabic flex items-center gap-2 text-sm">
                         السنة
@@ -473,7 +490,7 @@ export function AuthForm({ redirectTo = '/app' }: AuthFormProps) {
                   </div>
 
                   <div className="flex gap-3 mt-6">
-                    <Button 
+                    <Button
                       type="button"
                       variant="outline"
                       className="flex-1 font-arabic h-12 rounded-xl"
@@ -482,9 +499,9 @@ export function AuthForm({ redirectTo = '/app' }: AuthFormProps) {
                       <ArrowRight className="h-4 w-4 ml-2" />
                       رجوع
                     </Button>
-                    <Button 
-                      type="submit" 
-                      className="flex-1 font-arabic h-12 text-base rounded-xl gap-2 shadow-lg bg-gradient-to-r from-green-500 to-emerald-400 hover:from-green-600 hover:to-emerald-500" 
+                    <Button
+                      type="submit"
+                      className="flex-1 font-arabic h-12 text-base rounded-xl gap-2 shadow-lg bg-gradient-to-r from-green-500 to-emerald-400 hover:from-green-600 hover:to-emerald-500"
                       disabled={isLoading}
                     >
                       {isLoading ? (
@@ -554,7 +571,7 @@ export function AuthForm({ redirectTo = '/app' }: AuthFormProps) {
                   ) : (
                     <>
                       <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/>
+                        <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z" />
                       </svg>
                       {mode === 'login' ? 'تسجيل الدخول بـ Apple' : 'التسجيل بـ Apple'}
                     </>
@@ -572,7 +589,7 @@ export function AuthForm({ redirectTo = '/app' }: AuthFormProps) {
 
                 <form onSubmit={handleSubmit} className="space-y-4">
                   {mode === 'signup' && (
-                    <motion.div 
+                    <motion.div
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: 'auto' }}
                       exit={{ opacity: 0, height: 0 }}
@@ -594,7 +611,7 @@ export function AuthForm({ redirectTo = '/app' }: AuthFormProps) {
                           dir="rtl"
                         />
                       </div>
-                      
+
                       <div className="space-y-2">
                         <Label htmlFor="phone" className="font-arabic flex items-center gap-2">
                           <Phone className="h-4 w-4 text-muted-foreground" />
@@ -660,9 +677,9 @@ export function AuthForm({ redirectTo = '/app' }: AuthFormProps) {
                     />
                   </div>
 
-                  <Button 
-                    type="submit" 
-                    className="w-full font-arabic h-12 text-base rounded-xl gap-2 shadow-lg" 
+                  <Button
+                    type="submit"
+                    className="w-full font-arabic h-12 text-base rounded-xl gap-2 shadow-lg"
                     disabled={isLoading}
                   >
                     {isLoading ? (

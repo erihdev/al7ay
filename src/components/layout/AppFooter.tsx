@@ -22,12 +22,12 @@ export const AppFooter = forwardRef<HTMLElement>((_, ref) => {
         <span className="text-[10px]">
           صنع بواسطة{' '}
           <a
-            href="https://divathar.com"
+            href="https://erihdev.com"
             target="_blank"
             rel="noopener noreferrer"
             className="text-primary/60 hover:text-primary transition-colors font-medium"
           >
-            divathar.com
+            erihdev.com
           </a>
         </span>
       </div>
