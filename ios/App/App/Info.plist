@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleDisplayName</key>
-        <string>al7ay</string>
+        <string>الحي</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -51,5 +51,11 @@
 	<string>التطبيق يستخدم الموقع لتقديم خدمات الحي المخصصة ولمعرفة جيرانك والأماكن القريبة.</string>
 	<key>NSLocationAlwaysUsageDescription</key>
 	<string>التطبيق يستخدم الموقع لتقديم خدمات الحي المخصصة ولمعرفة جيرانك والأماكن القريبة.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>التطبيق يحتاج للوصول إلى الكاميرا للسماح لك بالتقاط صور للمنتجات أو تحديث صورة ملفك الشخصي.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>التطبيق يحتاج للوصول إلى معرض الصور لتتمكن من اختيار صور للمنتجات أو تحديث صورة ملفك الشخصي.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>التطبيق يحتاج للوصول إلى معرض الصور لحفظ الصور المتعلقة بالطلبات والتقارير.</string>
 </dict>
 </plist>

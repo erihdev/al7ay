@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
-import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
+import { useEffect, useRef } from 'react';
+import { motion, useMotionValue, useSpring, useTransform, MotionValue } from 'framer-motion';
 
 interface InteractiveBackgroundProps {
   variant?: 'particles' | 'gradient' | 'geometric' | 'waves';
@@ -33,91 +33,108 @@ export function InteractiveBackground({
     return () => window.removeEventListener('mousemove', handleMouseMove);
   }, [mouseX, mouseY]);
 
-  const opacityMap = {
-    subtle: 0.3,
-    medium: 0.5,
-    strong: 0.7,
-  };
-
-  const opacity = opacityMap[intensity];
-
   if (variant === 'particles') {
-    return <ParticlesBackground x={x} y={y} opacity={opacity} className={className} />;
+    return <ParticlesBackground x={x} y={y} intensity={intensity} className={className} />;
   }
 
   if (variant === 'gradient') {
-    return <GradientBackground x={x} y={y} opacity={opacity} className={className} />;
+    return <GradientBackground x={x} y={y} intensity={intensity} className={className} />;
   }
 
   if (variant === 'geometric') {
-    return <GeometricBackground x={x} y={y} opacity={opacity} className={className} />;
+    return <GeometricBackground x={x} y={y} intensity={intensity} className={className} />;
   }
 
   if (variant === 'waves') {
-    return <WavesBackground opacity={opacity} className={className} />;
+    return <WavesBackground intensity={intensity} className={className} />;
   }
 
   return null;
 }
 
+interface BackgroundProps {
+  x: MotionValue<number>;
+  y: MotionValue<number>;
+  intensity: 'subtle' | 'medium' | 'strong';
+  className?: string;
+}
+
+interface ParticleProps {
+  x: MotionValue<number>;
+  y: MotionValue<number>;
+  particle: {
+    id: number;
+    size: number;
+    initialX: number;
+    initialY: number;
+    delay: number;
+  };
+}
+
+function Particle({ x, y, particle }: ParticleProps) {
+  const translateX = useTransform(x, [0, 1], [-30 + particle.initialX, 30 + particle.initialX]);
+  const translateY = useTransform(y, [0, 1], [-30 + particle.initialY, 30 + particle.initialY]);
+
+  return (
+    <motion.div
+      className="absolute rounded-full bg-primary/40"
+      style={{
+        width: particle.size,
+        height: particle.size,
+        left: `${particle.initialX}%`,
+        top: `${particle.initialY}%`,
+        x: translateX,
+        y: translateY,
+      }}
+      animate={{
+        scale: [1, 1.2, 1],
+        opacity: [0.3, 0.6, 0.3],
+      }}
+      transition={{
+        duration: 3 + particle.delay,
+        repeat: Infinity,
+        ease: 'easeInOut',
+      }}
+    />
+  );
+}
+
 // Particles Background
-function ParticlesBackground({ x, y, opacity, className }: any) {
-  const particles = Array.from({ length: 20 }, (_, i) => ({
+function ParticlesBackground({ x, y, intensity, className }: BackgroundProps) {
+  const particles = useRef(Array.from({ length: 20 }, (_, i) => ({
     id: i,
     size: Math.random() * 6 + 2,
     initialX: Math.random() * 100,
     initialY: Math.random() * 100,
     delay: Math.random() * 2,
-  }));
+  }))).current;
+
+  const opacityClass = intensity === 'subtle' ? 'opacity-30' : intensity === 'medium' ? 'opacity-50' : 'opacity-70';
 
   return (
-    <div className={`fixed inset-0 pointer-events-none overflow-hidden ${className}`} style={{ opacity }}>
-      {particles.map((particle) => {
-        const translateX = useTransform(x, [0, 1], [-30 + particle.initialX, 30 + particle.initialX]);
-        const translateY = useTransform(y, [0, 1], [-30 + particle.initialY, 30 + particle.initialY]);
-
-        return (
-          <motion.div
-            key={particle.id}
-            className="absolute rounded-full bg-primary/40"
-            style={{
-              width: particle.size,
-              height: particle.size,
-              left: `${particle.initialX}%`,
-              top: `${particle.initialY}%`,
-              x: translateX,
-              y: translateY,
-            }}
-            animate={{
-              scale: [1, 1.2, 1],
-              opacity: [0.3, 0.6, 0.3],
-            }}
-            transition={{
-              duration: 3 + particle.delay,
-              repeat: Infinity,
-              ease: 'easeInOut',
-            }}
-          />
-        );
-      })}
+    <div className={`fixed inset-0 pointer-events-none overflow-hidden ${opacityClass} ${className}`}>
+      {particles.map((particle) => (
+        <Particle key={particle.id} x={x} y={y} particle={particle} />
+      ))}
     </div>
   );
 }
 
 // Gradient Background
-function GradientBackground({ x, y, opacity, className }: any) {
+function GradientBackground({ x, y, intensity, className }: BackgroundProps) {
   const gradientX = useTransform(x, [0, 1], ['0%', '100%']);
   const gradientY = useTransform(y, [0, 1], ['0%', '100%']);
+  const opacityClass = intensity === 'subtle' ? 'opacity-30' : intensity === 'medium' ? 'opacity-50' : 'opacity-70';
 
   return (
-    <div className={`fixed inset-0 pointer-events-none ${className}`} style={{ opacity }}>
+    <div className={`fixed inset-0 pointer-events-none ${opacityClass} ${className}`}>
       <motion.div
         className="absolute inset-0"
         style={{
           background: `radial-gradient(circle at var(--x) var(--y), hsl(var(--primary) / 0.3), transparent 50%)`,
-          ['--x' as any]: gradientX,
-          ['--y' as any]: gradientY,
-        }}
+          ['--x' as string]: gradientX,
+          ['--y' as string]: gradientY,
+        } as React.CSSProperties}
       />
       <motion.div
         className="absolute inset-0"
@@ -140,9 +157,76 @@ function GradientBackground({ x, y, opacity, className }: any) {
   );
 }
 
+interface GeometricShapeProps {
+  x: MotionValue<number>;
+  y: MotionValue<number>;
+  shape: {
+    id: number;
+    type: string;
+    size: number;
+    initialX: number;
+    initialY: number;
+    rotation: number;
+    delay: number;
+  };
+}
+
+function GeometricShape({ x, y, shape }: GeometricShapeProps) {
+  const translateX = useTransform(x, [0, 1], [-20, 20]);
+  const translateY = useTransform(y, [0, 1], [-20, 20]);
+
+  return (
+    <motion.div
+      className={`absolute ${
+        shape.type === 'circle' 
+          ? 'rounded-full' 
+          : shape.type === 'square' 
+            ? 'rounded-lg' 
+            : ''
+      }`}
+      style={{
+        width: shape.size,
+        height: shape.size,
+        left: `${shape.initialX}%`,
+        top: `${shape.initialY}%`,
+        x: translateX,
+        y: translateY,
+        rotate: shape.rotation,
+        background: shape.type === 'triangle' 
+          ? 'none'
+          : 'linear-gradient(135deg, hsl(var(--primary) / 0.1), hsl(var(--accent) / 0.1))',
+        borderWidth: shape.type === 'triangle' ? 0 : 1,
+        borderColor: 'hsl(var(--primary) / 0.2)',
+        clipPath: shape.type === 'triangle' 
+          ? 'polygon(50% 0%, 0% 100%, 100% 100%)' 
+          : undefined,
+        backgroundColor: shape.type === 'triangle' 
+          ? 'hsl(var(--primary) / 0.1)' 
+          : undefined,
+      }}
+      animate={{
+        rotate: [shape.rotation, shape.rotation + 360],
+        scale: [1, 1.1, 1],
+      }}
+      transition={{
+        rotate: {
+          duration: 20 + shape.delay * 5,
+          repeat: Infinity,
+          ease: 'linear',
+        },
+        scale: {
+          duration: 4 + shape.delay,
+          repeat: Infinity,
+          ease: 'easeInOut',
+        },
+      }}
+    />
+  );
+}
+
 // Geometric Background
-function GeometricBackground({ x, y, opacity, className }: any) {
-  const shapes = Array.from({ length: 8 }, (_, i) => ({
+function GeometricBackground({ x, y, intensity, className }: BackgroundProps) {
+  const shapes = useRef(Array.from({ length: 8 }, (_, i) => ({
     id: i,
     type: i % 3 === 0 ? 'circle' : i % 3 === 1 ? 'square' : 'triangle',
     size: Math.random() * 60 + 20,
@@ -150,71 +234,25 @@ function GeometricBackground({ x, y, opacity, className }: any) {
     initialY: Math.random() * 100,
     rotation: Math.random() * 360,
     delay: Math.random() * 2,
-  }));
+  }))).current;
+
+  const opacityClass = intensity === 'subtle' ? 'opacity-30' : intensity === 'medium' ? 'opacity-50' : 'opacity-70';
 
   return (
-    <div className={`fixed inset-0 pointer-events-none overflow-hidden ${className}`} style={{ opacity }}>
-      {shapes.map((shape) => {
-        const translateX = useTransform(x, [0, 1], [-20, 20]);
-        const translateY = useTransform(y, [0, 1], [-20, 20]);
-
-        return (
-          <motion.div
-            key={shape.id}
-            className={`absolute ${
-              shape.type === 'circle' 
-                ? 'rounded-full' 
-                : shape.type === 'square' 
-                  ? 'rounded-lg' 
-                  : ''
-            }`}
-            style={{
-              width: shape.size,
-              height: shape.size,
-              left: `${shape.initialX}%`,
-              top: `${shape.initialY}%`,
-              x: translateX,
-              y: translateY,
-              rotate: shape.rotation,
-              background: shape.type === 'triangle' 
-                ? 'none'
-                : 'linear-gradient(135deg, hsl(var(--primary) / 0.1), hsl(var(--accent) / 0.1))',
-              borderWidth: shape.type === 'triangle' ? 0 : 1,
-              borderColor: 'hsl(var(--primary) / 0.2)',
-              clipPath: shape.type === 'triangle' 
-                ? 'polygon(50% 0%, 0% 100%, 100% 100%)' 
-                : undefined,
-              backgroundColor: shape.type === 'triangle' 
-                ? 'hsl(var(--primary) / 0.1)' 
-                : undefined,
-            }}
-            animate={{
-              rotate: [shape.rotation, shape.rotation + 360],
-              scale: [1, 1.1, 1],
-            }}
-            transition={{
-              rotate: {
-                duration: 20 + shape.delay * 5,
-                repeat: Infinity,
-                ease: 'linear',
-              },
-              scale: {
-                duration: 4 + shape.delay,
-                repeat: Infinity,
-                ease: 'easeInOut',
-              },
-            }}
-          />
-        );
-      })}
+    <div className={`fixed inset-0 pointer-events-none overflow-hidden ${opacityClass} ${className}`}>
+      {shapes.map((shape) => (
+        <GeometricShape key={shape.id} x={x} y={y} shape={shape} />
+      ))}
     </div>
   );
 }
 
 // Waves Background
-function WavesBackground({ opacity, className }: any) {
+function WavesBackground({ intensity, className }: { intensity: 'subtle' | 'medium' | 'strong'; className: string }) {
+  const opacityClass = intensity === 'subtle' ? 'opacity-30' : intensity === 'medium' ? 'opacity-50' : 'opacity-70';
+
   return (
-    <div className={`fixed inset-0 pointer-events-none overflow-hidden ${className}`} style={{ opacity }}>
+    <div className={`fixed inset-0 pointer-events-none overflow-hidden ${opacityClass} ${className}`}>
       <svg
         className="absolute bottom-0 left-0 w-full h-1/2"
         viewBox="0 0 1440 320"
@@ -252,7 +290,6 @@ function WavesBackground({ opacity, className }: any) {
           }}
         />
       </svg>
-      
       {/* Floating orbs */}
       {[...Array(5)].map((_, i) => (
         <motion.div

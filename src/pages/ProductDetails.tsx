@@ -8,7 +8,7 @@ import { ProductReviewsList } from '@/components/reviews/ProductReviewsList';
 import { ProductReviewDialog } from '@/components/reviews/ProductReviewDialog';
 import { useProductAverageRating, useMyReview } from '@/hooks/useProductReviews';
 import { useAuth } from '@/contexts/AuthContext';
-import { useCart } from '@/contexts/CartContext';
+import { useCart } from '@/hooks/useCart';
 import { ArrowRight, Star, Plus, Minus, ShoppingCart } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';

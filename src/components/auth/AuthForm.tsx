@@ -181,8 +181,9 @@ export function AuthForm({ redirectTo = '/app' }: AuthFormProps) {
         toast.success('تم تسجيل الدخول بنجاح!');
         await checkRoleAndNavigate();
       }
-    } catch (error: any) {
-      toast.error(error.message || 'حدث خطأ ما');
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'حدث خطأ ما';
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -203,8 +204,9 @@ export function AuthForm({ redirectTo = '/app' }: AuthFormProps) {
       if (error) throw error;
       toast.success('تم إرسال رابط استعادة كلمة المرور إلى بريدك الإلكتروني');
       setMode('login');
-    } catch (error: any) {
-      toast.error(error.message || 'حدث خطأ في إرسال رابط الاستعادة');
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'حدث خطأ في إرسال رابط الاستعادة';
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -217,8 +219,9 @@ export function AuthForm({ redirectTo = '/app' }: AuthFormProps) {
         redirect_uri: window.location.origin,
       });
       if (error) throw error;
-    } catch (error: any) {
-      toast.error(error.message || 'حدث خطأ في تسجيل الدخول بـ Google');
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'حدث خطأ في تسجيل الدخول بـ Google';
+      toast.error(errorMessage);
       setIsGoogleLoading(false);
     }
   };
@@ -230,8 +233,9 @@ export function AuthForm({ redirectTo = '/app' }: AuthFormProps) {
         redirect_uri: window.location.origin,
       });
       if (error) throw error;
-    } catch (error: any) {
-      toast.error(error.message || 'حدث خطأ في تسجيل الدخول بـ Apple');
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'حدث خطأ في تسجيل الدخول بـ Apple';
+      toast.error(errorMessage);
       setIsAppleLoading(false);
     }
   };

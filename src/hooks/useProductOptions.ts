@@ -17,13 +17,7 @@ export interface ProductOptionValue {
   sort_order: number;
 }
 
-export interface SelectedOption {
-  option_id: string;
-  option_name: string;
-  value_id: string;
-  value_name: string;
-  price_modifier: number;
-}
+export type { SelectedOption } from '@/types/cart';
 
 export function useProductOptions(productId?: string) {
   return useQuery({

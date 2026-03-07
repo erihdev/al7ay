@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { useAllProductOptions, SelectedOption } from '@/hooks/useProductOptions';
-import { useCart } from '@/contexts/CartContext';
+import { useCart } from '@/hooks/useCart';
 import { useProductAverageRating } from '@/hooks/useProductReviews';
 import { ProductReviewsList } from '@/components/reviews/ProductReviewsList';
 import { Loader2, Plus, Minus, Star } from 'lucide-react';

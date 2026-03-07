@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
@@ -18,9 +18,9 @@ import { StoreLocationAlert } from '@/components/provider/StoreLocationAlert';
 import { ProviderNotificationPermission } from '@/components/provider/ProviderNotificationPermission';
 import { SimpleNotificationIndicator } from '@/components/provider/SimpleNotificationIndicator';
 import { NotificationSetupGuide } from '@/components/provider/NotificationSetupGuide';
-import { 
-  ShoppingBag, 
-  TrendingUp, 
+import {
+  ShoppingBag,
+  TrendingUp,
   LogOut,
   Coffee,
   Clock,
@@ -43,72 +43,7 @@ import { AnimatedLogo } from '@/components/ui/AnimatedLogo';
 import { Badge } from '@/components/ui/badge';
 import { motion } from 'framer-motion';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-
-interface Provider {
-  id: string;
-  user_id: string;
-  application_id: string | null;
-  business_name: string;
-  business_name_en: string | null;
-  logo_url: string | null;
-  description: string | null;
-  phone: string | null;
-  email: string;
-  neighborhood_id: string | null;
-  is_active: boolean;
-  is_verified: boolean;
-  subscription_status: string | null;
-  delivery_scope: 'neighborhood' | 'city';
-  store_lat: number | null;
-  store_lng: number | null;
-  delivery_radius_km: number;
-  store_settings: {
-    primary_color: string;
-    accent_color: string;
-  } | null;
-  store_theme: {
-    primary_color: string;
-    secondary_color: string;
-    accent_color: string;
-    background_color: string;
-    text_color: string;
-    header_style: 'solid' | 'gradient' | 'transparent';
-    font_family: string;
-    border_radius: 'none' | 'small' | 'medium' | 'large' | 'full';
-    button_style: 'square' | 'rounded' | 'pill';
-  } | null;
-  freelance_certificate_url: string | null;
-  bank_name: string | null;
-  iban: string | null;
-  national_address: string | null;
-  is_payment_verified: boolean;
-  commission_rate: number;
-  payment_method: 'direct_gateway' | 'platform_managed';
-  gateway_account_id: string | null;
-  gateway_approval_url: string | null;
-  payout_frequency: 'weekly' | 'monthly';
-  last_payout_date: string | null;
-  pending_payout: number;
-  created_at: string;
-  updated_at: string;
-}
-
-interface ProviderOrder {
-  id: string;
-  status: string;
-  total_amount: number;
-  created_at: string;
-  customer_name: string;
-  order_type: string;
-}
-
-interface ProviderProduct {
-  id: string;
-  name_ar: string;
-  price: number;
-  is_available: boolean;
-  is_featured: boolean;
-}
+import { ServiceProvider, ProviderProduct, ProviderOrder } from '@/hooks/useProviderData';
 
 interface PayoutRecord {
   created_at: string;
@@ -122,7 +57,7 @@ const ProviderDashboard = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [provider, setProvider] = useState<Provider | null>(null);
+  const [provider, setProvider] = useState<ServiceProvider | null>(null);
   const [products, setProducts] = useState<ProviderProduct[]>([]);
   const [orders, setOrders] = useState<ProviderOrder[]>([]);
   const [payoutHistory, setPayoutHistory] = useState<PayoutRecord[]>([]);
@@ -134,9 +69,9 @@ const ProviderDashboard = () => {
   useProviderAimtellTag(provider?.id);
 
   // Auto-request notification permission and register provider for targeted notifications
-  useAutoNotificationPermission({ 
-    providerId: provider?.id, 
-    userId: provider?.user_id 
+  useAutoNotificationPermission({
+    providerId: provider?.id,
+    userId: provider?.user_id
   });
 
   // Auto re-register push if subscription is invalid or missing
@@ -147,7 +82,7 @@ const ProviderDashboard = () => {
   // Test notification function
   const handleTestNotification = async () => {
     if (!provider?.id) return;
-    
+
     setTestingNotification(true);
     try {
       const { data, error } = await supabase.functions.invoke('send-notification', {
@@ -180,65 +115,49 @@ const ProviderDashboard = () => {
     }
   };
 
-  // Load provider data - simplified direct fetch
-  const loadProviderData = async (userId: string, accessToken: string) => {
-    console.log('loadProviderData with token for userId:', userId);
-    
-    const baseUrl = import.meta.env.VITE_SUPABASE_URL;
-    const headers = {
-      'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-      'Authorization': `Bearer ${accessToken}`,
-      'Content-Type': 'application/json'
-    };
-    
+  const loadProviderData = useCallback(async (userId: string) => {
+    console.log('loadProviderData for userId:', userId);
+    setLoading(true);
+    setError(null);
+
     try {
       // Fetch provider - get all fields needed for settings
-      const providerRes = await fetch(
-        `${baseUrl}/rest/v1/service_providers?user_id=eq.${userId}&select=*`,
-        { headers }
-      );
-      
-      if (!providerRes.ok) {
-        console.error('Provider fetch failed:', providerRes.status);
+      const { data: providerData, error: providerError } = await supabase
+        .from('service_providers')
+        .select('*')
+        .eq('user_id', userId);
+
+      if (providerError) {
+        console.error('Provider fetch failed:', providerError);
         setError('فشل في تحميل بيانات المتجر');
         setLoading(false);
         return;
       }
-      
-      const providerData = await providerRes.json();
+
       console.log('Provider data:', providerData);
-      
+
       if (!providerData || providerData.length === 0) {
         setError('لم يتم العثور على حساب مقدم خدمة');
         setLoading(false);
         return;
       }
-      
+
       const providerInfo = providerData[0];
-      
-      // Fetch products, orders, and payout history in parallel
+
+      // Fetch products, orders, and payout history in parallel using supabase client
       const [productsRes, ordersRes, payoutsRes] = await Promise.all([
-        fetch(
-          `${baseUrl}/rest/v1/provider_products?provider_id=eq.${providerInfo.id}&select=id,name_ar,price,is_available,is_featured`,
-          { headers }
-        ),
-        fetch(
-          `${baseUrl}/rest/v1/provider_orders?provider_id=eq.${providerInfo.id}&select=id,status,total_amount,created_at,customer_name,order_type&order=created_at.desc`,
-          { headers }
-        ),
-        fetch(
-          `${baseUrl}/rest/v1/provider_payouts?provider_id=eq.${providerInfo.id}&select=created_at,amount,commission_amount,net_amount,transaction_reference&order=created_at.desc&limit=10`,
-          { headers }
-        )
+        supabase.from('provider_products').select('*').eq('provider_id', providerInfo.id),
+        supabase.from('provider_orders').select('*').eq('provider_id', providerInfo.id).order('created_at', { ascending: false }),
+        supabase.from('provider_payouts').select('*').eq('provider_id', providerInfo.id).order('created_at', { ascending: false }).limit(10)
       ]);
-      
-      const productsData = productsRes.ok ? await productsRes.json() : [];
-      const ordersData = ordersRes.ok ? await ordersRes.json() : [];
-      const payoutsData = payoutsRes.ok ? await payoutsRes.json() : [];
-      
+
+      const productsData = (productsRes.data || []) as ProviderProduct[];
+      const ordersData = (ordersRes.data || []) as ProviderOrder[];
+      const payoutsData = payoutsRes.data || [];
+
       console.log('Loaded:', productsData.length, 'products,', ordersData.length, 'orders,', payoutsData.length, 'payouts');
-      
-      setProvider(providerInfo);
+
+      setProvider(providerInfo as unknown as ServiceProvider);
       setProducts(productsData);
       setOrders(ordersData);
       setPayoutHistory(payoutsData);
@@ -248,11 +167,32 @@ const ProviderDashboard = () => {
       setError('حدث خطأ أثناء تحميل البيانات');
       setLoading(false);
     }
-  };
+  }, []);
+
+  const tryLocalStorage = useCallback(async () => {
+    const storedSession = localStorage.getItem('sb-hmnpraslunhnuigeetoe-auth-token');
+    if (!storedSession) {
+      navigate('/provider-login', { replace: true });
+      return;
+    }
+
+    try {
+      const parsed = JSON.parse(storedSession);
+      if (parsed?.access_token && parsed?.user?.id) {
+        console.log('Using token from localStorage');
+        await loadProviderData(parsed.user.id);
+      } else {
+        navigate('/provider-login', { replace: true });
+      }
+    } catch (e) {
+      console.error('Parse error:', e);
+      navigate('/provider-login', { replace: true });
+    }
+  }, [navigate, loadProviderData]);
 
   useEffect(() => {
     let mounted = true;
-    
+
     const init = async () => {
       // First try to get session from Supabase client (with short timeout)
       const timeout = setTimeout(() => {
@@ -261,14 +201,14 @@ const ProviderDashboard = () => {
           tryLocalStorage();
         }
       }, 3000);
-      
+
       try {
         const { data: { session } } = await supabase.auth.getSession();
         clearTimeout(timeout);
-        
+
         if (session?.user && session?.access_token) {
           console.log('Got session from Supabase client');
-          await loadProviderData(session.user.id, session.access_token);
+          await loadProviderData(session.user.id);
         } else {
           await tryLocalStorage();
         }
@@ -278,32 +218,9 @@ const ProviderDashboard = () => {
         await tryLocalStorage();
       }
     };
-    
-    const tryLocalStorage = async () => {
-      if (!mounted) return;
-      
-      const storedSession = localStorage.getItem('sb-hmnpraslunhnuigeetoe-auth-token');
-      if (!storedSession) {
-        navigate('/provider-login', { replace: true });
-        return;
-      }
-      
-      try {
-        const parsed = JSON.parse(storedSession);
-        if (parsed?.access_token && parsed?.user?.id) {
-          console.log('Using token from localStorage');
-          await loadProviderData(parsed.user.id, parsed.access_token);
-        } else {
-          navigate('/provider-login', { replace: true });
-        }
-      } catch (e) {
-        console.error('Parse error:', e);
-        navigate('/provider-login', { replace: true });
-      }
-    };
-    
+
     init();
-    
+
     // Listen for sign out
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === 'SIGNED_OUT' && mounted) {
@@ -315,11 +232,11 @@ const ProviderDashboard = () => {
       mounted = false;
       subscription.unsubscribe();
     };
-  }, [navigate]);
+  }, [navigate, loading, tryLocalStorage, loadProviderData]);
 
   const loadDashboard = async () => {
     if (!provider) return;
-    
+
     setLoading(true);
     setError(null);
 
@@ -330,8 +247,8 @@ const ProviderDashboard = () => {
         supabase.from('provider_payouts').select('created_at, amount, commission_amount, net_amount, transaction_reference').eq('provider_id', provider.id).order('created_at', { ascending: false }).limit(10)
       ]);
 
-      setProducts(productsRes.data || []);
-      setOrders(ordersRes.data || []);
+      setProducts((productsRes.data || []) as ProviderProduct[]);
+      setOrders((ordersRes.data || []) as ProviderOrder[]);
       setPayoutHistory(payoutsRes.data || []);
     } catch (err) {
       console.error('Refresh error:', err);
@@ -351,7 +268,7 @@ const ProviderDashboard = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-bl from-primary/5 via-background to-background flex items-center justify-center" dir="rtl">
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           className="text-center"
@@ -436,10 +353,10 @@ const ProviderDashboard = () => {
             <div className="flex items-center gap-2">
               <div className="relative">
                 {provider.logo_url ? (
-                  <img 
-                    src={provider.logo_url} 
-                    alt={provider.business_name} 
-                    className="h-9 w-9 sm:h-11 sm:w-11 rounded-lg object-cover ring-2 ring-primary/20 shadow-md" 
+                  <img
+                    src={provider.logo_url}
+                    alt={provider.business_name}
+                    className="h-9 w-9 sm:h-11 sm:w-11 rounded-lg object-cover ring-2 ring-primary/20 shadow-md"
                   />
                 ) : (
                   <div className="h-9 w-9 sm:h-11 sm:w-11 rounded-lg bg-gradient-to-bl from-primary to-primary/80 flex items-center justify-center shadow-md">
@@ -476,9 +393,9 @@ const ProviderDashboard = () => {
               <SimpleNotificationIndicator />
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button 
-                    variant="outline" 
-                    size="icon" 
+                  <Button
+                    variant="outline"
+                    size="icon"
                     onClick={handleTestNotification}
                     disabled={testingNotification}
                     className="relative h-8 w-8 sm:h-9 sm:w-9"
@@ -494,9 +411,9 @@ const ProviderDashboard = () => {
                   <p>اختبار الإشعارات</p>
                 </TooltipContent>
               </Tooltip>
-              <Button 
-                variant={soundEnabled ? "default" : "outline"} 
-                size="icon" 
+              <Button
+                variant={soundEnabled ? "default" : "outline"}
+                size="icon"
                 onClick={() => setSoundEnabled(!soundEnabled)}
                 className={`h-8 w-8 sm:h-9 sm:w-9 ${soundEnabled ? "bg-primary/10 text-primary hover:bg-primary/20" : ""}`}
               >
@@ -516,8 +433,8 @@ const ProviderDashboard = () => {
           {/* Modern Tab Navigation - Compact on mobile */}
           <div className="mb-3 sm:mb-6">
             <TabsList className="w-full h-auto p-1 bg-muted/50 rounded-xl grid grid-cols-6 gap-0.5">
-              <TabsTrigger 
-                value="kitchen" 
+              <TabsTrigger
+                value="kitchen"
                 className="rounded-lg data-[state=active]:bg-gradient-to-l data-[state=active]:from-amber-500 data-[state=active]:to-orange-500 data-[state=active]:text-white data-[state=active]:shadow-md py-2 sm:py-3 px-1 gap-1 transition-all"
               >
                 <ChefHat className="h-4 w-4" />
@@ -527,32 +444,32 @@ const ProviderDashboard = () => {
                   </Badge>
                 )}
               </TabsTrigger>
-              <TabsTrigger 
-                value="overview" 
+              <TabsTrigger
+                value="overview"
                 className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-md py-2 sm:py-3 px-1 gap-1 transition-all"
               >
                 <TrendingUp className="h-4 w-4" />
               </TabsTrigger>
-              <TabsTrigger 
-                value="stats" 
+              <TabsTrigger
+                value="stats"
                 className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-md py-2 sm:py-3 px-1 gap-1 transition-all"
               >
                 <BarChart3 className="h-4 w-4" />
               </TabsTrigger>
-              <TabsTrigger 
-                value="products" 
+              <TabsTrigger
+                value="products"
                 className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-md py-2 sm:py-3 px-1 gap-1 transition-all"
               >
                 <Coffee className="h-4 w-4" />
               </TabsTrigger>
-              <TabsTrigger 
-                value="theme" 
+              <TabsTrigger
+                value="theme"
                 className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-md py-2 sm:py-3 px-1 gap-1 transition-all"
               >
                 <Palette className="h-4 w-4" />
               </TabsTrigger>
-              <TabsTrigger 
-                value="settings" 
+              <TabsTrigger
+                value="settings"
                 className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-md py-2 sm:py-3 px-1 gap-1 transition-all"
               >
                 <Settings className="h-4 w-4" />
@@ -588,7 +505,7 @@ const ProviderDashboard = () => {
                   </CardContent>
                 </Card>
               </motion.div>
-              
+
               <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
                 <Card className="border-0 shadow-lg bg-gradient-to-bl from-amber-500 to-orange-500 text-white overflow-hidden">
                   <CardContent className="p-5 relative">
@@ -600,7 +517,7 @@ const ProviderDashboard = () => {
                   </CardContent>
                 </Card>
               </motion.div>
-              
+
               <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
                 <Card className="border-0 shadow-lg bg-gradient-to-bl from-emerald-500 to-green-500 text-white overflow-hidden">
                   <CardContent className="p-5 relative">
@@ -612,7 +529,7 @@ const ProviderDashboard = () => {
                   </CardContent>
                 </Card>
               </motion.div>
-              
+
               <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
                 <Card className="border-0 shadow-lg bg-gradient-to-bl from-primary to-primary/80 text-white overflow-hidden">
                   <CardContent className="p-5 relative">
@@ -691,9 +608,9 @@ const ProviderDashboard = () => {
           </TabsContent>
 
           <TabsContent value="stats">
-            <ProviderStats 
-              orders={orders} 
-              products={products} 
+            <ProviderStats
+              orders={orders}
+              products={products}
               providerData={{
                 business_name: provider.business_name,
                 email: provider.email,
@@ -708,16 +625,16 @@ const ProviderDashboard = () => {
           </TabsContent>
 
           <TabsContent value="theme">
-            <StoreThemeCustomizer 
-              provider={provider as any}
-              onUpdate={(updatedProvider) => setProvider(updatedProvider as Provider)}
+            <StoreThemeCustomizer
+              provider={provider}
+              onUpdate={(updatedProvider) => setProvider(updatedProvider as ServiceProvider)}
             />
           </TabsContent>
 
           <TabsContent value="settings">
-            <ProviderSettingsManager 
-              provider={provider as any} 
-              onUpdate={(updatedProvider) => setProvider(updatedProvider as Provider)}
+            <ProviderSettingsManager
+              provider={provider}
+              onUpdate={(updatedProvider) => setProvider(updatedProvider as ServiceProvider)}
             />
           </TabsContent>
         </Tabs>

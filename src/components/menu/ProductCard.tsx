@@ -2,7 +2,7 @@ import { Plus, Star, ShoppingCart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { useCart } from '@/contexts/CartContext';
+import { useCart } from '@/hooks/useCart';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ProductCustomizationDialog } from './ProductCustomizationDialog';

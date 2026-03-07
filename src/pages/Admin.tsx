@@ -41,7 +41,8 @@ import {
   Cog,
   Lock,
   Receipt,
-  Bell
+  Bell,
+  LucideIcon
 } from 'lucide-react';
 import { CouponManager } from '@/components/admin/CouponManager';
 import { SalesReports } from '@/components/admin/SalesReports';
@@ -86,7 +87,7 @@ import type { Database } from '@/integrations/supabase/types';
 
 type OrderStatus = Database['public']['Enums']['order_status'];
 
-const statusFlow: { status: OrderStatus; label: string; icon: any; color: string }[] = [
+const statusFlow: { status: OrderStatus; label: string; icon: LucideIcon; color: string }[] = [
   { status: 'pending', label: 'جديد', icon: Clock, color: 'bg-yellow-500' },
   { status: 'preparing', label: 'قيد التحضير', icon: Package, color: 'bg-blue-500' },
   { status: 'ready', label: 'جاهز', icon: CheckCircle, color: 'bg-green-500' },
@@ -596,7 +597,7 @@ const Admin = () => {
                                 </span>
                               )}
                             </div>
-                            {order.order_items?.map((item: any) => (
+                            {(order.order_items as { id: string; product_name: string; quantity: number }[])?.map((item) => (
                               <p key={item.id} className="text-sm text-muted-foreground">
                                 {item.product_name} × {item.quantity}
                               </p>

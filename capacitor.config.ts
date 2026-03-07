@@ -2,7 +2,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'com.erihdev.al7ay',
-  appName: 'al7ay',
+  appName: 'الحي',
   webDir: 'dist',
   ios: {
     contentInset: 'automatic',

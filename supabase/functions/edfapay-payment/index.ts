@@ -16,6 +16,10 @@ interface PaymentRequest {
   description?: string;
   returnUrl: string;
   paymentMethod?: 'card' | 'apple_pay';
+  billingAddress?: string;
+  billingCity?: string;
+  billingZip?: string;
+  billingCountry?: string;
 }
 
 // Helper function to convert Uint8Array to hex string
@@ -49,7 +53,7 @@ async function calculateHash(orderId: string, amount: string, currency: string, 
   return sha1Hash;
 }
 
-serve(async (req) => {
+serve(async (req: Request) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -62,24 +66,37 @@ serve(async (req) => {
     if (!merchantId || !password) {
       console.error('EdfaPay credentials not configured');
       return new Response(
-        JSON.stringify({ 
+        JSON.stringify({
           error: 'Payment gateway not configured',
-          message: 'يرجى التواصل مع الدعم الفني' 
+          message: 'يرجى التواصل مع الدعم الفني'
         }),
-        { 
-          status: 503, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        {
+          status: 503,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         }
       );
     }
 
-    const { pendingOrderId, amount, customerEmail, customerName, customerPhone, description, returnUrl, paymentMethod }: PaymentRequest = await req.json();
-    
+    const {
+      pendingOrderId,
+      amount,
+      customerEmail,
+      customerName,
+      customerPhone,
+      description,
+      returnUrl,
+      paymentMethod,
+      billingAddress,
+      billingCity,
+      billingZip,
+      billingCountry
+    }: PaymentRequest = await req.json();
+
     // Get client IP from request headers
-    const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 
-                     req.headers.get('x-real-ip') || 
-                     req.headers.get('cf-connecting-ip') ||
-                     '1.1.1.1';
+    const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+      req.headers.get('x-real-ip') ||
+      req.headers.get('cf-connecting-ip') ||
+      '1.1.1.1';
 
     // Validate required fields
     if (!pendingOrderId || !amount || !returnUrl) {
@@ -116,15 +133,15 @@ serve(async (req) => {
     formData.append('order_description', orderDescription);
     formData.append('payer_first_name', firstName);
     formData.append('payer_last_name', lastName);
-    formData.append('payer_address', 'Saudi Arabia');
-    formData.append('payer_city', 'Riyadh');
-    formData.append('payer_country', 'SA');
-    formData.append('payer_zip', '12345');
+    formData.append('payer_address', billingAddress || 'Saudi Arabia');
+    formData.append('payer_city', billingCity || 'Riyadh');
+    formData.append('payer_country', billingCountry || 'SA');
+    formData.append('payer_zip', billingZip || '12345');
     formData.append('payer_email', customerEmail || 'customer@example.com');
     formData.append('payer_phone', customerPhone || '0500000000');
     formData.append('payer_ip', clientIp);
     formData.append('term_url_3ds', returnUrl);
-    
+
     // Add payment method for Apple Pay
     if (paymentMethod === 'apple_pay') {
       formData.append('payment_method', 'APPLEPAY');
@@ -141,7 +158,7 @@ serve(async (req) => {
 
     if (result.result === 'ERROR' || !response.ok) {
       return new Response(
-        JSON.stringify({ 
+        JSON.stringify({
           error: 'Payment initiation failed',
           message: 'فشل في بدء عملية الدفع',
           details: result.errors || result.error_message
@@ -163,9 +180,9 @@ serve(async (req) => {
 
   } catch {
     return new Response(
-      JSON.stringify({ 
+      JSON.stringify({
         error: 'Internal server error',
-        message: 'حدث خطأ في معالجة الدفع' 
+        message: 'حدث خطأ في معالجة الدفع'
       }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

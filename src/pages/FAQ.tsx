@@ -9,7 +9,32 @@ import {
 import { ArrowRight, HelpCircle, Store, CreditCard, Truck, Shield, Users, Phone } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
+import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+
 export default function FAQ() {
+  const [contactInfo, setContactInfo] = useState({
+    email: 'support@al7ay.com',
+    whatsapp: '966500000000'
+  });
+
+  useEffect(() => {
+    const fetchContact = async () => {
+      const { data } = await supabase
+        .from('contact_settings')
+        .select('email, whatsapp')
+        .single();
+
+      if (data) {
+        setContactInfo({
+          email: data.email,
+          whatsapp: data.whatsapp
+        });
+      }
+    };
+    fetchContact();
+  }, []);
+
   const faqCategories = [
     {
       icon: Store,
@@ -193,12 +218,12 @@ export default function FAQ() {
               </p>
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
                 <Button asChild>
-                  <a href="mailto:support@alhaay.com">
+                  <a href={`mailto:${contactInfo.email}`}>
                     راسلنا عبر البريد
                   </a>
                 </Button>
                 <Button variant="outline" asChild>
-                  <a href="https://wa.me/966500000000" target="_blank" rel="noopener noreferrer">
+                  <a href={`https://wa.me/${contactInfo.whatsapp}`} target="_blank" rel="noopener noreferrer">
                     تواصل واتساب
                   </a>
                 </Button>

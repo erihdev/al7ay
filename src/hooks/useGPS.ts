@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useMapboxToken } from './useMapboxToken';
 
 /**
  * Advanced GPS/Geolocation Hook
  * نظام GPS متقدم مع دقة عالية وتتبع مستمر
  */
 
-export interface GeolocationPosition {
+export interface CustomGeolocationPosition {
     latitude: number;
     longitude: number;
     accuracy: number;
@@ -27,7 +28,7 @@ export interface UseGPSOptions {
     maximumAge?: number;
     watch?: boolean; // تتبع مستمر
     onError?: (error: GeolocationError) => void;
-    onSuccess?: (position: GeolocationPosition) => void;
+    onSuccess?: (position: CustomGeolocationPosition) => void;
 }
 
 export function useGPS(options: UseGPSOptions = {}) {
@@ -40,10 +41,11 @@ export function useGPS(options: UseGPSOptions = {}) {
         onSuccess,
     } = options;
 
-    const [position, setPosition] = useState<GeolocationPosition | null>(null);
+    const [position, setPosition] = useState<CustomGeolocationPosition | null>(null);
     const [error, setError] = useState<GeolocationError | null>(null);
     const [loading, setLoading] = useState(false);
     const [supported, setSupported] = useState(false);
+    const { data: mapboxToken } = useMapboxToken();
 
     // التحقق من الدعم
     useEffect(() => {
@@ -51,8 +53,8 @@ export function useGPS(options: UseGPSOptions = {}) {
     }, []);
 
     // معالجة النجاح
-    const handleSuccess = useCallback((pos: GeolocationPosition) => {
-        const locationData: GeolocationPosition = {
+    const handleSuccess = useCallback((pos: globalThis.GeolocationPosition) => {
+        const locationData: CustomGeolocationPosition = {
             latitude: pos.coords.latitude,
             longitude: pos.coords.longitude,
             accuracy: pos.coords.accuracy,
@@ -140,8 +142,8 @@ export function useGPS(options: UseGPSOptions = {}) {
             );
         },
         getAddressFromCoords: async () => {
-            if (!position) return null;
-            return await reverseGeocode(position.latitude, position.longitude);
+            if (!position || !mapboxToken) return null;
+            return await reverseGeocode(position.latitude, position.longitude, mapboxToken);
         },
     };
 }
@@ -183,23 +185,24 @@ function toRad(degrees: number): number {
  */
 export async function reverseGeocode(
     latitude: number,
-    longitude: number
+    longitude: number,
+    mapboxToken: string
 ): Promise<string | null> {
     try {
-        // يمكنك استخدام Google Maps API أو أي خدمة أخرى
-        // هذا مثال باستخدام Nominatim (مجاني)
         const response = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&accept-language=ar`
+            `https://api.mapbox.com/geocoding/v5/mapbox.places/${longitude},${latitude}.json?access_token=${mapboxToken}&language=ar`
         );
 
         if (!response.ok) {
-            throw new Error('فشل في الحصول على العنوان');
+            throw new Error('فشل في الحصول على العنوان من Mapbox');
         }
 
         const data = await response.json();
-        return data.display_name || null;
+        return data.features && data.features.length > 0
+            ? data.features[0].place_name
+            : null;
     } catch (error) {
-        console.error('خطأ في reverse geocoding:', error);
+        console.error('خطأ في reverse geocoding (Mapbox):', error);
         return null;
     }
 }

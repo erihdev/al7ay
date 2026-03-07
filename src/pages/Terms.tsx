@@ -3,7 +3,26 @@ import { Button } from '@/components/ui/button';
 import { ArrowRight, FileText, Shield, AlertTriangle, Scale, UserCheck, Ban } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
+import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+
 export default function Terms() {
+  const [contactEmail, setContactEmail] = useState('support@al7ay.com');
+
+  useEffect(() => {
+    const fetchContact = async () => {
+      const { data } = await supabase
+        .from('contact_settings')
+        .select('email')
+        .single();
+
+      if (data) {
+        setContactEmail(data.email);
+      }
+    };
+    fetchContact();
+  }, []);
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">
       <div className="container max-w-4xl mx-auto px-4 py-8">
@@ -31,11 +50,11 @@ export default function Terms() {
             </CardHeader>
             <CardContent className="prose prose-sm dark:prose-invert max-w-none">
               <p>
-                مرحباً بك في منصة "الحي". باستخدامك لهذه المنصة، فإنك توافق على الالتزام بهذه الشروط والأحكام. 
+                مرحباً بك في منصة "الحي". باستخدامك لهذه المنصة، فإنك توافق على الالتزام بهذه الشروط والأحكام.
                 يرجى قراءتها بعناية قبل استخدام خدماتنا.
               </p>
               <p>
-                منصة "الحي" هي منصة تربط بين مقدمي الخدمات المنزلية والعملاء في الأحياء المختلفة، 
+                منصة "الحي" هي منصة تربط بين مقدمي الخدمات المنزلية والعملاء في الأحياء المختلفة،
                 وتسهل عملية الطلب والتوصيل للمنتجات والخدمات.
               </p>
             </CardContent>
@@ -132,8 +151,8 @@ export default function Terms() {
             </CardHeader>
             <CardContent className="prose prose-sm dark:prose-invert max-w-none">
               <p>
-                في حالة وجود أي نزاع، نشجع على التواصل معنا أولاً لمحاولة حله ودياً. 
-                تخضع هذه الشروط لقوانين المملكة العربية السعودية، وأي نزاع لا يمكن حله ودياً 
+                في حالة وجود أي نزاع، نشجع على التواصل معنا أولاً لمحاولة حله ودياً.
+                تخضع هذه الشروط لقوانين المملكة العربية السعودية، وأي نزاع لا يمكن حله ودياً
                 سيتم إحالته للجهات القضائية المختصة.
               </p>
             </CardContent>
@@ -144,8 +163,8 @@ export default function Terms() {
             <CardContent className="pt-6">
               <p className="text-sm text-center">
                 للاستفسارات حول شروط الاستخدام، تواصل معنا عبر البريد الإلكتروني:{' '}
-                <a href="mailto:support@alhaay.com" className="text-primary font-medium">
-                  support@alhaay.com
+                <a href={`mailto:${contactEmail}`} className="text-primary font-medium">
+                  {contactEmail}
                 </a>
               </p>
             </CardContent>

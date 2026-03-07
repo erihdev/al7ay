@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import type { Database } from '@/integrations/supabase/types';
+import { SelectedOption } from '@/types/cart';
 
 type Order = Database['public']['Tables']['orders']['Row'];
 type OrderItem = Database['public']['Tables']['order_items']['Row'];
@@ -31,7 +32,7 @@ interface CreateOrderData {
     quantity: number;
     unit_price: number;
     total_price: number;
-    selected_options?: any[];
+    selected_options?: SelectedOption[];
   }[];
 }
 
@@ -184,6 +185,14 @@ export function useCreateOrder() {
         }
       }
 
+      // Get admin email from contact settings
+      const { data: contactSettings } = await supabase
+        .from('contact_settings')
+        .select('email')
+        .single();
+
+      const adminEmail = contactSettings?.email || 'difmashni@gmail.com';
+
       // Send admin notification email
       try {
         await supabase.functions.invoke('send-order-email', {
@@ -195,7 +204,7 @@ export function useCreateOrder() {
             orderTotal: orderData.total_amount,
             orderType: orderData.order_type,
             deliveryAddress: orderData.delivery_address,
-            adminEmail: 'difmashni@gmail.com',
+            adminEmail: adminEmail,
             items: orderData.items.map(item => ({
               name: item.product_name,
               quantity: item.quantity,

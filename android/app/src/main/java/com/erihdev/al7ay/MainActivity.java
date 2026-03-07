@@ -1,4 +1,4 @@
-package app.lovable.c5160f700391456ca56d5779caf9872d;
+package com.erihdev.al7ay;
 
 import com.getcapacitor.BridgeActivity;
 

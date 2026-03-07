@@ -1,6 +1,6 @@
 import { useMyOrders } from '@/hooks/useOrders';
 import { useAuth } from '@/contexts/AuthContext';
-import { useCart } from '@/contexts/CartContext';
+import { useCart } from '@/hooks/useCart';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -16,6 +16,21 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
+
+interface OrderItem {
+  product_id: string;
+  product_name: string;
+  unit_price: string | number;
+  quantity: number;
+}
+
+interface Order {
+  id: string;
+  status: string;
+  order_items: OrderItem[];
+  // Add other properties of an Order if they are used elsewhere
+  // e.g., total_amount, created_at, delivery_address, etc.
+}
 
 const statusConfig = {
   pending: { 
@@ -85,7 +100,7 @@ const Orders = () => {
   const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
   const navigate = useNavigate();
 
-  const handleReorder = (order: any) => {
+  const handleReorder = (order: Order) => {
     if (!order.order_items || order.order_items.length === 0) {
       toast.error('لا توجد منتجات في هذا الطلب');
       return;
@@ -93,7 +108,7 @@ const Orders = () => {
 
     clearCart();
     
-    order.order_items.forEach((item: any) => {
+    order.order_items.forEach((item) => {
       addItem({
         id: item.product_id,
         name_ar: item.product_name,
@@ -369,7 +384,7 @@ const Orders = () => {
                                     className="overflow-hidden"
                                   >
                                     <div className="mt-3 space-y-2">
-                                      {order.order_items.map((item: any) => (
+                                      {order.order_items.map((item: { id: string; product_name: string; quantity: number; total_price: number }) => (
                                         <div key={item.id} className="flex items-center justify-between p-2 bg-muted/20 rounded-lg">
                                           <span className="text-sm font-medium">{item.product_name}</span>
                                           <div className="flex items-center gap-2">
@@ -505,7 +520,7 @@ const Orders = () => {
                                   className="overflow-hidden"
                                 >
                                   <div className="mt-2 space-y-1">
-                                    {order.order_items.map((item: any) => (
+                                    {order.order_items.map((item: { id: string; product_name: string; quantity: number; total_price: number }) => (
                                       <div key={item.id} className="flex items-center justify-between text-sm py-1">
                                         <span className="text-muted-foreground">{item.product_name} × {item.quantity}</span>
                                         <span>{Number(item.total_price).toFixed(0)} ر.س</span>

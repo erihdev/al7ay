@@ -1,12 +1,13 @@
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import heroCustomerVideo from '@/assets/hero-customer.mp4';
 import heroProviderVideo from '@/assets/hero-provider.mp4';
 import {
-  MapPin, 
-  Truck, 
-  Star, 
+  MapPin,
+  Truck,
+  Star,
   ArrowLeft,
   Store,
   Shield,
@@ -28,13 +29,54 @@ import { AnimatedLogo } from '@/components/ui/AnimatedLogo';
 import { InteractiveBackground } from '@/components/ui/InteractiveBackground';
 import { PageTransition } from '@/components/ui/PageTransition';
 import { motion } from 'framer-motion';
+import { supabase } from '@/integrations/supabase/client';
 
 const Landing = () => {
+  const [dbStats, setDbStats] = useState({
+    users: 0,
+    providers: 0,
+    orders: 0,
+    rating: 4.9
+  });
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const [
+          { count: usersCount },
+          { count: providersCount },
+          { count: ordersCount },
+          { data: reviews }
+        ] = await Promise.all([
+          supabase.from('profiles').select('*', { count: 'exact', head: true }),
+          supabase.from('service_providers').select('*', { count: 'exact', head: true }).eq('is_active', true),
+          supabase.from('orders').select('*', { count: 'exact', head: true }),
+          supabase.from('product_reviews').select('rating')
+        ]);
+
+        const avgRating = reviews && reviews.length > 0
+          ? (reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length).toFixed(1)
+          : 4.9;
+
+        setDbStats({
+          users: usersCount || 0,
+          providers: providersCount || 0,
+          orders: ordersCount || 0,
+          rating: Number(avgRating)
+        });
+      } catch (error) {
+        console.error('Error fetching landing stats:', error);
+      }
+    };
+
+    fetchStats();
+  }, []);
+
   const stats = [
-    { value: '+50K', label: 'عميل', icon: Users },
-    { value: '+1.2K', label: 'مقدم خدمة', icon: Store },
-    { value: '+100K', label: 'طلب/شهر', icon: ShoppingBag },
-    { value: '4.9', label: 'تقييم', icon: Star }
+    { value: dbStats.users > 1000 ? `+${(dbStats.users / 1000).toFixed(1)}k` : dbStats.users, label: 'عميل', icon: Users },
+    { value: dbStats.providers, label: 'مقدم خدمة', icon: Store },
+    { value: dbStats.orders > 1000 ? `+${(dbStats.orders / 1000).toFixed(1)}k` : dbStats.orders, label: 'طلب', icon: ShoppingBag },
+    { value: dbStats.rating, label: 'تقييم', icon: Star }
   ];
 
   const customerFeatures = [
@@ -53,7 +95,7 @@ const Landing = () => {
     <PageTransition>
       <div className="min-h-screen bg-background font-arabic relative overflow-x-hidden" dir="rtl">
         <InteractiveBackground variant="particles" intensity="subtle" />
-        
+
         {/* Header */}
         <header className="sticky top-0 z-50 bg-background/95 backdrop-blur border-b pt-[env(safe-area-inset-top)]">
           <div className="container mx-auto px-4 py-1">
@@ -85,12 +127,12 @@ const Landing = () => {
         <section className="relative py-10 md:py-16">
           <div className="container mx-auto px-4">
             {/* Title */}
-            <motion.div 
+            <motion.div
               className="text-center mb-8"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
             >
-              <motion.h1 
+              <motion.h1
                 className="text-4xl md:text-6xl font-bold mb-3 bg-gradient-to-r from-primary via-primary to-accent bg-clip-text text-transparent"
                 initial={{ scale: 0.9 }}
                 animate={{ scale: 1 }}
@@ -129,11 +171,11 @@ const Landing = () => {
               >
                 <Card className="overflow-hidden border-2 hover:border-primary/50 transition-all group h-full">
                   <div className="relative h-40 overflow-hidden">
-                    <video 
-                      src={heroCustomerVideo} 
-                      autoPlay 
-                      loop 
-                      muted 
+                    <video
+                      src={heroCustomerVideo}
+                      autoPlay
+                      loop
+                      muted
                       playsInline
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     />
@@ -179,11 +221,11 @@ const Landing = () => {
               >
                 <Card className="overflow-hidden border-2 hover:border-accent/50 transition-all group h-full">
                   <div className="relative h-40 overflow-hidden">
-                    <video 
-                      src={heroProviderVideo} 
-                      autoPlay 
-                      loop 
-                      muted 
+                    <video
+                      src={heroProviderVideo}
+                      autoPlay
+                      loop
+                      muted
                       playsInline
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     />

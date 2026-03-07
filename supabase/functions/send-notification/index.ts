@@ -20,7 +20,7 @@ const silentStatuses = ['pending', 'preparing'];
 
 // Send Web Push notification using VAPID
 async function sendWebPushToUser(
-  supabase: any,
+  supabase: ReturnType<typeof createClient>,
   userId: string,
   title: string,
   body: string,
@@ -54,7 +54,7 @@ async function sendWebPushToUser(
         userId,
         title,
         body,
-        icon: 'https://al7ay.lovable.app/icons/icon-192.png',
+        icon: 'https://al7ay.com/icons/icon-192.png',
         url,
       }),
     });
@@ -90,15 +90,23 @@ async function sendAimtellNotification(
   try {
     // Build payload for notification
     // Reference: https://developers.aimtell.com/reference/api-send-push-notification
-    const payload: Record<string, any> = {
+    const payload: {
+      idSite: string | undefined;
+      title: string;
+      body: string;
+      link: string;
+      requireInteraction: boolean;
+      icon: string;
+      alias?: string;
+    } = {
       idSite: siteId,
       title: title,
       body: body,
       link: url,
       requireInteraction: true,
-      icon: 'https://al7ay.lovable.app/icons/icon-192.png',
+      icon: 'https://al7ay.com/icons/icon-192.png',
     };
-    
+
     // Add alias for targeting - format must be "user==VALUE" as per Aimtell docs
     // Reference: https://developers.aimtell.com/reference/api-send-push-notification#option-3
     if (attributes) {
@@ -108,9 +116,9 @@ async function sendAimtellNotification(
         payload.alias = `user==${attributes.customer_id}`;
       }
     }
-    
+
     console.log('Sending Aimtell notification with payload:', JSON.stringify(payload));
-    
+
     // Use X-Authorization header and /prod/push endpoint
     // Reference: https://developers.aimtell.com/reference/api-send-push-notification
     const response = await fetch('https://api.aimtell.com/prod/push', {
@@ -124,7 +132,7 @@ async function sendAimtellNotification(
 
     const responseText = await response.text();
     console.log('Aimtell API response:', response.status, responseText);
-    
+
     // Check if request was successful
     if (response.ok) {
       try {
@@ -153,10 +161,10 @@ async function sendAimtellNotification(
 
 // Helper function for realtime broadcast
 async function sendRealtimeBroadcast(
-  supabase: any,
+  supabase: ReturnType<typeof createClient>,
   channelName: string,
   event: string,
-  payload: any
+  payload: Record<string, unknown>
 ): Promise<boolean> {
   try {
     const channel = supabase.channel(channelName);
@@ -172,7 +180,7 @@ async function sendRealtimeBroadcast(
   }
 }
 
-serve(async (req) => {
+serve(async (req: Request) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -279,7 +287,7 @@ serve(async (req) => {
       console.log('New order notification sent for order:', orderId, 'aimtellSent:', aimtellSent, 'webPushSent:', webPushSent);
 
       return new Response(
-        JSON.stringify({ 
+        JSON.stringify({
           success: true,
           message: 'Provider notified of new order',
           broadcastSent: true,
@@ -340,7 +348,7 @@ serve(async (req) => {
       console.log('Customer arrival notification sent for order:', orderId, 'aimtellSent:', aimtellSent);
 
       return new Response(
-        JSON.stringify({ 
+        JSON.stringify({
           success: true,
           message: 'Store notified of customer arrival',
           broadcastSent: true,
@@ -364,7 +372,7 @@ serve(async (req) => {
       if (silentStatuses.includes(status)) {
         console.log(`Skipping push notification for silent status: ${status}`);
         return new Response(
-          JSON.stringify({ 
+          JSON.stringify({
             success: true,
             message: 'Status update is silent - no push notification sent',
             skipped: true,
@@ -385,7 +393,7 @@ serve(async (req) => {
       );
 
       return new Response(
-        JSON.stringify({ 
+        JSON.stringify({
           success: true,
           message: 'Customer notification sent',
           aimtellSent: aimtellSent,
@@ -397,7 +405,7 @@ serve(async (req) => {
     // Handle admin message notification to customer
     if (type === 'admin_message') {
       const { title, message: msgBody } = requestBody;
-      
+
       if (!customerId || !title || !msgBody) {
         return new Response(
           JSON.stringify({ error: 'Missing required fields: customerId, title, message' }),
@@ -441,7 +449,7 @@ serve(async (req) => {
       console.log('Admin message sent to customer:', customerId, 'aimtellSent:', aimtellSent, 'webPushSent:', webPushSent);
 
       return new Response(
-        JSON.stringify({ 
+        JSON.stringify({
           success: true,
           message: 'Admin message sent to customer',
           aimtellSent,
@@ -454,7 +462,7 @@ serve(async (req) => {
     // Handle count recipients (for filtered bulk notifications)
     if (type === 'count_recipients') {
       const { tier, neighborhoodId } = requestBody;
-      
+
       try {
         // Build query to count recipients
         let userIds: string[] = [];
@@ -465,15 +473,15 @@ serve(async (req) => {
             .from('loyalty_points')
             .select('user_id')
             .eq('tier', tier);
-          
-          userIds = loyaltyData?.map(l => l.user_id) || [];
+
+          userIds = loyaltyData?.map((l: { user_id: string }) => l.user_id) || [];
         } else {
           // Get all user ids from profiles
           const { data: profilesData } = await supabase
             .from('profiles')
             .select('user_id');
-          
-          userIds = profilesData?.map(p => p.user_id) || [];
+
+          userIds = profilesData?.map((p: { user_id: string }) => p.user_id) || [];
         }
 
         // If neighborhood filter, further filter by users who ordered from providers in that neighborhood
@@ -483,17 +491,17 @@ serve(async (req) => {
             .from('service_providers')
             .select('id')
             .eq('neighborhood_id', neighborhoodId);
-          
-          const providerIds = providers?.map(p => p.id) || [];
-          
+
+          const providerIds = providers?.map((p: { id: string }) => p.id) || [];
+
           if (providerIds.length > 0) {
             // Get unique customer_ids who ordered from these providers
             const { data: orders } = await supabase
               .from('orders')
               .select('customer_id')
               .in('provider_id', providerIds);
-            
-            const customerIds = [...new Set(orders?.map(o => o.customer_id) || [])];
+
+            const customerIds = [...new Set(orders?.map((o: { customer_id: string }) => o.customer_id) || [])];
             userIds = userIds.filter(id => customerIds.includes(id));
           } else {
             userIds = [];
@@ -516,7 +524,7 @@ serve(async (req) => {
     // Handle bulk notification to customers (optionally filtered)
     if (type === 'bulk_notification') {
       const { title, message: msgBody, tier, neighborhoodId } = requestBody;
-      
+
       if (!title || !msgBody) {
         return new Response(
           JSON.stringify({ error: 'Missing required fields: title, message' }),
@@ -534,16 +542,16 @@ serve(async (req) => {
           .from('loyalty_points')
           .select('user_id')
           .eq('tier', tier);
-        
-        customerUserIds = loyaltyData?.map(l => l.user_id) || [];
+
+        customerUserIds = loyaltyData?.map((l: { user_id: string }) => l.user_id) || [];
         filterDescription = `tier:${tier}`;
       } else {
         // Get all user ids from profiles
         const { data: profilesData } = await supabase
           .from('profiles')
           .select('user_id');
-        
-        customerUserIds = profilesData?.map(p => p.user_id) || [];
+
+        customerUserIds = profilesData?.map((p: { user_id: string }) => p.user_id) || [];
       }
 
       // If neighborhood filter, further filter by users who ordered from providers in that neighborhood
@@ -553,17 +561,17 @@ serve(async (req) => {
           .from('service_providers')
           .select('id')
           .eq('neighborhood_id', neighborhoodId);
-        
-        const providerIds = providers?.map(p => p.id) || [];
-        
+
+        const providerIds = providers?.map((p: { id: string }) => p.id) || [];
+
         if (providerIds.length > 0) {
           // Get unique customer_ids who ordered from these providers
           const { data: orders } = await supabase
             .from('orders')
             .select('customer_id')
             .in('provider_id', providerIds);
-          
-          const orderCustomerIds = [...new Set(orders?.map(o => o.customer_id) || [])];
+
+          const orderCustomerIds = [...new Set(orders?.map((o: { customer_id: string }) => o.customer_id) || [])];
           customerUserIds = customerUserIds.filter(id => orderCustomerIds.includes(id));
         } else {
           customerUserIds = [];
@@ -576,7 +584,7 @@ serve(async (req) => {
 
       if (customerCount === 0) {
         return new Response(
-          JSON.stringify({ 
+          JSON.stringify({
             success: true,
             message: 'No recipients match the filter',
             sentCount: 0
@@ -624,7 +632,7 @@ serve(async (req) => {
       console.log(`Bulk notification sent: aimtell=${aimtellSent}, webpush=${webPushSuccessCount}/${customerCount}`);
 
       return new Response(
-        JSON.stringify({ 
+        JSON.stringify({
           success: true,
           message: 'Bulk notification sent',
           sentCount: customerCount,

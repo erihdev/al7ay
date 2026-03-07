@@ -1,4 +1,5 @@
 import { useEffect, useCallback, useRef } from 'react';
+import { useCart } from '@/hooks/useCart';
 import { useLocalNotifications } from './useLocalNotifications';
 
 const CART_REMINDER_KEY = 'cart_last_activity';
@@ -70,7 +71,7 @@ export function useCartReminder(itemCount: number) {
         clearTimeout(reminderTimeoutRef.current);
       }
     };
-  }, []);
+  }, [itemCount, notifyCartReminder, permission]);
 
   // Update activity when item count changes
   useEffect(() => {

@@ -1,4 +1,4 @@
-import { useCart } from '@/contexts/CartContext';
+import { useCart } from '@/hooks/useCart';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLocation } from '@/contexts/LocationContext';
 import { useLoyaltyPoints, useCreateOrder } from '@/hooks/useOrders';
@@ -133,8 +133,9 @@ const Cart = () => {
       });
       setAppliedCoupon(result);
       toast.success(`تم تطبيق الكوبون: خصم ${result.discount.toFixed(0)} ر.س`);
-    } catch (error: any) {
-      toast.error(error.message);
+    } catch (error: unknown) {
+      const err = error as Error;
+      toast.error(err.message);
     }
   };
 
@@ -231,8 +232,9 @@ const Cart = () => {
       toast.success('تم إرسال طلبك بنجاح!');
       clearCart();
       navigate('/orders');
-    } catch (error: any) {
-      toast.error(error.message || 'حدث خطأ ما');
+    } catch (error: unknown) {
+      const err = error as Error;
+      toast.error(err.message || 'حدث خطأ ما');
     }
   };
 

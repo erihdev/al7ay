@@ -1,6 +1,9 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useLocation } from '@/contexts/LocationContext';
+import { SelectedOption } from '@/types/cart';
+import { Json } from '@/integrations/supabase/types';
 
 interface PendingOrderData {
   providerId?: string;
@@ -21,7 +24,7 @@ interface PendingOrderData {
     quantity: number;
     unitPrice: number;
     totalPrice: number;
-    selectedOptions?: any;
+    selectedOptions?: SelectedOption[];
   }>;
 }
 
@@ -35,10 +38,16 @@ interface PaymentResult {
 export function useEdfaPayment() {
   const [isProcessing, setIsProcessing] = useState(false);
 
+  const { userAddress } = useLocation();
+
   const initiatePayment = async (orderData: PendingOrderData): Promise<PaymentResult> => {
     setIsProcessing(true);
 
     try {
+      // Extract city from address string (rough extraction if not structured)
+      const addressParts = userAddress?.split(',') || [];
+      const city = addressParts.length > 1 ? addressParts[addressParts.length - 2].trim() : 'Riyadh';
+
       // First, create a pending order
       const { data: pendingOrder, error: pendingError } = await supabase
         .from('pending_orders')
@@ -49,13 +58,13 @@ export function useEdfaPayment() {
           customer_phone: orderData.customerPhone,
           customer_email: orderData.customerEmail || null,
           order_type: orderData.orderType,
-          delivery_address: orderData.deliveryAddress || null,
+          delivery_address: orderData.deliveryAddress || userAddress || null,
           delivery_lat: orderData.deliveryLat || null,
           delivery_lng: orderData.deliveryLng || null,
           notes: orderData.notes || null,
           total_amount: orderData.totalAmount,
           payment_method: 'online',
-          items: orderData.items
+          items: orderData.items as unknown as Json
         })
         .select()
         .single();
@@ -78,6 +87,10 @@ export function useEdfaPayment() {
           description: `طلب من ${orderData.customerName}`,
           returnUrl,
           paymentMethod: orderData.paymentMethod || 'card',
+          billingAddress: userAddress || orderData.deliveryAddress || 'Saudi Arabia',
+          billingCity: city,
+          billingZip: '12345', // Default if not available
+          billingCountry: 'SA'
         },
       });
 

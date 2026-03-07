@@ -9,7 +9,7 @@ export interface ProviderOrderItem {
   quantity: number;
   unit_price: number;
   total_price: number;
-  selected_options: any;
+  selected_options: Record<string, unknown> | null;
 }
 
 export interface ProviderOrder {
