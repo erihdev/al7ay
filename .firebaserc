@@ -1,0 +1,14 @@
+{
+  "projects": {
+    "default": "zyiarah-app"
+  },
+  "targets": {
+    "zyiarah-app": {
+      "hosting": {
+        "al7ay": [
+          "al7ay-app"
+        ]
+      }
+    }
+  }
+}
