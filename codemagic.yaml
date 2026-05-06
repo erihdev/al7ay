@@ -36,7 +36,7 @@ workflows:
     max_build_duration: 120
     instance_type: mac_mini_m2
     integrations:
-      app_store_connect: Al7ay Key
+      app_store_connect: Zyiarah Key
     environment:
       node: 20
       xcode: latest
