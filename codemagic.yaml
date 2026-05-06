@@ -40,9 +40,6 @@ workflows:
     environment:
       node: 22
       xcode: latest
-      ios_signing:
-        distribution_type: app_store
-        bundle_identifier: com.erihdev.al7ay
     scripts:
       - name: Install dependencies
         script: |
@@ -53,6 +50,9 @@ workflows:
       - name: Sync Capacitor
         script: |
           npx cap sync ios
+      - name: Fetch and create signing files
+        script: |
+          app-store-connect fetch-signing-files "com.erihdev.al7ay" --type IOS_APP_STORE --create --create-certificate
       - name: Set up code signing settings on Xcode project
         script: |
           xcode-project use-profiles
