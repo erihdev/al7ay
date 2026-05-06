@@ -57,5 +57,7 @@
 	<string>التطبيق يحتاج للوصول إلى معرض الصور لتتمكن من اختيار صور للمنتجات أو تحديث صورة ملفك الشخصي.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>التطبيق يحتاج للوصول إلى معرض الصور لحفظ الصور المتعلقة بالطلبات والتقارير.</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 </dict>
 </plist>
