@@ -4,7 +4,7 @@ workflows:
     max_build_duration: 60
     instance_type: linux_x2
     environment:
-      node: 20
+      node: 22
       groups:
         - google_play_credentials # Add your Google Play service account key in Codemagic UI
     scripts:
@@ -38,7 +38,7 @@ workflows:
     integrations:
       app_store_connect: Zyiarah Key
     environment:
-      node: 20
+      node: 22
       xcode: latest
       cocoapods: default
     scripts:
