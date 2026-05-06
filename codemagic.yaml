@@ -35,12 +35,15 @@ workflows:
     name: al7ay iOS Build
     max_build_duration: 120
     instance_type: mac_mini_m2
+    integrations:
+      app_store_connect: Zyiarah Key
     environment:
       node: 20
       xcode: latest
       cocoapods: default
-      groups:
-        - appstore_credentials # Add your App Store Connect API Key in Codemagic UI
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.erihdev.al7ay
     scripts:
       - name: Install dependencies
         script: |
@@ -74,7 +77,7 @@ workflows:
         notify:
           success: true
           failure: true
-#     app_store_connect:
-#       auth:
-#         integration: $APP_STORE_CONNECT_KEY
-#       submit_to_testflight: true
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
+        submit_to_app_store: false
