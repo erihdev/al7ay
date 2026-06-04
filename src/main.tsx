@@ -16,4 +16,12 @@ Sentry.init({
     replaysOnErrorSampleRate: 1.0,
 });
 
+// Remove the HTML splash screen once React is ready to render
+const htmlSplash = document.getElementById("html-splash");
+if (htmlSplash) {
+  htmlSplash.style.transition = "opacity 0.3s ease";
+  htmlSplash.style.opacity = "0";
+  setTimeout(() => htmlSplash.remove(), 350);
+}
+
 createRoot(document.getElementById("root")!).render(<App />);
