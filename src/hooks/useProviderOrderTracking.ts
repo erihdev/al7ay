@@ -108,12 +108,8 @@ export function useProviderOrderTracking(orderId: string) {
   useEffect(() => {
     if (!orderId) return;
 
-    let trackingChannel: RealtimeChannel;
-    let orderChannel: RealtimeChannel;
-    let routeChannel: RealtimeChannel;
-
     // Subscribe to tracking updates
-    trackingChannel = supabase
+    const trackingChannel = supabase
       .channel(`provider-tracking-${orderId}`)
       .on(
         'postgres_changes',
@@ -134,7 +130,7 @@ export function useProviderOrderTracking(orderId: string) {
       .subscribe();
 
     // Subscribe to order status updates
-    orderChannel = supabase
+    const orderChannel = supabase
       .channel(`provider-order-status-${orderId}`)
       .on(
         'postgres_changes',
@@ -152,7 +148,7 @@ export function useProviderOrderTracking(orderId: string) {
       .subscribe();
 
     // Subscribe to route history updates
-    routeChannel = supabase
+    const routeChannel = supabase
       .channel(`provider-route-history-${orderId}`)
       .on(
         'postgres_changes',

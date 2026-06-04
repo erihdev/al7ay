@@ -50,6 +50,7 @@ export function LocationPickerDialog({
   // Default to Saudi Arabia center
   const defaultCenter = { lat: 24.7136, lng: 46.6753 };
 
+  /* eslint-disable react-hooks/exhaustive-deps */
   useEffect(() => {
     if (!open || !mapContainer.current || !mapboxToken) return;
 
@@ -98,6 +99,7 @@ export function LocationPickerDialog({
       marker.current = null;
     };
   }, [open, mapboxToken]);
+  /* eslint-enable react-hooks/exhaustive-deps */
 
   const reverseGeocode = async (lat: number, lng: number) => {
     try {

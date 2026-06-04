@@ -310,6 +310,8 @@ export function StoreLocationPicker({ location, onLocationChange, deliveryRadius
     return () => {
       map.current?.remove();
     };
+    // يُشغَّل مرة واحدة فقط لتهيئة الخريطة
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mapboxToken]);
 
   // Update marker when location prop changes

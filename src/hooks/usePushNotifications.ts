@@ -23,18 +23,7 @@ export function usePushNotifications() {
   const [isSupported, setIsSupported] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    // Check if push notifications are supported
-    const supported = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
-    setIsSupported(supported);
-
-    if (supported) {
-      setPermission(Notification.permission);
-      checkSubscription();
-    }
-  }, [user]);
-
-  const checkSubscription = async () => {
+  const checkSubscription = useCallback(async () => {
     if (!user) return;
 
     try {
@@ -44,7 +33,18 @@ export function usePushNotifications() {
     } catch (error) {
       console.error('Error checking subscription:', error);
     }
-  };
+  }, [user]);
+
+  useEffect(() => {
+    // Check if push notifications are supported
+    const supported = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+    setIsSupported(supported);
+
+    if (supported) {
+      setPermission(Notification.permission);
+      checkSubscription();
+    }
+  }, [user, checkSubscription]);
 
   const subscribe = useCallback(async () => {
     if (!user || !isSupported) return false;

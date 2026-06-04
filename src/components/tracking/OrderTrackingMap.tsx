@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { useMapboxToken } from '@/hooks/useMapboxToken';
@@ -38,7 +38,7 @@ export function OrderTrackingMap({
   const [routeInfo, setRouteInfo] = useState<{ distance: string; duration: string } | null>(null);
 
   // Fetch expected route from store to destination
-  const fetchExpectedRoute = async () => {
+  const fetchExpectedRoute = useCallback(async () => {
     if (!map.current || !storeLocation) return;
 
     setIsLoadingRoute(true);
@@ -82,7 +82,7 @@ export function OrderTrackingMap({
     } finally {
       setIsLoadingRoute(false);
     }
-  };
+  }, [storeLocation, deliveryLocation]);
 
   // Initialize map
   useEffect(() => {
@@ -225,7 +225,7 @@ export function OrderTrackingMap({
     return () => {
       map.current?.remove();
     };
-  }, [mapboxToken, storeLocation, deliveryLocation]);
+  }, [mapboxToken, storeLocation, deliveryLocation, fetchExpectedRoute]);
 
   // Update actual route line when history changes
   useEffect(() => {

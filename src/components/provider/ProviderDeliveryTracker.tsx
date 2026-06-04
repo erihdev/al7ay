@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -54,9 +54,10 @@ export function ProviderDeliveryTracker({
   const userMarkerRef = useRef<mapboxgl.Marker | null>(null);
 
   // Customer destination
-  const destination = deliveryLat && deliveryLng 
-    ? { lat: deliveryLat, lng: deliveryLng }
-    : null;
+  const destination = useMemo(
+    () => (deliveryLat && deliveryLng ? { lat: deliveryLat, lng: deliveryLng } : null),
+    [deliveryLat, deliveryLng]
+  );
 
   // Calculate distance using Haversine formula
   const calculateDistance = useCallback((from: { lat: number; lng: number }, to: { lat: number; lng: number }) => {

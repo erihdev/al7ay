@@ -61,11 +61,12 @@ function SuggestionsMap({
   const { data: mapboxToken, isLoading: tokenLoading } = useMapboxToken();
   const [showMap, setShowMap] = useState(false);
 
+  /* eslint-disable react-hooks/exhaustive-deps */
   useEffect(() => {
     if (!showMap || !mapboxToken || !mapContainer.current || map.current) return;
 
     mapboxgl.accessToken = mapboxToken;
-    
+
     const suggestionsWithCoords = suggestions.filter(s => s.lat && s.lng);
     const center: [number, number] = suggestionsWithCoords.length > 0 
       ? [suggestionsWithCoords[0].lng!, suggestionsWithCoords[0].lat!]
@@ -86,7 +87,11 @@ function SuggestionsMap({
       map.current?.remove();
       map.current = null;
     };
+    // 'suggestions' is intentionally omitted: it is only used to compute the
+    // initial center on mount. Re-running when suggestions change would destroy
+    // and recreate the map; marker updates are handled by the effect below.
   }, [showMap, mapboxToken]);
+  /* eslint-enable react-hooks/exhaustive-deps */
 
   useEffect(() => {
     if (!map.current || !showMap) return;
@@ -205,11 +210,12 @@ function LocationEditorMap({
     lng: initialLng || 46.6753
   });
 
+  /* eslint-disable react-hooks/exhaustive-deps */
   useEffect(() => {
     if (!showMap || !mapboxToken || !mapContainer.current || map.current) return;
 
     mapboxgl.accessToken = mapboxToken;
-    
+
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
       style: 'mapbox://styles/mapbox/streets-v12',
@@ -248,6 +254,7 @@ function LocationEditorMap({
       map.current = null;
     };
   }, [showMap, mapboxToken]);
+  /* eslint-enable react-hooks/exhaustive-deps */
 
   if (!initialLat && !initialLng) {
     return (

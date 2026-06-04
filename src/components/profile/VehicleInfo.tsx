@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -150,15 +150,9 @@ export function VehicleInfo() {
     return models.map(model => ({ value: model, label: model }));
   }, [vehicleData.vehicle_brand]);
 
-  useEffect(() => {
-    if (user) {
-      fetchVehicleData();
-    }
-  }, [user]);
-
-  const fetchVehicleData = async () => {
+  const fetchVehicleData = useCallback(async () => {
     if (!user) return;
-    
+
     setIsLoading(true);
     try {
       const { data, error } = await supabase
@@ -185,7 +179,13 @@ export function VehicleInfo() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [user]);
+
+  useEffect(() => {
+    if (user) {
+      fetchVehicleData();
+    }
+  }, [user, fetchVehicleData]);
 
   const handleSave = async () => {
     if (!user) return;

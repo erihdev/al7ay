@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useMapboxToken } from '@/hooks/useMapboxToken';
 import { toast } from 'sonner';
@@ -86,14 +86,7 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  // Resolve address when user location changes significantly
-  useEffect(() => {
-    if (userLocation && !userAddress && mapboxToken) {
-      resolveAddress(userLocation.lat, userLocation.lng);
-    }
-  }, [userLocation, mapboxToken]);
-
-  const resolveAddress = async (lat: number, lng: number): Promise<string | null> => {
+  const resolveAddress = useCallback(async (lat: number, lng: number): Promise<string | null> => {
     if (!mapboxToken) return null;
 
     setIsLoadingAddress(true);
@@ -114,7 +107,14 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
       setIsLoadingAddress(false);
     }
     return null;
-  };
+  }, [mapboxToken]);
+
+  // Resolve address when user location changes significantly
+  useEffect(() => {
+    if (userLocation && !userAddress && mapboxToken) {
+      resolveAddress(userLocation.lat, userLocation.lng);
+    }
+  }, [userLocation, userAddress, mapboxToken, resolveAddress]);
 
   const setUserLocation = (location: { lat: number; lng: number }) => {
     setUserLocationState(location);

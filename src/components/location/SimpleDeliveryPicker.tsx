@@ -91,11 +91,11 @@ export function SimpleDeliveryPicker({
   }, [location, storeLocation]);
 
   // Check if location is within delivery zone
-  const isWithinDeliveryZone = (lat: number, lng: number): boolean => {
+  const isWithinDeliveryZone = useCallback((lat: number, lng: number): boolean => {
     if (!storeLocation) return true;
     const distance = calculateDistance(storeLocation.lat, storeLocation.lng, lat, lng);
     return distance <= deliveryRadius;
-  };
+  }, [storeLocation, deliveryRadius]);
 
   // Extract coordinates from Google Maps link
   const parseGoogleMapsLink = useCallback((link: string): { lat: number; lng: number } | null => {
@@ -205,7 +205,7 @@ export function SimpleDeliveryPicker({
       },
       { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
     );
-  }, [onLocationChange, storeLocation, deliveryRadius]);
+  }, [onLocationChange, isWithinDeliveryZone]);
 
   // Handle Google Maps link
   const handleLinkSubmit = useCallback(async () => {
@@ -243,7 +243,7 @@ export function SimpleDeliveryPicker({
     }
     
     setIsParsingLink(false);
-  }, [googleMapsLink, parseGoogleMapsLink, onLocationChange, storeLocation, deliveryRadius]);
+  }, [googleMapsLink, parseGoogleMapsLink, onLocationChange, isWithinDeliveryZone]);
 
   // Handle manual coordinates
   const handleManualSubmit = useCallback(async () => {
@@ -267,7 +267,7 @@ export function SimpleDeliveryPicker({
     setManualLng('');
     setShowManualEntry(false);
     toast.success('تم حفظ الموقع!');
-  }, [manualLat, manualLng, onLocationChange, storeLocation, deliveryRadius]);
+  }, [manualLat, manualLng, onLocationChange, isWithinDeliveryZone]);
 
   return (
     <div className={`space-y-3 ${className}`}>

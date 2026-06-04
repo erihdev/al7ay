@@ -148,7 +148,7 @@ export function PullUpStyleOrderCard({
     } finally {
       setIsNotifyingStore(false);
     }
-  }, [order.id, order.service_providers?.id, isNotifyingStore, hasNotifiedStore]);
+  }, [order.id, order.order_number, order.service_providers?.id, isNotifyingStore, hasNotifiedStore]);
 
   const status = statusConfig[order.status] || statusConfig.pending;
   const StatusIcon = status.icon;

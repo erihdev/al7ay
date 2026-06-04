@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useMemo } from 'react';
+import { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { useMapboxToken } from '@/hooks/useMapboxToken';
@@ -59,7 +59,7 @@ export function ProviderOrderTrackingMap({ orderId }: ProviderOrderTrackingMapPr
     toggleSound(newValue);
   };
   // Fetch expected route from store to destination
-  const fetchExpectedRoute = async () => {
+  const fetchExpectedRoute = useCallback(async () => {
     if (!map.current || !storeLocation || !order?.delivery_lat || !order?.delivery_lng) return;
 
     setIsLoadingRoute(true);
@@ -102,7 +102,7 @@ export function ProviderOrderTrackingMap({ orderId }: ProviderOrderTrackingMapPr
     } finally {
       setIsLoadingRoute(false);
     }
-  };
+  }, [storeLocation, order?.delivery_lat, order?.delivery_lng]);
 
   // Initialize map
   useEffect(() => {
@@ -254,7 +254,7 @@ export function ProviderOrderTrackingMap({ orderId }: ProviderOrderTrackingMapPr
     return () => {
       map.current?.remove();
     };
-  }, [mapboxToken, storeLocation, order?.delivery_lat, order?.delivery_lng, order?.service_providers?.business_name]);
+  }, [mapboxToken, storeLocation, order?.delivery_lat, order?.delivery_lng, order?.service_providers?.business_name, fetchExpectedRoute]);
 
   // Update actual route line when history changes
   useEffect(() => {

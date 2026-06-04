@@ -160,7 +160,7 @@ function ManualLocationPicker({ storeLocation, deliveryRadiusKm, onLocationSelec
   };
 
   // Reverse geocode
-  const reverseGeocode = async (lat: number, lng: number) => {
+  const reverseGeocode = useCallback(async (lat: number, lng: number) => {
     if (!mapboxToken) return;
     try {
       const response = await fetch(
@@ -173,7 +173,7 @@ function ManualLocationPicker({ storeLocation, deliveryRadiusKm, onLocationSelec
     } catch (error) {
       console.error('Reverse geocode error:', error);
     }
-  };
+  }, [mapboxToken]);
 
   useEffect(() => {
     if (!mapContainer.current || !mapboxToken) return;
@@ -270,7 +270,7 @@ function ManualLocationPicker({ storeLocation, deliveryRadiusKm, onLocationSelec
     return () => {
       map.current?.remove();
     };
-  }, [mapboxToken, storeLocation, deliveryRadiusKm, primaryColor]);
+  }, [mapboxToken, storeLocation, deliveryRadiusKm, primaryColor, reverseGeocode]);
 
   const handleGetCurrentLocation = () => {
     navigator.geolocation.getCurrentPosition(
@@ -496,7 +496,8 @@ const StoreCart = ({ primaryColor = '#1B4332', storeLocation, deliveryRadiusKm =
     };
 
     fetchUserProfile();
-  }, [user]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]); // intentionally omits customerName/customerPhone/customerEmail to only auto-fill once per login
 
   // Reset view when sheet closes
   useEffect(() => {
@@ -509,7 +510,8 @@ const StoreCart = ({ primaryColor = '#1B4332', storeLocation, deliveryRadiusKm =
         }
       }, 300);
     }
-  }, [isOpen]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]); // intentionally omits viewState to avoid re-triggering when view changes
 
   const formatOrderNumber = (orderNumber: number) => {
     return orderNumber.toString();

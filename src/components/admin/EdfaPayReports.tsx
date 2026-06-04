@@ -62,9 +62,10 @@ export function EdfaPayReports() {
         return { start: subDays(now, 7), end: now };
       case 'month':
         return { start: startOfMonth(now), end: now };
-      case 'lastMonth':
+      case 'lastMonth': {
         const lastMonth = subMonths(now, 1);
         return { start: startOfMonth(lastMonth), end: endOfMonth(lastMonth) };
+      }
       case 'quarter':
         return { start: subDays(now, 90), end: now };
       case 'year':

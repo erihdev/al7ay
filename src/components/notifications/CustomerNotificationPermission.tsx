@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Bell, BellRing, RefreshCw, Settings, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -17,7 +17,7 @@ export function CustomerNotificationPermission({ customerId }: CustomerNotificat
 
   useEffect(() => {
     checkPermission();
-  }, []);
+  }, []); // يُشغَّل مرة واحدة عند التحميل
 
   const checkPermission = () => {
     if (!('Notification' in window)) {
@@ -27,7 +27,7 @@ export function CustomerNotificationPermission({ customerId }: CustomerNotificat
     setPermissionState(Notification.permission as PermissionState);
   };
 
-  const registerAimtellAttributes = () => {
+  const registerAimtellAttributes = useCallback(() => {
     if (typeof window._at?.track !== 'function') {
       return false;
     }
@@ -41,7 +41,7 @@ export function CustomerNotificationPermission({ customerId }: CustomerNotificat
     } catch {
       return false;
     }
-  };
+  }, [customerId]);
 
   const requestNotificationPermission = async () => {
     setPermissionState('loading');
@@ -90,7 +90,7 @@ export function CustomerNotificationPermission({ customerId }: CustomerNotificat
       }, 1500);
       return () => clearTimeout(timer);
     }
-  }, [permissionState, customerId]);
+  }, [permissionState, customerId, registerAimtellAttributes]);
 
   if (permissionState === 'granted' || permissionState === 'unsupported') {
     return null;

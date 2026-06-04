@@ -156,16 +156,20 @@ function InAppNavigationModeComponent({
     setDistanceToDestination(distToDest);
   }, [userLocation, destination, calculateDistance]);
 
-  // Enter navigation mode on mount
+  // Capture initial values for one-time mount effect via refs
+  const initialHeading = useRef(heading);
+  const initialUserLocation = useRef(userLocation);
+
+  // Enter navigation mode on mount — intentionally runs once
   useEffect(() => {
     if (!map) return;
 
     // Enable 3D terrain-like perspective
     map.flyTo({
-      center: [userLocation.lng, userLocation.lat],
+      center: [initialUserLocation.current.lng, initialUserLocation.current.lat],
       zoom: 18,
       pitch: 65,
-      bearing: heading,
+      bearing: initialHeading.current,
       duration: 1000
     });
 
@@ -178,7 +182,7 @@ function InAppNavigationModeComponent({
         duration: 500
       });
     };
-  }, []);
+  }, [map]);
 
   // Follow user location with smooth bearing updates
   useEffect(() => {
@@ -190,7 +194,7 @@ function InAppNavigationModeComponent({
       duration: 300,
       easing: (t) => t
     });
-  }, [userLocation, heading, map]);
+  }, [userLocation.lat, userLocation.lng, heading, map]);
 
   // Format distance
   const formatDistance = (meters: number) => {

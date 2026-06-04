@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -86,13 +86,7 @@ const ProviderRegister = () => {
   const [useCustomNeighborhood, setUseCustomNeighborhood] = useState(false);
 
   // Redirect if already logged in as provider
-  useEffect(() => {
-    if (user) {
-      checkExistingProvider();
-    }
-  }, [user]);
-
-  const checkExistingProvider = async () => {
+  const checkExistingProvider = useCallback(async () => {
     if (!user) return;
     const { data } = await supabase
       .from('service_providers')
@@ -103,7 +97,13 @@ const ProviderRegister = () => {
     if (data) {
       navigate('/provider-dashboard');
     }
-  };
+  }, [user, navigate]);
+
+  useEffect(() => {
+    if (user) {
+      checkExistingProvider();
+    }
+  }, [user, checkExistingProvider]);
 
   // Fetch plans
   useEffect(() => {

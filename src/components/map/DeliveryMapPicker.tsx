@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { useLocation } from '@/contexts/LocationContext';
@@ -24,6 +24,7 @@ export function DeliveryMapPicker({ onLocationSelect, initialLocation }: Deliver
   const [address, setAddress] = useState<string>('');
   const [isConfirming, setIsConfirming] = useState(false);
 
+  /* eslint-disable react-hooks/exhaustive-deps */
   useEffect(() => {
     if (!mapContainer.current || !mapboxToken || !storeLocation) return;
 
@@ -112,7 +113,11 @@ export function DeliveryMapPicker({ onLocationSelect, initialLocation }: Deliver
     return () => {
       map.current?.remove();
     };
+    // 'reverseGeocode', 'selectedLocation', 'userLocation', 'initialLocation', and
+    // 'deliveryRadius' are intentionally omitted from deps: they are only used during
+    // map initialization. Adding them would destroy and recreate the map on every change.
   }, [mapboxToken, storeLocation]);
+  /* eslint-enable react-hooks/exhaustive-deps */
 
   const createCircleGeoJSON = (lng: number, lat: number, radiusMeters: number): GeoJSON.FeatureCollection => {
     const points = 64;
@@ -143,7 +148,7 @@ export function DeliveryMapPicker({ onLocationSelect, initialLocation }: Deliver
     };
   };
 
-  const reverseGeocode = async (lat: number, lng: number) => {
+  const reverseGeocode = useCallback(async (lat: number, lng: number) => {
     try {
       const response = await fetch(
         `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?access_token=${mapboxToken}&language=ar`
@@ -155,7 +160,7 @@ export function DeliveryMapPicker({ onLocationSelect, initialLocation }: Deliver
     } catch (error) {
       console.error('Reverse geocode error:', error);
     }
-  };
+  }, [mapboxToken]);
 
   const goToCurrentLocation = () => {
     if (userLocation && map.current && marker.current) {

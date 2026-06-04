@@ -1,5 +1,5 @@
 import { useForm } from 'react-hook-form';
-<parameter name="zodResolver">{zodResolver} from '@hookform/resolvers/zod';
+import { zodResolver } from '@hookform/resolvers/zod';
     import {loginSchema, LoginForm} from '@/lib/validations';
     import {Button} from '@/components/ui/button';
     import {Input} from '@/components/ui/input';

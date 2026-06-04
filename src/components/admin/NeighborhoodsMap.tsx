@@ -43,6 +43,7 @@ const NeighborhoodsMap = ({ neighborhoods, onEdit, onNeighborhoodClick }: Neighb
   const [isFullscreen, setIsFullscreen] = useState(false);
 
   // Initialize map
+  /* eslint-disable react-hooks/exhaustive-deps */
   useEffect(() => {
     if (!mapContainer.current || !mapboxToken || map.current) return;
 
@@ -72,7 +73,11 @@ const NeighborhoodsMap = ({ neighborhoods, onEdit, onNeighborhoodClick }: Neighb
       map.current?.remove();
       map.current = null;
     };
+    // 'neighborhoods' is intentionally omitted: it is only used to compute the
+    // initial center on mount. Re-running when neighborhoods change would destroy
+    // and recreate the map; marker updates are handled by the effect below.
   }, [mapboxToken]);
+  /* eslint-enable react-hooks/exhaustive-deps */
 
   // Update markers when neighborhoods change
   useEffect(() => {

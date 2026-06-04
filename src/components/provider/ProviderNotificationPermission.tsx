@@ -38,7 +38,7 @@ export function ProviderNotificationPermission({ providerId }: ProviderNotificat
 
   useEffect(() => {
     checkPermission();
-  }, []);
+  }, []); // يُشغَّل مرة واحدة عند التحميل
 
   const checkPermission = () => {
     if (!('Notification' in window)) {
@@ -126,7 +126,7 @@ export function ProviderNotificationPermission({ providerId }: ProviderNotificat
   }, [user]);
 
   // Also register with Aimtell for Android/Desktop
-  const registerAimtell = async (): Promise<boolean> => {
+  const registerAimtell = useCallback(async (): Promise<boolean> => {
     if (typeof window._at !== 'object' || !window._at?.track) {
       console.log('⚠️ Aimtell SDK not available');
       return false;
@@ -147,28 +147,28 @@ export function ProviderNotificationPermission({ providerId }: ProviderNotificat
       console.error('❌ Error registering Aimtell:', error);
       return false;
     }
-  };
+  }, [providerId]);
 
   // Main registration function
-  const registerNotifications = async (): Promise<boolean> => {
+  const registerNotifications = useCallback(async (): Promise<boolean> => {
     console.log('🔄 Starting notification registration...');
-    
+
     // Always try Web Push first (works everywhere including iOS PWA)
     const webPushSuccess = await registerWebPush();
-    
+
     // Also try Aimtell for Android/Desktop fallback
     const aimtellSuccess = await registerAimtell();
-    
+
     const success = webPushSuccess || aimtellSuccess;
-    
+
     if (success) {
       hasRegistered.current = true;
       setIsRegistered(true);
       console.log('✅ Notification registration complete:', { webPushSuccess, aimtellSuccess });
     }
-    
+
     return success;
-  };
+  }, [registerWebPush, registerAimtell]);
 
   // Send test notification
   const sendTestNotification = async () => {
@@ -288,7 +288,7 @@ export function ProviderNotificationPermission({ providerId }: ProviderNotificat
     // Small delay to ensure everything is loaded
     const timer = setTimeout(autoRegister, 1000);
     return () => clearTimeout(timer);
-  }, [permissionState, registerWebPush]);
+  }, [permissionState, registerNotifications]);
 
   if (permissionState === 'unsupported') {
     return null;

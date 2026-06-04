@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -52,11 +52,7 @@ const EmployeeRewards = () => {
   const [loading, setLoading] = useState(true);
   const [claiming, setClaiming] = useState<string | null>(null);
 
-  useEffect(() => {
-    checkEmployee();
-  }, []);
-
-  const checkEmployee = async () => {
+  const checkEmployee = useCallback(async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
@@ -92,7 +88,11 @@ const EmployeeRewards = () => {
       console.error("Error checking employee:", error);
       navigate("/");
     }
-  };
+  }, [navigate]);
+
+  useEffect(() => {
+    checkEmployee();
+  }, [checkEmployee]);
 
   const fetchData = async (empId: string) => {
     setLoading(true);

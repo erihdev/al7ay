@@ -47,6 +47,7 @@ export function UnifiedLocationPicker({
     const defaultCenter = { lat: 24.7136, lng: 46.6753 };
 
     // Initialize Map
+    /* eslint-disable react-hooks/exhaustive-deps */
     useEffect(() => {
         if (!mapContainer.current || !mapboxToken || map.current) return;
 
@@ -113,7 +114,12 @@ export function UnifiedLocationPicker({
             map.current?.remove();
             map.current = null;
         };
+        // 'initialLocation', 'userLocation', 'locationPermission', 'requestLocation', and
+        // 'onLocationSelect' are intentionally omitted: they are only used during map
+        // initialization. Re-running on their changes would destroy and recreate the map.
+        // Location sync after mount is handled by the separate userLocation effect below.
     }, [mapboxToken]);
+    /* eslint-enable react-hooks/exhaustive-deps */
 
     // Sync map center with userLocation context updates (e.g. from GPS)
     useEffect(() => {
