@@ -170,7 +170,11 @@ const ProviderDashboard = () => {
   }, []);
 
   const tryLocalStorage = useCallback(async () => {
-    const storedSession = localStorage.getItem('sb-hmnpraslunhnuigeetoe-auth-token');
+    // Derive the Supabase auth-token storage key from the project ref in the env URL,
+    // so this is not tied to any specific Supabase project (survives backend migration).
+    const projectRef = (import.meta.env.VITE_SUPABASE_URL as string || '')
+      .replace('https://', '').split('.')[0];
+    const storedSession = localStorage.getItem(`sb-${projectRef}-auth-token`);
     if (!storedSession) {
       navigate('/provider-login', { replace: true });
       return;
