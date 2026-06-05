@@ -133,37 +133,56 @@
 </head>
 
 <body>
-  <div id="root">
-    <!-- Native HTML loading screen — shows instantly before React mounts, replaced automatically when React renders -->
-    <div id="html-splash" style="
-      position: fixed; inset: 0; z-index: 9999;
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      background: inherit;
-    ">
-      <div style="position: relative; width: 120px; height: 120px; display: flex; align-items: center; justify-content: center;">
-        <!-- Spinning ring -->
-        <div style="
-          position: absolute; inset: 0; border-radius: 50%;
-          border: 3px solid transparent;
-          border-top-color: hsl(43,75%,48%);
-          animation: spin 1.2s linear infinite;
-        "></div>
-        <!-- Logo -->
-        <img src="/favicon.png" alt="الحي" style="width: 72px; height: 72px; object-fit: contain;" />
-      </div>
-      <h1 style="margin-top: 24px; font-size: 2rem; font-weight: 700; color: hsl(43,75%,48%); font-family: sans-serif;">الحي</h1>
-      <p style="margin-top: 8px; font-size: 0.9rem; color: hsl(43,50%,60%); font-family: sans-serif;">منصة الخدمات المحلية</p>
-      <!-- Progress bar -->
-      <div style="margin-top: 28px; width: 120px; height: 3px; background: rgba(255,255,255,0.1); border-radius: 99px; overflow: hidden;">
-        <div style="height: 100%; background: hsl(43,75%,48%); border-radius: 99px; animation: slide 1s ease-in-out infinite;"></div>
-      </div>
+  <!-- HTML splash: outside #root so React doesn't destroy it on mount -->
+  <div id="html-splash" style="
+    position: fixed; inset: 0; z-index: 9999;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    transition: opacity 0.35s ease;
+  ">
+    <div style="position: relative; width: 120px; height: 120px; display: flex; align-items: center; justify-content: center;">
+      <div style="
+        position: absolute; inset: 0; border-radius: 50%;
+        border: 3px solid transparent;
+        border-top-color: hsl(43,75%,48%);
+        animation: splash-spin 1.2s linear infinite;
+      "></div>
+      <img src="/favicon.png" alt="الحي" style="width: 72px; height: 72px; object-fit: contain;" />
+    </div>
+    <h1 style="margin-top: 24px; font-size: 2rem; font-weight: 700; color: hsl(43,75%,48%); font-family: sans-serif;">الحي</h1>
+    <p style="margin-top: 8px; font-size: 0.9rem; color: hsl(43,50%,60%); font-family: sans-serif;">منصة الخدمات المحلية</p>
+    <div style="margin-top: 28px; width: 120px; height: 3px; background: rgba(255,255,255,0.1); border-radius: 99px; overflow: hidden;">
+      <div style="height: 100%; background: hsl(43,75%,48%); border-radius: 99px; animation: splash-slide 1s ease-in-out infinite;"></div>
     </div>
   </div>
 
+  <div id="root"></div>
+
   <style>
-    @keyframes spin { to { transform: rotate(360deg); } }
-    @keyframes slide { 0% { transform: translateX(-100%); } 100% { transform: translateX(400%); } }
+    #html-splash { background-color: var(--html-splash-bg, hsl(30,25%,8%)); }
+    @keyframes splash-spin { to { transform: rotate(360deg); } }
+    @keyframes splash-slide { 0% { transform: translateX(-100%); } 100% { transform: translateX(400%); } }
   </style>
+
+  <script>
+    // Apply correct background from saved theme
+    (function() {
+      try {
+        var t = localStorage.getItem('theme') || 'system';
+        var dark = t === 'dark' || (t === 'auto' && (new Date().getHours() < 6 || new Date().getHours() >= 18)) || (t === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        var bg = dark ? 'hsl(30,25%,8%)' : 'hsl(38,30%,97%)';
+        document.getElementById('html-splash').style.setProperty('--html-splash-bg', bg);
+        document.getElementById('html-splash').style.backgroundColor = bg;
+      } catch(e) {}
+    })();
+
+    // Safety net: auto-dismiss after 8 seconds if React hasn't removed it
+    setTimeout(function() {
+      var s = document.getElementById('html-splash');
+      if (!s) return;
+      s.style.opacity = '0';
+      setTimeout(function() { var s2 = document.getElementById('html-splash'); if(s2) s2.remove(); }, 400);
+    }, 8000);
+  </script>
 
   <script type="module" src="/src/main.tsx"></script>
 </body>
