@@ -5,3 +5,7 @@ verify_jwt = false
 
 [functions.aimtell-webhook]
 verify_jwt = false
+
+# EdfaPay posts the payment callback from its own servers with no Supabase JWT.
+[functions.edfapay-webhook]
+verify_jwt = false

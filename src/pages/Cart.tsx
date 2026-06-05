@@ -765,27 +765,29 @@ const Cart = () => {
                 <Label
                   htmlFor="online-payment"
                   className={`relative flex items-center gap-4 p-5 rounded-2xl border-2 cursor-pointer transition-all duration-300 ${paymentMethod === 'online'
-                    ? 'border-blue-500 bg-blue-500/5 shadow-md scale-[1.02]'
-                    : 'border-muted hover:border-blue-500/30 hover:bg-muted/30'
+                    ? 'border-foreground bg-foreground/5 shadow-md scale-[1.02]'
+                    : 'border-muted hover:border-foreground/30 hover:bg-muted/30'
                     }`}
                 >
                   <RadioGroupItem value="online" id="online-payment" className="sr-only" />
-                  <div className={`p-3 rounded-xl transition-colors duration-300 ${paymentMethod === 'online' ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/30' : 'bg-muted text-muted-foreground'}`}>
-                    <CreditCard className="h-6 w-6" />
+                  <div className={`p-3 rounded-xl transition-colors duration-300 ${paymentMethod === 'online' ? 'bg-black text-white shadow-lg' : 'bg-muted text-muted-foreground'}`}>
+                    {/* Apple logo */}
+                    <svg className="h-6 w-6" viewBox="0 0 384 512" fill="currentColor" aria-hidden="true">
+                      <path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z" />
+                    </svg>
                   </div>
                   <div className="flex-1">
-                    <p className="font-bold text-base">الدفع الإلكتروني</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">بطاقة ائتمان / مدى / Apple Pay</p>
+                    <p className="font-bold text-base flex items-center gap-1">
+                      <svg className="h-4 w-4" viewBox="0 0 384 512" fill="currentColor" aria-hidden="true">
+                        <path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z" />
+                      </svg>
+                      Pay
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-0.5">الدفع الإلكتروني الآمن • بطاقة / مدى / Apple Pay</p>
                   </div>
                   {paymentMethod === 'online' && (
-                    <div className="flex gap-1 absolute bottom-4 left-4 opacity-50">
-                      <div className="w-6 h-4 bg-foreground/20 rounded"></div>
-                      <div className="w-6 h-4 bg-foreground/20 rounded"></div>
-                    </div>
-                  )}
-                  {paymentMethod === 'online' && (
                     <motion.div layoutId="paymentCheck" className="absolute top-4 left-4">
-                      <div className="bg-blue-500 text-white rounded-full p-0.5">
+                      <div className="bg-foreground text-background rounded-full p-0.5">
                         <CheckCircle2 className="h-4 w-4" />
                       </div>
                     </motion.div>
@@ -925,12 +927,19 @@ const Cart = () => {
           transition={{ delay: 0.6 }}
         >
           <Button
-            className="w-full h-16 text-xl font-bold font-arabic rounded-2xl shadow-xl shadow-primary/20 hover:shadow-2xl hover:shadow-primary/30 transition-all transform hover:scale-[1.02] active:scale-[0.98] bg-gradient-to-r from-primary to-primary/90"
+            className={`w-full h-16 text-xl font-bold font-arabic rounded-2xl shadow-xl transition-all transform hover:scale-[1.02] active:scale-[0.98] ${paymentMethod === 'online'
+              ? 'bg-black hover:bg-gray-900 text-white shadow-black/20'
+              : 'bg-gradient-to-r from-primary to-primary/90 shadow-primary/20 hover:shadow-2xl hover:shadow-primary/30'
+              }`}
             onClick={handleSubmitOrder}
             disabled={createOrder.isPending || isPaymentProcessing}
           >
             {createOrder.isPending || isPaymentProcessing ? (
               <Loader2 className="h-6 w-6 animate-spin ml-2" />
+            ) : paymentMethod === 'online' ? (
+              <svg className="h-6 w-6 ml-2" viewBox="0 0 384 512" fill="currentColor" aria-hidden="true">
+                <path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z" />
+              </svg>
             ) : (
               <Sparkles className="h-6 w-6 ml-2 animate-pulse" />
             )}

@@ -106,8 +106,10 @@ serve(async (req: Request) => {
       );
     }
 
-    // Generate unique transaction ID using pending order ID
-    const transactionId = `TXN${Date.now()}`;
+    // Use the pending order id as the EdfaPay order_id so the webhook callback
+    // can map the result straight back to the right pending order.
+    // (useEdfaPayment creates a fresh pending_orders row per attempt, so this is unique.)
+    const transactionId = pendingOrderId;
     const orderAmount = amount.toFixed(2);
     const orderCurrency = 'SAR';
     const orderDescription = description || `Order ${pendingOrderId}`;

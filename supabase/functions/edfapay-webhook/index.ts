@@ -20,59 +20,61 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Parse webhook data from EdfaPay
-    const webhookData = await req.json();
-    
+    // EdfaPay sends the callback as application/x-www-form-urlencoded (NOT JSON).
+    // Parse robustly, supporting JSON too for resilience/testing.
+    const rawBody = await req.text();
+    const contentType = req.headers.get('content-type') || '';
+    let webhookData: Record<string, string>;
+    if (contentType.includes('application/json')) {
+      try { webhookData = JSON.parse(rawBody); } catch { webhookData = {}; }
+    } else {
+      webhookData = Object.fromEntries(new URLSearchParams(rawBody));
+    }
+
     console.log('EdfaPay webhook received:', webhookData);
 
-    // Extract payment information
-    const {
-      order_id,
-      transaction_id,
-      status,
-      amount,
-      currency,
-      payment_method,
-      error_message
-    } = webhookData;
+    // Extract payment info using EdfaPay's real field names (order_id, trans_id, result, status)
+    const order_id = webhookData.order_id;
+    const transaction_id = webhookData.trans_id || webhookData.transaction_id || webhookData.id || null;
+    const result = (webhookData.result || '').toUpperCase();
+    const status = (webhookData.status || '').toUpperCase();
+    const amount = webhookData.amount;
+    const currency = webhookData.currency;
+    const payment_method = webhookData.payment_method || webhookData.card_brand;
+    const error_message =
+      webhookData.decline_reason || webhookData.error_message || webhookData.error || webhookData.message || '';
 
-    // Extract pending order ID from transaction ID (format: TXN-{pendingOrderId}-{timestamp})
-    const pendingOrderIdMatch = order_id?.match(/TXN-(.+?)-\d+$/);
-    const pendingOrderId = pendingOrderIdMatch ? pendingOrderIdMatch[1] : null;
+    // The order_id we sent to EdfaPay IS the pending order id (UUID).
+    // Fallback to the legacy TXN-{id}-{ts} format just in case.
+    let pendingOrderId: string | null = order_id || null;
+    const legacyMatch = order_id?.match(/TXN-(.+?)-\d+$/);
+    if (legacyMatch) pendingOrderId = legacyMatch[1];
 
     if (!pendingOrderId) {
       console.error('Could not extract pending order ID from webhook:', order_id);
       return new Response(
-        JSON.stringify({ error: 'Invalid order ID format' }),
+        JSON.stringify({ error: 'Invalid order ID' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Map EdfaPay status to payment status
+    // Map EdfaPay result/status -> our payment status.
+    // Success: result=SUCCESS / status=SETTLED. Declined: result/status=DECLINED.
+    const SUCCESS = ['SUCCESS', 'SETTLED', 'APPROVED', 'CAPTURED', 'COMPLETED'];
+    const FAILED = ['DECLINED', 'ERROR', 'FAILED', 'REVERSED', 'VOIDED'];
+    const PENDING = ['PENDING', 'REDIRECT', 'PROCESSING', '3DS'];
+
     let paymentStatus: string;
     let shouldCreateOrder = false;
-
-    switch (status?.toLowerCase()) {
-      case 'success':
-      case 'approved':
-      case 'completed':
-        paymentStatus = 'paid';
-        shouldCreateOrder = true;
-        break;
-      case 'pending':
-      case 'processing':
-        paymentStatus = 'pending';
-        break;
-      case 'failed':
-      case 'declined':
-      case 'error':
-        paymentStatus = 'failed';
-        break;
-      case 'cancelled':
-        paymentStatus = 'cancelled';
-        break;
-      default:
-        paymentStatus = 'unknown';
+    if (SUCCESS.includes(result) || SUCCESS.includes(status)) {
+      paymentStatus = 'paid';
+      shouldCreateOrder = true;
+    } else if (PENDING.includes(result) || PENDING.includes(status)) {
+      paymentStatus = 'pending';
+    } else if (FAILED.includes(result) || FAILED.includes(status)) {
+      paymentStatus = 'failed';
+    } else {
+      paymentStatus = 'unknown';
     }
 
     console.log(`Processing payment for pending order ${pendingOrderId} - Status: ${paymentStatus}`);
