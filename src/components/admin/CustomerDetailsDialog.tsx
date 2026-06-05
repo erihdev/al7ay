@@ -344,7 +344,7 @@ export function CustomerDetailsDialog({ customer, open, onOpenChange }: Customer
                                 {format(new Date(order.created_at), 'dd MMM yyyy - HH:mm', { locale: ar })}
                               </p>
                               <div className="flex flex-wrap gap-1 mt-2">
-                                {order.order_items?.slice(0, 3).map((item: any, idx: number) => (
+                                {order.order_items?.slice(0, 3).map((item: { product_name: string; quantity: number }, idx: number) => (
                                   <Badge key={idx} variant="outline" className="text-xs">
                                     {item.product_name} × {item.quantity}
                                   </Badge>

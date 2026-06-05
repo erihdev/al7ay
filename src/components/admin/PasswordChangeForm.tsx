@@ -37,9 +37,9 @@ export function PasswordChangeForm() {
       toast.success('تم تغيير كلمة المرور بنجاح');
       setNewPassword('');
       setConfirmPassword('');
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error changing password:', error);
-      toast.error(error.message || 'حدث خطأ أثناء تغيير كلمة المرور');
+      toast.error((error instanceof Error ? error.message : String(error)) || 'حدث خطأ أثناء تغيير كلمة المرور');
     } finally {
       setIsLoading(false);
     }

@@ -7,7 +7,7 @@ import { ar } from 'date-fns/locale';
 // Extend jsPDF type for autotable
 declare module 'jspdf' {
   interface jsPDF {
-    autoTable: (options: any) => jsPDF;
+    autoTable: (options: Record<string, unknown>) => jsPDF;
   }
 }
 
@@ -128,7 +128,7 @@ export function exportToPDF(
       headStyles: { fillColor: [59, 130, 246] },
     });
     
-    yPos = (doc as any).lastAutoTable.finalY + 15;
+    yPos = (doc as jsPDF & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 15;
   }
 
   // Daily Sales
@@ -149,7 +149,7 @@ export function exportToPDF(
     headStyles: { fillColor: [59, 130, 246] },
   });
 
-  yPos = (doc as any).lastAutoTable.finalY + 15;
+  yPos = (doc as jsPDF & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 15;
 
   // Category Breakdown
   if (monthlyData && monthlyData.categoryBreakdown.length > 0) {
@@ -169,7 +169,7 @@ export function exportToPDF(
       headStyles: { fillColor: [59, 130, 246] },
     });
 
-    yPos = (doc as any).lastAutoTable.finalY + 15;
+    yPos = (doc as jsPDF & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 15;
   }
 
   // Order Status

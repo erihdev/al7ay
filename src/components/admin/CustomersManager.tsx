@@ -211,7 +211,7 @@ export const CustomersManager = () => {
       setEditingCustomer(null);
       setIsSaving(false);
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       console.error('Update error:', error);
       toast.error('حدث خطأ أثناء تحديث البيانات');
       setIsSaving(false);
@@ -256,7 +256,7 @@ export const CustomersManager = () => {
       setCustomerToDelete(null);
       setIsDeleting(false);
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       console.error('Delete error:', error);
       toast.error('حدث خطأ أثناء حذف العميل');
       setIsDeleting(false);
@@ -320,7 +320,7 @@ export const CustomersManager = () => {
       setPointsForm({ amount: 0, operation: 'add', reason: '' });
       setIsSavingPoints(false);
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       console.error('Points adjustment error:', error);
       toast.error('حدث خطأ أثناء تعديل النقاط');
       setIsSavingPoints(false);

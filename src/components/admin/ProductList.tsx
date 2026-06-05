@@ -23,7 +23,7 @@ import type { Database } from '@/integrations/supabase/types';
 type Product = Database['public']['Tables']['products']['Row'];
 type ProductCategory = Database['public']['Enums']['product_category'];
 
-const categoryConfig: Record<ProductCategory, { label: string; icon: any }> = {
+const categoryConfig: Record<ProductCategory, { label: string; icon: ({ className }: { className?: string }) => JSX.Element }> = {
   coffee: { label: 'قهوة', icon: Coffee },
   cold_drinks: { label: 'مشروبات باردة', icon: IceCream },
   sweets: { label: 'حلويات', icon: Cake },

@@ -19,15 +19,15 @@ interface ApplePayPaymentRequest {
 }
 
 interface ApplePayPaymentToken {
-  paymentData: any;
-  paymentMethod: any;
+  paymentData: Record<string, unknown>;
+  paymentMethod: Record<string, unknown>;
   transactionIdentifier: string;
 }
 
 interface ApplePayPayment {
   token: ApplePayPaymentToken;
-  billingContact?: any;
-  shippingContact?: any;
+  billingContact?: Record<string, unknown>;
+  shippingContact?: Record<string, unknown>;
 }
 
 interface ApplePayValidateMerchantEvent {
@@ -48,7 +48,7 @@ interface ApplePaySessionClass {
 interface ApplePaySessionInstance {
   begin(): void;
   abort(): void;
-  completeMerchantValidation(merchantSession: any): void;
+  completeMerchantValidation(merchantSession: Record<string, unknown>): void;
   completePayment(status: number): void;
   onvalidatemerchant: ((event: ApplePayValidateMerchantEvent) => void) | null;
   onpaymentauthorized: ((event: ApplePayPaymentAuthorizedEvent) => void) | null;
@@ -80,7 +80,7 @@ interface ApplePayOrderData {
     quantity: number;
     unitPrice: number;
     totalPrice: number;
-    selectedOptions?: any;
+    selectedOptions?: Record<string, unknown>;
   }>;
 }
 

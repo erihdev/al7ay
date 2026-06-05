@@ -14,7 +14,8 @@ import {
   Navigation2,
   Bell,
   BellOff,
-  Hand
+  Hand,
+  type LucideIcon
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -28,7 +29,7 @@ interface ProviderOrdersManagerProps {
   providerId: string;
 }
 
-const statusConfig: Record<string, { label: string; icon: any; color: string; bgColor: string }> = {
+const statusConfig: Record<string, { label: string; icon: LucideIcon; color: string; bgColor: string }> = {
   pending: { label: 'جديد', icon: Clock, color: 'text-yellow-600', bgColor: 'bg-yellow-50' },
   preparing: { label: 'قيد التحضير', icon: Package, color: 'text-blue-600', bgColor: 'bg-blue-50' },
   ready: { label: 'جاهز', icon: CheckCircle, color: 'text-green-600', bgColor: 'bg-green-50' },

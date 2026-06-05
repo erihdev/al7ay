@@ -353,7 +353,7 @@ export const EmployeesManager = () => {
     type: 'permissions_updated' | 'account_created' | 'status_changed' | 'contract_created',
     employee: Employee,
     extraData?: { 
-      permissions?: any[]; 
+      permissions?: string[];
       isActive?: boolean; 
       temporaryPassword?: string; 
       contractNumber?: string;
@@ -405,8 +405,8 @@ export const EmployeesManager = () => {
       resetPositionForm();
       toast.success('تم إضافة المسمى الوظيفي بنجاح');
     },
-    onError: (error: any) => {
-      toast.error(error.message || 'حدث خطأ');
+    onError: (error: unknown) => {
+      toast.error((error instanceof Error ? error.message : String(error)) || 'حدث خطأ');
     },
   });
 
@@ -515,8 +515,8 @@ export const EmployeesManager = () => {
       resetForm();
       toast.success('تم إضافة الموظف بنجاح وإرسال بيانات الدخول');
     },
-    onError: (error: any) => {
-      toast.error(error.message || 'حدث خطأ أثناء إضافة الموظف');
+    onError: (error: unknown) => {
+      toast.error((error instanceof Error ? error.message : String(error)) || 'حدث خطأ أثناء إضافة الموظف');
     },
   });
 
@@ -650,8 +650,8 @@ export const EmployeesManager = () => {
       resetContractForm();
       toast.success('تم إنشاء العقد وإرسال رابط التوقيع للموظف');
     },
-    onError: (error: any) => {
-      toast.error(error.message || 'حدث خطأ');
+    onError: (error: unknown) => {
+      toast.error((error instanceof Error ? error.message : String(error)) || 'حدث خطأ');
     },
   });
 
@@ -694,15 +694,21 @@ export const EmployeesManager = () => {
       queryClient.invalidateQueries({ queryKey: ['employee-contracts'] });
       toast.success('تم إرسال رابط التوقيع الجديد للموظف');
     },
-    onError: (error: any) => {
-      toast.error(error.message || 'حدث خطأ');
+    onError: (error: unknown) => {
+      toast.error((error instanceof Error ? error.message : String(error)) || 'حدث خطأ');
     },
   });
 
   // Sign contract mutation
   const signContract = useMutation({
     mutationFn: async ({ contractId, signatureData, isAdmin }: { contractId: string; signatureData: string; isAdmin: boolean }) => {
-      const updates: any = {};
+      const updates: {
+        admin_signature?: string;
+        admin_signed_at?: string;
+        employee_signature?: string;
+        employee_signed_at?: string;
+        status?: string;
+      } = {};
       
       if (isAdmin) {
         updates.admin_signature = signatureData;

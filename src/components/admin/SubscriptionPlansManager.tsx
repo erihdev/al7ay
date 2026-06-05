@@ -74,14 +74,14 @@ export function SubscriptionPlansManager() {
       return data.map(plan => ({
         ...plan,
         features: Array.isArray(plan.features) ? plan.features : [],
-        discount_percent: (plan as any).discount_percent || 0
+        discount_percent: (plan as { discount_percent?: number }).discount_percent || 0
       })) as SubscriptionPlan[];
     },
   });
 
   // Create/Update mutation
   const savePlan = useMutation({
-    mutationFn: async (data: any) => {
+    mutationFn: async (data: typeof formData) => {
       const planData = {
         name_ar: data.name_ar,
         name_en: data.name_en || null,

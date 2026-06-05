@@ -46,7 +46,7 @@ export function OffersManager() {
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [editingOffer, setEditingOffer] = useState<any>(null);
+  const [editingOffer, setEditingOffer] = useState<import('@/hooks/useSpecialOffers').SpecialOffer | null>(null);
 
   // Form state
   const [productId, setProductId] = useState('');
@@ -99,12 +99,12 @@ export function OffersManager() {
       }
       setIsDialogOpen(false);
       resetForm();
-    } catch (error: any) {
-      toast.error(error.message);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : String(error));
     }
   };
 
-  const handleEdit = (offer: any) => {
+  const handleEdit = (offer: import('@/hooks/useSpecialOffers').SpecialOffer) => {
     setEditingOffer(offer);
     setProductId(offer.product_id);
     setDiscountPercentage(offer.discount_percentage.toString());
@@ -119,20 +119,20 @@ export function OffersManager() {
       await deleteOffer.mutateAsync(deleteId);
       toast.success('تم حذف العرض');
       setDeleteId(null);
-    } catch (error: any) {
-      toast.error(error.message);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : String(error));
     }
   };
 
-  const handleToggleActive = async (offer: any) => {
+  const handleToggleActive = async (offer: import('@/hooks/useSpecialOffers').SpecialOffer) => {
     try {
       await updateOffer.mutateAsync({
         id: offer.id,
         is_active: !offer.is_active,
       });
       toast.success(offer.is_active ? 'تم إيقاف العرض' : 'تم تفعيل العرض');
-    } catch (error: any) {
-      toast.error(error.message);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : String(error));
     }
   };
 

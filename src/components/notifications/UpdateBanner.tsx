@@ -7,7 +7,7 @@ import { useEffect, useRef } from 'react';
 // Create notification sound using Web Audio API
 const playNotificationSound = () => {
   try {
-    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const audioContext = new (window.AudioContext || (window as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext)();
     
     // Create a pleasant notification melody
     const playNote = (frequency: number, startTime: number, duration: number) => {

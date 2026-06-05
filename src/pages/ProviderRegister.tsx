@@ -133,8 +133,8 @@ const ProviderRegister = () => {
         } else {
           setPlans(data.map(plan => ({
             ...plan,
-            features: Array.isArray(plan.features) ? (plan.features as any) : [],
-            discount_percent: (plan as any).discount_percent || 0
+            features: Array.isArray(plan.features) ? (plan.features as string[]) : [],
+            discount_percent: (plan as Record<string, unknown>).discount_percent as number || 0
           })));
         }
       } catch (err) {
@@ -377,9 +377,9 @@ const ProviderRegister = () => {
 
       toast.success('تم إنشاء حسابك بنجاح!');
       navigate('/provider-dashboard', { replace: true });
-    } catch (error: any) {
+    } catch (error) {
       console.error('Registration error:', error);
-      toast.error(error.message || 'حدث خطأ أثناء التسجيل');
+      toast.error((error instanceof Error ? error.message : null) || 'حدث خطأ أثناء التسجيل');
     } finally {
       setIsLoading(false);
     }

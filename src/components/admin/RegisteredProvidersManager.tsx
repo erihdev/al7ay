@@ -246,7 +246,7 @@ const RegisteredProvidersManager = () => {
       setSelectedProvider(null);
       setActivatingId(null);
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       console.error('Activation error:', error);
       toast.error('حدث خطأ أثناء تفعيل الحساب');
       setActivatingId(null);
@@ -274,9 +274,9 @@ const RegisteredProvidersManager = () => {
       setProviderToDelete(null);
       setDeletingId(null);
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       console.error('Delete error:', error);
-      toast.error('حدث خطأ أثناء حذف الحساب: ' + error.message);
+      toast.error('حدث خطأ أثناء حذف الحساب: ' + (error instanceof Error ? error.message : String(error)));
       setDeletingId(null);
     }
   });

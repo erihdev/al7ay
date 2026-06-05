@@ -19,7 +19,8 @@ import {
   Truck,
   XCircle,
   Loader2,
-  ChevronUp
+  ChevronUp,
+  type LucideIcon
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import mapboxgl from 'mapbox-gl';
@@ -44,7 +45,7 @@ interface InAppNavigationModeProps {
   isProvider?: boolean;
 }
 
-const statusConfig: Record<string, { label: string; icon: any; color: string; bgColor: string; nextLabel?: string }> = {
+const statusConfig: Record<string, { label: string; icon: LucideIcon; color: string; bgColor: string; nextLabel?: string }> = {
   pending: { 
     label: 'جديد', 
     icon: Clock, 

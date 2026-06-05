@@ -283,7 +283,7 @@ const ProviderStoreContent = () => {
   }
 
   function getCategoryIconComponent(category: string) {
-    const icons: Record<string, any> = {
+    const icons: Record<string, React.ComponentType<{ className?: string }>> = {
       'featured': Sparkles,
       'coffee': Coffee,
       'sweets': Cake,
@@ -615,7 +615,7 @@ const ProviderStoreContent = () => {
               {provider.active_neighborhoods && (
                 <p className="text-white/70 text-xs flex items-center justify-center gap-1.5 mb-2">
                   <MapPin className="h-3.5 w-3.5" />
-                  {(provider.active_neighborhoods as any).name}، {(provider.active_neighborhoods as any).city}
+                  {(provider.active_neighborhoods as { name: string; city: string }).name}، {(provider.active_neighborhoods as { name: string; city: string }).city}
                 </p>
               )}
 

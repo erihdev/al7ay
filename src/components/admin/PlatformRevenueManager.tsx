@@ -40,7 +40,7 @@ import 'jspdf-autotable';
 // Extend jsPDF type for autotable
 declare module 'jspdf' {
   interface jsPDF {
-    autoTable: (options: any) => jsPDF;
+    autoTable: (options: Record<string, unknown>) => jsPDF;
   }
 }
 
@@ -310,7 +310,7 @@ export function PlatformRevenueManager() {
       headStyles: { fillColor: [27, 67, 50] },
     });
 
-    yPos = (doc as any).lastAutoTable.finalY + 15;
+    yPos = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 15;
 
     // Monthly Data
     if (revenueData.monthlyData.length > 0) {

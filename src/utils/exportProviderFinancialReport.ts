@@ -5,7 +5,7 @@ import { format } from 'date-fns';
 // Extend jsPDF type for autotable
 declare module 'jspdf' {
   interface jsPDF {
-    autoTable: (options: any) => jsPDF;
+    autoTable: (options: Record<string, unknown>) => jsPDF;
   }
 }
 
@@ -104,7 +104,7 @@ export function exportProviderFinancialReportToPDF(data: ProviderFinancialData) 
     headStyles: { fillColor: [27, 67, 50] },
   });
 
-  yPos = (doc as any).lastAutoTable.finalY + 15;
+  yPos = (doc as jsPDF & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 15;
 
   // Daily Breakdown
   if (data.dailyBreakdown.length > 0) {
@@ -131,7 +131,7 @@ export function exportProviderFinancialReportToPDF(data: ProviderFinancialData) 
       styles: { halign: 'center' },
     });
 
-    yPos = (doc as any).lastAutoTable.finalY + 15;
+    yPos = (doc as jsPDF & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 15;
   }
 
   // Payout History

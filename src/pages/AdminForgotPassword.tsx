@@ -34,8 +34,8 @@ const AdminForgotPassword = () => {
       
       setIsEmailSent(true);
       toast.success('تم إرسال رابط استعادة كلمة المرور');
-    } catch (error: any) {
-      toast.error(error.message || 'حدث خطأ أثناء إرسال الرابط');
+    } catch (error) {
+      toast.error((error instanceof Error ? error.message : null) || 'حدث خطأ أثناء إرسال الرابط');
     } finally {
       setIsLoading(false);
     }

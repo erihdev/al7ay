@@ -214,7 +214,7 @@ const StoreThemeCustomizer = ({ provider, onUpdate }: StoreThemeCustomizerProps)
        
       const { error } = await supabase
         .from('service_providers')
-        .update({ store_theme: theme } as any)
+        .update({ store_theme: theme as string })
         .eq('id', provider.id);
 
       if (error) throw error;

@@ -14,7 +14,7 @@ export const lazyLoadImage = (imageUrl: string): Promise<string> => {
 };
 
 // Throttle - تحديد عدد مرات تنفيذ function
-export function throttle<T extends (...args: any[]) => any>(
+export function throttle<T extends (...args: unknown[]) => unknown>(
     func: T,
     delay: number
 ): (...args: Parameters<T>) => void {
@@ -29,7 +29,7 @@ export function throttle<T extends (...args: any[]) => any>(
 }
 
 // Debounce - تأخير التنفيذ
-export function debounce<T extends (...args: any[]) => any>(
+export function debounce<T extends (...args: unknown[]) => unknown>(
     func: T,
     delay: number
 ): (...args: Parameters<T>) => void {
@@ -41,7 +41,7 @@ export function debounce<T extends (...args: any[]) => any>(
 }
 
 // تحسين الأداء - Memoization
-export function memoize<T extends (...args: any[]) => any>(
+export function memoize<T extends (...args: unknown[]) => unknown>(
     fn: T
 ): T {
     const cache = new Map();

@@ -238,7 +238,7 @@ export function useUpdateProviderProfile() {
        
       const { error } = await supabase
         .from('service_providers')
-        .update(data as any)
+        .update(data as Partial<ServiceProvider>)
         .eq('id', id);
       
       if (error) throw error;

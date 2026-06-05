@@ -58,8 +58,8 @@ export function ProductReviewDialog({ productId, productName, open, onOpenChange
         toast.success('تم إضافة تقييمك');
       }
       onOpenChange(false);
-    } catch (error: any) {
-      toast.error(error.message || 'حدث خطأ');
+    } catch (error) {
+      toast.error((error instanceof Error ? error.message : null) || 'حدث خطأ');
     }
   };
 

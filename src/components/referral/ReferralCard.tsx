@@ -47,8 +47,8 @@ export function ReferralCard() {
       toast.success('تم تطبيق كود الإحالة! حصلت على 25 نقطة');
       setInputCode('');
       setShowInput(false);
-    } catch (error: any) {
-      toast.error(error.message);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : String(error));
     }
   };
 

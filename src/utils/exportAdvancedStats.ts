@@ -5,7 +5,7 @@ import { format } from 'date-fns';
 // Extend jsPDF type for autotable
 declare module 'jspdf' {
   interface jsPDF {
-    autoTable: (options: any) => jsPDF;
+    autoTable: (options: Record<string, unknown>) => jsPDF;
   }
 }
 
@@ -73,7 +73,7 @@ export function exportAdvancedStatsToPDF(stats: AdvancedStatsData) {
     styles: { halign: 'center' },
   });
   
-  yPos = (doc as any).lastAutoTable.finalY + 15;
+  yPos = (doc as jsPDF & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 15;
 
   // Key Metrics
   doc.setFontSize(14);
@@ -96,7 +96,7 @@ export function exportAdvancedStatsToPDF(stats: AdvancedStatsData) {
     headStyles: { fillColor: [16, 185, 129] },
   });
 
-  yPos = (doc as any).lastAutoTable.finalY + 15;
+  yPos = (doc as jsPDF & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 15;
 
   // Order Status Breakdown
   doc.setFontSize(14);
@@ -124,7 +124,7 @@ export function exportAdvancedStatsToPDF(stats: AdvancedStatsData) {
     headStyles: { fillColor: [59, 130, 246] },
   });
 
-  yPos = (doc as any).lastAutoTable.finalY + 15;
+  yPos = (doc as jsPDF & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 15;
 
   // Check if we need a new page
   if (yPos > 240) {
@@ -151,7 +151,7 @@ export function exportAdvancedStatsToPDF(stats: AdvancedStatsData) {
     styles: { halign: 'center' },
   });
 
-  yPos = (doc as any).lastAutoTable.finalY + 15;
+  yPos = (doc as jsPDF & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 15;
 
   // Category Breakdown
   if (Object.keys(stats.categoryBreakdown).length > 0) {

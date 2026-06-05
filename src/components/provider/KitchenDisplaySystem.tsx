@@ -22,7 +22,8 @@ import {
   Volume2,
   VolumeX,
   Printer,
-  AlertTriangle
+  AlertTriangle,
+  type LucideIcon
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { format, formatDistanceToNow } from 'date-fns';
@@ -52,10 +53,10 @@ interface KitchenDisplaySystemProps {
   providerId: string;
 }
 
-const statusConfig: Record<string, { 
-  label: string; 
-  icon: any; 
-  color: string; 
+const statusConfig: Record<string, {
+  label: string;
+  icon: LucideIcon;
+  color: string;
   bgColor: string;
   borderColor: string;
   gradient: string;

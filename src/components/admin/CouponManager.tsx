@@ -79,11 +79,11 @@ export function CouponManager() {
 
       setIsFormOpen(false);
       resetForm();
-    } catch (error: any) {
-      toast({ 
-        title: 'خطأ', 
-        description: error.message,
-        variant: 'destructive' 
+    } catch (error) {
+      toast({
+        title: 'خطأ',
+        description: error instanceof Error ? error.message : String(error),
+        variant: 'destructive'
       });
     }
   };
@@ -93,11 +93,11 @@ export function CouponManager() {
       try {
         await deleteCoupon.mutateAsync(id);
         toast({ title: 'تم حذف الكوبون' });
-      } catch (error: any) {
-        toast({ 
-          title: 'خطأ', 
-          description: error.message,
-          variant: 'destructive' 
+      } catch (error) {
+        toast({
+          title: 'خطأ',
+          description: error instanceof Error ? error.message : String(error),
+          variant: 'destructive'
         });
       }
     }

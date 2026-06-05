@@ -79,7 +79,7 @@ export function useProviderOrderStatusNotifications() {
               
               // Show unified toast notification with provider name
               toast.success(`${providerName} - ${statusInfo.message}`, {
-                description: `${statusInfo.emoji} طلب #${(payload.new as any)?.order_number || (payload.new?.id as string)?.slice(0, 8)}`,
+                description: `${statusInfo.emoji} طلب #${(payload.new as Record<string, unknown>)?.order_number || (payload.new?.id as string)?.slice(0, 8)}`,
                 duration: 8000,
               });
             }
@@ -110,7 +110,7 @@ export function useProviderOrderStatusNotifications() {
               playNotificationSound(newStatus);
               
               toast.success(statusInfo.message, {
-                description: `${statusInfo.emoji} رقم الطلب: #${(payload.new as any)?.order_number || (payload.new?.id as string)?.slice(0, 8)}`,
+                description: `${statusInfo.emoji} رقم الطلب: #${(payload.new as Record<string, unknown>)?.order_number || (payload.new?.id as string)?.slice(0, 8)}`,
                 duration: 8000,
               });
             }

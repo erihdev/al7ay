@@ -48,7 +48,7 @@ export function useProviderOrderNotifications(providerId: string | undefined, en
     }
   }, []);
 
-  const getOrderSoundType = useCallback((order: any): NotificationSoundType => {
+  const getOrderSoundType = useCallback((order: Record<string, unknown>): NotificationSoundType => {
     // Check if order is urgent (high value or has notes indicating urgency)
     if (order.total_amount > 200 || order.notes?.includes('عاجل')) {
       return 'urgent';
@@ -73,7 +73,7 @@ export function useProviderOrderNotifications(providerId: string | undefined, en
         },
         (payload) => {
           console.log('New order received:', payload);
-          const order = payload.new as any;
+          const order = payload.new as Record<string, unknown>;
           const soundType = getOrderSoundType(order);
           playNotificationSound(soundType);
           

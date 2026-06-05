@@ -100,8 +100,8 @@ const ProductReviews = ({ productId, primaryColor = '#1B4332' }: ProductReviewsP
       setIsDialogOpen(false);
       setComment('');
     },
-    onError: (error: any) => {
-      toast.error(error.message || 'حدث خطأ أثناء إرسال التقييم');
+    onError: (error: unknown) => {
+      toast.error((error instanceof Error ? error.message : null) || 'حدث خطأ أثناء إرسال التقييم');
     }
   });
 

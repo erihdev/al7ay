@@ -69,8 +69,8 @@ const AdminLogin = () => {
         // Force navigation - the admin check will happen on the admin page
         navigate('/admin');
       }, 500);
-    } catch (error: any) {
-      toast.error(error.message || 'بيانات الدخول غير صحيحة');
+    } catch (error) {
+      toast.error((error instanceof Error ? error.message : null) || 'بيانات الدخول غير صحيحة');
       setIsLoading(false);
     }
   };

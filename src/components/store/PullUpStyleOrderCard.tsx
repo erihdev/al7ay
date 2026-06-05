@@ -14,7 +14,8 @@ import {
   Loader2,
   Navigation2,
   Store,
-  Bell
+  Bell,
+  type LucideIcon
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import mapboxgl from 'mapbox-gl';
@@ -51,7 +52,7 @@ interface PullUpStyleOrderCardProps {
   onDetailsClick?: () => void;
 }
 
-const statusConfig: Record<string, { label: string; icon: any; color: string; bgColor: string; step: number }> = {
+const statusConfig: Record<string, { label: string; icon: LucideIcon; color: string; bgColor: string; step: number }> = {
   pending: { 
     label: 'قيد الانتظار', 
     icon: Clock, 

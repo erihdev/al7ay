@@ -30,7 +30,8 @@ import {
   Navigation2,
   RefreshCw,
   Star,
-  MessageSquare
+  MessageSquare,
+  type LucideIcon
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
@@ -38,7 +39,7 @@ import { ar } from 'date-fns/locale';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 
-const statusConfig: Record<string, { label: string; icon: any; color: string; bgColor: string }> = {
+const statusConfig: Record<string, { label: string; icon: LucideIcon; color: string; bgColor: string }> = {
   pending: { 
     label: 'قيد الانتظار', 
     icon: Clock, 

@@ -9,7 +9,7 @@ interface Payment {
   payment_method: string;
   status: string;
   transaction_id: string | null;
-  provider_response: any;
+  provider_response: Record<string, unknown> | null;
   created_at: string;
   updated_at: string;
   order?: {

@@ -158,7 +158,7 @@ export function AdvancedStats() {
       // Top performing products
       const productSales: Record<string, { name: string; quantity: number; revenue: number }> = {};
       allOrders?.forEach(order => {
-        order.order_items?.forEach((item: any) => {
+        order.order_items?.forEach((item: { product_id?: string; product_name: string; quantity: number; total_price: number | string }) => {
           const productId = item.product_id || item.product_name;
           if (!productSales[productId]) {
             productSales[productId] = {
@@ -200,7 +200,7 @@ export function AdvancedStats() {
       // Category breakdown
       const categoryBreakdown: Record<string, number> = {};
       allOrders?.forEach(order => {
-        order.order_items?.forEach((item: any) => {
+        order.order_items?.forEach((item: { product_id?: string; total_price: number | string }) => {
           // Get product category from products list
           const product = products?.find(p => p.id === item.product_id);
           const category = product?.category || 'other';

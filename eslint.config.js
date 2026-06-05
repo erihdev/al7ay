@@ -19,8 +19,11 @@ export default tseslint.config(
     },
     rules: {
       ...reactHooks.configs.recommended.rules,
-      "react-refresh/only-export-components": ["warn", { allowConstantExport: true }],
+      // Fast-refresh warnings are expected in context/UI files that intentionally export multiple values
+      "react-refresh/only-export-components": "off",
       "@typescript-eslint/no-unused-vars": "off",
+      // Allow `any` only as a last resort — will be fixed file by file
+      "@typescript-eslint/no-explicit-any": "warn",
     },
   },
 );

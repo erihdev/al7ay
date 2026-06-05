@@ -4,11 +4,11 @@ import { useEffect, useRef } from 'react';
 declare global {
   interface Window {
     _at?: {
-      track?: (event: string, data: any) => void;
-      trackEvent?: (event: string, data: any) => void;
-      push?: (args: any[]) => void;
+      track?: (event: string, data: Record<string, unknown>) => void;
+      trackEvent?: (event: string, data: Record<string, unknown>) => void;
+      push?: (args: unknown[]) => void;
     };
-    _aimtellPushQueue?: any[];
+    _aimtellPushQueue?: unknown[];
   }
 }
 

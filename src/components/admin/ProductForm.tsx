@@ -156,9 +156,9 @@ export function ProductForm({ product, open, onOpenChange }: ProductFormProps) {
       resetForm();
       onOpenChange(false);
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       console.error('Save error:', error);
-      toast.error(error.message || 'حدث خطأ');
+      toast.error((error instanceof Error ? error.message : String(error)) || 'حدث خطأ');
     },
     onSettled: () => {
       setUploading(false);

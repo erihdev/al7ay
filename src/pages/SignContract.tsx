@@ -80,7 +80,7 @@ export default function SignContract() {
     mutationFn: async (signatureData: string) => {
       if (!contract) throw new Error('العقد غير موجود');
       
-      const updates: Record<string, any> = {
+      const updates: Record<string, unknown> = {
         employee_signature: signatureData,
         employee_signed_at: new Date().toISOString(),
       };
@@ -103,8 +103,8 @@ export default function SignContract() {
       toast.success('تم توقيع العقد بنجاح! شكراً لك.');
       setTimeout(() => navigate('/'), 2000);
     },
-    onError: (error: any) => {
-      toast.error(error.message || 'حدث خطأ أثناء التوقيع');
+    onError: (error: unknown) => {
+      toast.error((error instanceof Error ? error.message : null) || 'حدث خطأ أثناء التوقيع');
     },
   });
 

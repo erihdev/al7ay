@@ -11,7 +11,7 @@ let audioContext: AudioContext | null = null;
  */
 export function getAudioContext(): AudioContext {
   if (!audioContext) {
-    audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    audioContext = new (window.AudioContext || (window as Window & { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
   }
   
   if (audioContext.state === 'suspended') {

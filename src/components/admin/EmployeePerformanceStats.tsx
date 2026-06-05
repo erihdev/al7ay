@@ -198,7 +198,7 @@ export const EmployeePerformanceStats = () => {
 
   // Send notification mutation
   const sendNotificationMutation = useMutation({
-    mutationFn: async (data: { type: string; employeeName: string; employeeEmail: string; [key: string]: any }) => {
+    mutationFn: async (data: { type: string; employeeName: string; employeeEmail: string; [key: string]: unknown }) => {
       const { data: result, error } = await supabase.functions.invoke("send-employee-notification", {
         body: data,
       });
@@ -221,8 +221,8 @@ export const EmployeePerformanceStats = () => {
       const empLogs = activityLogs?.filter((log) => log.employee_id === emp.id) || [];
       
       const positions = (emp.employee_positions || [])
-        .sort((a: any, b: any) => (a.is_primary ? -1 : b.is_primary ? 1 : 0))
-        .map((ep: any) => ep.job_positions?.title_ar || "غير محدد");
+        .sort((a: { is_primary: boolean }, b: { is_primary: boolean }) => (a.is_primary ? -1 : b.is_primary ? 1 : 0))
+        .map((ep: { is_primary: boolean; job_positions?: { title_ar: string } | null }) => ep.job_positions?.title_ar || "غير محدد");
 
       const actionsByCategory: Record<string, number> = {};
       Object.entries(ACTION_CATEGORIES).forEach(([category, actions]) => {
@@ -303,8 +303,8 @@ export const EmployeePerformanceStats = () => {
       const change = period2Count > 0 ? ((period1Count - period2Count) / period2Count) * 100 : period1Count > 0 ? 100 : 0;
 
       const positions = (emp.employee_positions || [])
-        .sort((a: any, b: any) => (a.is_primary ? -1 : b.is_primary ? 1 : 0))
-        .map((ep: any) => ep.job_positions?.title_ar || "غير محدد");
+        .sort((a: { is_primary: boolean }, b: { is_primary: boolean }) => (a.is_primary ? -1 : b.is_primary ? 1 : 0))
+        .map((ep: { is_primary: boolean; job_positions?: { title_ar: string } | null }) => ep.job_positions?.title_ar || "غير محدد");
 
       return {
         id: emp.id,
@@ -351,7 +351,7 @@ export const EmployeePerformanceStats = () => {
     const topEmployees = sortedStats.slice(0, 5);
     
     return Object.keys(ACTION_CATEGORIES).map((category) => {
-      const dataPoint: any = { category: CATEGORY_LABELS[category] };
+      const dataPoint: Record<string, string | number> = { category: CATEGORY_LABELS[category] };
       topEmployees.forEach((emp) => {
         dataPoint[emp.name] = emp.actionsByCategory[category] || 0;
       });
@@ -427,7 +427,7 @@ export const EmployeePerformanceStats = () => {
       headStyles: { fillColor: [139, 92, 246] },
     });
 
-    yPos = (doc as any).lastAutoTable.finalY + 15;
+    yPos = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 15;
 
     if (yPos > 200) {
       doc.addPage();
@@ -514,7 +514,7 @@ export const EmployeePerformanceStats = () => {
       </Card>
 
       {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "overview" | "comparison" | "inactive" | "achievements")}>
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="overview" className="flex items-center gap-2">
             <Activity className="h-4 w-4" />

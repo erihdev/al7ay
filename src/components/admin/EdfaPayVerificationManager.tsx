@@ -116,9 +116,9 @@ export function EdfaPayVerificationManager() {
       setSelectedProvider(null);
       setReverifyingId(null);
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       console.error('Re-verification error:', error);
-      toast.error(error.message || 'فشل إعادة التحقق');
+      toast.error((error instanceof Error ? error.message : String(error)) || 'فشل إعادة التحقق');
       setReverifyingId(null);
     }
   });

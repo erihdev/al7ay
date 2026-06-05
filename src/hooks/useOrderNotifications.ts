@@ -5,7 +5,7 @@ import type { RealtimeChannel } from '@supabase/supabase-js';
 
 // Simple notification sound using Web Audio API
 function createNotificationSound() {
-  const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+  const audioContext = new (window.AudioContext || (window as Window & { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
   
   const playSound = () => {
     // Resume context if suspended (browser autoplay policy)
@@ -83,7 +83,7 @@ export function useOrderNotifications(enabled: boolean = true) {
           table: 'orders',
         },
         (payload) => {
-          const newOrder = payload.new as any;
+          const newOrder = payload.new as Record<string, unknown>;
           
           // Play notification sound
           playNotificationSound();

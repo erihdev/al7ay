@@ -151,10 +151,10 @@ export function LocationPickerDialog({
         const data = await response.json();
         
         if (data.features && data.features.length > 0) {
-          results.push(...data.features.map((f: any, i: number) => ({
+          results.push(...data.features.map((f: { text?: string; place_name: string; context?: { id: string; text: string }[]; center: [number, number] }, i: number) => ({
             id: `mapbox-${i}`,
             name: f.text || f.place_name.split(',')[0],
-            city: f.context?.find((c: any) => c.id.startsWith('place'))?.text || '',
+            city: f.context?.find((c: { id: string; text: string }) => c.id.startsWith('place'))?.text || '',
             lat: f.center[1],
             lng: f.center[0],
             source: 'mapbox' as const,

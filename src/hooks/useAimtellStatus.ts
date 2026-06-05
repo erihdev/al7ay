@@ -17,7 +17,7 @@ export function useAimtellStatus(providerId: string | undefined) {
 
   const checkStatus = useCallback(() => {
     // Check if Aimtell SDK is loaded by looking for the track function
-    const sdk = (window as any)._at;
+    const sdk = (window as Window & { _at?: { track?: (...args: unknown[]) => void } })._at;
     const sdkLoaded = !!(sdk && typeof sdk.track === 'function');
     
     // Check browser notification permission

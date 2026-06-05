@@ -10,6 +10,19 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
+
+interface NotificationTemplate {
+  id: string;
+  name: string;
+  title: string;
+  body: string;
+  category: string | null;
+  is_active: boolean;
+  usage_count: number;
+  created_at: string;
+  updated_at: string;
+  created_by: string | null;
+}
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
 import { 
@@ -35,7 +48,7 @@ const CATEGORIES = [
 export function NotificationTemplatesManager() {
   const queryClient = useQueryClient();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingTemplate, setEditingTemplate] = useState<any>(null);
+  const [editingTemplate, setEditingTemplate] = useState<NotificationTemplate | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     title: '',
@@ -107,7 +120,7 @@ export function NotificationTemplatesManager() {
     setIsDialogOpen(false);
   };
 
-  const handleEdit = (template: any) => {
+  const handleEdit = (template: NotificationTemplate) => {
     setEditingTemplate(template);
     setFormData({
       name: template.name,
