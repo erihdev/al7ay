@@ -8,7 +8,7 @@ import { useState, useCallback } from 'react';
 export function useDebounce<T>(value: T, delay: number = 500): T {
     const [debouncedValue, setDebouncedValue] = useState<T>(value);
 
-    useState(() => {
+    useEffect(() => {
         const handler = setTimeout(() => {
             setDebouncedValue(value);
         }, delay);
@@ -16,7 +16,7 @@ export function useDebounce<T>(value: T, delay: number = 500): T {
         return () => {
             clearTimeout(handler);
         };
-    });
+    }, [value, delay]);
 
     return debouncedValue;
 }
@@ -69,26 +69,24 @@ export function useScrollLock() {
 export function useMediaQuery(query: string): boolean {
     const [matches, setMatches] = useState(false);
 
-    useState(() => {
+    useEffect(() => {
         const media = window.matchMedia(query);
-        if (media.matches !== matches) {
-            setMatches(media.matches);
-        }
+        setMatches(media.matches);
 
         const listener = () => setMatches(media.matches);
         media.addEventListener('change', listener);
 
         return () => media.removeEventListener('change', listener);
-    });
+    }, [query]);
 
     return matches;
 }
 
 // Hook للكشف عن الاتصال بالإنترنت
 export function useOnlineStatus(): boolean {
-    const [isOnline, setIsOnline] = useState(navigator.onLine);
+    const [isOnline, setIsOnline] = useState(typeof navigator !== 'undefined' ? navigator.onLine : true);
 
-    useState(() => {
+    useEffect(() => {
         const handleOnline = () => setIsOnline(true);
         const handleOffline = () => setIsOnline(false);
 
@@ -99,7 +97,7 @@ export function useOnlineStatus(): boolean {
             window.removeEventListener('online', handleOnline);
             window.removeEventListener('offline', handleOffline);
         };
-    });
+    }, []);
 
     return isOnline;
 }
@@ -134,7 +132,7 @@ export function useIntersectionObserver(
 ): boolean {
     const [isIntersecting, setIsIntersecting] = useState(false);
 
-    useState(() => {
+    useEffect(() => {
         if (!elementRef.current) return;
 
         const observer = new IntersectionObserver(([entry]) => {
@@ -144,7 +142,7 @@ export function useIntersectionObserver(
         observer.observe(elementRef.current);
 
         return () => observer.disconnect();
-    });
+    }, [elementRef, options]);
 
     return isIntersecting;
 }

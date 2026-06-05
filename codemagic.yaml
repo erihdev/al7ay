@@ -7,6 +7,10 @@ workflows:
       node: 22
       groups:
         - google_play_credentials # Add your Google Play service account key in Codemagic UI
+      vars:
+        VITE_SUPABASE_URL: "https://hmnpraslunhnuigeetoe.supabase.co"
+        VITE_SUPABASE_PUBLISHABLE_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhtbnByYXNsdW5obnVpZ2VldG9lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg0MDQwNDcsImV4cCI6MjA4Mzk4MDA0N30.9WvOeDDBt4zItwD25NQMAbYBXmH2ofiwir8r3qiNt4E"
+        VITE_SUPABASE_PROJECT_ID: "hmnpraslunhnuigeetoe"
     scripts:
       - name: Install dependencies
         script: |
@@ -42,6 +46,10 @@ workflows:
       xcode: latest
       groups:
         - ios_signing # Add CERTIFICATE_PRIVATE_KEY (secure) in Codemagic UI
+      vars:
+        VITE_SUPABASE_URL: "https://hmnpraslunhnuigeetoe.supabase.co"
+        VITE_SUPABASE_PUBLISHABLE_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhtbnByYXNsdW5obnVpZ2VldG9lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg0MDQwNDcsImV4cCI6MjA4Mzk4MDA0N30.9WvOeDDBt4zItwD25NQMAbYBXmH2ofiwir8r3qiNt4E"
+        VITE_SUPABASE_PROJECT_ID: "hmnpraslunhnuigeetoe"
     scripts:
       - name: Install dependencies
         script: |
