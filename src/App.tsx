@@ -71,20 +71,21 @@ const App = () => {
   }, []);
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
-        <AuthProvider>
-          <CartProvider>
-            <LocationProvider>
-              <TooltipProvider>
-                <LoadingScreen isLoading={isLoading} />
-                <UpdateBanner />
-                <CustomerOrderNotifications />
-                <Toaster />
-                <Sonner />
-                <BrowserRouter>
-                  <Suspense fallback={<PageLoader />}>
-                    <Routes>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider>
+          <AuthProvider>
+            <CartProvider>
+              <LocationProvider>
+                <TooltipProvider>
+                  <LoadingScreen isLoading={isLoading} />
+                  <UpdateBanner />
+                  <CustomerOrderNotifications />
+                  <Toaster />
+                  <Sonner />
+                  <BrowserRouter>
+                    <Suspense fallback={<PageLoader />}>
+                      <Routes>
                       <Route path="/" element={<Landing />} />
                       <Route path="/app" element={<Index />} />
                       <Route path="/product/:productId" element={<ProductDetails />} />
@@ -120,15 +121,16 @@ const App = () => {
                       <Route path="/welcome" element={<Landing />} />
                       <Route path="*" element={<NotFound />} />
                     </Routes>
-                  </Suspense>
-                  <AppFooter />
-                </BrowserRouter>
-              </TooltipProvider>
-            </LocationProvider>
-          </CartProvider>
-        </AuthProvider>
-      </ThemeProvider>
-    </QueryClientProvider>
+                    </Suspense>
+                    <AppFooter />
+                  </BrowserRouter>
+                </TooltipProvider>
+              </LocationProvider>
+            </CartProvider>
+          </AuthProvider>
+        </ThemeProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 };
 

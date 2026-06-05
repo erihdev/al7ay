@@ -1,34 +1,33 @@
 // App entry point
 import { createRoot } from "react-dom/client";
-import * as Sentry from "@sentry/react";
 import App from "./App.tsx";
 import "./index.css";
 
-// Detect Capacitor (native app) environment
-const isCapacitor = typeof (window as Window & { Capacitor?: { isNativePlatform?: () => boolean } }).Capacitor !== 'undefined';
-
-Sentry.init({
-    dsn: "https://139bc0d0ec25af6e6b1fe61262a918db@o4510939233976320.ingest.us.sentry.io/4510939838349312",
-    integrations: isCapacitor
-        // Disable replay in Capacitor — can cause WebView issues
-        ? [Sentry.browserTracingIntegration()]
-        : [Sentry.browserTracingIntegration(), Sentry.replayIntegration()],
-    tracesSampleRate: 1.0,
-    tracePropagationTargets: ["localhost", /^https:\/\/yourserver\.io\/api/],
-    replaysSessionSampleRate: isCapacitor ? 0 : 0.1,
-    replaysOnErrorSampleRate: isCapacitor ? 0 : 1.0,
-});
-
-/** Remove the HTML splash screen with a fade after React mounts */
+/** Fade out and remove the HTML splash screen */
 function removeHtmlSplash() {
   const s = document.getElementById("html-splash");
   if (!s) return;
   s.style.opacity = "0";
-  setTimeout(() => { const el = document.getElementById("html-splash"); if (el) el.remove(); }, 400);
+  setTimeout(() => { document.getElementById("html-splash")?.remove(); }, 400);
 }
 
-const root = createRoot(document.getElementById("root")!);
-root.render(<App />);
+/** Show a visible error on screen — helps diagnose crashes on real devices */
+function showFatalError(err: unknown) {
+  removeHtmlSplash();
+  const msg = err instanceof Error ? `${err.message}\n\n${err.stack ?? ""}` : String(err);
+  const div = document.createElement("div");
+  div.style.cssText =
+    "position:fixed;inset:0;z-index:99999;background:#0d1f17;color:#f87171;" +
+    "padding:24px;font-family:monospace;font-size:13px;overflow:auto;white-space:pre-wrap;direction:ltr";
+  div.textContent = "🚨 App Error:\n\n" + msg;
+  document.body.appendChild(div);
+}
 
-// Remove splash after React's first paint (double rAF = after layout + paint)
-requestAnimationFrame(() => requestAnimationFrame(removeHtmlSplash));
+try {
+  const root = createRoot(document.getElementById("root")!);
+  root.render(<App />);
+  // Remove splash after React's first paint (double rAF = after layout + paint)
+  requestAnimationFrame(() => requestAnimationFrame(removeHtmlSplash));
+} catch (err) {
+  showFatalError(err);
+}

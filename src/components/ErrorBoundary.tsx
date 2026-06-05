@@ -1,5 +1,4 @@
 import { Component, ErrorInfo, ReactNode } from 'react';
-import * as Sentry from '@sentry/react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
@@ -35,14 +34,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
     public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
         console.error('Error caught by boundary:', error, errorInfo);
-
-        // إرسال الخطأ إلى Sentry
-        Sentry.captureException(error, { extra: { componentStack: errorInfo.componentStack } });
-
-        this.setState({
-            error,
-            errorInfo,
-        });
+        this.setState({ error, errorInfo });
     }
 
     private handleReset = () => {
@@ -80,8 +72,8 @@ export class ErrorBoundary extends Component<Props, State> {
                                 </p>
                             </div>
 
-                            {/* Error Details (في وضع التطوير فقط) */}
-                            {process.env.NODE_ENV === 'development' && this.state.error && (
+                            {/* Error Details - always shown to help diagnose issues */}
+                            {this.state.error && (
                                 <Card className="p-4 bg-muted/30 text-right">
                                     <p className="text-sm font-mono text-red-500 mb-2">
                                         {this.state.error.toString()}
