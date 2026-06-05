@@ -96,7 +96,7 @@ npx supabase secrets set \
   MAPBOX_ACCESS_TOKEN=__من_المشروع_القديم__ \
   AIMTELL_API_KEY=__من_المشروع_القديم__ \
   AIMTELL_SITE_ID=33878 \
-  VAPID_PUBLIC_KEY=BLcfxrzMmUMPGMAMOKnw-0nJZ8oe3YkXUjPUW6uvmyFre4K8pNhzjkYZNC0cZIAhXFT4brgG_p7dZuSOPu7vm7U \
+  VAPID_PUBLIC_KEY=BGvaDjAFzT9wThyVENojjsQjRBKBU8_UZE91CIBm-MGX-zvVhq4YZ0dn3p_szqzQWrhMfiZOYqBuLflXj_YwFWI \
   VAPID_PRIVATE_KEY=__من_المشروع_القديم__
 ```
 > `SUPABASE_URL` و `SUPABASE_SERVICE_ROLE_KEY` تُحقن تلقائياً — لا تضبطها يدوياً.

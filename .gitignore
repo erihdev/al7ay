@@ -35,3 +35,6 @@ dist-ssr
 *.keystore
 *.jks
 android/app/release/
+
+# Supabase CLI temp (contains project ref / pooler url)
+supabase/.temp/

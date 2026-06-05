@@ -3,7 +3,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 
 // VAPID public key for Web Push notifications
-const VAPID_PUBLIC_KEY = 'BLcfxrzMmUMPGMAMOKnw-0nJZ8oe3YkXUjPUW6uvmyFre4K8pNhzjkYZNC0cZIAhXFT4brgG_p7dZuSOPu7vm7U';
+const VAPID_PUBLIC_KEY = 'BGvaDjAFzT9wThyVENojjsQjRBKBU8_UZE91CIBm-MGX-zvVhq4YZ0dn3p_szqzQWrhMfiZOYqBuLflXj_YwFWI';
 
 // Safe check for Notification API support
 const isNotificationSupported = (): boolean => {
