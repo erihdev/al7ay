@@ -81,7 +81,7 @@ export default function PaymentResult() {
   const content = getStatusContent();
 
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <div className="min-h-screen bg-background pb-20 font-arabic" dir="rtl">
       <div className="container mx-auto px-4 py-8">
         <div className="flex flex-col items-center justify-center min-h-[60vh]">
           <Card className={`w-full max-w-md ${content.bgColor} border-none shadow-lg`}>

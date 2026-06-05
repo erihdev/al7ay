@@ -21,7 +21,6 @@ import {
   Phone,
   Mail,
   Globe,
-  ChevronDown,
   User,
   Upload,
   Link2

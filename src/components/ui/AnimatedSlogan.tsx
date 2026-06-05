@@ -9,9 +9,9 @@ interface AnimatedSloganProps {
 
 export const AnimatedSlogan = ({ showLogo = true, size = 'lg', className = '' }: AnimatedSloganProps) => {
   const sizeClasses = {
-    sm: 'text-2xl md:text-3xl',
-    md: 'text-3xl md:text-4xl lg:text-5xl',
-    lg: 'text-4xl md:text-5xl lg:text-6xl'
+    sm: 'text-xl md:text-2xl lg:text-3xl',
+    md: 'text-2xl md:text-3xl lg:text-4xl xl:text-5xl',
+    lg: 'text-3xl md:text-4xl lg:text-5xl xl:text-6xl'
   };
 
   const logoSizes = {

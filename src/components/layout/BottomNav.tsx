@@ -20,7 +20,7 @@ export function BottomNav() {
   const favoritesCount = favorites?.length || 0;
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 safe-area-inset-bottom">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 pb-[env(safe-area-inset-bottom)]">
       {/* Frosted glass background with gradient border */}
       <div className="relative bg-background/80 backdrop-blur-xl border-t border-border/50">
         {/* Subtle gradient glow at top */}

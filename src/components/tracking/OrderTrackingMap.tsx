@@ -27,7 +27,6 @@ export function OrderTrackingMap({
   driverLocation,
   routeHistory = [],
   isActive,
-  expectedRouteGeometry,
 }: OrderTrackingMapProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);

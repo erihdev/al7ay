@@ -8,7 +8,7 @@ export default function Settings() {
     return (
         <div className="min-h-screen bg-background">
             {/* Header */}
-            <div className="border-b bg-card/50 backdrop-blur-sm">
+            <div className="border-b bg-card/50 backdrop-blur-sm pt-[env(safe-area-inset-top)]">
                 <div className="max-w-5xl mx-auto px-4 py-6">
                     <div className="flex items-center gap-3 animate-fade-in">
                         <div className="p-3 rounded-lg bg-gradient-premium">

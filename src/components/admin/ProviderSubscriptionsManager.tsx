@@ -160,7 +160,7 @@ export function ProviderSubscriptionsManager() {
   return (
     <div className="space-y-6">
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <Card>
           <CardContent className="p-4 text-center">
             <div className="text-2xl font-bold text-green-600">{activeCount}</div>
@@ -203,8 +203,8 @@ export function ProviderSubscriptionsManager() {
                 return (
                   <Card key={sub.id} className={isExpired ? 'border-destructive/50' : ''}>
                     <CardContent className="p-4">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
+                      <div className="flex flex-col sm:flex-row items-start gap-3 sm:justify-between">
+                        <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
                             <h3 className="font-bold">{sub.provider?.business_name}</h3>
                             {getStatusBadge(sub.status, sub.ends_at)}
@@ -240,12 +240,12 @@ export function ProviderSubscriptionsManager() {
                             )}
                           </div>
                         </div>
-                        <div className="flex flex-col gap-2">
+                        <div className="flex flex-row sm:flex-col gap-2 shrink-0">
                           <Select
                             value={sub.status}
                             onValueChange={(value) => updateStatus.mutate({ id: sub.id, status: value })}
                           >
-                            <SelectTrigger className="w-32">
+                            <SelectTrigger className="w-28 sm:w-32">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>

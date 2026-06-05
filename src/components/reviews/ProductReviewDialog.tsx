@@ -87,7 +87,7 @@ export function ProductReviewDialog({ productId, productName, open, onOpenChange
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent dir="rtl" className="sm:max-w-md">
+      <DialogContent dir="rtl" className="w-full max-w-[95vw] sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="font-arabic">
             {existingReview ? 'تعديل تقييمك' : 'إضافة تقييم'} - {productName}

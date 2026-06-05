@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -25,12 +25,12 @@ const ProviderReviewDialog = ({ providerId, providerName, trigger }: ProviderRev
   const [comment, setComment] = useState(existingReview?.comment || '');
 
   // Update state when existing review loads
-  useState(() => {
+  useEffect(() => {
     if (existingReview) {
       setRating(existingReview.rating);
       setComment(existingReview.comment || '');
     }
-  });
+  }, [existingReview]);
 
   const handleSubmit = async () => {
     if (!user) {
@@ -80,7 +80,7 @@ const ProviderReviewDialog = ({ providerId, providerName, trigger }: ProviderRev
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="max-w-md">
+      <DialogContent className="w-full max-w-[95vw] sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="text-center">
             {existingReview ? 'تعديل تقييمك' : 'تقييم'} {providerName}

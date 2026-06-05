@@ -69,16 +69,16 @@ export function AnalyticsCard() {
     return (
         <div className="space-y-6">
             {/* Header */}
-            <div className="flex items-center justify-between animate-fade-up">
+            <div className="flex flex-wrap items-center justify-between gap-3 animate-fade-up">
                 <div>
-                    <h2 className="text-3xl font-bold text-gradient-premium">
+                    <h2 className="text-2xl sm:text-3xl font-bold text-gradient-premium">
                         لوحة التحليلات
                     </h2>
                     <p className="text-muted-foreground mt-1">
                         نظرة شاملة على أداء عملك
                     </p>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-wrap">
                     <Button
                         variant="outline"
                         className="hover-lift"
@@ -180,7 +180,7 @@ export function AnalyticsCard() {
 
             {/* Summary */}
             <Card className="p-6 bg-gradient-luxury text-white animate-fade-up stagger-3">
-                <div className="flex items-start justify-between">
+                <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="space-y-2">
                         <h3 className="text-xl font-bold">ملخص الأداء</h3>
                         <p className="text-white/80">

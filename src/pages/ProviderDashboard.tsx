@@ -232,7 +232,8 @@ const ProviderDashboard = () => {
       mounted = false;
       subscription.unsubscribe();
     };
-  }, [navigate, loading, tryLocalStorage, loadProviderData]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [navigate, tryLocalStorage, loadProviderData]);
 
   const loadDashboard = async () => {
     if (!provider) return;

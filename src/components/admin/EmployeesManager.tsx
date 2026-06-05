@@ -315,11 +315,6 @@ export const EmployeesManager = () => {
     return employeePositions?.filter(ep => ep.employee_id === employeeId) || [];
   };
 
-  const _getEmployeePositionNames = (employeeId: string) => {
-    const positions = getEmployeePositions(employeeId);
-    return positions.map(p => p.job_positions?.title_ar).filter(Boolean).join('، ') || '-';
-  };
-
   // Fetch contracts
   const { data: contracts, isLoading: contractsLoading } = useQuery({
     queryKey: ['employee-contracts'],
@@ -1141,6 +1136,7 @@ export const EmployeesManager = () => {
                   لا يوجد موظفين حتى الآن
                 </div>
               ) : (
+                <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -1228,6 +1224,7 @@ export const EmployeesManager = () => {
                     ))}
                   </TableBody>
                 </Table>
+                </div>
               )}
             </CardContent>
           </Card>
@@ -1254,7 +1251,7 @@ export const EmployeesManager = () => {
                     إضافة مسمى
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
+                <DialogContent className="w-[95vw] max-w-lg max-h-[80vh] overflow-y-auto">
                   <DialogHeader>
                     <DialogTitle>
                       {selectedPosition ? 'تعديل المسمى الوظيفي' : 'إضافة مسمى وظيفي جديد'}
@@ -1551,7 +1548,7 @@ export const EmployeesManager = () => {
         setIsContractDialogOpen(open);
         if (!open) resetContractForm();
       }}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="w-[95vw] max-w-lg">
           <DialogHeader>
             <DialogTitle>إنشاء عقد جديد لـ {selectedEmployee?.name}</DialogTitle>
           </DialogHeader>
@@ -1650,7 +1647,7 @@ export const EmployeesManager = () => {
           clearSignature();
         }
       }}>
-        <DialogContent className="max-w-2xl max-h-[90vh]">
+        <DialogContent className="w-[95vw] max-w-2xl max-h-[90vh]">
           <DialogHeader>
             <DialogTitle>العقد الإلكتروني - {selectedContract?.contract_number}</DialogTitle>
           </DialogHeader>
@@ -1807,7 +1804,7 @@ export const EmployeesManager = () => {
 
       {/* Permissions Dialog */}
       <Dialog open={isPermissionsOpen} onOpenChange={setIsPermissionsOpen}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="w-[95vw] max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               صلاحيات الموظف: {selectedEmployee?.name}

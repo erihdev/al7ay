@@ -410,7 +410,7 @@ const Orders = () => {
                                       تتبع الطلب
                                     </Button>
                                   </DialogTrigger>
-                                  <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+                                  <DialogContent className="w-full max-w-[95vw] sm:max-w-lg max-h-[90vh] overflow-y-auto">
                                     <DialogHeader>
                                       <DialogTitle className="font-arabic">تتبع الطلب</DialogTitle>
                                     </DialogHeader>

@@ -485,7 +485,7 @@ export function SuggestedNeighborhoodsManager() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-3 sm:grid-cols-3 gap-3 sm:gap-4">
         <Card>
           <CardContent className="p-4 text-center">
             <p className="text-2xl font-bold text-yellow-600">{pendingSuggestions.length}</p>
@@ -645,7 +645,7 @@ export function SuggestedNeighborhoodsManager() {
         setShowApproveDialog(open);
         if (!open) setEditedLocation(null);
       }}>
-        <DialogContent className="font-arabic max-w-2xl max-h-[90vh] overflow-y-auto" dir="rtl">
+        <DialogContent className="font-arabic w-[95vw] max-w-2xl max-h-[90vh] overflow-y-auto" dir="rtl">
           <DialogHeader>
             <DialogTitle>قبول اقتراح الحي</DialogTitle>
           </DialogHeader>

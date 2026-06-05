@@ -10,6 +10,8 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Skeleton } from '@/components/ui/skeleton';
+import { toast } from 'sonner';
 
 interface NotificationTemplate {
   id: string;
@@ -23,8 +25,6 @@ interface NotificationTemplate {
   updated_at: string;
   created_by: string | null;
 }
-import { Skeleton } from '@/components/ui/skeleton';
-import { toast } from 'sonner';
 import { 
   FileText, 
   Plus, 
@@ -126,7 +126,7 @@ export function NotificationTemplatesManager() {
       name: template.name,
       title: template.title,
       body: template.body,
-      category: template.category
+      category: template.category ?? 'general'
     });
     setIsDialogOpen(true);
   };

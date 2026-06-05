@@ -182,7 +182,7 @@ export function AccountSettings() {
                 <p className="text-sm text-muted-foreground">
                     إجراءات دائمة تؤثر على حسابك
                 </p>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                     <Button variant="outline" size="sm" className="text-red-500 hover:bg-red-500/10">
                         تغيير كلمة المرور
                     </Button>

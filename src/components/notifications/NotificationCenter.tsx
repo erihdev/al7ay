@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Bell } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -21,6 +21,8 @@ export function NotificationCenter() {
     const [unreadCount, setUnreadCount] = useState(0);
     const [isOpen, setIsOpen] = useState(false);
     const { toast } = useToast();
+    const toastRef = useRef(toast);
+    toastRef.current = toast;
 
     useEffect(() => {
         loadNotifications();
@@ -38,7 +40,7 @@ export function NotificationCenter() {
                 setUnreadCount(prev => prev + 1);
 
                 // Show toast notification
-                toast({
+                toastRef.current({
                     title: newNotification.title,
                     description: newNotification.message,
                     variant: newNotification.type === "error" ? "destructive" : "default",
@@ -49,7 +51,7 @@ export function NotificationCenter() {
         return () => {
             supabase.removeChannel(channel);
         };
-    }, [toast]);
+    }, []);
 
     const loadNotifications = async () => {
         // Mock data for now - replace with actual Supabase query

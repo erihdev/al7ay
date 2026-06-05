@@ -13,7 +13,7 @@ interface NotificationSetupGuideProps {
 }
 
 export function NotificationSetupGuide({ providerId }: NotificationSetupGuideProps) {
-  const { isSDKLoaded, isSubscribed, permissionState, requestPermission, checkStatus } = useAimtellStatus(providerId);
+  const { isSDKLoaded, permissionState, requestPermission, checkStatus } = useAimtellStatus(providerId);
   const [isLoading, setIsLoading] = useState(false);
   const [isTestLoading, setIsTestLoading] = useState(false);
   const [showInstructions, setShowInstructions] = useState(false);

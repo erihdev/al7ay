@@ -238,7 +238,7 @@ export default function SignContract() {
   }
 
   return (
-    <div className="min-h-screen bg-background p-4 py-8" dir="rtl">
+    <div className="min-h-screen bg-background px-3 sm:p-4 py-8 overflow-x-hidden" dir="rtl">
       <div className="max-w-3xl mx-auto space-y-6">
         {/* Header */}
         <div className="text-center">
@@ -256,7 +256,7 @@ export default function SignContract() {
             <ScrollArea className="h-[400px]">
               <div className="space-y-6 p-2">
                 {/* Basic Info */}
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1">
                     <p className="text-sm text-muted-foreground">المسمى الوظيفي</p>
                     <p className="font-semibold">{contract.job_positions?.title_ar}</p>

@@ -203,7 +203,7 @@ export const ChatDialog = ({ providerId, providerName, primaryColor = '#1B4332' 
           ) : null}
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-md p-0 font-arabic h-[80vh] flex flex-col gap-0" dir="rtl">
+      <DialogContent className="w-full max-w-[95vw] sm:max-w-md p-0 font-arabic h-[80vh] flex flex-col gap-0" dir="rtl">
         <DialogHeader className="p-4 border-b flex-shrink-0 relative">
           <div className="flex items-center justify-between">
             <DialogTitle className="text-right flex-1">محادثة مع {providerName}</DialogTitle>

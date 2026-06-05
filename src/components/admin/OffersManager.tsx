@@ -155,7 +155,7 @@ export function OffersManager() {
               إضافة عرض
             </Button>
           </DialogTrigger>
-          <DialogContent dir="rtl" className="sm:max-w-md">
+          <DialogContent dir="rtl" className="w-[95vw] max-w-md">
             <DialogHeader>
               <DialogTitle className="font-arabic">
                 {editingOffer ? 'تعديل العرض' : 'إضافة عرض جديد'}
@@ -264,8 +264,8 @@ export function OffersManager() {
                     expired ? 'bg-muted/50 opacity-60' : 'bg-card'
                   }`}
                 >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
+                  <div className="flex items-start justify-between gap-2 flex-wrap sm:flex-nowrap">
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
                       <div className="w-12 h-12 rounded-lg overflow-hidden bg-muted shrink-0">
                         {offer.products?.image_url ? (
                           <img

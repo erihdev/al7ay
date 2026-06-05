@@ -205,7 +205,7 @@ export default function ProductDetails() {
       </div>
 
       {/* Fixed Bottom Bar */}
-      <div className="fixed bottom-0 left-0 right-0 bg-card border-t border-border p-4 z-20">
+      <div className="fixed bottom-0 left-0 right-0 bg-card border-t border-border p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] z-20">
         <div className="container mx-auto flex items-center gap-4">
           <div className="flex-1">
             <p className="text-sm text-muted-foreground">الإجمالي</p>

@@ -516,24 +516,28 @@ export const EmployeePerformanceStats = () => {
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "overview" | "comparison" | "inactive" | "achievements")}>
         <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="overview" className="flex items-center gap-2">
-            <Activity className="h-4 w-4" />
-            نظرة عامة
+          <TabsTrigger value="overview" className="flex items-center gap-1 text-xs sm:text-sm sm:gap-2">
+            <Activity className="h-4 w-4 shrink-0" />
+            <span className="hidden sm:inline">نظرة عامة</span>
+            <span className="sm:hidden">عامة</span>
           </TabsTrigger>
-          <TabsTrigger value="comparison" className="flex items-center gap-2">
-            <GitCompare className="h-4 w-4" />
-            مقارنة الفترات
+          <TabsTrigger value="comparison" className="flex items-center gap-1 text-xs sm:text-sm sm:gap-2">
+            <GitCompare className="h-4 w-4 shrink-0" />
+            <span className="hidden sm:inline">مقارنة الفترات</span>
+            <span className="sm:hidden">مقارنة</span>
           </TabsTrigger>
-          <TabsTrigger value="inactive" className="flex items-center gap-2">
-            <AlertTriangle className="h-4 w-4" />
-            غير النشطين
+          <TabsTrigger value="inactive" className="flex items-center gap-1 text-xs sm:text-sm sm:gap-2">
+            <AlertTriangle className="h-4 w-4 shrink-0" />
+            <span className="hidden sm:inline">غير النشطين</span>
+            <span className="sm:hidden">غائبون</span>
             {inactiveEmployees.length > 0 && (
-              <Badge variant="destructive" className="mr-1">{inactiveEmployees.length}</Badge>
+              <Badge variant="destructive" className="mr-1 text-[10px]">{inactiveEmployees.length}</Badge>
             )}
           </TabsTrigger>
-          <TabsTrigger value="achievements" className="flex items-center gap-2">
-            <Trophy className="h-4 w-4" />
-            الإنجازات
+          <TabsTrigger value="achievements" className="flex items-center gap-1 text-xs sm:text-sm sm:gap-2">
+            <Trophy className="h-4 w-4 shrink-0" />
+            <span className="hidden sm:inline">الإنجازات</span>
+            <span className="sm:hidden">إنجازات</span>
           </TabsTrigger>
         </TabsList>
 
@@ -708,7 +712,7 @@ export const EmployeePerformanceStats = () => {
               {isLoading ? (
                 <div className="text-center py-8">جاري التحميل...</div>
               ) : sortedStats.length > 0 ? (
-                <div className="rounded-md border overflow-hidden">
+                <div className="rounded-md border overflow-x-auto">
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -821,7 +825,7 @@ export const EmployeePerformanceStats = () => {
             </CardHeader>
             <CardContent>
               {comparisonStats.length > 0 ? (
-                <div className="rounded-md border overflow-hidden">
+                <div className="rounded-md border overflow-x-auto">
                   <Table>
                     <TableHeader>
                       <TableRow>

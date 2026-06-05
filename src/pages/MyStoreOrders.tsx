@@ -5,21 +5,16 @@ import { useCustomerAimtellTag } from '@/hooks/useAimtellTags';
 import { useAutoNotificationPermission } from '@/hooks/useAutoNotificationPermission';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { AuthForm } from '@/components/auth/AuthForm';
-import { StoreNavigationMap } from '@/components/store/StoreNavigationMap';
-import { ProviderOrderTrackingMap } from '@/components/store/ProviderOrderTrackingMap';
 import { PullUpStyleOrderCard } from '@/components/store/PullUpStyleOrderCard';
 import ProviderReviewDialog from '@/components/reviews/ProviderReviewDialog';
 import { 
-  Package, 
-  Clock, 
-  MapPin, 
-  Store as StoreIcon, 
-  Phone,
+  Clock,
+  Store as StoreIcon,
   ChefHat,
   CheckCircle2,
   Truck,
@@ -27,7 +22,6 @@ import {
   ArrowRight,
   Loader2,
   ShoppingBag,
-  Navigation2,
   RefreshCw,
   Star,
   MessageSquare,
@@ -85,7 +79,6 @@ const MyStoreOrders = () => {
   const { data: orders, isLoading, refetch } = useMyProviderOrders();
   const navigate = useNavigate();
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
-  const [showMapForOrder, setShowMapForOrder] = useState<string | null>(null);
   const [defaultStoreLocation, setDefaultStoreLocation] = useState<{ lat: number; lng: number } | null>(null);
 
   // Register Aimtell tag for customer push notifications

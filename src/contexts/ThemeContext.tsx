@@ -43,16 +43,23 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     
     const updateTheme = (animate = true) => {
       const resolvedTheme = resolveTheme();
-      
+
       // Add transition class for smooth animation
       if (animate) {
         root.classList.add('theme-transitioning');
       }
-      
+
       root.classList.remove('light', 'dark');
       root.classList.add(resolvedTheme);
+
+      // CRITICAL: index.html sets an inline backgroundColor/colorScheme on <html>
+      // for the first-paint anti-flash. Inline styles override class-based CSS vars,
+      // so we MUST update them here on every theme change or the root bg stays frozen.
+      root.style.backgroundColor = resolvedTheme === 'dark' ? 'hsl(30,25%,8%)' : 'hsl(38,30%,97%)';
+      root.style.colorScheme = resolvedTheme;
+
       setActualTheme(resolvedTheme);
-      
+
       // Remove transition class after animation completes
       if (animate) {
         setTimeout(() => {

@@ -44,7 +44,7 @@ export function ReferralStats() {
     try {
       exportLoyaltyToExcel(loyaltyStats, loyaltyUsers, referralStats, topReferrers, allReferrals);
       toast.success('تم تصدير التقرير بنجاح');
-    } catch (error) {
+    } catch {
       toast.error('حدث خطأ أثناء التصدير');
     }
   };

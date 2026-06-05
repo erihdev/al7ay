@@ -24,7 +24,7 @@ export function AppearanceSettings() {
             <div className="space-y-4 p-4 rounded-lg border">
                 <Label className="text-base font-semibold">نمط العرض</Label>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div className="grid grid-cols-3 gap-3">
                     <button
                         onClick={() => setTheme("light")}
                         className={`p-4 rounded-lg border-2 transition-all hover-lift ${theme === "light"

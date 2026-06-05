@@ -389,10 +389,10 @@ const Admin = () => {
   return (
     <div className="min-h-screen bg-background font-arabic relative" dir="rtl">
       <InteractiveBackground variant="geometric" intensity="subtle" />
-      <header className="bg-card/80 backdrop-blur-sm border-b border-border p-4 relative z-10">
+      <header className="bg-card/80 backdrop-blur-sm border-b border-border p-4 relative z-10 pt-[calc(1rem+env(safe-area-inset-top))]">
         <div className="container mx-auto flex items-center justify-between">
           <h1 className="text-xl font-bold">لوحة التحكم</h1>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1 sm:gap-3">
             {/* Sound Toggle */}
             <Button
               variant="ghost"
@@ -411,21 +411,24 @@ const Admin = () => {
                 <VolumeX className="h-4 w-4 text-muted-foreground" />
               )}
             </Button>
-            <Button variant="ghost" size="sm" onClick={() => navigate('/')}>
+            <Button variant="ghost" size="sm" onClick={() => navigate('/')} className="hidden sm:flex">
               <Home className="h-4 w-4 ml-2" />
               العودة للمتجر
             </Button>
-            <Button 
-              variant="destructive" 
-              size="sm" 
+            <Button variant="ghost" size="icon" onClick={() => navigate('/')} className="sm:hidden">
+              <Home className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
               onClick={async () => {
                 await signOut();
                 navigate('/');
                 toast.success('تم تسجيل الخروج بنجاح');
               }}
             >
-              <LogOut className="h-4 w-4 ml-2" />
-              تسجيل الخروج
+              <LogOut className="h-4 w-4 sm:ml-2" />
+              <span className="hidden sm:inline">تسجيل الخروج</span>
             </Button>
           </div>
         </div>
@@ -494,9 +497,9 @@ const Admin = () => {
           </aside>
 
           {/* Mobile Tab Navigation */}
-          <div className="lg:hidden w-full mb-4">
+          <div className="lg:hidden w-full mb-4 overflow-x-auto">
             <Tabs value={activeTab} onValueChange={handleTabChange}>
-              <TabsList className="flex flex-wrap gap-2 h-auto p-2">
+              <TabsList className="flex flex-wrap gap-2 h-auto p-2 min-w-0">
                 {TAB_CATEGORIES.flatMap((cat) =>
                   cat.tabs.map((tab) => {
                     const TabIcon = tab.icon;

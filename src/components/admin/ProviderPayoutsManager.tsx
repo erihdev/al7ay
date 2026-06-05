@@ -362,7 +362,7 @@ export function ProviderPayoutsManager() {
           </div>
 
           {providers && providers.length > 0 ? (
-            <div className="rounded-md border">
+            <div className="rounded-md border overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -441,7 +441,7 @@ export function ProviderPayoutsManager() {
         </CardHeader>
         <CardContent>
           {filteredHistory && filteredHistory.length > 0 ? (
-            <div className="rounded-md border">
+            <div className="rounded-md border overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>

@@ -8,7 +8,7 @@ export default function Analytics() {
     return (
         <div className="min-h-screen bg-background">
             {/* Header with Notification Center */}
-            <div className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-10">
+            <div className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-10 pt-[env(safe-area-inset-top)]">
                 <div className="max-w-7xl mx-auto px-4 py-4">
                     <div className="flex items-center justify-between">
                         <div className="animate-fade-in">

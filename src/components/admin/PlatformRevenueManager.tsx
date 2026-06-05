@@ -371,8 +371,8 @@ export function PlatformRevenueManager() {
           <h2 className="text-2xl font-bold">إيرادات المنصة</h2>
           <p className="text-muted-foreground">ملخص شامل لجميع مصادر دخل المنصة</p>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="flex bg-muted rounded-lg p-1">
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex flex-wrap bg-muted rounded-lg p-1">
             {[
               { value: 'week', label: 'أسبوع' },
               { value: 'month', label: 'شهر' },
@@ -395,7 +395,8 @@ export function PlatformRevenueManager() {
           </Button>
           <Button onClick={exportToPDF} className="gap-2">
             <Download className="h-4 w-4" />
-            تصدير PDF
+            <span className="hidden sm:inline">تصدير PDF</span>
+            <span className="sm:hidden">PDF</span>
           </Button>
         </div>
       </div>
@@ -574,7 +575,7 @@ export function PlatformRevenueManager() {
                   <p className="font-medium">عمولات (إدارة عبر المنصة)</p>
                   <p className="text-sm text-muted-foreground">نسبة {revenueData?.commissionSettings.platformRate}%</p>
                 </div>
-                <div className="text-left">
+                <div>
                   <p className="text-xl font-bold text-green-600">
                     {revenueData?.platformManagedCommission.toFixed(0)} ر.س
                   </p>
@@ -586,7 +587,7 @@ export function PlatformRevenueManager() {
                   <p className="font-medium">عمولات (ربط مباشر EdfaPay)</p>
                   <p className="text-sm text-muted-foreground">نسبة {revenueData?.commissionSettings.directRate}%</p>
                 </div>
-                <div className="text-left">
+                <div>
                   <p className="text-xl font-bold text-blue-600">
                     {revenueData?.directGatewayCommission.toFixed(0)} ر.س
                   </p>
@@ -598,7 +599,7 @@ export function PlatformRevenueManager() {
                   <p className="font-medium">إيرادات الاشتراكات</p>
                   <p className="text-sm text-muted-foreground">{revenueData?.activeSubscriptions} اشتراك نشط</p>
                 </div>
-                <div className="text-left">
+                <div>
                   <p className="text-xl font-bold text-purple-600">
                     {revenueData?.subscriptionRevenue.toFixed(0)} ر.س
                   </p>

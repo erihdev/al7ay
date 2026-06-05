@@ -133,22 +133,22 @@ export function NotificationsLogManager() {
       </div>
 
       <Tabs defaultValue="stats" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="stats" className="gap-2">
-            <BarChart3 className="h-4 w-4" />
-            الإحصائيات
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4">
+          <TabsTrigger value="stats" className="gap-1 text-xs sm:text-sm">
+            <BarChart3 className="h-4 w-4 shrink-0" />
+            <span className="hidden sm:inline">الإحصائيات</span>
           </TabsTrigger>
-          <TabsTrigger value="log" className="gap-2">
-            <Bell className="h-4 w-4" />
-            السجل
+          <TabsTrigger value="log" className="gap-1 text-xs sm:text-sm">
+            <Bell className="h-4 w-4 shrink-0" />
+            <span className="hidden sm:inline">السجل</span>
           </TabsTrigger>
-          <TabsTrigger value="scheduled" className="gap-2">
-            <Clock className="h-4 w-4" />
-            المجدولة
+          <TabsTrigger value="scheduled" className="gap-1 text-xs sm:text-sm">
+            <Clock className="h-4 w-4 shrink-0" />
+            <span className="hidden sm:inline">المجدولة</span>
           </TabsTrigger>
-          <TabsTrigger value="templates" className="gap-2">
-            <FileText className="h-4 w-4" />
-            القوالب
+          <TabsTrigger value="templates" className="gap-1 text-xs sm:text-sm">
+            <FileText className="h-4 w-4 shrink-0" />
+            <span className="hidden sm:inline">القوالب</span>
           </TabsTrigger>
         </TabsList>
         
@@ -347,7 +347,7 @@ export function NotificationsLogManager() {
                                     <Clock className="h-3 w-3" />
                                     {format(new Date(log.created_at), 'dd MMM yyyy - HH:mm', { locale: ar })}
                                   </span>
-                                  {log.is_bulk && log.bulk_recipients_count > 0 && (
+                                  {log.is_bulk && (log.bulk_recipients_count ?? 0) > 0 && (
                                     <span className="flex items-center gap-1">
                                       <Users className="h-3 w-3" />
                                       {log.bulk_recipients_count} مستلم
@@ -358,7 +358,7 @@ export function NotificationsLogManager() {
                                   )}
                                 </div>
                                 {/* Performance metrics */}
-                                {(log.opened_count > 0 || log.clicked_count > 0) && (
+                                {((log.opened_count ?? 0) > 0 || (log.clicked_count ?? 0) > 0) && (
                                   <div className="flex items-center gap-3 mt-1 text-xs">
                                     <span className="flex items-center gap-1 text-purple-600">
                                       <Eye className="h-3 w-3" />

@@ -64,9 +64,9 @@ export function UpdateBanner() {
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -100 }}
         transition={{ type: 'spring', damping: 20, stiffness: 300 }}
-        className="fixed top-0 left-0 right-0 z-[100] safe-area-inset-top"
+        className="fixed top-0 left-0 right-0 z-[100]"
       >
-        <div className="bg-gradient-to-r from-primary via-primary/90 to-primary text-primary-foreground p-3 shadow-lg">
+        <div className="bg-gradient-to-r from-primary via-primary/90 to-primary text-primary-foreground px-3 pt-[calc(0.75rem+env(safe-area-inset-top))] pb-3 shadow-lg">
           <div className="max-w-md mx-auto flex items-center gap-3">
             <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0 animate-pulse">
               <Sparkles className="h-4 w-4" />

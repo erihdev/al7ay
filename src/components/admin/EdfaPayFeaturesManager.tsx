@@ -145,7 +145,7 @@ const EdfaPayFeaturesManager = () => {
                 </p>
               </div>
             </div>
-            <div className="text-left">
+            <div className="text-start">
               <div className="text-3xl font-bold text-primary">
                 {enabledCount} / {totalCount}
               </div>

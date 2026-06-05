@@ -54,7 +54,7 @@ export function PasswordChangeForm() {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4 max-w-md">
+        <form onSubmit={handleSubmit} className="space-y-4 w-full max-w-md">
           <div className="space-y-2">
             <Label htmlFor="newPassword">كلمة المرور الجديدة</Label>
             <div className="relative">

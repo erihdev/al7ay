@@ -542,7 +542,7 @@ const NeighborhoodsManager = () => {
       </Card>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <Card>
           <CardContent className="p-4 text-center">
             <p className="text-3xl font-bold">{filterStats.filtered}</p>
@@ -651,7 +651,7 @@ const NeighborhoodsManager = () => {
 
       {/* Add/Edit Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent dir="rtl">
+        <DialogContent dir="rtl" className="w-[95vw] max-w-lg">
           <DialogHeader>
             <DialogTitle className="font-arabic">
               {editingNeighborhood ? 'تعديل الحي' : 'إضافة حي جديد'}

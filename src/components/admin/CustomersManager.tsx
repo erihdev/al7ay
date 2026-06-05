@@ -516,6 +516,7 @@ export const CustomersManager = () => {
                 <p>لا يوجد عملاء</p>
               </div>
             ) : (
+              <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -618,6 +619,7 @@ export const CustomersManager = () => {
                   ))}
                 </TableBody>
               </Table>
+              </div>
             )}
           </ScrollArea>
         </CardContent>

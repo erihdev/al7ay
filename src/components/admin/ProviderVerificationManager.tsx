@@ -274,7 +274,7 @@ export function ProviderVerificationManager() {
                 className="pr-10"
               />
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <Button
                 variant={filter === 'all' ? 'default' : 'outline'}
                 size="sm"
@@ -303,7 +303,7 @@ export function ProviderVerificationManager() {
           </div>
 
           {/* Providers Table */}
-          <div className="rounded-md border">
+          <div className="rounded-md border overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>

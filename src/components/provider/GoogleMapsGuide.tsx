@@ -103,7 +103,7 @@ export function GoogleMapsGuide() {
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="w-full max-w-md"
+              className="w-full max-w-[min(28rem,95vw)]"
               onClick={(e) => e.stopPropagation()}
             >
               <Card className="overflow-hidden border-2">

@@ -120,7 +120,7 @@ export function CouponManager() {
               إضافة كوبون
             </Button>
           </DialogTrigger>
-          <DialogContent dir="rtl">
+          <DialogContent dir="rtl" className="w-[95vw] max-w-lg">
             <DialogHeader>
               <DialogTitle>
                 {editingCoupon ? 'تعديل الكوبون' : 'إضافة كوبون جديد'}

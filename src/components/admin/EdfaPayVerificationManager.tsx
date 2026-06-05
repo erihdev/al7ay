@@ -328,7 +328,7 @@ export function EdfaPayVerificationManager() {
 
       {/* Provider Details Dialog */}
       <Dialog open={!!selectedProvider} onOpenChange={() => setSelectedProvider(null)}>
-        <DialogContent className="max-w-lg" dir="rtl">
+        <DialogContent className="w-[95vw] max-w-lg" dir="rtl">
           <DialogHeader>
             <DialogTitle className="font-arabic flex items-center gap-2">
               <CreditCard className="h-5 w-5" />

@@ -110,7 +110,7 @@ export function PerformanceReport() {
 
             {/* Summary Card */}
             <Card className="p-6 bg-gradient-success text-white animate-fade-up stagger-5">
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-4 flex-wrap">
                     <div className="p-3 rounded-lg bg-white/20">
                         <ArrowUpRight className="h-6 w-6" />
                     </div>

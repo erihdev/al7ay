@@ -175,7 +175,7 @@ const ApplicationsManager = () => {
   if (isLoading) {
     return (
       <div className="space-y-4">
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[1, 2, 3, 4].map(i => (
             <Skeleton key={i} className="h-24 rounded-lg" />
           ))}
@@ -262,7 +262,7 @@ const ApplicationsManager = () => {
                       <h3 className="font-bold text-lg">{application.business_name}</h3>
                       {getStatusBadge(application.status)}
                     </div>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm text-muted-foreground">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 text-sm text-muted-foreground">
                       <div className="flex items-center gap-1">
                         <User className="h-4 w-4" />
                         <span>{application.full_name}</span>
@@ -332,7 +332,7 @@ const ApplicationsManager = () => {
 
       {/* Application Details Dialog */}
       <Dialog open={!!selectedApplication} onOpenChange={() => setSelectedApplication(null)}>
-        <DialogContent className="max-w-lg" dir="rtl">
+        <DialogContent className="w-[95vw] max-w-lg" dir="rtl">
           <DialogHeader>
             <DialogTitle className="font-arabic">تفاصيل الطلب</DialogTitle>
             <DialogDescription className="font-arabic">

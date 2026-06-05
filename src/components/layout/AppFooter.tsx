@@ -16,7 +16,7 @@ export const AppFooter = forwardRef<HTMLElement>((_, ref) => {
   }
 
   return (
-    <footer ref={ref} className="py-2 text-center text-xs text-muted-foreground/60">
+    <footer ref={ref} className="py-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] text-center text-xs text-muted-foreground/60">
       <div className="flex flex-col gap-1">
         <span>v{CURRENT_APP_VERSION}</span>
         <span className="text-[10px]">

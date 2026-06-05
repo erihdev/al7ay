@@ -11,7 +11,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { UnifiedLocationPicker } from '@/components/location/UnifiedLocationPicker';
 import { Badge } from '@/components/ui/badge';
 import { OrderScheduler } from '@/components/scheduling/OrderScheduler';
@@ -46,8 +45,6 @@ const Cart = () => {
     lng: number;
     address: string;
   } | null>(null);
-  const [isMapOpen, setIsMapOpen] = useState(false);
-
   // Coupon state
   const [couponCode, setCouponCode] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState<{ coupon: Coupon; discount: number } | null>(null);
@@ -391,7 +388,7 @@ const Cart = () => {
                       <Button
                         size="icon"
                         variant="ghost"
-                        className="h-8 w-8 rounded-full text-muted-foreground hover:text-red-500 hover:bg-red-50 absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                        className="h-8 w-8 rounded-full text-muted-foreground hover:text-red-500 hover:bg-red-50 absolute top-2 left-2 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity"
                         onClick={() => removeItem(item.id)}
                       >
                         <Trash2 className="h-4 w-4" />

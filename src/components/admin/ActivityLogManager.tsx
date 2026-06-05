@@ -162,7 +162,7 @@ export const ActivityLogManager = () => {
           {isLoading ? (
             <div className="text-center py-8">جاري التحميل...</div>
           ) : activityLogs && activityLogs.length > 0 ? (
-            <div className="rounded-md border overflow-hidden">
+            <div className="rounded-md border overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -191,7 +191,7 @@ export const ActivityLogManager = () => {
                       </TableCell>
                       <TableCell>{getActionBadge(log.action_type)}</TableCell>
                       <TableCell>
-                        <div className="max-w-[300px] truncate">
+                        <div className="max-w-[200px] truncate">
                           {log.action_description}
                         </div>
                       </TableCell>

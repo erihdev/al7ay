@@ -1,5 +1,4 @@
 import { useProviderOrderStatusNotifications } from '@/hooks/useProviderOrderStatusNotifications';
-import { useAuth } from '@/contexts/AuthContext';
 
 /**
  * This component initializes real-time order status notifications for customers.
@@ -7,9 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
  * It doesn't render any UI - just sets up the realtime subscription.
  */
 export function CustomerOrderNotifications() {
-  const { user } = useAuth();
-  
-  // Only initialize notifications if user is logged in
+  // Initialize real-time order status notifications
   useProviderOrderStatusNotifications();
 
   // This component doesn't render anything visible

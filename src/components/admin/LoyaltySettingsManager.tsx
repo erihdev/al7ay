@@ -159,21 +159,21 @@ export default function LoyaltySettingsManager() {
 
       <Tabs defaultValue="guide" className="w-full">
         <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="guide">
-            <Info className="h-4 w-4 ml-1" />
-            الشرح
+          <TabsTrigger value="guide" className="flex items-center gap-1 text-xs sm:text-sm">
+            <Info className="h-4 w-4 shrink-0" />
+            <span>الشرح</span>
           </TabsTrigger>
-          <TabsTrigger value="tiers">
-            <Crown className="h-4 w-4 ml-1" />
-            المستويات
+          <TabsTrigger value="tiers" className="flex items-center gap-1 text-xs sm:text-sm">
+            <Crown className="h-4 w-4 shrink-0" />
+            <span>المستويات</span>
           </TabsTrigger>
-          <TabsTrigger value="points">
-            <Coins className="h-4 w-4 ml-1" />
-            النقاط
+          <TabsTrigger value="points" className="flex items-center gap-1 text-xs sm:text-sm">
+            <Coins className="h-4 w-4 shrink-0" />
+            <span>النقاط</span>
           </TabsTrigger>
-          <TabsTrigger value="referrals">
-            <Users className="h-4 w-4 ml-1" />
-            الإحالات
+          <TabsTrigger value="referrals" className="flex items-center gap-1 text-xs sm:text-sm">
+            <Users className="h-4 w-4 shrink-0" />
+            <span>الإحالات</span>
           </TabsTrigger>
         </TabsList>
 

@@ -314,25 +314,30 @@ export const EmployeePointsManager = () => {
     <div className="space-y-6">
       <Tabs defaultValue="leaderboard" className="w-full">
         <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="leaderboard" className="flex items-center gap-2">
-            <Trophy className="h-4 w-4" />
-            لوحة الصدارة
+          <TabsTrigger value="leaderboard" className="flex items-center gap-1 text-[11px] sm:text-sm sm:gap-2 px-1">
+            <Trophy className="h-4 w-4 shrink-0" />
+            <span className="hidden sm:inline">لوحة الصدارة</span>
+            <span className="sm:hidden">صدارة</span>
           </TabsTrigger>
-          <TabsTrigger value="rewards" className="flex items-center gap-2">
-            <Gift className="h-4 w-4" />
-            المكافآت
+          <TabsTrigger value="rewards" className="flex items-center gap-1 text-[11px] sm:text-sm sm:gap-2 px-1">
+            <Gift className="h-4 w-4 shrink-0" />
+            <span className="hidden sm:inline">المكافآت</span>
+            <span className="sm:hidden">مكافآت</span>
           </TabsTrigger>
-          <TabsTrigger value="claims" className="flex items-center gap-2">
-            <Award className="h-4 w-4" />
-            طلبات المكافآت
+          <TabsTrigger value="claims" className="flex items-center gap-1 text-[11px] sm:text-sm sm:gap-2 px-1">
+            <Award className="h-4 w-4 shrink-0" />
+            <span className="hidden sm:inline">طلبات المكافآت</span>
+            <span className="sm:hidden">طلبات</span>
           </TabsTrigger>
-          <TabsTrigger value="history" className="flex items-center gap-2">
-            <History className="h-4 w-4" />
-            سجل النقاط
+          <TabsTrigger value="history" className="flex items-center gap-1 text-[11px] sm:text-sm sm:gap-2 px-1">
+            <History className="h-4 w-4 shrink-0" />
+            <span className="hidden sm:inline">سجل النقاط</span>
+            <span className="sm:hidden">سجل</span>
           </TabsTrigger>
-          <TabsTrigger value="reports" className="flex items-center gap-2">
-            <Mail className="h-4 w-4" />
-            التقارير الدورية
+          <TabsTrigger value="reports" className="flex items-center gap-1 text-[11px] sm:text-sm sm:gap-2 px-1">
+            <Mail className="h-4 w-4 shrink-0" />
+            <span className="hidden sm:inline">التقارير الدورية</span>
+            <span className="sm:hidden">تقارير</span>
           </TabsTrigger>
         </TabsList>
 

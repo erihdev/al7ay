@@ -130,11 +130,11 @@ export function LocalNotificationSettings() {
           <div className="space-y-4">
             {/* Order Updates */}
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 bg-blue-500/10 rounded-lg flex items-center justify-center">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-9 h-9 bg-blue-500/10 rounded-lg flex items-center justify-center shrink-0">
                   <Bell className="h-4 w-4 text-blue-500" />
                 </div>
-                <div>
+                <div className="min-w-0">
                   <Label htmlFor="orderUpdates" className="font-medium">تحديثات الطلبات</Label>
                   <p className="text-xs text-muted-foreground">إشعار عند تغير حالة طلبك</p>
                 </div>
@@ -160,11 +160,11 @@ export function LocalNotificationSettings() {
 
             {/* Special Offers */}
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 bg-orange-500/10 rounded-lg flex items-center justify-center">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-9 h-9 bg-orange-500/10 rounded-lg flex items-center justify-center shrink-0">
                   <Gift className="h-4 w-4 text-orange-500" />
                 </div>
-                <div>
+                <div className="min-w-0">
                   <Label htmlFor="specialOffers" className="font-medium">العروض الخاصة</Label>
                   <p className="text-xs text-muted-foreground">إشعار عند توفر عروض جديدة</p>
                 </div>
@@ -190,11 +190,11 @@ export function LocalNotificationSettings() {
 
             {/* Cart Reminders */}
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 bg-green-500/10 rounded-lg flex items-center justify-center">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-9 h-9 bg-green-500/10 rounded-lg flex items-center justify-center shrink-0">
                   <ShoppingCart className="h-4 w-4 text-green-500" />
                 </div>
-                <div>
+                <div className="min-w-0">
                   <Label htmlFor="cartReminders" className="font-medium">تذكير السلة</Label>
                   <p className="text-xs text-muted-foreground">تذكير بالمنتجات في السلة</p>
                 </div>
@@ -220,11 +220,11 @@ export function LocalNotificationSettings() {
 
             {/* Loyalty Points */}
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 bg-yellow-500/10 rounded-lg flex items-center justify-center">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-9 h-9 bg-yellow-500/10 rounded-lg flex items-center justify-center shrink-0">
                   <Star className="h-4 w-4 text-yellow-500" />
                 </div>
-                <div>
+                <div className="min-w-0">
                   <Label htmlFor="loyaltyPoints" className="font-medium">نقاط الولاء</Label>
                   <p className="text-xs text-muted-foreground">إشعار عند كسب نقاط جديدة</p>
                 </div>

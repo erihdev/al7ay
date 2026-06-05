@@ -87,8 +87,8 @@ export function ReferralCard() {
               <div className="h-10 bg-muted animate-pulse rounded flex-1" />
             ) : (
               <>
-                <div className="flex-1 bg-background rounded-lg p-3 text-center">
-                  <span className="font-mono font-bold text-xl tracking-wider">
+                <div className="flex-1 min-w-0 bg-background rounded-lg p-3 text-center overflow-hidden">
+                  <span className="font-mono font-bold text-xl tracking-wider break-all">
                     {referralCode || '---'}
                   </span>
                 </div>

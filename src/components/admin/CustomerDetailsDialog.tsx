@@ -191,7 +191,7 @@ export function CustomerDetailsDialog({ customer, open, onOpenChange }: Customer
       }
       onOpenChange(open);
     }}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
+      <DialogContent className="w-[95vw] max-w-4xl max-h-[90vh] overflow-hidden">
         <DialogHeader>
           <DialogTitle className="flex items-center justify-between">
             <div className="flex items-center gap-3">

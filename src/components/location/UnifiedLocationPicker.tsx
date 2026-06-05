@@ -210,7 +210,7 @@ export function UnifiedLocationPicker({
             </div>
 
             {/* Floating Action Buttons */}
-            <div className="absolute bottom-32 right-4 z-10 flex flex-col gap-2">
+            <div className="absolute bottom-[8.5rem] right-4 z-10 flex flex-col gap-2">
                 <Button
                     size="icon"
                     variant="secondary"
@@ -227,7 +227,7 @@ export function UnifiedLocationPicker({
             </div>
 
             {/* Bottom Address Card */}
-            <div className="absolute bottom-0 left-0 right-0 z-20 p-4 bg-gradient-to-t from-black/20 to-transparent">
+            <div className="absolute bottom-0 left-0 right-0 z-20 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] bg-gradient-to-t from-black/20 to-transparent">
                 <AnimatePresence>
                     {userLocation && (
                         <motion.div

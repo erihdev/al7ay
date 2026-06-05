@@ -214,7 +214,7 @@ export function SubscriptionPlansManager() {
               خطة جديدة
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-lg" dir="rtl">
+          <DialogContent className="w-[95vw] max-w-lg max-h-[90vh] overflow-y-auto" dir="rtl">
             <DialogHeader>
               <DialogTitle>
                 {editingPlan ? 'تعديل الخطة' : 'إضافة خطة جديدة'}

@@ -408,7 +408,7 @@ export function AdvancedStats() {
       </div>
 
       {/* Secondary Stats */}
-      <div className="grid grid-cols-3 md:grid-cols-6 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
         <Card>
           <CardContent className="p-4 text-center">
             <Users className="h-6 w-6 text-primary mx-auto mb-2" />

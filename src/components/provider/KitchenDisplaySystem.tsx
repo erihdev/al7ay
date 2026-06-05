@@ -114,7 +114,7 @@ const statusConfig: Record<string, {
 const statusFlow = ['pending', 'preparing', 'ready', 'out_for_delivery', 'completed'];
 
 const KitchenDisplaySystem = ({ providerId }: KitchenDisplaySystemProps) => {
-  const { data: orders, isLoading, refetch } = useProviderOrders(providerId);
+  const { data: orders, isLoading } = useProviderOrders(providerId);
   const updateOrderMutation = useUpdateProviderOrder();
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isFullscreen, setIsFullscreen] = useState(false);

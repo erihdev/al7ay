@@ -252,7 +252,7 @@ const EmployeeRewards = () => {
 
         <main className="max-w-4xl mx-auto p-6 space-y-6">
           {/* Points Summary */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <Card className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground">
               <CardContent className="p-6 text-center">
                 <Star className="h-8 w-8 mx-auto mb-2 fill-current" />
@@ -279,17 +279,19 @@ const EmployeeRewards = () => {
           {/* Tabs */}
           <Tabs defaultValue="rewards" className="w-full">
             <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="rewards" className="flex items-center gap-2">
-                <Gift className="h-4 w-4" />
-                المكافآت المتاحة
+              <TabsTrigger value="rewards" className="flex items-center gap-1 text-xs sm:text-sm">
+                <Gift className="h-4 w-4 shrink-0" />
+                <span className="hidden xs:inline">المكافآت المتاحة</span>
+                <span className="xs:hidden">المكافآت</span>
               </TabsTrigger>
-              <TabsTrigger value="claimed" className="flex items-center gap-2">
-                <Award className="h-4 w-4" />
+              <TabsTrigger value="claimed" className="flex items-center gap-1 text-xs sm:text-sm">
+                <Award className="h-4 w-4 shrink-0" />
                 طلباتي
               </TabsTrigger>
-              <TabsTrigger value="history" className="flex items-center gap-2">
-                <History className="h-4 w-4" />
-                سجل النقاط
+              <TabsTrigger value="history" className="flex items-center gap-1 text-xs sm:text-sm">
+                <History className="h-4 w-4 shrink-0" />
+                <span className="hidden xs:inline">سجل النقاط</span>
+                <span className="xs:hidden">السجل</span>
               </TabsTrigger>
             </TabsList>
 
@@ -300,12 +302,12 @@ const EmployeeRewards = () => {
                   return (
                     <Card key={reward.id} className={!canClaim ? "opacity-60" : ""}>
                       <CardContent className="p-4">
-                        <div className="flex items-center justify-between">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                           <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                               <Gift className="h-6 w-6 text-primary" />
                             </div>
-                            <div>
+                            <div className="min-w-0">
                               <h4 className="font-semibold">{reward.name_ar}</h4>
                               {reward.description_ar && (
                                 <p className="text-sm text-muted-foreground">{reward.description_ar}</p>
@@ -318,7 +320,7 @@ const EmployeeRewards = () => {
                           <Button
                             onClick={() => handleClaimReward(reward)}
                             disabled={!canClaim || claiming === reward.id}
-                            className="flex items-center gap-2"
+                            className="flex items-center gap-2 shrink-0"
                           >
                             {claiming === reward.id ? (
                               "جاري الطلب..."

@@ -17,15 +17,13 @@ import {
   CheckCircle,
   AlertCircle,
   CreditCard,
-  Percent,
   ExternalLink,
   Zap,
   RefreshCw,
   Info,
   Globe,
   MapPinned,
-  Bell,
-  Receipt
+  Bell
 } from 'lucide-react';
 import { VolumeControl } from '@/components/notifications/VolumeControl';
 import { ProviderInvoiceSettings } from './ProviderInvoiceSettings';

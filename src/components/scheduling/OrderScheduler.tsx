@@ -119,7 +119,7 @@ export function OrderScheduler({ scheduledFor, onScheduleChange }: OrderSchedule
                   {format(selectedDate, 'EEEE, d MMMM yyyy', { locale: ar })}
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
+              <PopoverContent className="w-auto max-w-[95vw] p-0" align="start">
                 <Calendar
                   mode="single"
                   selected={selectedDate}

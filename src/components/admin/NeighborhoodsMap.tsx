@@ -6,13 +6,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { 
-  Map, 
-  MapPin, 
-  Users, 
-  Edit, 
-  X, 
-  ZoomIn, 
+import {
+  Map,
+  MapPin,
+  Users,
+  Edit,
+  X,
+  ZoomIn,
   ZoomOut,
   Maximize2
 } from 'lucide-react';
@@ -37,10 +37,8 @@ const NeighborhoodsMap = ({ neighborhoods, onEdit, onNeighborhoodClick }: Neighb
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
-  const popupRef = useRef<mapboxgl.Popup | null>(null);
   const { data: mapboxToken, isLoading: isTokenLoading } = useMapboxToken();
   const [selectedNeighborhood, setSelectedNeighborhood] = useState<Neighborhood | null>(null);
-  const [isFullscreen, setIsFullscreen] = useState(false);
 
   // Initialize map
   /* eslint-disable react-hooks/exhaustive-deps */
@@ -202,7 +200,7 @@ const NeighborhoodsMap = ({ neighborhoods, onEdit, onNeighborhoodClick }: Neighb
   }
 
   return (
-    <Card className={isFullscreen ? 'fixed inset-4 z-50' : ''}>
+    <Card>
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -226,9 +224,9 @@ const NeighborhoodsMap = ({ neighborhoods, onEdit, onNeighborhoodClick }: Neighb
         </div>
       </CardHeader>
       <CardContent className="p-0 relative">
-        <div 
-          ref={mapContainer} 
-          className={`w-full rounded-b-lg ${isFullscreen ? 'h-[calc(100%-60px)]' : 'h-[400px]'}`}
+        <div
+          ref={mapContainer}
+          className="w-full rounded-b-lg h-[400px]"
         />
 
         {/* Selected Neighborhood Info Panel */}

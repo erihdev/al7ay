@@ -347,7 +347,7 @@ const ProviderProductsManager = ({ providerId }: ProviderProductsManagerProps) =
 
       {/* Add/Edit Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent dir="rtl" className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogContent dir="rtl" className="w-full max-w-[min(32rem,95vw)] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="font-arabic">
               {editingProduct ? 'تعديل المنتج' : 'إضافة منتج جديد'}

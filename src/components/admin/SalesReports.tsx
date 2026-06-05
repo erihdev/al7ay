@@ -22,7 +22,7 @@ export function SalesReports() {
     try {
       exportToExcel(dailyData, monthlyData, statusData);
       toast.success('تم تصدير التقرير إلى Excel');
-    } catch (error) {
+    } catch {
       toast.error('حدث خطأ أثناء التصدير');
     }
   };
@@ -35,7 +35,7 @@ export function SalesReports() {
     try {
       exportToPDF(dailyData, monthlyData, statusData);
       toast.success('تم تصدير التقرير إلى PDF');
-    } catch (error) {
+    } catch {
       toast.error('حدث خطأ أثناء التصدير');
     }
   };

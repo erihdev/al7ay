@@ -16,7 +16,7 @@ import { toast } from 'sonner';
 import { Loader2, Mail, Lock, User, ArrowLeft, ArrowRight, KeyRound, Phone, Car, Camera, Palette } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
-import { lovable } from '@/integrations/lovable';
+import { signInWithProvider } from '@/lib/nativeAuth';
 
 // Car brands and models data
 const carBrands: Record<string, string[]> = {
@@ -215,9 +215,7 @@ export function AuthForm({ redirectTo = '/app' }: AuthFormProps) {
   const handleGoogleLogin = async () => {
     setIsGoogleLoading(true);
     try {
-      const { error } = await lovable.auth.signInWithOAuth('google', {
-        redirect_uri: window.location.origin,
-      });
+      const { error } = await signInWithProvider('google');
       if (error) throw error;
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'حدث خطأ في تسجيل الدخول بـ Google';
@@ -229,9 +227,7 @@ export function AuthForm({ redirectTo = '/app' }: AuthFormProps) {
   const handleAppleLogin = async () => {
     setIsAppleLoading(true);
     try {
-      const { error } = await lovable.auth.signInWithOAuth('apple', {
-        redirect_uri: window.location.origin,
-      });
+      const { error } = await signInWithProvider('apple');
       if (error) throw error;
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'حدث خطأ في تسجيل الدخول بـ Apple';

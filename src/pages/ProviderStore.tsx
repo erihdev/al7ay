@@ -385,7 +385,7 @@ const ProviderStoreContent = () => {
       {/* Coverage Alert Dialog */}
       {showCoverageAlert && isOutsideCoverage && (
         <Dialog open={showCoverageAlert} onOpenChange={setShowCoverageAlert}>
-          <DialogContent className="max-w-md font-arabic" dir="rtl">
+          <DialogContent className="w-full max-w-[95vw] sm:max-w-md font-arabic" dir="rtl">
             <div className="space-y-4">
               <div className="flex items-center gap-3 text-amber-600">
                 <div className="p-3 bg-amber-100 dark:bg-amber-900/30 rounded-full">
@@ -839,7 +839,7 @@ const ProviderStoreContent = () => {
       <AnimatePresence>
         {selectedProduct && (
           <Dialog open={!!selectedProduct} onOpenChange={() => { setSelectedProduct(null); setQuantity(1); }}>
-            <DialogContent dir="rtl" className="font-arabic max-w-lg p-0 overflow-hidden gap-0 rounded-3xl">
+            <DialogContent dir="rtl" className="font-arabic w-full max-w-[95vw] sm:max-w-lg p-0 overflow-hidden gap-0 rounded-3xl">
               <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}

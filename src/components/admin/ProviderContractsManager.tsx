@@ -330,7 +330,7 @@ export function ProviderContractsManager() {
                 إضافة عقد
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className="w-[95vw] max-w-4xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>
                   {selectedContract ? 'تعديل العقد' : 'إضافة عقد جديد'}
@@ -602,9 +602,9 @@ export function ProviderContractsManager() {
 
       {/* Contracts Table */}
       <Card>
-        <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <table className="w-full">
+        <CardContent className="p-0 overflow-x-auto">
+          <div>
+            <table className="w-full min-w-[640px]">
               <thead>
                 <tr className="border-b bg-muted/50">
                   <th className="text-right p-4">التاجر</th>
@@ -689,7 +689,7 @@ export function ProviderContractsManager() {
 
       {/* View Contract Dialog */}
       <Dialog open={!!viewContract} onOpenChange={() => setViewContract(null)}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="w-[95vw] max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>تفاصيل العقد</DialogTitle>
           </DialogHeader>

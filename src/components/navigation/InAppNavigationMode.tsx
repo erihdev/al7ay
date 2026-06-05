@@ -304,10 +304,10 @@ function InAppNavigationModeComponent({
         <motion.div
           initial={{ y: -100 }}
           animate={{ y: 0 }}
-          className="absolute top-0 left-0 right-0 bg-gradient-to-b from-black/90 via-black/80 to-transparent p-4 pb-8 pointer-events-auto"
+          className="absolute top-0 left-0 right-0 bg-gradient-to-b from-black/90 via-black/80 to-transparent pt-[env(safe-area-inset-top)] px-4 pb-8 pointer-events-auto"
         >
           {/* Direction instruction */}
-          <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center justify-between mb-3 pt-4">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center shadow-lg shadow-primary/30">
                 <ArrowUp 
@@ -364,7 +364,7 @@ function InAppNavigationModeComponent({
                     initial={{ height: 0, opacity: 0 }}
                     animate={{ height: 'auto', opacity: 1 }}
                     exit={{ height: 0, opacity: 0 }}
-                    className="px-4 pb-8 space-y-4"
+                    className="px-4 pb-[calc(2rem+env(safe-area-inset-bottom))] space-y-4"
                   >
                     {/* Order Info Row */}
                     <div className="flex items-center justify-between">
@@ -417,14 +417,14 @@ function InAppNavigationModeComponent({
                         return (
                           <div key={status} className="flex items-center">
                             <div className={`
-                              w-10 h-10 rounded-full flex items-center justify-center transition-all
+                              w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center transition-all
                               ${isCurrent ? 'ring-2 ring-primary ring-offset-2 ring-offset-black' : ''}
                               ${isActive ? config.bgColor : 'bg-white/10'}
                             `}>
-                              <Icon className={`h-5 w-5 ${isActive ? config.color : 'text-white/40'}`} />
+                              <Icon className={`h-4 w-4 sm:h-5 sm:w-5 ${isActive ? config.color : 'text-white/40'}`} />
                             </div>
                             {index < statusFlow.length - 2 && (
-                              <div className={`w-6 h-1 mx-1 rounded ${isActive && index < currentIndex ? 'bg-primary' : 'bg-white/20'}`} />
+                              <div className={`w-4 sm:w-6 h-1 mx-0.5 sm:mx-1 rounded ${isActive && index < currentIndex ? 'bg-primary' : 'bg-white/20'}`} />
                             )}
                           </div>
                         );
@@ -505,7 +505,7 @@ function InAppNavigationModeComponent({
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    className="px-4 pb-6"
+                    className="px-4 pb-[calc(1.5rem+env(safe-area-inset-bottom))]"
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
@@ -551,7 +551,7 @@ function InAppNavigationModeComponent({
             className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/95 via-black/85 to-transparent pointer-events-auto"
           >
             {/* Stats row */}
-            <div className="px-4 pt-6 pb-3">
+            <div className="px-4 pt-6 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
               <div className="flex items-center justify-around bg-white/10 backdrop-blur-xl rounded-2xl p-4 mb-4">
                 {/* Speed */}
                 <div className="flex flex-col items-center">
@@ -620,8 +620,8 @@ function InAppNavigationModeComponent({
               </div>
             </div>
 
-            {/* Safe area padding for iPhone */}
-            <div className="h-6 bg-black" />
+            {/* Safe area padding for iPhone home indicator */}
+            <div className="pb-[env(safe-area-inset-bottom)] bg-black" />
           </motion.div>
         )}
 
