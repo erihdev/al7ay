@@ -183,7 +183,7 @@ export function NotificationSetupGuide({ providerId }: NotificationSetupGuidePro
               <ol className="text-xs text-muted-foreground space-y-1 list-decimal list-inside mr-6">
                 <li>افتح إعدادات المتصفح (Chrome/Safari)</li>
                 <li>ابحث عن "إعدادات الموقع" أو "Site Settings"</li>
-                <li>ابحث عن الموقع al7ay.lovable.app</li>
+                <li>ابحث عن موقع تطبيق الحي</li>
                 <li>فعّل الإشعارات</li>
               </ol>
             </div>

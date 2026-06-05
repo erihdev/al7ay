@@ -1,25 +1,17 @@
 // Native-aware OAuth (Google / Apple) sign-in for Capacitor + Supabase.
 //
-// On the web (PWA / browser) we keep using the existing Lovable cloud-auth flow,
-// because window.location.origin is a real https URL that the provider can redirect to.
+// Web (PWA / browser): use Supabase's standard OAuth redirect with window.location.origin.
+// Native app (Capacitor iOS / Android): window.location.origin is capacitor://localhost which
+// OAuth providers reject (404). So we ask Supabase for the provider URL with a deep-link
+// redirect (al7ay://auth-callback), open it in the system browser, catch the deep link, and
+// exchange the returned code/tokens for a Supabase session.
 //
-// Inside the native app (Capacitor iOS / Android) window.location.origin is something
-// like capacitor://localhost which OAuth providers reject -> the user sees a 404.
-// So on native we:
-//   1. Ask Supabase for the provider URL with redirectTo = a deep link (al7ay://auth-callback)
-//      and skipBrowserRedirect so WE control the navigation.
-//   2. Open that URL in the system browser (@capacitor/browser).
-//   3. Listen for the app being re-opened via the deep link (@capacitor/app appUrlOpen).
-//   4. Exchange the returned code (or tokens) for a Supabase session, then close the browser.
-//
-// BACKEND CONFIG REQUIRED for native to work end-to-end (must be done once in dashboards):
-//   - Supabase -> Authentication -> URL Configuration -> Redirect URLs: add  al7ay://auth-callback
-//   - Supabase -> Authentication -> Providers: enable Google and Apple with valid credentials
-//   - Apple: a "Sign in with Apple" Services ID configured for the Supabase callback
+// BACKEND CONFIG (once, in the Supabase dashboard you now own):
+//   - Authentication -> URL Configuration -> Redirect URLs: add  al7ay://auth-callback
+//   - Authentication -> Providers: Google and Apple are already enabled.
 
 import { Capacitor } from '@capacitor/core';
 import { supabase } from '@/integrations/supabase/client';
-import { lovable } from '@/integrations/lovable';
 
 export const OAUTH_DEEP_LINK = 'al7ay://auth-callback';
 
@@ -67,7 +59,6 @@ async function nativeOAuth(provider: Provider): Promise<OAuthResult> {
     if (error) return { error };
     if (!data?.url) return { error: new Error('تعذّر بدء تسجيل الدخول') };
 
-    // Listen for the deep-link redirect back into the app.
     const handle = await App.addListener('appUrlOpen', async ({ url }) => {
       if (!url || !url.startsWith('al7ay://auth-callback')) return;
       try {
@@ -75,7 +66,7 @@ async function nativeOAuth(provider: Provider): Promise<OAuthResult> {
       } catch (e) {
         console.error('OAuth callback error:', e);
       } finally {
-        try { await Browser.close(); } catch { /* browser may already be closed */ }
+        try { await Browser.close(); } catch { /* already closed */ }
         await handle.remove();
       }
     });
@@ -92,9 +83,10 @@ export async function signInWithProvider(provider: Provider): Promise<OAuthResul
   if (Capacitor.isNativePlatform()) {
     return nativeOAuth(provider);
   }
-  // Web / PWA: keep the existing Lovable hosted flow (works with https origin).
-  const result = await lovable.auth.signInWithOAuth(provider, {
-    redirect_uri: window.location.origin,
+  // Web / PWA: standard Supabase OAuth redirect.
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider,
+    options: { redirectTo: window.location.origin },
   });
-  return { error: result.error ?? null };
+  return { error: error ?? null };
 }
